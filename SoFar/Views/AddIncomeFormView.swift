@@ -17,9 +17,6 @@ struct AddIncomeFormView: View {
     let incomeObjectID: NSManagedObjectID?
     /// Optional Budget to attach this income to on save (currently unused by the model).
     let budgetObjectID: NSManagedObjectID?
-    /// Optional starting date for a new income entry. When supplied, the form defaults to this
-    /// date instead of today.
-    let initialDate: Date?
 
     // MARK: State
     @StateObject var viewModel: AddIncomeFormViewModel     // internal so lifecycle extension can access
@@ -28,18 +25,13 @@ struct AddIncomeFormView: View {
 
     // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
-         budgetObjectID: NSManagedObjectID? = nil,
-         initialDate: Date? = nil) {
+         budgetObjectID: NSManagedObjectID? = nil) {
         self.incomeObjectID = incomeObjectID
         self.budgetObjectID = budgetObjectID
-        self.initialDate = initialDate
-
-        let vm = AddIncomeFormViewModel(
+        _viewModel = StateObject(wrappedValue: AddIncomeFormViewModel(
             incomeObjectID: incomeObjectID,
             budgetObjectID: budgetObjectID
-        )
-        if let initialDate { vm.firstDate = initialDate }
-        _viewModel = StateObject(wrappedValue: vm)
+        ))
     }
 
     // MARK: Body
