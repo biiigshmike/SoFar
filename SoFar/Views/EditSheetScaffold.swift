@@ -1,0 +1,104 @@
+//
+//  EditSheetScaffold.swift
+//  SoFar
+//
+//  A reusable, cross-platform scaffold for editing sheets.
+//  Standardizes:
+//  - Navigation title
+//  - Cancel / Save buttons (toolbar placements map correctly on iOS & macOS)
+//  - Presentation detents & drag indicator on iOS/iPadOS
+//  - Form container with consistent spacing
+//
+//  Usage:
+//  EditSheetScaffold(
+//      title: "Rename Card",
+//      detents: [.fraction(0.25), .medium],           // optional override
+//      saveButtonTitle: "Save",                        // optional
+//      cancelButtonTitle: "Cancel",                    // optional
+//      isSaveEnabled: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+//      onCancel: { /* optional cleanup */ },
+//      onSave: {                                      // return true to dismiss, false to stay open
+//          /* validate & persist */; return true
+//      }
+//  ) {
+//      // Your form content here
+//  }
+//
+
+import SwiftUI
+
+// MARK: - EditSheetScaffold
+/// Generic wrapper that provides a consistent edit sheet layout and controls.
+/// - Parameters:
+///   - title: Title shown in the navigation bar.
+///   - detents: Preferred sheet sizes on platforms that support them (iOS/iPadOS).
+///   - saveButtonTitle / cancelButtonTitle: Localized labels for actions.
+///   - isSaveEnabled: Enables/disables the Save button for validation UI.
+///   - onCancel: Called when Cancel is tapped (sheet always dismisses).
+///   - onSave: Return `true` to dismiss the sheet, `false` to keep it open (e.g., validation failed).
+///   - content: The form/body of your editor.
+struct EditSheetScaffold<Content: View>: View {
+
+    // MARK: Inputs
+    let title: String
+    let detents: [PresentationDetent]
+    let saveButtonTitle: String
+    let cancelButtonTitle: String
+    let isSaveEnabled: Bool
+    var onCancel: (() -> Void)?
+    var onSave: () -> Bool
+    @ViewBuilder var content: Content
+
+    // MARK: Environment
+    @Environment(\.dismiss) private var dismiss
+
+    // MARK: Init
+    init(
+        title: String,
+        detents: [PresentationDetent] = [.medium, .large],
+        saveButtonTitle: String = "Save",
+        cancelButtonTitle: String = "Cancel",
+        isSaveEnabled: Bool = true,
+        onCancel: (() -> Void)? = nil,
+        onSave: @escaping () -> Bool,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.detents = detents
+        self.saveButtonTitle = saveButtonTitle
+        self.cancelButtonTitle = cancelButtonTitle
+        self.isSaveEnabled = isSaveEnabled
+        self.onCancel = onCancel
+        self.onSave = onSave
+        self.content = content()
+    }
+
+    // MARK: body
+    var body: some View {
+        NavigationStack {
+            Form { content }
+                .navigationTitle(title)
+                .toolbar {
+                    // MARK: Cancel
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(cancelButtonTitle) {
+                            onCancel?()
+                            dismiss()
+                        }
+                    }
+                    // MARK: Save
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(saveButtonTitle) {
+                            if onSave() { dismiss() }
+                        }
+                        .disabled(!isSaveEnabled)
+                    }
+                }
+        }
+        // MARK: Standard sheet behavior (platform-aware)
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        .presentationDetents(Set(detents))
+        .presentationDragIndicator(.visible)
+        #endif
+    }
+}

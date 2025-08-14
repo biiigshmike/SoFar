@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24G84" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Budget" representedClassName="Budget" syncable="YES" codeGenerationType="class">
+        <attribute name="endDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isRecurring" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="parentID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="recurrenceEndDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="recurrenceType" optional="YES" attributeType="String"/>
+        <attribute name="startDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="cards" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Card" inverseName="budget" inverseEntity="Card"/>
+        <relationship name="plannedExpense" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PlannedExpense" inverseName="budget" inverseEntity="PlannedExpense"/>
+    </entity>
+    <entity name="Card" representedClassName="Card" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="budget" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Budget" inverseName="cards" inverseEntity="Budget"/>
+        <relationship name="unplannedExpenses" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UnplannedExpense" inverseName="card" inverseEntity="UnplannedExpense"/>
+    </entity>
+    <entity name="ExpenseCategory" representedClassName="ExpenseCategory" syncable="YES" codeGenerationType="class">
+        <attribute name="color" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="unplannedExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="expenseCategory" inverseEntity="UnplannedExpense"/>
+    </entity>
+    <entity name="Income" representedClassName="Income" syncable="YES" codeGenerationType="class">
+        <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isPlanned" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="recurrence" optional="YES" attributeType="String"/>
+        <attribute name="recurrenceEndDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="secondPayDay" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="PlannedExpense" representedClassName="PlannedExpense" syncable="YES" codeGenerationType="class">
+        <attribute name="actualAmount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="descriptionText" optional="YES" attributeType="String"/>
+        <attribute name="globalTemplateID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isGlobal" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="plannedAmount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="transactionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="budget" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Budget" inverseName="plannedExpense" inverseEntity="Budget"/>
+    </entity>
+    <entity name="UnplannedExpense" representedClassName="UnplannedExpense" syncable="YES" codeGenerationType="class">
+        <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="descriptionText" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="parentID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="recurrence" optional="YES" attributeType="String"/>
+        <attribute name="recurrenceEndDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="secondBiMonthlyDate" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="transactionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="card" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Card" inverseName="unplannedExpenses" inverseEntity="Card"/>
+        <relationship name="childExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="parentExpense" inverseEntity="UnplannedExpense"/>
+        <relationship name="expenseCategory" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ExpenseCategory" inverseName="unplannedExpense" inverseEntity="ExpenseCategory"/>
+        <relationship name="parentExpense" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="UnplannedExpense" inverseName="childExpense" inverseEntity="UnplannedExpense"/>
+    </entity>
+</model>

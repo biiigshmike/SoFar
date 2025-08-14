@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4CF221902E4A42A500AD5F29 /* MijickCalendarView in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4CF220462E4A33BC00AD5F29 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4CF221902E4A42A500AD5F29 /* MijickCalendarView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = SoFar;
 			packageProductDependencies = (
+				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
 			productName = SoFar;
 			productReference = 4CF220372E4A33BA00AD5F29 /* SoFar.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 4CF2202E2E4A33B900AD5F29;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4CF2218E2E4A42A500AD5F29 /* XCRemoteSwiftPackageReference "CalendarView" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4CF220382E4A33BA00AD5F29 /* Products */;
 			projectDirPath = "";
@@ -593,6 +602,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4CF2218E2E4A42A500AD5F29 /* XCRemoteSwiftPackageReference "CalendarView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Mijick/CalendarView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF2218E2E4A42A500AD5F29 /* XCRemoteSwiftPackageReference "CalendarView" */;
+			productName = MijickCalendarView;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4CF2202F2E4A33B900AD5F29 /* Project object */;
 }
