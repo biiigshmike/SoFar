@@ -15,6 +15,7 @@ struct SoFarApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabView()
+                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
     }
 }
