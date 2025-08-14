@@ -22,7 +22,8 @@ struct IncomeView: View {
     // MARK: Presentation State
     /// Controls the Add Income sheet.
     @State private var isPresentingAddIncome: Bool = false
-    /// Holds the calendar's selected date to pre-fill the Add Income form.
+    /// If you want to pre-fill the Add form with the currently selected date in the future,
+    /// store it here. (The current AddIncomeFormView defaults to "today"; we can thread this later.)
     @State private var addIncomeInitialDate: Date? = nil
 
     // MARK: Environment
@@ -65,11 +66,9 @@ struct IncomeView: View {
             // Reload entries for the selected day after adding/saving
             viewModel.reloadForSelectedDay()
         }) {
-            AddIncomeFormView(
-                incomeObjectID: nil,
-                budgetObjectID: nil,
-                initialDate: addIncomeInitialDate
-            )
+            // NOTE: Current AddIncomeFormView doesn’t take an initial date.
+            // If you want that, I can extend it to accept `initialDate` and set its VM on appear.
+            AddIncomeFormView(incomeObjectID: nil, budgetObjectID: nil)
         }
         .onAppear {
             // Initial load (today or previously selected date)
