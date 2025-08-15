@@ -57,7 +57,8 @@ final class IncomeScreenViewModel: ObservableObject {
     func delete(income: Income) {
         do {
             try incomeService.deleteIncome(income)
-            if let d = selectedDate { load(day: d) }
+            let day = selectedDate ?? income.date ?? Date()
+            load(day: day)
         } catch {
             #if DEBUG
             print("Income delete error:", error)
