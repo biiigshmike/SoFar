@@ -20,24 +20,24 @@ struct IncomeView: View {
     @State private var isPresentingAddIncome: Bool = false
     /// Prefill date for AddIncomeFormView; derived from the currently selected calendar date or today.
     @State private var addIncomeInitialDate: Date? = nil
-
+    
     // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.managedObjectContext) private var viewContext
-
+    
     // MARK: View Model
     /// External owner should initialize and provide the view model. It manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
-
+    
     // MARK: Body
     var body: some View {
         VStack(spacing: 12) {
             // Calendar section in a padded card
             calendarSection
-
+            
             // Weekly summary bar
             weeklySummaryBar
-
+            
             // Selected day entries
             selectedDaySection
         }
@@ -79,7 +79,7 @@ struct IncomeView: View {
     /// background is black with a white selection circle.
     @ViewBuilder
     private var calendarSection: some View {
-        #if os(macOS)
+#if os(macOS)
         // macOS: attach the configuration closure directly to the call
         MCalendarView(
             selectedDate: $viewModel.selectedDate,
@@ -105,16 +105,14 @@ struct IncomeView: View {
                 isPresentingAddIncome = true
             }
         )
-        #else
+#else
         // iOS
         MCalendarView(
             selectedDate: $viewModel.selectedDate,
             selectedRange: .constant(nil)
         ) { config in
+            // iOS: use library defaults for Day/Weekdays/Month appearances
             config
-                .dayView(UBDayView.init)
-                .weekdaysView(UBWeekdaysView.init)
-                .monthLabel(UBMonthLabel.init)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -124,9 +122,9 @@ struct IncomeView: View {
                 .fill(colorScheme == .dark ? Color.black : Color.white)
         )
         .accessibilityIdentifier("IncomeCalendar")
-        #endif
+#endif
     }
-
+    
     // MARK: Weekly Summary Bar
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
@@ -152,7 +150,7 @@ struct IncomeView: View {
                 .shadow(radius: 1, y: 1)
         )
     }
-
+    
     // MARK: Selected Day Section (WITH swipe to delete)
     /// Displays the selected date and a list of income entries for that day.
     /// The list supports native swipe-to-delete on iOS & macOS; it also scrolls
@@ -161,12 +159,12 @@ struct IncomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
             let entries = viewModel.incomesForDay
-
+            
             // MARK: Section Title — Selected Day
             Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
                 .font(.headline)
                 .padding(.bottom, DS.Spacing.xs)
-
+            
             if entries.isEmpty {
                 // MARK: Empty State (no income on this date)
                 Text("No income for \(formattedDate(date)).")
@@ -208,13 +206,16 @@ struct IncomeView: View {
                     }
                 }
                 .listStyle(.plain)
-                #if os(iOS)
+#if os(iOS)
                 .scrollIndicators(.hidden)
-                #endif
-                .scrollContentBackground(.hidden) // keep our pill background
+#endif
+                .scrollContentBackground(.hidden) // keep our pill background visible
                 // Keep the "pill" compact; enable scrolling when there are many rows.
-                .frame(minHeight: 64, maxHeight: 260)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                .frame(minHeight: 60, maxHeight: 120) // ↓ slightly smaller than before
+                // IMPORTANT: Do NOT clip the List; clipping rounds the swipe-action background
+                // on the first row (top-right corner). Keeping the outer container rounded
+                // preserves the pill look without cutting the swipe actions.
+                // .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))  ← keep removed
             }
         }
         .padding()
@@ -226,9 +227,9 @@ struct IncomeView: View {
                 .shadow(radius: 1, y: 1)
         )
     }
-
+    
     // MARK: Helpers
-
+    
     /// Formats a date for short UI display (e.g., "Aug 14, 2025").
     private func formattedDate(_ date: Date) -> String {
         let f = DateFormatter()
@@ -236,7 +237,7 @@ struct IncomeView: View {
         f.timeStyle = .none
         return f.string(from: date)
     }
-
+    
     /// Computes the start/end of the week containing `date` using the current calendar and locale.
     private func weekBounds(for date: Date) -> (start: Date, end: Date) {
         let cal = Calendar.current
@@ -250,7 +251,7 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .day, value: 7 - deltaToStart, to: start) ?? date
         return (start, end)
     }
-
+    
     /// Locale-aware currency string for display.
     private func currencyString(for amount: Double) -> String {
         let nf = NumberFormatter()

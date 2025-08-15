@@ -56,6 +56,7 @@ struct CardsView: View {
                     .add { isPresentingAddCard = true }
                 ]
             )
+            .navigationTitle("Cards")
             // MARK: Add Sheet
             .sheet(isPresented: $isPresentingAddCard) {
                 AddCardFormView { newName, selectedTheme in
@@ -144,7 +145,7 @@ struct CardsView: View {
     private var emptyView: some View {
         UBEmptyState(
             iconSystemName: "creditcard",
-            title: "No Cards Yet",
+            title: "Cards",
             message: "Create a card to start tracking unplanned expenses.",
             primaryButtonTitle: "Add Card",
             onPrimaryTap: { isPresentingAddCard = true }
