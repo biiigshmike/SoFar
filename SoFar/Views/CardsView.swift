@@ -171,7 +171,7 @@ struct CardsView: View {
                     }
                     .frame(height: fixedCardHeight)
                     .contextMenu {
-                        Button("Edit…", systemImage: "pencil") {
+                        Button("Edit", systemImage: "pencil") {
                             editingCard = card
                         }
                         Button(role: .destructive) {

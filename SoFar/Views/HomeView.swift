@@ -191,7 +191,7 @@ struct HomeView: View {
 
                             // MARK: Context Menu → Edit / Delete
                             .contextMenu {
-                                Button("Edit Budget…", systemImage: "pencil") {
+                                Button("Edit", systemImage: "pencil") {
                                     budgetToEdit = .init(id: summary.id)
                                 }
                                 Button(role: .destructive) {

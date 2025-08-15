@@ -12,16 +12,33 @@ import CoreData
 struct AddPlannedExpenseView: View {
 
     // MARK: Inputs
+    /// Budget to preselect in the horizontal picker; pass nil to let the user choose.
     let preselectedBudgetID: NSManagedObjectID?
+    /// New: if true, the "Use in future budgets?" toggle will start ON when the view first appears.
+    let defaultSaveAsGlobalPreset: Bool
+    /// Called after a successful save.
     let onSaved: () -> Void
 
     // MARK: State
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: AddPlannedExpenseViewModel
 
+    /// Guard to apply `defaultSaveAsGlobalPreset` only once on first load.
+    @State private var didApplyDefaultGlobal = false
+
     // MARK: Init
-    init(preselectedBudgetID: NSManagedObjectID?, onSaved: @escaping () -> Void) {
+    /// Designated initializer.
+    /// - Parameters:
+    ///   - preselectedBudgetID: Optional budget objectID to preselect.
+    ///   - defaultSaveAsGlobalPreset: When true, defaults the "Use in future budgets?" toggle to ON on first load.
+    ///   - onSaved: Closure invoked after `vm.save()` succeeds.
+    init(
+        preselectedBudgetID: NSManagedObjectID?,
+        defaultSaveAsGlobalPreset: Bool = false,
+        onSaved: @escaping () -> Void
+    ) {
         self.preselectedBudgetID = preselectedBudgetID
+        self.defaultSaveAsGlobalPreset = defaultSaveAsGlobalPreset
         self.onSaved = onSaved
         _vm = StateObject<AddPlannedExpenseViewModel>(
             wrappedValue: AddPlannedExpenseViewModel(preselectedBudgetID: preselectedBudgetID)
@@ -74,6 +91,7 @@ struct AddPlannedExpenseView: View {
                                 .ub_compactDatePickerStyle()
                         }
 
+                        // MARK: Use in future budgets?
                         Toggle("Use in future budgets?", isOn: $vm.saveAsGlobalPreset)
                     }
                     .padding(.horizontal, DS.Spacing.l)
@@ -85,7 +103,8 @@ struct AddPlannedExpenseView: View {
         .appToolbar(titleDisplayMode: .inline, trailingItems: [])
         .safeAreaInset(edge: .bottom) {
             HStack {
-                Button("Cancel") { dismiss() }.buttonStyle(.bordered)
+                Button("Cancel") { dismiss() }
+                    .buttonStyle(.bordered)
                 Button("Save") { trySave() }
                     .buttonStyle(.borderedProminent)
                     .disabled(!vm.canSave)
@@ -95,7 +114,16 @@ struct AddPlannedExpenseView: View {
             .padding(.vertical, DS.Spacing.m)
             .background(.ultraThinMaterial)
         }
-        .task { await vm.load() }
+        .task {
+            // MARK: Lifecycle
+            await vm.load()
+
+            // Apply the default ONCE; do not fight the user's later toggle.
+            if !didApplyDefaultGlobal {
+                vm.saveAsGlobalPreset = defaultSaveAsGlobalPreset
+                didApplyDefaultGlobal = true
+            }
+        }
     }
 
     // MARK: Actions
@@ -110,7 +138,11 @@ struct AddPlannedExpenseView: View {
             #if canImport(UIKit)
             let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
-            UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.rootViewController?.present(alert, animated: true)
+            UIApplication.shared.connectedScenes
+                .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+                .first?
+                .rootViewController?
+                .present(alert, animated: true)
             #endif
         }
     }

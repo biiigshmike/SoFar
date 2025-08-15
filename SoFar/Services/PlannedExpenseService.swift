@@ -40,6 +40,10 @@ enum PlannedExpenseServiceError: Error {
 /// Public API for managing `PlannedExpense` entities.
 final class PlannedExpenseService {
     
+    // MARK: Singleton (for convenience across SwiftUI)
+    /// Global access used by views like PresetsView.
+    static let shared = PlannedExpenseService()
+    
     // MARK: Properties
     private let expenseRepo: CoreDataRepository<PlannedExpense>
     private let budgetRepo: CoreDataRepository<Budget>

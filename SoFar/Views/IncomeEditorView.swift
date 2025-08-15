@@ -9,6 +9,15 @@
 import SwiftUI
 import CoreData
 
+// MARK: - IncomeEditorMode
+/// Controls how the editor behaves:
+/// - `.add(Date)`: prefill the form with a specific date when creating a new income
+/// - `.edit`: edit an existing `Income` (passed via `seedIncome`)
+enum IncomeEditorMode: Equatable {
+    case add(Date)
+    case edit
+}
+
 // MARK: - IncomeEditorAction
 /// Represents a user's action from the editor.
 enum IncomeEditorAction {
@@ -76,6 +85,10 @@ struct IncomeEditorView: View {
     @State private var form: IncomeEditorForm = .init()
     
     // MARK: Init
+    /// - Parameters:
+    ///   - mode: `.add(date)` to prefill the date; `.edit` to edit `seedIncome`
+    ///   - seedIncome: the income to edit when in `.edit` mode
+    ///   - onCommit: closure invoked on Save/Cancel; return `true` to dismiss the sheet
     init(mode: IncomeEditorMode, seedIncome: Income? = nil, onCommit: @escaping (IncomeEditorAction) -> Bool) {
         self.mode = mode
         self.seedIncome = seedIncome
@@ -209,6 +222,10 @@ struct IncomeEditorView: View {
     }
     
     // MARK: Initial Form
+    /// Builds initial field values based on mode and optional seed income.
+    /// - Parameters:
+    ///   - mode: `.add(date)` or `.edit`
+    ///   - seed: existing `Income` to edit when in `.edit`
     private static func makeInitialForm(mode: IncomeEditorMode, seed: Income?) -> IncomeEditorForm {
         if case .edit = mode, let inc = seed {
             var f = IncomeEditorForm()

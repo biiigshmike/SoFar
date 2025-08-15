@@ -5,7 +5,7 @@ import CoreData
 /// A standardized add/edit sheet for Planned or Actual income entries.
 /// Mirrors the visual chrome and labeling of AddBudgetFormView / AddCardView.
 /// Usage:
-///     - Provide an optional `incomeObjectID` to edit an existing Income, otherwise a new record is created.
+///     - Provide an optional `incomeObjectID` to edit an existing Income; otherwise a new record is created.
 ///     - Optionally pass `budgetObjectID` to associate the income to a specific budget on save.
 ///     - The Save button is enabled when Source is non-empty and Amount > 0.
 struct AddIncomeFormView: View {
@@ -17,17 +17,26 @@ struct AddIncomeFormView: View {
     let incomeObjectID: NSManagedObjectID?
     /// Optional Budget to attach this income to on save (currently unused by the model).
     let budgetObjectID: NSManagedObjectID?
+    /// If provided (from calendar or + button), pre-fills the 'First Date' field when adding.
+    /// Must be internal so the lifecycle extension in a separate file can read it.
+    let initialDate: Date?
 
     // MARK: State
-    @StateObject var viewModel: AddIncomeFormViewModel     // internal so lifecycle extension can access
-    @State private var isPresentingCustomRecurrence = false
-    @State private var error: IdentifiableError?
+    /// Must be internal so the lifecycle extension in a separate file can call into it.
+    @StateObject var viewModel: AddIncomeFormViewModel = AddIncomeFormViewModel(incomeObjectID: nil, budgetObjectID: nil)
+    @State private var error: SaveError?
+
+    // MARK: Recurrence UI State (for Custom Editor sheet trigger)
+    /// Controls presentation when the RecurrencePickerView asks the host to show a custom editor.
+    @State private var isPresentingCustomRecurrenceEditor: Bool = false
 
     // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
-         budgetObjectID: NSManagedObjectID? = nil) {
+         budgetObjectID: NSManagedObjectID? = nil,
+         initialDate: Date? = nil) {
         self.incomeObjectID = incomeObjectID
         self.budgetObjectID = budgetObjectID
+        self.initialDate = initialDate
         _viewModel = StateObject(wrappedValue: AddIncomeFormViewModel(
             incomeObjectID: incomeObjectID,
             budgetObjectID: budgetObjectID
@@ -45,21 +54,29 @@ struct AddIncomeFormView: View {
             onSave: { saveTapped() } // return true to dismiss
         ) {
             // MARK: Form Content
-            typeSection
-            detailsSection
-            recurrenceSection
+            // Wrap in Group to help the scaffold infer its generic Content on macOS
+            Group {
+                typeSection
+                detailsSection
+                recurrenceSection
+            }
         }
         .alert(item: $error) { err in
-            Alert(title: Text("Couldn’t Save"),
-                  message: Text(err.message),
-                  dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text("Couldn’t Save"),
+                message: Text(err.message),
+                dismissButton: .default(Text("OK"))
+            )
         }
-        // Attach the eager-load hook so editing forms prefill immediately.
-        .background(_eagerLoadHook)
+        // MARK: Eager load (edit) / Prefill date (add)
+        _eagerLoadHook
     }
 
     // MARK: Sections
-    /// Planned vs Actual
+
+    // MARK: Type
+    /// Segmented control to switch between Planned (true) and Actual (false).
+    /// Binding: `$viewModel.isPlanned` — true = Planned; false = Actual.
     @ViewBuilder
     private var typeSection: some View {
         Section {
@@ -68,31 +85,26 @@ struct AddIncomeFormView: View {
                 Text("Actual").tag(false)
             }
             .pickerStyle(.segmented)
-            .accessibilityIdentifier("incomeTypePicker")
+            .accessibilityIdentifier("incomeTypeSegmentedControl")
         } header: {
             sectionHeader("Type")
         }
     }
 
-    /// Source, Amount, First Date
+    // MARK: Details
+    /// Source, amount, and first date.
     @ViewBuilder
     private var detailsSection: some View {
         Section {
             // ---- Source
-            TextField("Source", text: $viewModel.source, prompt: Text("e.g., Paycheck"))
+            TextField("e.g., Paycheck", text: $viewModel.source)
                 .ub_noAutoCapsAndCorrection()
-                .accessibilityIdentifier("incomeSourceField")
 
-            // ---- Amount (String-backed so we can show a real prompt and left alignment)
-            TextField("Amount",
-                      text: $viewModel.amountInput,
-                      prompt: Text("e.g., 2,500.00"))
-                .ub_noAutoCapsAndCorrection()
-                .multilineTextAlignment(.leading) // left align while typing
-                .accessibilityIdentifier("incomeAmountField")
-                #if os(iOS)
-                .keyboardType(.decimalPad)
-                #endif
+            // ---- Amount
+            TextField("e.g., 1,234.56", text: $viewModel.amountInput)
+            #if os(iOS)
+                .keyboardType(.decimalPad)   // iOS only; gated so macOS compiles
+            #endif
 
             // ---- First Date
             DatePicker("First Date", selection: $viewModel.firstDate, displayedComponents: [.date])
@@ -102,59 +114,43 @@ struct AddIncomeFormView: View {
         }
     }
 
+    // MARK: Recurrence
     /// Recurrence presets + options, including "forever" and end date.
+    /// NOTE: `RecurrencePickerView` signature expects:
+    ///   - rule: Binding<RecurrenceRule>
+    ///   - isPresentingCustomEditor: Binding<Bool>
     @ViewBuilder
     private var recurrenceSection: some View {
         Section {
             RecurrencePickerView(
                 rule: $viewModel.recurrenceRule,
-                isPresentingCustomEditor: $isPresentingCustomRecurrence
+                isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
             )
-            .accessibilityIdentifier("incomeRecurrencePicker")
         } header: {
-            sectionHeader("Recurrence")
-        }
-        .sheet(isPresented: $isPresentingCustomRecurrence) {
-            CustomRecurrenceEditorView(
-                initial: viewModel.customRuleSeed,
-                onCancel: { isPresentingCustomRecurrence = false },
-                onSave: { custom in
-                    viewModel.applyCustomRecurrence(custom)
-                    isPresentingCustomRecurrence = false
-                }
-            )
-            .presentationDetents([.medium, .large])
+            sectionHeader("Recurrence (Optional)")
         }
     }
 
-    // MARK: Actions
-    /// Attempts to save via the view model. Returns `true` to dismiss sheet; false keeps it open.
-    @discardableResult
+    // MARK: Save
+    /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
         do {
-            try viewModel.save(in: viewContext)
+            try viewModel.save(in: viewContext) // NOTE: `in:` matches the VM’s signature
             return true
+        } catch let err as SaveError {
+            self.error = err
+            return false
         } catch {
-            self.error = IdentifiableError(error.localizedDescription)
+            self.error = .message("Unexpected error: \(error.localizedDescription)")
             return false
         }
     }
 
-    // MARK: Helpers
-    /// Small, consistent all-caps gray header like AddBudget/AddCard
+    // MARK: Utilities
+    /// Uniform section header style.
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
-            .font(.footnote)
+            .font(.caption)
             .foregroundStyle(.secondary)
-            .textCase(.none) // ensure we control casing
-            .accessibilityAddTraits(.isHeader)
     }
-}
-
-// MARK: - IdentifiableError
-/// Wraps an error message for SwiftUI .alert(item:)
-private struct IdentifiableError: Identifiable {
-    let id = UUID()
-    let message: String
-    init(_ message: String) { self.message = message }
 }
