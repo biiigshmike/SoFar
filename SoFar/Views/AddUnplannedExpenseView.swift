@@ -7,7 +7,7 @@
 //  • Card chooser (horizontal)  ← uses shared CardPickerRow (no local duplicate)
 //  • Category chips row (static Add button + live, scrolling chips)
 //  • Description, Amount, Date
-//  -------------------------------------------------------------
+//  -------------------------------------------------------------?
 //
 
 import SwiftUI
@@ -23,6 +23,18 @@ struct AddUnplannedExpenseView: View {
 
     // MARK: State
     @StateObject private var vm: AddUnplannedExpenseViewModel
+    
+    // MARK: - Layout
+    /// Height of the card picker row.  This matches the tile height defined in
+    /// `CardPickerRow`.  We reduce the height on macOS so the picker doesn’t
+    /// overwhelm the form.  Adjust here rather than directly inside
+    /// `CardPickerRow` for centralized control.
+    #if os(macOS)
+    private let cardRowHeight: CGFloat = 150
+    #else
+    private let cardRowHeight: CGFloat = 160
+    #endif
+
 
     // MARK: Init
     init(allowedCardIDs: Set<NSManagedObjectID>? = nil,
@@ -47,41 +59,81 @@ struct AddUnplannedExpenseView: View {
             onSave: { trySave() }
         ) {
             // MARK: Card Picker (horizontal)
-            Section {
+            UBFormSection("Assign a Card to Expense", isUppercased: false) {
                 CardPickerRow(
                     allCards: vm.allCards,
                     selectedCardID: $vm.selectedCardID
                 )
-            } header: {
-                Text("Assign a Card to Expense")
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: cardRowHeight)
+                .ub_hideScrollIndicators()
             }
 
             // MARK: Category Chips Row
-            Section {
+            UBFormSection("Category", isUppercased: false) {
                 CategoryChipsRow(
                     selectedCategoryID: $vm.selectedCategoryID
                 )
                 .accessibilityElement(children: .contain)
-            } header: {
-                Text("Category")
             }
 
-            // MARK: Fields
-            Section {
-                TextField("Expense Description", text: $vm.descriptionText)
-                    .ub_noAutoCapsAndCorrection()
 
-                TextField("Amount", text: $vm.amountString)
-                    .ub_decimalKeyboard()
+            // MARK: Individual Fields
+            // Give each field its own section with a header so that the
+            // descriptive label appears outside the cell, mirroring the
+            // appearance of the Add Card form.  Also left‑align text for
+            // improved readability on macOS and avoid right‑aligned text.
 
-                DatePicker("Transaction Date", selection: $vm.transactionDate, displayedComponents: [.date])
+            // Expense Description
+            UBFormSection("Expense Description", isUppercased: false) {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $vm.descriptionText, prompt: Text("e.g., coffee"))
+                        .ub_noAutoCapsAndCorrection()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Expense Description")
+                } else {
+                    TextField("e.g., coffee", text: $vm.descriptionText)
+                        .ub_noAutoCapsAndCorrection()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Expense Description")
+                }
+            }
+
+            // Amount
+            UBFormSection("Amount", isUppercased: false) {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $vm.amountString, prompt: Text("e.g., 4.75"))
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Amount")
+                } else {
+                    TextField("e.g., 4.75", text: $vm.amountString)
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Amount")
+                }
+            }
+
+            // Transaction Date
+            UBFormSection("Transaction Date", isUppercased: false) {
+                DatePicker("", selection: $vm.transactionDate, displayedComponents: [.date])
+                    .labelsHidden()
                     .ub_compactDatePickerStyle()
+                    .accessibilityLabel("Transaction Date")
             }
         }
         .onAppear { CoreDataService.shared.ensureLoaded() }
         .task { await vm.load() }
         // Make sure our chips & sheet share the same context.
         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        // Apply cross‑platform form styling and sheet padding
+        .ub_sheetPadding()
+        .ub_formStyleGrouped()
+        .ub_hideScrollIndicators()
     }
 
     // MARK: - trySave()
@@ -92,11 +144,11 @@ struct AddUnplannedExpenseView: View {
         do {
             try vm.save()
             onSaved()
-            #if canImport(UIKit)
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            #endif
+            // Resign keyboard on iOS via unified helper
+            ub_dismissKeyboard()
             return true
         } catch {
+            // Present error via UIKit alert on iOS; macOS simply returns false.
             #if canImport(UIKit)
             let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -161,12 +213,38 @@ private struct CategoryChipsRow: View {
                 }
                 .padding(.trailing, DS.Spacing.s)
             }
+            // Hide scroll indicators consistently across platforms
+            .ub_hideScrollIndicators()
         }
         .sheet(isPresented: $isPresentingNewCategory) {
-            NewCategorySheet { created in
-                // Auto-select the new category when saved
-                selectedCategoryID = created.objectID
+            // Present a unified category editor sheet when adding a new category.  The
+            // sheet uses the same look and feel as the rest of the app via
+            // ExpenseCategoryEditorSheet.  Upon save, it creates a new
+            // ExpenseCategory in the current context and passes it back via
+            // `onCreated`.
+            ExpenseCategoryEditorSheet(
+                initialName: "",
+                initialHex: "#4E9CFF"
+            ) { name, hex in
+                // Persist the new category and auto-select it.
+                let category = ExpenseCategory(context: viewContext)
+                category.id = UUID()
+                category.name = name
+                category.color = hex
+                do {
+                    // Obtain a permanent ID so the fetch request updates immediately.
+                    try viewContext.obtainPermanentIDs(for: [category])
+                    try viewContext.save()
+                    // Auto-select the newly created category.
+                    selectedCategoryID = category.objectID
+                } catch {
+                    // In case of an error, log it for debugging; the sheet will stay open.
+                    #if DEBUG
+                    print("Failed to create category:", error.localizedDescription)
+                    #endif
+                }
             }
+            // Limit the sheet height on iOS/iPadOS to a medium size; macOS uses the default.
             .presentationDetents([.medium])
             .environment(\.managedObjectContext, viewContext)
         }
@@ -191,7 +269,7 @@ private struct AddCategoryPill: View {
                 .padding(.horizontal, DS.Spacing.m)
                 .padding(.vertical, 8)
                 .background(
-                    Capsule().fill(Color.primary.opacity(0.08))
+                    Capsule().fill(DS.Colors.chipFill)
                 )
         }
         .buttonStyle(.plain)
@@ -218,106 +296,14 @@ private struct CategoryChip: View {
         .padding(.vertical, 8)
         .background(
             Capsule()
-                .fill(isSelected ? Color.primary.opacity(0.12) : Color.primary.opacity(0.06))
+                .fill(isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill)
         )
         .overlay(
             Capsule()
-                .stroke(isSelected ? Color.primary.opacity(0.35) : Color.primary.opacity(0.12), lineWidth: isSelected ? 1.5 : 1)
+                .stroke(isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill, lineWidth: isSelected ? 1.5 : 1)
         )
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-// MARK: - NewCategorySheet
-/// Creates a category (name + color) in the SAME environment viewContext.
-private struct NewCategorySheet: View {
-
-    // MARK: Callback
-    var onCreated: (ExpenseCategory) -> Void
-
-    // MARK: Environment
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.managedObjectContext) private var viewContext
-
-    // MARK: State
-    @State private var categoryName: String = ""
-    @State private var categoryColor: Color = .blue
-    @State private var errorMessage: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Category name", text: $categoryName)
-                        .ub_noAutoCapsAndCorrection()
-                } header: { Text("Name") }
-
-                Section {
-                    ColorPicker("Color", selection: $categoryColor, supportsOpacity: false)
-                } header: { Text("Appearance") }
-            }
-            .navigationTitle("New Category")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { createCategory() }
-                        .disabled(categoryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-            .alert("Error", isPresented: .constant(errorMessage != nil), actions: {
-                Button("OK") { errorMessage = nil }
-            }, message: { Text(errorMessage ?? "") })
-        }
-    }
-
-    // MARK: createCategory()
-    /// Creates + saves, obtains permanent ID, returns created object.
-    private func createCategory() {
-        let trimmed = categoryName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            errorMessage = "Please enter a category name."
-            return
-        }
-
-        do {
-            let category = ExpenseCategory(context: viewContext)
-            category.id = UUID()
-            category.name = trimmed
-            category.color = colorToHex(categoryColor) ?? "#999999"
-
-            // Ensure stable ID so selection works immediately.
-            try viewContext.obtainPermanentIDs(for: [category])
-            try viewContext.save()
-
-            onCreated(category)
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    // MARK: colorToHex(_:)
-    /// Converts SwiftUI Color -> "#RRGGBB" (no alpha).
-    private func colorToHex(_ color: Color) -> String? {
-        #if canImport(UIKit)
-        let ui = UIColor(color)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
-        let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
-        return String(format: "#%02X%02X%02X", ri, gi, bi)
-        #elseif canImport(AppKit)
-        if #available(macOS 11.0, *) {
-            guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return nil }
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            sRGB.getRed(&r, green: &g, blue: &b, alpha: &a)
-            let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
-            return String(format: "#%02X%02X%02X", ri, gi, bi)
-        } else {
-            return nil
-        }
-        #endif
-    }
-}

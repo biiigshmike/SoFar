@@ -8,6 +8,14 @@
 import SwiftUI
 import CoreData
 
+// Conditionally import platform-specific frameworks for color conversions.
+#if canImport(UIKit)
+import UIKit
+#endif
+#if canImport(AppKit)
+import AppKit
+#endif
+
 // MARK: - ExpenseCategoryManagerView
 /// Full-fidelity management screen for Expense Categories.
 /// - Shows categories, allows add/rename/delete, and color editing.
@@ -177,84 +185,97 @@ struct ExpenseCategoryManagerView: View {
 
 // MARK: - ExpenseCategoryEditorSheet
 /// Modal sheet for adding or editing a category.
-/// - Parameters:
-///   - initialName: Prefills the name field when editing.
-///   - initialHex: Prefills the hex string; validate lightly.
-///   - onSave: Closure invoked with new values; the caller persists.
+/// This sheet adopts the same styling as the other add/edit forms in the app.  It
+/// presents two grouped sections—one for the name and one for the color—using
+/// `UBFormSection` for consistent header styling.  The `ColorPicker` is used
+/// instead of a static hex field so users can tap the color swatch to pick a
+/// color on both macOS and iOS.  The `onSave` closure receives the trimmed
+/// name and a hex string (e.g., "#4E9CFF") generated from the selected color.
 struct ExpenseCategoryEditorSheet: View {
+    // MARK: Environment
     @Environment(\.dismiss) private var dismiss
 
+    // MARK: State
+    /// Holds the editable name for the category.  The Save button is disabled
+    /// until this value is non-empty after trimming whitespace.
     @State private var name: String
-    @State private var hex: String
+    /// Holds the currently selected color.  The initial value is derived from
+    /// the provided hex string or falls back to a system blue.
+    @State private var color: Color
 
+    // MARK: Callback
+    /// Called when the user taps Save.  The closure is passed the trimmed
+    /// name and a sanitized hex string representing the current color.
     let onSave: (_ name: String, _ hex: String) -> Void
 
+    // MARK: Init
     init(initialName: String, initialHex: String, onSave: @escaping (_ name: String, _ hex: String) -> Void) {
         self._name = State(initialValue: initialName)
-        self._hex = State(initialValue: initialHex)
+        // Convert the incoming hex string to a Color; default to blue if invalid.
+        self._color = State(initialValue: Color(hex: initialHex) ?? .blue)
         self.onSave = onSave
     }
 
+    // MARK: Body
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Details") {
-                    // Name
-                    TextField("Name", text: $name)
-                    #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                    #endif
-
-                    // Hex
-                    TextField("#RRGGBB", text: $hex)
-                    #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                    #endif
-                        .autocorrectionDisabled(true)
-
-                    HStack {
-                        ColorCircle(hex: hex)
-                        Text("Preview")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+        EditSheetScaffold(
+            title: "New Category",
+            saveButtonTitle: "Save",
+            cancelButtonTitle: "Cancel",
+            isSaveEnabled: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            onCancel: nil,
+            onSave: {
+                // Trim and validate the name; convert the color to a hex string.
+                let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, let hex = colorToHex(color) else { return false }
+                onSave(trimmed, hex)
+                return true
             }
-            .navigationTitle("Category")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let sanitized = sanitizeHex(hex)
-                        onSave(name.trimmingCharacters(in: .whitespacesAndNewlines), sanitized)
-                        dismiss()
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sanitizeHex(hex).isEmpty == true)
-                }
+        ) {
+            // Name field
+            UBFormSection("Name") {
+                // Use an empty label to align the field correctly in the form row.
+                TextField("", text: $name, prompt: Text("e.g., Groceries"))
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .ub_noAutoCapsAndCorrection()
+            }
+
+            // Color picker
+            UBFormSection("Color") {
+                ColorPicker("Color", selection: $color, supportsOpacity: false)
+                    // Hide the inline label so the control fills the row.
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(minWidth: sheetMinWidth)
+        // Apply our consistent form styling and sheet padding.
+        .ub_sheetPadding()
+        .ub_formStyleGrouped()
+        .ub_hideScrollIndicators()
     }
 
-    // MARK: - Helpers
-    private var sheetMinWidth: CGFloat {
-        #if os(macOS)
-        return 420
-        #else
-        return 0
+    // MARK: Helper: Color -> Hex
+    /// Converts a SwiftUI `Color` into a `#RRGGBB` uppercase hex string.  Returns
+    /// nil if conversion fails (e.g., color isn't representable in sRGB).
+    private func colorToHex(_ color: Color) -> String? {
+        #if canImport(UIKit)
+        let ui = UIColor(color)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
+        let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
+        return String(format: "#%02X%02X%02X", ri, gi, bi)
+        #elseif canImport(AppKit)
+        if #available(macOS 11.0, *) {
+            guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return nil }
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            sRGB.getRed(&r, green: &g, blue: &b, alpha: &a)
+            let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
+            return String(format: "#%02X%02X%02X", ri, gi, bi)
+        } else {
+            return nil
+        }
         #endif
-    }
-
-    /// Sanitizes a hex string; returns uppercase #RRGGBB or empty string if invalid.
-    private func sanitizeHex(_ value: String) -> String {
-        var v = value.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if v.hasPrefix("#") == false { v = "#\(v)" }
-        let pattern = #"^#[0-9A-F]{6}$"#
-        if v.range(of: pattern, options: .regularExpression) != nil {
-            return v
-        }
-        return ""
     }
 }
 

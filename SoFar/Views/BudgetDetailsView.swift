@@ -20,9 +20,14 @@ struct BudgetDetailsView: View {
     @StateObject private var vm: BudgetDetailsViewModel
 
     // MARK: UI State
+    /// Controls the presentation of the “Add…” action sheet.
     @State private var isShowingAddMenu = false
-    @State private var pushAddPlanned = false
-    @State private var pushAddUnplanned = false
+    /// Flags controlling the modal presentation of the add‑planned and add‑unplanned sheets.
+    /// Using separate booleans allows independent control for each sheet without
+    /// resorting to push‑style navigation.  When true, the corresponding sheet
+    /// is presented via a `.sheet` modifier at the bottom of this view.
+    @State private var isPresentingAddPlannedSheet = false
+    @State private var isPresentingAddUnplannedSheet = false
 
     // MARK: Init
     init(budgetObjectID: NSManagedObjectID) {
@@ -108,24 +113,28 @@ struct BudgetDetailsView: View {
                 .add { isShowingAddMenu = true }
             ]
         )
-        .confirmationDialog("Add", isPresented: $isShowingAddMenu, titleVisibility: .visible) {
-            Button("Add Planned Expense") { pushAddPlanned = true }
-            Button("Add Variable Expense") { pushAddUnplanned = true }
+        .confirmationDialog("Add",
+                            isPresented: $isShowingAddMenu,
+                            titleVisibility: .visible) {
+            Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
+            Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
         }
         .onAppear {
             CoreDataService.shared.ensureLoaded()
             Task { await vm.load() }
         }
         .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search"))
-        // Navigation to add screens (use same context)
-        .navigationDestination(isPresented: $pushAddPlanned) {
+        // Modal sheets for adding planned or unplanned expenses.  Sheets are
+        // preferred over navigation destinations so that the edit forms
+        // present in a pop‑up window on macOS and slide‑up sheet on iOS/iPadOS.
+        .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
                 preselectedBudgetID: vm.budget?.objectID,
                 onSaved: { /* lists auto-update via @FetchRequest */ }
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
-        .navigationDestination(isPresented: $pushAddUnplanned) {
+        .sheet(isPresented: $isPresentingAddUnplannedSheet) {
             AddUnplannedExpenseView(
                 allowedCardIDs: Set(((vm.budget?.cards as? Set<Card>) ?? []).map { $0.objectID }),
                 initialDate: vm.startDate,

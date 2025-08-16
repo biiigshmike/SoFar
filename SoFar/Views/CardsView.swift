@@ -32,6 +32,7 @@ struct CardsView: View {
     // MARK: Selection State
     /// Stable selection keyed to CardItem.id (works for objectID-backed and preview items).
     @State private var selectedCardStableID: String? = nil
+    @Namespace private var cardTransitionNS
 
     // MARK: Grid Layout
     private let gridColumns: [GridItem] = [
@@ -52,9 +53,9 @@ struct CardsView: View {
             // MARK: App Toolbar
             .appToolbar(
                 titleDisplayMode: .large,
-                trailingItems: [
+                trailingItems: (selectedCardStableID == nil) ? [
                     .add { isPresentingAddCard = true }
-                ]
+                ] : []
             )
             .navigationTitle("Cards")
             // MARK: Add Sheet
@@ -156,6 +157,7 @@ struct CardsView: View {
     // MARK: Grid View
     /// - Parameter cards: Data snapshot to render.
     private func gridView(cards: [CardItem]) -> some View {
+        ZStack {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: DS.Spacing.l) {
                 ForEach(cards) { card in
@@ -171,6 +173,9 @@ struct CardsView: View {
                         // e.g., vm.showExpenses(for: card) or set a sidebar selection.
                     }
                     .frame(height: fixedCardHeight)
+                    .matchedGeometryEffect(id: "card-\(card.id)", in: cardTransitionNS)
+                    .opacity(selectedCardStableID != nil && selectedCardStableID != card.id ? 0 : 1)
+                    .animation(.smooth(duration: 0.25), value: selectedCardStableID)
                     .contextMenu {
                         Button("Edit", systemImage: "pencil") {
                             editingCard = card
@@ -188,6 +193,22 @@ struct CardsView: View {
             // Disable the default animation for grid changes to prevent "grid hop".
             .animation(nil, value: cards)
         }
+            // Detail overlay
+            if let selID = selectedCardStableID,
+               let selected = cards.first(where: { $0.id == selID }) {
+                CardDetailView(
+                    card: selected,
+                    namespace: cardTransitionNS,
+                    onDone: { withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+                        selectedCardStableID = nil
+                    }},
+                    onEdit: { editingCard = selected }
+                )
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
+                                         removal: .opacity))
+                .zIndex(10)
+            }
+        } // ZStack
         // MARK: Keep selection valid when dataset changes (delete/rename)
         .onChange(of: cards.map(\.id)) { _, ids in
             if let sel = selectedCardStableID, !ids.contains(sel) {

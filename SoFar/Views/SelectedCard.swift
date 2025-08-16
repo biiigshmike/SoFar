@@ -21,8 +21,28 @@ struct SelectCard: View {
             .font(.title3.weight(.semibold))
             .foregroundStyle(isSelected ? Color.accentColor : .primary)
             .multilineTextAlignment(.center)
-            .frame(width: 160, height: 100)
-            .background(.thinMaterial)
+            // Size: Slightly smaller on macOS to avoid overly large tiles in sheets.
+            // On iOS/tvOS we keep the original 160×100 footprint.
+            .frame(
+                width: {
+                    #if os(macOS)
+                    return 150
+                    #else
+                    return 160
+                    #endif
+                }(),
+                height: {
+                    #if os(macOS)
+                    return 90
+                    #else
+                    return 100
+                    #endif
+                }()
+            )
+            // Use a custom neutral fill instead of `.thinMaterial` so cards look
+            // consistent across platforms. `.thinMaterial` can appear opaque gray
+            // on macOS and may not match the form background.
+            .background(DS.Colors.cardFill)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.25), lineWidth: 2)

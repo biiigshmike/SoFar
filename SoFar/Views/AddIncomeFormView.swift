@@ -57,7 +57,9 @@ struct AddIncomeFormView: View {
             // Wrap in Group to help the scaffold infer its generic Content on macOS
             Group {
                 typeSection
-                detailsSection
+                sourceSection
+                amountSection
+                firstDateSection
                 recurrenceSection
             }
         }
@@ -68,6 +70,12 @@ struct AddIncomeFormView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        // Apply cross‑platform form styling and sheet padding.  Grouped form
+        // style yields a neutral background on all platforms.  Hide scroll
+        // indicators for a cleaner look.
+        .ub_sheetPadding()
+        .ub_formStyleGrouped()
+        .ub_hideScrollIndicators()
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
     }
@@ -76,41 +84,85 @@ struct AddIncomeFormView: View {
 
     // MARK: Type
     /// Segmented control to switch between Planned (true) and Actual (false).
-    /// Binding: `$viewModel.isPlanned` — true = Planned; false = Actual.
+    /// Fills the entire row on macOS/iOS.
     @ViewBuilder
     private var typeSection: some View {
-        Section {
-            Picker("Type", selection: $viewModel.isPlanned) {
-                Text("Planned").tag(true)
-                Text("Actual").tag(false)
+        UBFormSection("Type", isUppercased: true) {
+            // A stretching container ensures the row uses the full available width.
+            HStack {
+                Picker("", selection: $viewModel.isPlanned) {
+                    Text("Planned").tag(true)
+                    Text("Actual").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()                         // no inline label column
+                .frame(maxWidth: .infinity)             // <- make the control stretch
+                .controlSize(.large)                    // (optional) nicer tap targets
+                .accessibilityIdentifier("incomeTypeSegmentedControl")
             }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("incomeTypeSegmentedControl")
-        } header: {
-            sectionHeader("Type")
+            .frame(maxWidth: .infinity)                 // <- make the row stretch
         }
     }
 
-    // MARK: Details
-    /// Source, amount, and first date.
+
+    // MARK: Source
+    /// Source of income, such as "Paycheck" or "Gift".  The section
+    /// header appears outside the text field to match the Add Card and
+    /// expense views.  The text field expands to fill the row and aligns
+    /// the content to the leading edge.
     @ViewBuilder
-    private var detailsSection: some View {
-        Section {
-            // ---- Source
-            TextField("e.g., Paycheck", text: $viewModel.source)
-                .ub_noAutoCapsAndCorrection()
+    private var sourceSection: some View {
+        UBFormSection("Source", isUppercased: true) {
+            if #available(iOS 15.0, macOS 12.0, *) {
+                TextField("", text: $viewModel.source, prompt: Text("e.g., Paycheck"))
+                    .ub_noAutoCapsAndCorrection()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Income Source")
+            } else {
+                TextField("e.g., Paycheck", text: $viewModel.source)
+                    .ub_noAutoCapsAndCorrection()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Income Source")
+            }
+        }
+    }
 
-            // ---- Amount
-            TextField("e.g., 1,234.56", text: $viewModel.amountInput)
-            #if os(iOS)
-                .keyboardType(.decimalPad)   // iOS only; gated so macOS compiles
-            #endif
+    // MARK: Amount
+    /// Monetary amount for the income.  The field uses the cross‑platform
+    /// decimal keyboard helper and aligns its contents to the leading edge.
+    @ViewBuilder
+    private var amountSection: some View {
+        UBFormSection("Amount", isUppercased: true) {
+            if #available(iOS 15.0, macOS 12.0, *) {
+                TextField("", text: $viewModel.amountInput, prompt: Text("e.g., 1,234.56"))
+                    .ub_decimalKeyboard()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Income Amount")
+            } else {
+                TextField("e.g., 1,234.56", text: $viewModel.amountInput)
+                    .ub_decimalKeyboard()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Income Amount")
+            }
+        }
+    }
 
-            // ---- First Date
-            DatePicker("First Date", selection: $viewModel.firstDate, displayedComponents: [.date])
+    // MARK: First Date
+    /// The first date when this income is received.  The date picker label
+    /// is hidden so the section header provides the context.  We use
+    /// `.ub_compactDatePickerStyle()` for a consistent cross‑platform look.
+    @ViewBuilder
+    private var firstDateSection: some View {
+        UBFormSection("First Date", isUppercased: true) {
+            DatePicker("", selection: $viewModel.firstDate, displayedComponents: [.date])
+                .labelsHidden()
+                .ub_compactDatePickerStyle()
                 .accessibilityIdentifier("incomeFirstDatePicker")
-        } header: {
-            sectionHeader("Details")
+                .accessibilityLabel("First Date")
         }
     }
 
@@ -121,13 +173,11 @@ struct AddIncomeFormView: View {
     ///   - isPresentingCustomEditor: Binding<Bool>
     @ViewBuilder
     private var recurrenceSection: some View {
-        Section {
+        UBFormSection("Recurrence (Optional)", isUppercased: false) {
             RecurrencePickerView(
                 rule: $viewModel.recurrenceRule,
                 isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
             )
-        } header: {
-            sectionHeader("Recurrence (Optional)")
         }
     }
 
@@ -136,6 +186,8 @@ struct AddIncomeFormView: View {
     private func saveTapped() -> Bool {
         do {
             try viewModel.save(in: viewContext) // NOTE: `in:` matches the VM’s signature
+            // Resign keyboard on iOS/iPadOS for a polished dismissal.
+            ub_dismissKeyboard()
             return true
         } catch let err as SaveError {
             self.error = err

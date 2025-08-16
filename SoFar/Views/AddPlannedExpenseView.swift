@@ -14,7 +14,7 @@ struct AddPlannedExpenseView: View {
     // MARK: Inputs
     /// Budget to preselect in the horizontal picker; pass nil to let the user choose.
     let preselectedBudgetID: NSManagedObjectID?
-    /// New: if true, the "Use in future budgets?" toggle will start ON when the view first appears.
+    /// If true, the "Use in future budgets?" toggle will start ON when the view first appears.
     let defaultSaveAsGlobalPreset: Bool
     /// Called after a successful save.
     let onSaved: () -> Void
@@ -27,6 +27,17 @@ struct AddPlannedExpenseView: View {
 
     /// Guard to apply `defaultSaveAsGlobalPreset` only once on first load.
     @State private var didApplyDefaultGlobal = false
+
+    // MARK: Layout
+    /// Height of the horizontal budget picker row.  We explicitly constrain
+    /// the picker height so it doesn’t expand to fill excessive space on
+    /// macOS sheets.  The height is slightly taller on iOS/iPadOS to account
+    /// for larger touch targets.
+    #if os(macOS)
+    private let budgetPickerHeight: CGFloat = 100
+    #else
+    private let budgetPickerHeight: CGFloat = 110
+    #endif
 
     // MARK: Init
     /// Designated initializer.
@@ -42,7 +53,7 @@ struct AddPlannedExpenseView: View {
         self.preselectedBudgetID = preselectedBudgetID
         self.defaultSaveAsGlobalPreset = defaultSaveAsGlobalPreset
         self.onSaved = onSaved
-        _vm = StateObject<AddPlannedExpenseViewModel>(
+        _vm = StateObject(
             wrappedValue: AddPlannedExpenseViewModel(preselectedBudgetID: preselectedBudgetID)
         )
     }
@@ -56,40 +67,101 @@ struct AddPlannedExpenseView: View {
             onSave: { trySave() }
         ) {
             // MARK: Budget Picker (horizontal)
-            Section {
+            UBFormSection("Choose Budget", isUppercased: true) {
+                // Horizontal picker of budgets.  Constrain the height explicitly
+                // so the row doesn’t take up the majority of the sheet on macOS.
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: DS.Spacing.m) {
-                        ForEach(vm.allBudgets, id: \.objectID) { b in
+                        ForEach(vm.allBudgets, id: \.objectID) { budget in
                             SelectCard(
-                                title: b.name ?? "Untitled",
-                                isSelected: vm.selectedBudgetID == b.objectID
+                                title: budget.name ?? "Untitled",
+                                isSelected: vm.selectedBudgetID == budget.objectID
                             )
-                            .onTapGesture { vm.selectedBudgetID = b.objectID }
+                            .onTapGesture { vm.selectedBudgetID = budget.objectID }
                         }
                     }
                     .padding(.horizontal, DS.Spacing.l)
                 }
-            } header: {
-                Text("Choose Budget")
+                .frame(height: budgetPickerHeight)
+                .ub_pickerBackground()
+                .ub_hideScrollIndicators()
             }
 
-            // MARK: Fields
-            Section {
-                TextField("Expense Description", text: $vm.descriptionText)
-                    .ub_noAutoCapsAndCorrection()
+            // MARK: Individual Fields
+            // Instead of grouping all fields into a single section, mirror the
+            // Add Card form by giving each input its own section with a
+            // descriptive header.  This pushes the label outside of the cell
+            // (e.g. “Name” in Add Card) and allows the actual `TextField`
+            // to be empty, so the placeholder remains visible and left‑aligned.
 
-                TextField("Planned Amount", text: $vm.plannedAmountString)
-                    .ub_decimalKeyboard()
+            // Expense Description
+            UBFormSection("Expense Description", isUppercased: true) {
+                // Use an empty label and a prompt for true placeholder styling on modern OSes.
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $vm.descriptionText, prompt: Text("Electric"))
+                        .ub_noAutoCapsAndCorrection()
+                        // Align text to the leading edge and make the field
+                        // expand to fill available row width.  Without this,
+                        // macOS tends to shrink the field and right‑align the
+                        // placeholder.  The frame ensures left alignment on
+                        // all platforms.
+//                        .multilineTextAlignment(.leading)
+//                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Expense Description")
+                } else {
+                    TextField("e.g., groceries", text: $vm.descriptionText)
+                        .ub_noAutoCapsAndCorrection()
+//                        .multilineTextAlignment(.leading)
+//                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Expense Description")
+                }
+            }
 
-                TextField("Actual Amount", text: $vm.actualAmountString)
-                    .ub_decimalKeyboard()
+            // Planned Amount
+            UBFormSection("Planned Amount", isUppercased: true) {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Planned Amount")
+                } else {
+                    TextField("e.g., 25.00", text: $vm.plannedAmountString)
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Planned Amount")
+                }
+            }
 
-                DatePicker("Transaction Date", selection: $vm.transactionDate, displayedComponents: [.date])
+            // Actual Amount
+            UBFormSection("Actual Amount", isUppercased: true) {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Actual Amount")
+                } else {
+                    TextField("102.50", text: $vm.actualAmountString)
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Actual Amount")
+                }
+            }
+
+            // Transaction Date
+            UBFormSection("Transaction Date", isUppercased: true) {
+                // Hide the label of the DatePicker itself; the section header supplies the label.
+                DatePicker("", selection: $vm.transactionDate, displayedComponents: [.date])
+                    .labelsHidden()
                     .ub_compactDatePickerStyle()
+                    .accessibilityLabel("Transaction Date")
             }
 
             // MARK: Use in future budgets?
-            Section {
+            UBFormSection("Use in future budgets?", isUppercased: true) {
                 Toggle("Use in future budgets?", isOn: $vm.saveAsGlobalPreset)
             }
         }
@@ -103,6 +175,10 @@ struct AddPlannedExpenseView: View {
                 didApplyDefaultGlobal = true
             }
         }
+        // Apply cross‑platform form styling and sheet padding
+        .ub_sheetPadding()
+        .ub_formStyleGrouped()
+        .ub_hideScrollIndicators()
     }
 
     // MARK: Actions
@@ -113,13 +189,17 @@ struct AddPlannedExpenseView: View {
         do {
             try vm.save()
             onSaved()
-            #if canImport(UIKit)
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            #endif
+            // Resign keyboard on iOS for a neat dismissal.
+            ub_dismissKeyboard()
             return true
         } catch {
+            // Present error via UIKit alert on iOS; macOS simply returns false.
             #if canImport(UIKit)
-            let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
+            let alert = UIAlertController(
+                title: "Couldn’t Save",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             UIApplication.shared.connectedScenes
                 .compactMap { ($0 as? UIWindowScene)?.keyWindow }

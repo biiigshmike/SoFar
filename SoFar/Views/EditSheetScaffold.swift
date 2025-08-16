@@ -100,5 +100,8 @@ struct EditSheetScaffold<Content: View>: View {
         .presentationDetents(Set(detents))
         .presentationDragIndicator(.visible)
         #endif
+        #if os(macOS)
+        .frame(minWidth: 680)
+        #endif
     }
 }

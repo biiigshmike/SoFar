@@ -98,22 +98,24 @@ struct AddBudgetView: View {
             // Put only the fields inside; the scaffold wraps this in a Form and toolbar.
 
             // ---- Name
-            Section {
-                // IMPORTANT: Use `prompt:` so the text acts as a placeholder across platforms.
-                // An empty title avoids macOS Form showing a leading label row.
+            UBFormSection("Name", isUppercased: true) {
+                // Use an empty label with a prompt so the text acts as a
+                // placeholder across platforms.  We expand the field to fill
+                // the row and align text to the leading edge for consistency
+                // with Add Card and the expense forms.
                 TextField(
                     "",
                     text: $vm.budgetName,
                     prompt: Text("e.g., July 2025")
                 )
                 .ub_noAutoCapsAndCorrection()
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel("Budget Name")
-            } header: {
-                Text("Name")
             }
 
             // ---- Dates
-            Section {
+            UBFormSection("Dates", isUppercased: true) {
                 HStack(spacing: DS.Spacing.m) {
                     DatePicker("Start", selection: $vm.startDate, displayedComponents: [.date])
                         .labelsHidden()
@@ -122,12 +124,10 @@ struct AddBudgetView: View {
                         .labelsHidden()
                         .ub_compactDatePickerStyle()
                 }
-            } header: {
-                Text("Dates")
             }
 
             // ---- Cards to Track
-            Section {
+            UBFormSection("Cards to Track", isUppercased: true) {
                 if vm.allCards.isEmpty {
                     Text("No cards yet. Add cards first to track variable expenses.")
                         .foregroundStyle(.secondary)
@@ -136,20 +136,21 @@ struct AddBudgetView: View {
                         let isTracking = Binding(
                             get: { vm.selectedCardObjectIDs.contains(card.objectID) },
                             set: { newValue in
-                                if newValue { vm.selectedCardObjectIDs.insert(card.objectID) }
-                                else { vm.selectedCardObjectIDs.remove(card.objectID) }
+                                if newValue {
+                                    vm.selectedCardObjectIDs.insert(card.objectID)
+                                } else {
+                                    vm.selectedCardObjectIDs.remove(card.objectID)
+                                }
                             }
                         )
                         Toggle(card.name ?? "Untitled Card", isOn: isTracking)
                     }
                 }
-            } header: {
-                Text("Cards to Track")
             }
 
             // ---- Preset Planned Expenses (ADD only)
             if !vm.isEditing {
-                Section {
+                UBFormSection("Preset Planned Expenses", isUppercased: true) {
                     if vm.globalPlannedExpenseTemplates.isEmpty {
                         Text("No presets yet. You can add them later.")
                             .foregroundStyle(.secondary)
@@ -158,20 +159,27 @@ struct AddBudgetView: View {
                             let isSelected = Binding(
                                 get: { vm.selectedTemplateObjectIDs.contains(template.objectID) },
                                 set: { newValue in
-                                    if newValue { vm.selectedTemplateObjectIDs.insert(template.objectID) }
-                                    else { vm.selectedTemplateObjectIDs.remove(template.objectID) }
+                                    if newValue {
+                                        vm.selectedTemplateObjectIDs.insert(template.objectID)
+                                    } else {
+                                        vm.selectedTemplateObjectIDs.remove(template.objectID)
+                                    }
                                 }
                             )
                             Toggle(template.descriptionText ?? "Untitled", isOn: isSelected)
                         }
                     }
-                } header: {
-                    Text("Preset Planned Expenses")
                 }
             }
         }
         // Keep async hydration for lists/templates.
         .task { await vm.load() }
+        // Apply cross‑platform form styling and sheet padding so this sheet
+        // matches other editors (e.g. Add Card, Add Expense).  Grouped
+        // styling yields a light container background on iOS/iPadOS and macOS.
+        .ub_sheetPadding()
+        .ub_formStyleGrouped()
+        .ub_hideScrollIndicators()
         // Present any save error in a standard alert.
         .alert("Couldn’t Save Budget",
                isPresented: Binding(
@@ -191,10 +199,8 @@ struct AddBudgetView: View {
         do {
             try vm.save()
             onSaved?()
-            // Resign keyboard on iOS for a neat dismissal.
-            #if canImport(UIKit)
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            #endif
+            // Resign keyboard on iOS/iPadOS via unified helper for a neat dismissal.
+            ub_dismissKeyboard()
             return true
         } catch {
             saveErrorMessage = error.localizedDescription

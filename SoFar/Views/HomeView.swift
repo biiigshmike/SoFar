@@ -42,7 +42,7 @@ struct HomeView: View {
 
     // MARK: Layout Constants
     private let cardMinWidth: CGFloat = 340
-    private let cardMaxWidth: CGFloat = 520
+    private let cardMaxWidth: CGFloat = .infinity
     private let gridSpacing: CGFloat = DS.Spacing.l
 
     // MARK: Body

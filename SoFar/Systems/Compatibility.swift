@@ -96,6 +96,59 @@ extension View {
         return self
         #endif
     }
+
+    // MARK: ub_formStyleGrouped()
+    /// Applies a grouped form style on platforms that support it.  On iOS 16+
+    /// and macOS 13+, `.formStyle(.grouped)` gives a subtle, neutral
+    /// background with inset sections.  On older systems or platforms that
+    /// don’t support it, this is a no-op so the view still compiles.  Use
+    /// this helper instead of sprinkling `#if` checks throughout your views.
+    func ub_formStyleGrouped() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return self.formStyle(.grouped)
+        } else {
+            return self
+        }
+    }
+
+    // MARK: ub_sheetPadding()
+    /// Adds a subtle inner padding around sheet content on macOS.  On other
+    /// platforms this returns `self` unchanged.  Use this at the end of your
+    /// sheet view chain to avoid flush edges on macOS sheets without
+    /// duplicating `#if os(macOS)` in every view.
+    func ub_sheetPadding() -> some View {
+        #if os(macOS)
+        return self
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+        #else
+        return self
+        #endif
+    }
+
+    // MARK: ub_pickerBackground()
+    /// Applies the app’s container background behind a scrollable picker (e.g.
+    /// card or budget pickers).  Without a background, horizontal `ScrollView`s
+    /// in a form may render on pure white on macOS and grouped gray on iOS.
+    /// Applying this ensures consistency across platforms.  You can call
+    /// `.ub_pickerBackground()` on a `ScrollView` or any container view to
+    /// unify its background.
+    func ub_pickerBackground() -> some View {
+        self.background(DS.Colors.containerBackground)
+    }
+
+    // MARK: ub_hideScrollIndicators()
+    /// Hides scroll indicators consistently across platforms.  On iOS and
+    /// macOS this sets `.scrollIndicators(.hidden)` when available; on older
+    /// versions it falls back to the legacy API.  Use this to avoid
+    /// repetitive availability checks.
+    func ub_hideScrollIndicators() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return self.scrollIndicators(.hidden)
+        } else {
+            return self
+        }
+    }
 }
 
 // MARK: - UBColor (Cross-Platform Neutrals)
@@ -250,6 +303,17 @@ enum UBDecor {
             RadialGradient(gradient: Gradient(stops: stops), center: center, startRadius: 0, endRadius: 80)
         )
     }
+}
+
+// MARK: - Global Helpers
+
+/// Dismisses the on‑screen keyboard on platforms that support UIKit.
+/// Call this in your save actions to neatly resign the first responder before
+/// dismissing a sheet.  On macOS and other platforms this is a no‑op.
+func ub_dismissKeyboard() {
+    #if canImport(UIKit)
+    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    #endif
 }
 
 // MARK: - Motion Provider Abstraction

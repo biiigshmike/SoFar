@@ -32,7 +32,14 @@ struct CardPickerRow: View {
     @Binding var selectedCardID: NSManagedObjectID?
 
     // MARK: Layout
+    // Card tile height.  We make the row slightly shorter on macOS to prevent the
+    // picker from dominating the sheet.  If you need further tuning, adjust
+    // these values here rather than inside individual views.
+    #if os(macOS)
+    private let tileHeight: CGFloat = 150
+    #else
     private let tileHeight: CGFloat = 160
+    #endif
 
     // MARK: Body
     var body: some View {
@@ -56,6 +63,9 @@ struct CardPickerRow: View {
             .padding(.horizontal, DS.Spacing.l)
             .padding(.vertical, DS.Spacing.s)
         }
+        // Apply unified background and hide indicators across platforms
+        .ub_pickerBackground()
+        .ub_hideScrollIndicators()
         // Default to the first available card if none selected yet.
         .onAppear {
             if selectedCardID == nil,

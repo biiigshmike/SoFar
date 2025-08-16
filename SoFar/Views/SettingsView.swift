@@ -134,7 +134,7 @@ struct SettingsView: View {
         #if os(macOS)
         return Color(nsColor: .clear)
         #else
-        return Color(.systemGroupedBackground)
+        return Color(.clear)
         #endif
     }
 }

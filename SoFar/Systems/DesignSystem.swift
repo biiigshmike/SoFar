@@ -63,16 +63,43 @@ enum DesignSystem {
         /// `underPageBackgroundColor` (fallback to `windowBackgroundColor` on older targets).
         static var containerBackground: Color {
             #if os(iOS) || os(tvOS)
-            return Color(UIColor.secondarySystemBackground)
+            return Color(UIColor.clear)
             #elseif os(macOS)
             if #available(macOS 12.0, *) {
-                return Color(nsColor: NSColor.underPageBackgroundColor)
+                return Color(nsColor: NSColor.clear)
             } else {
-                return Color(nsColor: NSColor.windowBackgroundColor)
+                return Color(nsColor: NSColor.clear)
             }
             #else
             return Color.gray.opacity(0.12)
             #endif
+        }
+
+        // MARK: Chip and Pill Fills
+        /// Default fill colour for unselected category chips and pills.  This neutral
+        /// tone ensures that chips sit comfortably on top of the form’s grouped
+        /// background on all platforms.  Increase or decrease the opacity to tune
+        /// the visual weight of chips globally.
+        static var chipFill: Color {
+            // Match the card fill opacity for consistency; adjust as desired
+            return Color.primary.opacity(0.06)
+        }
+
+        /// Fill colour for selected category chips and pills.  This uses a slightly
+        /// higher opacity of the primary colour to indicate selection without
+        /// overpowering the interface.  If you wish to refine the selection
+        /// contrast across themes, update this constant instead of hardcoding
+        /// values in your views.
+        static var chipSelectedFill: Color {
+            return Color.primary.opacity(0.12)
+        }
+
+        /// Stroke colour for the selection outline around a chip or pill.  Using
+        /// a separate constant allows you to globally adjust the stroke strength
+        /// independent of the fill opacity.  When unselected, you may choose to
+        /// return `.clear` or a low‑opacity stroke for subtle definition.
+        static var chipSelectedStroke: Color {
+            return Color.primary.opacity(0.35)
         }
     }
 }
