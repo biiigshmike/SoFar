@@ -112,6 +112,7 @@ struct SettingsView: View {
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 20)
         }
+        .background(groupedBackground.ignoresSafeArea())
         .screenBackground()
         .navigationTitle("Settings")
         // Use inline title on iOS; do nothing on macOS to avoid the availability error.
@@ -126,6 +127,15 @@ struct SettingsView: View {
         return 24
         #else
         return horizontalSizeClass == .regular ? 24 : 16
+        #endif
+    }
+
+    /// Matches iOS grouped background feel on all platforms.
+    private var groupedBackground: Color {
+        #if os(macOS)
+        return Color(nsColor: .clear)
+        #else
+        return Color(.systemGroupedBackground)
         #endif
     }
 }
