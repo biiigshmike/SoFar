@@ -62,12 +62,15 @@ struct HomeView: View {
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Home")
-        .appToolbar(
-            titleDisplayMode: .large,
-            trailingItems: [
-                .add { isPresentingAddBudget = true }
-            ]
-        )
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isPresentingAddBudget = true
+                } label: {
+                    Label("Add Budget", systemImage: "plus")
+                }
+            }
+        }
         .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search budgets"))
         .refreshable { await vm.refresh() }
         .task {

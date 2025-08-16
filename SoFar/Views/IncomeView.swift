@@ -46,17 +46,15 @@ struct IncomeView: View {
         .frame(maxHeight: .infinity, alignment: .top)
         .navigationTitle("Income")
         // MARK: Toolbar (+ button) → Present Add Income sheet
-        .appToolbar(
-            titleDisplayMode: .large,
-            trailingItems: [
-                .add {
-                    // MARK: + Button Action
-                    // Use selected date if any; otherwise default to today
-                    addIncomeInitialDate = viewModel.selectedDate ?? Date()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     isPresentingAddIncome = true
+                } label: {
+                    Label("Add Income", systemImage: "plus")
                 }
-            ]
-        )
+            }
+        }
         // Keep list in sync without deprecated APIs
         .modifier(SelectionChangeHandler(viewModel: viewModel))
         // MARK: Present Add Income Form

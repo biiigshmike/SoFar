@@ -107,12 +107,15 @@ struct BudgetDetailsView: View {
             }
         }
         .navigationTitle("Budget Details")
-        .appToolbar(
-            titleDisplayMode: .inline,
-            trailingItems: [
-                .add { isShowingAddMenu = true }
-            ]
-        )
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isShowingAddMenu = true
+                } label: {
+                Label("Add Expense", systemImage: "plus")
+                }
+            }
+        }
         .confirmationDialog("Add",
                             isPresented: $isShowingAddMenu,
                             titleVisibility: .visible) {

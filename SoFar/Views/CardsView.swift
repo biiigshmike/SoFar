@@ -51,13 +51,16 @@ struct CardsView: View {
             // MARK: Start observing when view appears
             .onAppear { viewModel.startIfNeeded() }
             // MARK: App Toolbar
-            .appToolbar(
-                titleDisplayMode: .large,
-                trailingItems: (selectedCardStableID == nil) ? [
-                    .add { isPresentingAddCard = true }
-                ] : []
-            )
             .navigationTitle("Cards")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isPresentingAddCard = true
+                    } label: {
+                        Label("Add Card", systemImage: "plus")
+                    }
+                }
+            }
             // MARK: Add Sheet
             .sheet(isPresented: $isPresentingAddCard) {
                 AddCardFormView { newName, selectedTheme in

@@ -10,8 +10,7 @@ import CoreData
 
 // MARK: - PresetsView
 /// Displays global (template) Planned Expenses with planned/actual amounts,
-/// assigned budget count, and the next upcoming date. The "+" uses the same
-/// pill-style toolbar as Home/Cards via `.appToolbar`. Empty state uses
+/// assigned budget count, and the next upcoming date. Empty state uses
 /// UBEmptyState for a consistent look.
 struct PresetsView: View {
     // MARK: Dependencies
@@ -56,12 +55,15 @@ struct PresetsView: View {
             }
             .navigationTitle("Presets")
             // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
-            .appToolbar(
-                titleDisplayMode: .large,
-                trailingItems: [
-                    .add { isPresentingAddSheet = true }
-                ]
-            )
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isPresentingAddSheet = true
+                    } label: {
+                        Label("Add Preset Planned Expense", systemImage: "plus")
+                    }
+                }
+            }
             // MARK: Data lifecycle
             .onAppear { viewModel.loadTemplates(using: viewContext) }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange)) { _ in
