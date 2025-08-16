@@ -113,7 +113,6 @@ struct SettingsView: View {
             .padding(.vertical, 20)
         }
         .background(groupedBackground.ignoresSafeArea())
-        .screenBackground()
         .navigationTitle("Settings")
         // Use inline title on iOS; do nothing on macOS to avoid the availability error.
         .applyInlineNavTitleOnIOS()
