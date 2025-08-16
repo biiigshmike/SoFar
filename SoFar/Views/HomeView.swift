@@ -61,7 +61,6 @@ struct HomeView: View {
         }
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .screenBackground()
         .navigationTitle("Home")
         .appToolbar(
             titleDisplayMode: .large,
