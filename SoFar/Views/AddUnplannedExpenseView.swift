@@ -7,7 +7,6 @@
 //  • Card chooser (horizontal)  ← uses shared CardPickerRow (no local duplicate)
 //  • Category chips row (static Add button + live, scrolling chips)
 //  • Description, Amount, Date
-//  • Save/Cancel bar
 //  -------------------------------------------------------------
 //
 
@@ -23,7 +22,6 @@ struct AddUnplannedExpenseView: View {
     let onSaved: () -> Void
 
     // MARK: State
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: AddUnplannedExpenseViewModel
 
     // MARK: Init
@@ -43,67 +41,42 @@ struct AddUnplannedExpenseView: View {
 
     // MARK: Body
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Spacing.l) {
-
-                    // MARK: Card Picker (horizontal)
-                    Text("Assign a Card to Expense")
-                        .font(.headline)
-                        .padding(.horizontal, DS.Spacing.l)
-
-                    CardPickerRow(
-                        allCards: vm.allCards,
-                        selectedCardID: $vm.selectedCardID
-                    )
-
-                    // MARK: Category Chips Row
-                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                        Text("Category").font(.headline)
-
-                        CategoryChipsRow(
-                            selectedCategoryID: $vm.selectedCategoryID
-                        )
-                        .accessibilityElement(children: .contain)
-                    }
-                    .padding(.horizontal, DS.Spacing.l)
-
-                    // MARK: Fields
-                    VStack(spacing: DS.Spacing.m) {
-                        TextField("Expense Description", text: $vm.descriptionText)
-                            .textFieldStyle(.roundedBorder)
-                            .ub_noAutoCapsAndCorrection()
-
-                        TextField("Amount", text: $vm.amountString)
-                            .textFieldStyle(.roundedBorder)
-                            .ub_decimalKeyboard()
-
-                        HStack {
-                            Text("Transaction Date").font(.headline)
-                            Spacer()
-                            DatePicker("", selection: $vm.transactionDate, displayedComponents: [.date])
-                                .labelsHidden()
-                                .ub_compactDatePickerStyle()
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.l)
-                }
-                .padding(.top, DS.Spacing.m)
+        EditSheetScaffold(
+            title: "Add Variable Expense",
+            isSaveEnabled: vm.canSave,
+            onSave: { trySave() }
+        ) {
+            // MARK: Card Picker (horizontal)
+            Section {
+                CardPickerRow(
+                    allCards: vm.allCards,
+                    selectedCardID: $vm.selectedCardID
+                )
+            } header: {
+                Text("Assign a Card to Expense")
             }
-        }
-        .navigationTitle("Add Variable Expense")
-        .appToolbar(titleDisplayMode: .inline, trailingItems: [])
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Button("Cancel") { dismiss() }.buttonStyle(.bordered)
-                Button("Save") { trySave() }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!vm.canSave)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+
+            // MARK: Category Chips Row
+            Section {
+                CategoryChipsRow(
+                    selectedCategoryID: $vm.selectedCategoryID
+                )
+                .accessibilityElement(children: .contain)
+            } header: {
+                Text("Category")
             }
-            .padding(.horizontal, DS.Spacing.l)
-            .padding(.vertical, DS.Spacing.m)
-            .background(.ultraThinMaterial)
+
+            // MARK: Fields
+            Section {
+                TextField("Expense Description", text: $vm.descriptionText)
+                    .ub_noAutoCapsAndCorrection()
+
+                TextField("Amount", text: $vm.amountString)
+                    .ub_decimalKeyboard()
+
+                DatePicker("Transaction Date", selection: $vm.transactionDate, displayedComponents: [.date])
+                    .ub_compactDatePickerStyle()
+            }
         }
         .onAppear { CoreDataService.shared.ensureLoaded() }
         .task { await vm.load() }
@@ -113,18 +86,27 @@ struct AddUnplannedExpenseView: View {
 
     // MARK: - trySave()
     /// Validates and persists the expense via the view model.
-    private func trySave() {
-        guard vm.canSave else { return }
+    /// - Returns: `true` if the sheet should dismiss; `false` to stay open.
+    private func trySave() -> Bool {
+        guard vm.canSave else { return false }
         do {
             try vm.save()
             onSaved()
-            dismiss()
+            #if canImport(UIKit)
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            #endif
+            return true
         } catch {
             #if canImport(UIKit)
             let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
-            UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.rootViewController?.present(alert, animated: true)
+            UIApplication.shared.connectedScenes
+                .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+                .first?
+                .rootViewController?
+                .present(alert, animated: true)
             #endif
+            return false
         }
     }
 }
