@@ -20,6 +20,8 @@ struct AddPlannedExpenseView: View {
     let onSaved: () -> Void
 
     // MARK: State
+    /// We don't call `dismiss()` directly anymore (the scaffold handles it),
+    /// but we keep this in case future platform-specific work needs it.
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: AddPlannedExpenseViewModel
 
@@ -47,72 +49,49 @@ struct AddPlannedExpenseView: View {
 
     // MARK: Body
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Spacing.l) {
-
-                    // MARK: Budget Picker (horizontal)
-                    Text("Choose Budget")
-                        .font(.headline)
-                        .padding(.horizontal, DS.Spacing.l)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(spacing: DS.Spacing.m) {
-                            ForEach(vm.allBudgets, id: \.objectID) { b in
-                                SelectCard(
-                                    title: b.name ?? "Untitled",
-                                    isSelected: vm.selectedBudgetID == b.objectID
-                                )
-                                .onTapGesture { vm.selectedBudgetID = b.objectID }
-                            }
+        EditSheetScaffold(
+            title: "Add Planned Expense",
+            saveButtonTitle: "Save",
+            isSaveEnabled: vm.canSave,
+            onSave: { trySave() }
+        ) {
+            // MARK: Budget Picker (horizontal)
+            Section {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: DS.Spacing.m) {
+                        ForEach(vm.allBudgets, id: \.objectID) { b in
+                            SelectCard(
+                                title: b.name ?? "Untitled",
+                                isSelected: vm.selectedBudgetID == b.objectID
+                            )
+                            .onTapGesture { vm.selectedBudgetID = b.objectID }
                         }
-                        .padding(.horizontal, DS.Spacing.l)
-                    }
-
-                    // MARK: Fields
-                    VStack(spacing: DS.Spacing.m) {
-                        TextField("Expense Description", text: $vm.descriptionText)
-                            .textFieldStyle(.roundedBorder)
-                            .ub_noAutoCapsAndCorrection()
-
-                        TextField("Planned Amount", text: $vm.plannedAmountString)
-                            .textFieldStyle(.roundedBorder)
-                            .ub_decimalKeyboard()
-
-                        TextField("Actual Amount", text: $vm.actualAmountString)
-                            .textFieldStyle(.roundedBorder)
-                            .ub_decimalKeyboard()
-
-                        HStack {
-                            Text("Transaction Date").font(.headline)
-                            Spacer()
-                            DatePicker("", selection: $vm.transactionDate, displayedComponents: [.date])
-                                .labelsHidden()
-                                .ub_compactDatePickerStyle()
-                        }
-
-                        // MARK: Use in future budgets?
-                        Toggle("Use in future budgets?", isOn: $vm.saveAsGlobalPreset)
                     }
                     .padding(.horizontal, DS.Spacing.l)
                 }
-                .padding(.top, DS.Spacing.m)
+            } header: {
+                Text("Choose Budget")
             }
-        }
-        .navigationTitle("Add Planned Expense")
-        .appToolbar(titleDisplayMode: .inline, trailingItems: [])
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .buttonStyle(.bordered)
-                Button("Save") { trySave() }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!vm.canSave)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+
+            // MARK: Fields
+            Section {
+                TextField("Expense Description", text: $vm.descriptionText)
+                    .ub_noAutoCapsAndCorrection()
+
+                TextField("Planned Amount", text: $vm.plannedAmountString)
+                    .ub_decimalKeyboard()
+
+                TextField("Actual Amount", text: $vm.actualAmountString)
+                    .ub_decimalKeyboard()
+
+                DatePicker("Transaction Date", selection: $vm.transactionDate, displayedComponents: [.date])
+                    .ub_compactDatePickerStyle()
             }
-            .padding(.horizontal, DS.Spacing.l)
-            .padding(.vertical, DS.Spacing.m)
-            .background(.ultraThinMaterial)
+
+            // MARK: Use in future budgets?
+            Section {
+                Toggle("Use in future budgets?", isOn: $vm.saveAsGlobalPreset)
+            }
         }
         .task {
             // MARK: Lifecycle
@@ -127,13 +106,17 @@ struct AddPlannedExpenseView: View {
     }
 
     // MARK: Actions
-    /// Attempts to save; on success calls `onSaved` and dismisses.
-    private func trySave() {
-        guard vm.canSave else { return }
+    /// Attempts to save; on success calls `onSaved`.
+    /// - Returns: `true` if the sheet should dismiss, `false` to stay open.
+    private func trySave() -> Bool {
+        guard vm.canSave else { return false }
         do {
             try vm.save()
             onSaved()
-            dismiss()
+            #if canImport(UIKit)
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            #endif
+            return true
         } catch {
             #if canImport(UIKit)
             let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
@@ -144,6 +127,7 @@ struct AddPlannedExpenseView: View {
                 .rootViewController?
                 .present(alert, animated: true)
             #endif
+            return false
         }
     }
 }
