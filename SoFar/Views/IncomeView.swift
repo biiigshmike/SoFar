@@ -211,7 +211,7 @@ struct IncomeView: View {
 #endif
                 .scrollContentBackground(.hidden) // keep our pill background visible
                 // Keep the "pill" compact; enable scrolling when there are many rows.
-                .frame(minHeight: 60, maxHeight: 120) // ↓ slightly smaller than before
+                .frame(minHeight: 50, maxHeight: 100) // ↓ slightly smaller than before
                 // IMPORTANT: Do NOT clip the List; clipping rounds the swipe-action background
                 // on the first row (top-right corner). Keeping the outer container rounded
                 // preserves the pill look without cutting the swipe actions.
