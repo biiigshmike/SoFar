@@ -84,6 +84,7 @@ struct PresetsView: View {
                 .presentationDetents([.medium, .large])
             }
         }
+        .screenBackground()
     }
 
     // MARK: - Actions

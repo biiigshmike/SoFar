@@ -44,6 +44,7 @@ struct IncomeView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxHeight: .infinity, alignment: .top)
+        .screenBackground()
         .navigationTitle("Income")
         // MARK: Toolbar (+ button) → Present Add Income sheet
         .appToolbar(
