@@ -114,9 +114,8 @@ struct SettingsView: View {
         }
         .background(groupedBackground.ignoresSafeArea())
         .navigationTitle("Settings")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
+        // Use inline title on iOS; do nothing on macOS to avoid the availability error.
+        .applyInlineNavTitleOnIOS()
     }
 
     // MARK: - Helpers
@@ -133,9 +132,24 @@ struct SettingsView: View {
     /// Matches iOS grouped background feel on all platforms.
     private var groupedBackground: Color {
         #if os(macOS)
-        return Color(nsColor: .windowBackgroundColor)
+        return Color(nsColor: .clear)
         #else
         return Color(.systemGroupedBackground)
+        #endif
+    }
+}
+
+// MARK: - Platform-Safe Modifiers
+extension View {
+    // MARK: applyInlineNavTitleOnIOS()
+    /// Sets `.navigationBarTitleDisplayMode(.inline)` on iOS only; is a no-op on macOS.
+    /// - Use when you want inline titles on iPhone/iPad but need to compile on Mac as well.
+    @ViewBuilder
+    func applyInlineNavTitleOnIOS() -> some View {
+        #if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
+        #else
+        self
         #endif
     }
 }
