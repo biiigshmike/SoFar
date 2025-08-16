@@ -11,20 +11,21 @@ import SwiftUI
 struct RootTabView: View {
     var body: some View {
         TabView {
-            NavigationStack { HomeView() }
+            NavigationStack { HomeView().screenBackground() }
                 .tabItem { Label("Home", systemImage: "house") }
 
-            NavigationStack { IncomeView() }
+            NavigationStack { IncomeView().screenBackground() }
                 .tabItem { Label("Income", systemImage: "calendar") }
 
-            NavigationStack { CardsView() }
+            NavigationStack { CardsView().screenBackground() }
                 .tabItem { Label("Cards", systemImage: "creditcard") }
 
-            NavigationStack { PresetsView() }
+            NavigationStack { PresetsView().screenBackground() }
                 .tabItem { Label("Presets", systemImage: "list.bullet.rectangle") }
 
-            NavigationStack { SettingsView() }
+            NavigationStack { SettingsView().screenBackground() }
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
+        .screenBackground()
     }
 }

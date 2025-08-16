@@ -45,6 +45,7 @@ struct CardsView: View {
     var body: some View {
         // MARK: Main Content
         contentView
+            .screenBackground()
             // Let SwiftUI handle transitions between loading/empty/loaded states.
             .animation(.default, value: viewModel.state)
             // MARK: Start observing when view appears
