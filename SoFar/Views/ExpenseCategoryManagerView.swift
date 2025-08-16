@@ -55,8 +55,6 @@ struct ExpenseCategoryManagerView: View {
                 Text("These categories appear when adding unplanned expenses. Colors help visually group spending.")
             }
         }
-        .scrollContentBackground(.hidden)
-        .screenBackground()
         .navigationTitle("Manage Categories")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
