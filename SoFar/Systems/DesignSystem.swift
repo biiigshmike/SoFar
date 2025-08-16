@@ -82,15 +82,6 @@ typealias DS = DesignSystem
 
 // MARK: - View Helpers
 extension View {
-    /// Applies the standard background colour to the entire screen.
-    /// - Note: New views should call this on their root container to ensure
-    /// a consistent background across the app.
-    func screenBackground() -> some View {
-        self
-            .background(DS.Colors.containerBackground)
-            .ignoresSafeArea()
-    }
-
     /// Adds the app’s standard “card” background: subtle fill, rounded corners, and soft shadow.
     func cardBackground() -> some View {
         self
