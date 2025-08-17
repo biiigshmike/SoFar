@@ -71,7 +71,7 @@ struct HomeView: View {
                 }
             }
         }
-        .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search budgets"))
+        .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search Budgets"))
         .refreshable { await vm.refresh() }
         .task {
             CoreDataService.shared.ensureLoaded()

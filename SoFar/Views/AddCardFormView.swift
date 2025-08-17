@@ -116,15 +116,15 @@ struct AddCardFormView: View {
                 // On macOS inside a Form, TextField("Title", text:) can render as a static label.
                 // Using the `prompt:` initializer ensures true placeholder styling.
                 if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $cardName, prompt: Text("e.g., Apple Card"))
+                    TextField("", text: $cardName, prompt: Text("Apple Card"))
                         .ub_noAutoCapsAndCorrection()
                         .submitLabel(.done)
-                        .accessibilityLabel("Card name")
+                        .accessibilityLabel("Card Name")
                 } else {
                     TextField("e.g., Apple Card", text: $cardName)
                         .ub_noAutoCapsAndCorrection()
                         .submitLabel(.done)
-                        .accessibilityLabel("Card name")
+                        .accessibilityLabel("Card Name")
                 }
             } header: {
                 Text("Name")

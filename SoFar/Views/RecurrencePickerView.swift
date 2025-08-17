@@ -79,11 +79,11 @@ struct RecurrencePickerView: View {
             }
 
             // End Date Controls
-            Toggle("Set end date", isOn: $hasEndDate)
+            Toggle("Set End Date", isOn: $hasEndDate)
                 .onChange(of: hasEndDate) { _, _ in applyPresetChange(selectedPreset) }
 
             if hasEndDate {
-                DatePicker("End date", selection: $endDate, displayedComponents: [.date])
+                DatePicker("End Date", selection: $endDate, displayedComponents: [.date])
                     .onChange(of: endDate) { _, _ in applyPresetChange(selectedPreset) }
             }
 

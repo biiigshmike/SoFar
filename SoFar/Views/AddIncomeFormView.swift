@@ -114,7 +114,7 @@ struct AddIncomeFormView: View {
     private var sourceSection: some View {
         UBFormSection("Source", isUppercased: true) {
             if #available(iOS 15.0, macOS 12.0, *) {
-                TextField("", text: $viewModel.source, prompt: Text("e.g., Paycheck"))
+                TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
                     .ub_noAutoCapsAndCorrection()
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -136,7 +136,7 @@ struct AddIncomeFormView: View {
     private var amountSection: some View {
         UBFormSection("Amount", isUppercased: true) {
             if #available(iOS 15.0, macOS 12.0, *) {
-                TextField("", text: $viewModel.amountInput, prompt: Text("e.g., 1,234.56"))
+                TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
                     .ub_decimalKeyboard()
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,7 +173,7 @@ struct AddIncomeFormView: View {
     ///   - isPresentingCustomEditor: Binding<Bool>
     @ViewBuilder
     private var recurrenceSection: some View {
-        UBFormSection("Recurrence (Optional)", isUppercased: false) {
+        UBFormSection("Recurrence (Optional)", isUppercased: true) {
             RecurrencePickerView(
                 rule: $viewModel.recurrenceRule,
                 isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor

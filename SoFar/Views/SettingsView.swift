@@ -31,6 +31,7 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView {
+
             VStack(spacing: 16) {
 
                 // MARK: General Hero Card
@@ -114,8 +115,6 @@ struct SettingsView: View {
         }
         .background(groupedBackground.ignoresSafeArea())
         .navigationTitle("Settings")
-        // Use inline title on iOS; do nothing on macOS to avoid the availability error.
-        .applyInlineNavTitleOnIOS()
     }
 
     // MARK: - Helpers
