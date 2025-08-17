@@ -171,7 +171,7 @@ struct CardDetailView: View {
     // MARK: totalsSection
     private func totalsSection(total: Double) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Total spent")
+            Text("Total Spent")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(total, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
@@ -186,7 +186,7 @@ struct CardDetailView: View {
     // MARK: categoryBreakdown
     private func categoryBreakdown(categories: [CardCategoryTotal]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("By category")
+            Text("By Category")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             ForEach(categories) { cat in

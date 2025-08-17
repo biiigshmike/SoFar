@@ -85,6 +85,7 @@ struct PresetsView: View {
                 .environment(\.managedObjectContext, viewContext)
                 .presentationDetents([.medium, .large])
             }
+            
         }
     }
 

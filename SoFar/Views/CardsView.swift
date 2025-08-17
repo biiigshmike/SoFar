@@ -36,7 +36,7 @@ struct CardsView: View {
 
     // MARK: Grid Layout
     private let gridColumns: [GridItem] = [
-        GridItem(.adaptive(minimum: 260, maximum: 360), spacing: DS.Spacing.l)
+        GridItem(.adaptive(minimum: 260, maximum: 260), spacing: DS.Spacing.l)
     ]
 
     // MARK: Layout Constants
