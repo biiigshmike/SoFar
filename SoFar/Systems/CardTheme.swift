@@ -36,6 +36,12 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
     case graphite
     case mint
     case sunset
+    case midnight
+    case forest
+    case sunrise
+    case blossom
+    case lavender
+    case nebula
 
     var id: String { rawValue }
 
@@ -48,6 +54,12 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
         case .graphite: return "Graphite"
         case .mint:     return "Mint"
         case .sunset:   return "Sunset"
+        case .midnight: return "Midnight"
+        case .forest:   return "Forest"
+        case .sunrise:  return "Sunrise"
+        case .blossom:  return "Blossom"
+        case .lavender: return "Lavender"
+        case .nebula:   return "Nebula"
         }
     }
 
@@ -55,8 +67,8 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
     /// Two base colors for the background gradient.
     var colors: (Color, Color) {
         switch self {
-        case .rose:     return (Color(red: 0.99, green: 0.25, blue: 0.42),
-                                Color(red: 0.93, green: 0.17, blue: 0.36))
+        case .rose:     return (Color(red: 0.98, green: 0.26, blue: 0.55),
+                                Color(red: 0.82, green: 0.00, blue: 0.35))
         case .ocean:    return (Color(red: 0.10, green: 0.66, blue: 0.80),
                                 Color(red: 0.02, green: 0.58, blue: 0.74))
         case .violet:   return (Color(red: 0.59, green: 0.37, blue: 0.98),
@@ -65,8 +77,20 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
                                 Color(red: 0.17, green: 0.18, blue: 0.20))
         case .mint:     return (Color(red: 0.11, green: 0.83, blue: 0.58),
                                 Color(red: 0.06, green: 0.73, blue: 0.51))
-        case .sunset:   return (Color(red: 1.00, green: 0.60, blue: 0.24),
-                                Color(red: 0.94, green: 0.43, blue: 0.32))
+        case .sunset:   return (Color(red: 1.00, green: 0.50, blue: 0.15),
+                                Color(red: 0.72, green: 0.17, blue: 0.44))
+        case .midnight: return (Color(red: 0.08, green: 0.10, blue: 0.26),
+                                Color(red: 0.02, green: 0.05, blue: 0.14))
+        case .forest:   return (Color(red: 0.13, green: 0.46, blue: 0.30),
+                                Color(red: 0.05, green: 0.30, blue: 0.18))
+        case .sunrise:  return (Color(red: 1.00, green: 0.76, blue: 0.28),
+                                Color(red: 0.99, green: 0.58, blue: 0.20))
+        case .blossom:  return (Color(red: 0.99, green: 0.63, blue: 0.81),
+                                Color(red: 0.89, green: 0.38, blue: 0.70))
+        case .lavender: return (Color(red: 0.78, green: 0.72, blue: 0.98),
+                                Color(red: 0.63, green: 0.56, blue: 0.93))
+        case .nebula:   return (Color(red: 0.58, green: 0.30, blue: 0.78),
+                                Color(red: 0.26, green: 0.09, blue: 0.50))
         }
     }
 
@@ -114,7 +138,7 @@ private extension CardTheme {
     var backgroundPattern: BackgroundPattern {
         switch self {
         case .rose:
-            return .diagonalStripes(spacing: 14, thickness: 6, opacity: 0.14)
+            return .crossHatch(spacing: 12, thickness: 1.4, opacity: 0.12)
         case .ocean:
             return .dots(spacing: 12, diameter: 2.6, opacity: 0.12)
         case .violet:
@@ -124,7 +148,19 @@ private extension CardTheme {
         case .mint:
             return .crossHatch(spacing: 16, thickness: 1.2, opacity: 0.10)
         case .sunset:
-            return .diagonalStripes(spacing: 16, thickness: 5, opacity: 0.12)
+            return .dots(spacing: 16, diameter: 3.0, opacity: 0.14)
+        case .midnight:
+            return .noise(opacity: 0.12)
+        case .forest:
+            return .diagonalStripes(spacing: 14, thickness: 4, opacity: 0.10)
+        case .sunrise:
+            return .grid(spacing: 12, thickness: 1.0, opacity: 0.12)
+        case .blossom:
+            return .dots(spacing: 14, diameter: 2.8, opacity: 0.12)
+        case .lavender:
+            return .crossHatch(spacing: 14, thickness: 1.1, opacity: 0.10)
+        case .nebula:
+            return .diagonalStripes(spacing: 18, thickness: 5, opacity: 0.12)
         }
     }
 }
