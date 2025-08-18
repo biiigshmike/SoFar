@@ -56,6 +56,26 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Secondary accent colour derived from the primary accent. Used for
+    /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
+    /// remaining harmonious with the selected theme.
+    var secondaryAccent: Color {
+        #if canImport(UIKit)
+        let uiColor = UIColor(accent)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(hue: Double(h), saturation: Double(s * 0.5), brightness: Double(min(b * 1.2, 1.0)))
+        #elseif canImport(AppKit)
+        let nsColor = NSColor(accent)
+        let converted = nsColor.usingColorSpace(.deviceRGB) ?? nsColor
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        converted.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(hue: Double(h), saturation: Double(s * 0.5), brightness: Double(min(b * 1.2, 1.0)))
+        #else
+        return accent
+        #endif
+    }
+
     /// Primary background colour for views.
     var background: Color {
         switch self {

@@ -51,7 +51,7 @@ struct PresetsView: View {
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                             .unifiedSwipeActions(
-                                .standard,
+                                UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                                 onEdit: { editingTemplate = item.template },
                                 onDelete: { delete(template: item.template) }
                             )

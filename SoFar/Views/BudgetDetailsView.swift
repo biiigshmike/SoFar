@@ -260,7 +260,7 @@ private struct PlannedListFR: View {
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
-                            .standard,
+                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                             onEdit: { editingItem = item },
                             onDelete: { deletePlanned(item) }
                         )
@@ -399,7 +399,7 @@ private struct VariableListFR: View {
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
-                            .standard,
+                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                             onEdit: { editingItem = item },
                             onDelete: { deleteUnplanned(item) }
                         )

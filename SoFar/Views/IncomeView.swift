@@ -280,6 +280,7 @@ private struct IncomeRow: View {
     let income: Income
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Body
     var body: some View {
@@ -296,7 +297,7 @@ private struct IncomeRow: View {
         .padding(.vertical, 6)
         // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
         .unifiedSwipeActions(
-            .standard,
+            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
             onEdit: onEdit,
             onDelete: onDelete
         )
