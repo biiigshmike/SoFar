@@ -12,7 +12,9 @@ import CoreData
 struct AddPlannedExpenseView: View {
 
     // MARK: Inputs
-    /// Budget to preselect in the horizontal picker; pass nil to let the user choose.
+    /// Existing PlannedExpense to edit; nil when adding.
+    let plannedExpenseID: NSManagedObjectID?
+    /// Budget to preselect when adding; ignored if `plannedExpenseID` is provided.
     let preselectedBudgetID: NSManagedObjectID?
     /// If true, the "Use in future budgets?" toggle will start ON when the view first appears.
     let defaultSaveAsGlobalPreset: Bool
@@ -46,23 +48,28 @@ struct AddPlannedExpenseView: View {
     ///   - defaultSaveAsGlobalPreset: When true, defaults the "Use in future budgets?" toggle to ON on first load.
     ///   - onSaved: Closure invoked after `vm.save()` succeeds.
     init(
-        preselectedBudgetID: NSManagedObjectID?,
+        plannedExpenseID: NSManagedObjectID? = nil,
+        preselectedBudgetID: NSManagedObjectID? = nil,
         defaultSaveAsGlobalPreset: Bool = false,
         onSaved: @escaping () -> Void
     ) {
+        self.plannedExpenseID = plannedExpenseID
         self.preselectedBudgetID = preselectedBudgetID
         self.defaultSaveAsGlobalPreset = defaultSaveAsGlobalPreset
         self.onSaved = onSaved
         _vm = StateObject(
-            wrappedValue: AddPlannedExpenseViewModel(preselectedBudgetID: preselectedBudgetID)
+            wrappedValue: AddPlannedExpenseViewModel(
+                plannedExpenseID: plannedExpenseID,
+                preselectedBudgetID: preselectedBudgetID
+            )
         )
     }
 
     // MARK: Body
     var body: some View {
         EditSheetScaffold(
-            title: "Add Planned Expense",
-            saveButtonTitle: "Save",
+            title: vm.isEditing ? "Edit Planned Expense" : "Add Planned Expense",
+            saveButtonTitle: vm.isEditing ? "Save Changes" : "Save",
             isSaveEnabled: vm.canSave,
             onSave: { trySave() }
         ) {
@@ -169,8 +176,8 @@ struct AddPlannedExpenseView: View {
             // MARK: Lifecycle
             await vm.load()
 
-            // Apply the default ONCE; do not fight the user's later toggle.
-            if !didApplyDefaultGlobal {
+            // Apply the default only when adding and only once.
+            if !vm.isEditing && !didApplyDefaultGlobal {
                 vm.saveAsGlobalPreset = defaultSaveAsGlobalPreset
                 didApplyDefaultGlobal = true
             }

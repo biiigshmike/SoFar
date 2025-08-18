@@ -16,6 +16,10 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     // MARK: Dependencies
     private let context: NSManagedObjectContext
 
+    // MARK: Identity
+    private let unplannedExpenseID: NSManagedObjectID?
+    let isEditing: Bool
+
     // MARK: Loaded Data
     @Published private(set) var allCards: [Card] = []
     @Published private(set) var allCategories: [ExpenseCategory] = []
@@ -31,11 +35,14 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     @Published var transactionDate: Date = Date()
 
     // MARK: Init
-    init(allowedCardIDs: Set<NSManagedObjectID>? = nil,
+    init(unplannedExpenseID: NSManagedObjectID? = nil,
+         allowedCardIDs: Set<NSManagedObjectID>? = nil,
          initialDate: Date? = nil,
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
+        self.unplannedExpenseID = unplannedExpenseID
         self.allowedCardIDs = allowedCardIDs
         self.context = context
+        self.isEditing = unplannedExpenseID != nil
         if let d = initialDate { self.transactionDate = d }
     }
 
@@ -45,9 +52,18 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
         allCards = fetchCards()
         allCategories = fetchCategories()
 
-        // Default selections
-        if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
-        if selectedCategoryID == nil { selectedCategoryID = allCategories.first?.objectID }
+        if isEditing, let id = unplannedExpenseID,
+           let existing = try? context.existingObject(with: id) as? UnplannedExpense {
+            selectedCardID = existing.card?.objectID
+            selectedCategoryID = existing.expenseCategory?.objectID
+            descriptionText = existing.descriptionText ?? ""
+            amountString = formatAmount(existing.amount)
+            transactionDate = existing.transactionDate ?? Date()
+        } else {
+            // Default selections
+            if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
+            if selectedCategoryID == nil { selectedCategoryID = allCategories.first?.objectID }
+        }
     }
 
     // MARK: Validation
@@ -90,18 +106,25 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             throw NSError(domain: "SoFar.AddUnplannedExpense", code: 12, userInfo: [NSLocalizedDescriptionKey: "Please enter a valid amount."])
         }
 
-        let newItem = UnplannedExpense(context: context)
-        newItem.id = newItem.id ?? UUID()
-        newItem.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        newItem.amount = amt
-        newItem.transactionDate = transactionDate
-        newItem.card = card
-        newItem.expenseCategory = category
+        let item: UnplannedExpense
+        if let id = unplannedExpenseID,
+           let existing = try? context.existingObject(with: id) as? UnplannedExpense {
+            item = existing
+        } else {
+            item = UnplannedExpense(context: context)
+            item.id = item.id ?? UUID()
+        }
+
+        item.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        item.amount = amt
+        item.transactionDate = transactionDate
+        item.card = card
+        item.expenseCategory = category
 
         // Optional: support a boolean "isRecurring" if it exists in your model
-        if let hasRecurring = newItem.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {
+        if let hasRecurring = item.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {
             // default false unless UI added later
-            newItem.setValue(false, forKey: hasRecurring.name)
+            item.setValue(item.value(forKey: hasRecurring.name) ?? false, forKey: hasRecurring.name)
         }
 
         try context.save()
@@ -128,5 +151,14 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []
+    }
+
+    private func formatAmount(_ value: Double) -> String {
+        let nf = NumberFormatter()
+        nf.locale = .current
+        nf.numberStyle = .decimal
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = 2
+        return nf.string(from: NSNumber(value: value)) ?? ""
     }
 }

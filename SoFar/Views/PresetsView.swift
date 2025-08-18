@@ -21,6 +21,7 @@ struct PresetsView: View {
     @StateObject private var viewModel = PresetsViewModel()
     @State private var isPresentingAddSheet = false
     @State private var sheetTemplateToAssign: PlannedExpense? = nil
+    @State private var editingTemplate: PlannedExpense? = nil
 
     // MARK: Body
     var body: some View {
@@ -49,6 +50,11 @@ struct PresetsView: View {
                             )
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                            .unifiedSwipeActions(
+                                .standard,
+                                onEdit: { editingTemplate = item.template },
+                                onDelete: { delete(template: item.template) }
+                            )
                         }
                         .onDelete(perform: deleteTemplates(_:))
                     }
@@ -88,6 +94,18 @@ struct PresetsView: View {
                 .environment(\.managedObjectContext, viewContext)
                 .presentationDetents([.medium, .large])
             }
+            // MARK: Edit Template Sheet
+            .sheet(item: $editingTemplate) { template in
+                AddPlannedExpenseView(
+                    plannedExpenseID: template.objectID,
+                    preselectedBudgetID: nil,
+                    defaultSaveAsGlobalPreset: true,
+                    onSaved: {
+                        viewModel.loadTemplates(using: viewContext)
+                    }
+                )
+                .environment(\.managedObjectContext, viewContext)
+            }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
@@ -101,6 +119,13 @@ struct PresetsView: View {
         for t in targets {
             PlannedExpenseService.shared.deleteTemplateAndChildren(template: t, in: viewContext)
         }
+        saveContext()
+        viewModel.loadTemplates(using: viewContext)
+    }
+
+    /// Delete a single template via swipe.
+    private func delete(template: PlannedExpense) {
+        PlannedExpenseService.shared.deleteTemplateAndChildren(template: template, in: viewContext)
         saveContext()
         viewModel.loadTemplates(using: viewContext)
     }

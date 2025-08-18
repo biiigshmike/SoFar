@@ -17,6 +17,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     // MARK: Dependencies
     private let context: NSManagedObjectContext
 
+    // MARK: Identity
+    private let plannedExpenseID: NSManagedObjectID?
+    let isEditing: Bool
+
     // MARK: Loaded Data
     @Published private(set) var allBudgets: [Budget] = []
 
@@ -29,10 +33,13 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     @Published var saveAsGlobalPreset: Bool = false
 
     // MARK: Init
-    init(preselectedBudgetID: NSManagedObjectID? = nil,
+    init(plannedExpenseID: NSManagedObjectID? = nil,
+         preselectedBudgetID: NSManagedObjectID? = nil,
          initialDate: Date? = nil,
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.context = context
+        self.plannedExpenseID = plannedExpenseID
+        self.isEditing = plannedExpenseID != nil
         self.selectedBudgetID = preselectedBudgetID
         if let d = initialDate { self.transactionDate = d }
     }
@@ -41,8 +48,19 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     func load() async {
         CoreDataService.shared.ensureLoaded()
         allBudgets = fetchBudgets()
-        // If preselected not provided, default to most-recent budget by start date
-        if selectedBudgetID == nil { selectedBudgetID = allBudgets.first?.objectID }
+
+        if isEditing, let id = plannedExpenseID,
+           let existing = try? context.existingObject(with: id) as? PlannedExpense {
+            selectedBudgetID = existing.budget?.objectID
+            descriptionText = existing.descriptionText ?? ""
+            plannedAmountString = formatAmount(existing.plannedAmount)
+            actualAmountString = formatAmount(existing.actualAmount)
+            transactionDate = existing.transactionDate ?? Date()
+            saveAsGlobalPreset = existing.isGlobal
+        } else {
+            // If preselected not provided, default to most-recent budget by start date
+            if selectedBudgetID == nil { selectedBudgetID = allBudgets.first?.objectID }
+        }
     }
 
     // MARK: Validation
@@ -62,14 +80,21 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         let plannedAmt = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
         let actualAmt  = Double(actualAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
 
-        let newItem = PlannedExpense(context: context)
-        newItem.id = newItem.id ?? UUID()
-        newItem.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        newItem.plannedAmount = plannedAmt
-        newItem.actualAmount = actualAmt
-        newItem.transactionDate = transactionDate
-        newItem.isGlobal = saveAsGlobalPreset
-        newItem.budget = targetBudget
+        let item: PlannedExpense
+        if let id = plannedExpenseID,
+           let existing = try? context.existingObject(with: id) as? PlannedExpense {
+            item = existing
+        } else {
+            item = PlannedExpense(context: context)
+            item.id = item.id ?? UUID()
+        }
+
+        item.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        item.plannedAmount = plannedAmt
+        item.actualAmount = actualAmt
+        item.transactionDate = transactionDate
+        item.isGlobal = saveAsGlobalPreset
+        item.budget = targetBudget
 
         try context.save()
     }
@@ -82,5 +107,14 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []
+    }
+
+    private func formatAmount(_ value: Double) -> String {
+        let nf = NumberFormatter()
+        nf.locale = .current
+        nf.numberStyle = .decimal
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = 2
+        return nf.string(from: NSNumber(value: value)) ?? ""
     }
 }
