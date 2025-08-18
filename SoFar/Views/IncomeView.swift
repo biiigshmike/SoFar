@@ -111,6 +111,10 @@ struct IncomeView: View {
                 .dayView(UBDayView.init)
                 .weekdaysView(UBWeekdaysView.init)
                 .monthLabel(UBMonthLabel.init)
+                // Allow unlimited navigation while defaulting to today's month
+                .startMonth(.distantPast)
+                .endMonth(.distantFuture)
+                .scrollTo(date: viewModel.selectedDate)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -133,8 +137,12 @@ struct IncomeView: View {
             selectedDate: $viewModel.selectedDate,
             selectedRange: .constant(nil)
         ) { config in
-            // iOS: use library defaults for Day/Weekdays/Month appearances
+            // Display Month/Year header and allow unrestricted scrolling
             config
+                .monthLabel(UBMonthLabel.init)
+                .startMonth(.distantPast)
+                .endMonth(.distantFuture)
+                .scrollTo(date: viewModel.selectedDate)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
