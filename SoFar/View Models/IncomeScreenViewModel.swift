@@ -11,9 +11,7 @@ import CoreData
 // MARK: - IncomeScreenViewModel
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
-    /// Tracks the currently selected day in the calendar.
-    /// Defaults to today so the calendar initially loads the current month.
-    @Published var selectedDate: Date? = Date()
+    @Published var selectedDate: Date? = nil
     @Published private(set) var incomesForDay: [Income] = []
     @Published private(set) var totalForSelectedDate: Double = 0
     
