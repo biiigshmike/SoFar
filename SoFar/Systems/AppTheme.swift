@@ -208,14 +208,19 @@ final class ThemeManager: ObservableObject {
     private let ubiquitousStore = NSUbiquitousKeyValueStore.default
 
     /// Determines if theme syncing is enabled via Settings and iCloud.
-    private var isSyncEnabled: Bool {
+    ///
+    /// This property does not rely on any instance state, so it is defined as
+    /// a `static` computed property. Doing so allows it to be accessed before
+    /// the class has completed initialization, avoiding "self used before all
+    /// stored properties are initialized" errors during `init`.
+    private static var isSyncEnabled: Bool {
         let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? true
         let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
         return themeSync && cloud
     }
 
     init() {
-        if isSyncEnabled {
+        if Self.isSyncEnabled {
             ubiquitousStore.synchronize()
             if let raw = ubiquitousStore.string(forKey: storageKey),
                let theme = AppTheme(rawValue: raw) {
@@ -245,13 +250,13 @@ final class ThemeManager: ObservableObject {
 
     private func save() {
         UserDefaults.standard.set(selectedTheme.rawValue, forKey: storageKey)
-        guard isSyncEnabled else { return }
+        guard Self.isSyncEnabled else { return }
         ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
         ubiquitousStore.synchronize()
     }
 
     @objc private func storeChanged(_ note: Notification) {
-        guard isSyncEnabled else { return }
+        guard Self.isSyncEnabled else { return }
         if let raw = ubiquitousStore.string(forKey: storageKey),
            let theme = AppTheme(rawValue: raw),
            theme != selectedTheme {
