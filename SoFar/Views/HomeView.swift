@@ -23,6 +23,7 @@ struct HomeView: View {
 
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -115,6 +116,7 @@ struct HomeView: View {
                 secondaryButton: .cancel()
             )
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 
     // MARK: Content Container

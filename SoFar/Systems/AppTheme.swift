@@ -1,4 +1,10 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - AppTheme
 /// Centralized color palette for the application. Each case defines a
@@ -32,27 +38,66 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Primary background colour for views.
     var background: Color {
         switch self {
-        case .classic: return Color(.systemBackground)
-        case .midnight: return Color.black
-        case .forest: return Color(red: 0.05, green: 0.14, blue: 0.10)
+        case .classic:
+            #if canImport(UIKit)
+            return Color(UIColor.systemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.windowBackgroundColor)
+            } else {
+                return Color.white
+            }
+            #else
+            return Color.white
+            #endif
+        case .midnight:
+            return Color.black
+        case .forest:
+            return Color(red: 0.05, green: 0.14, blue: 0.10)
         }
     }
 
     /// Secondary background used for card interiors and icons.
     var secondaryBackground: Color {
         switch self {
-        case .classic: return Color(.secondarySystemBackground)
-        case .midnight: return Color(red: 0.15, green: 0.15, blue: 0.18)
-        case .forest: return Color(red: 0.09, green: 0.20, blue: 0.15)
+        case .classic:
+            #if canImport(UIKit)
+            return Color(UIColor.secondarySystemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.controlBackgroundColor)
+            } else {
+                return Color.gray.opacity(0.1)
+            }
+            #else
+            return Color.gray.opacity(0.1)
+            #endif
+        case .midnight:
+            return Color(red: 0.15, green: 0.15, blue: 0.18)
+        case .forest:
+            return Color(red: 0.09, green: 0.20, blue: 0.15)
         }
     }
 
     /// Tertiary background for card shells.
     var tertiaryBackground: Color {
         switch self {
-        case .classic: return Color(.tertiarySystemBackground)
-        case .midnight: return Color(red: 0.12, green: 0.12, blue: 0.15)
-        case .forest: return Color(red: 0.07, green: 0.16, blue: 0.12)
+        case .classic:
+            #if canImport(UIKit)
+            return Color(UIColor.tertiarySystemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.controlBackgroundColor)
+            } else {
+                return Color.gray.opacity(0.15)
+            }
+            #else
+            return Color.gray.opacity(0.15)
+            #endif
+        case .midnight:
+            return Color(red: 0.12, green: 0.12, blue: 0.15)
+        case .forest:
+            return Color(red: 0.07, green: 0.16, blue: 0.12)
         }
     }
 }
