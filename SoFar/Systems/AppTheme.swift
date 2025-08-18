@@ -247,10 +247,12 @@ final class ThemeManager: ObservableObject {
         if isSyncEnabled {
             ubiquitousStore.synchronize()
             if let raw = ubiquitousStore.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
+               let theme = AppTheme(rawValue: raw),
+               theme != selectedTheme {
                 selectedTheme = theme
             } else if let raw = UserDefaults.standard.string(forKey: storageKey),
-                      let theme = AppTheme(rawValue: raw) {
+                      let theme = AppTheme(rawValue: raw),
+                      theme != selectedTheme {
                 selectedTheme = theme
             }
 
@@ -274,7 +276,8 @@ final class ThemeManager: ObservableObject {
 
             // Ensure we use the locally stored theme when sync is disabled.
             if let raw = UserDefaults.standard.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
+               let theme = AppTheme(rawValue: raw),
+               theme != selectedTheme {
                 selectedTheme = theme
             }
         }
