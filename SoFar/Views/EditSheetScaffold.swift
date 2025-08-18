@@ -13,6 +13,7 @@
 //  EditSheetScaffold(
 //      title: "Rename Card",
 //      detents: [.fraction(0.25), .medium],           // optional override
+//      initialDetent: .medium,                        // optional
 //      saveButtonTitle: "Save",                        // optional
 //      cancelButtonTitle: "Cancel",                    // optional
 //      isSaveEnabled: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -32,6 +33,7 @@ import SwiftUI
 /// - Parameters:
 ///   - title: Title shown in the navigation bar.
 ///   - detents: Preferred sheet sizes on platforms that support them (iOS/iPadOS).
+///   - initialDetent: The detent the sheet should open at. Defaults to the largest provided.
 ///   - saveButtonTitle / cancelButtonTitle: Localized labels for actions.
 ///   - isSaveEnabled: Enables/disables the Save button for validation UI.
 ///   - onCancel: Called when Cancel is tapped (sheet always dismisses).
@@ -52,11 +54,15 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: Environment
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var themeManager: ThemeManager
+#if os(iOS) || targetEnvironment(macCatalyst)
+    @State private var detentSelection: PresentationDetent
+#endif
 
     // MARK: Init
     init(
         title: String,
         detents: [PresentationDetent] = [.medium, .large],
+        initialDetent: PresentationDetent? = nil,
         saveButtonTitle: String = "Save",
         cancelButtonTitle: String = "Cancel",
         isSaveEnabled: Bool = true,
@@ -72,6 +78,9 @@ struct EditSheetScaffold<Content: View>: View {
         self.onCancel = onCancel
         self.onSave = onSave
         self.content = content()
+#if os(iOS) || targetEnvironment(macCatalyst)
+        _detentSelection = State(initialValue: initialDetent ?? detents.last ?? .medium)
+#endif
     }
 
     // MARK: body
@@ -101,7 +110,7 @@ struct EditSheetScaffold<Content: View>: View {
         .tint(themeManager.selectedTheme.accent)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
-        .presentationDetents(Set(detents))
+        .presentationDetents(Set(detents), selection: $detentSelection)
         .presentationDragIndicator(.visible)
         #endif
         #if os(macOS)
