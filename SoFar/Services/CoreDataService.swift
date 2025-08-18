@@ -25,7 +25,7 @@ final class CoreDataService: ObservableObject {
     private let modelName = "SoFarModel"
     
     /// Flip this to true later when we’re ready to enable CloudKit store options & entitlements.
-    private let enableCloudKitSync = false
+    private let enableCloudKitSync = true
     
     // MARK: Load State
     /// Tracks whether persistent stores have been loaded at least once.
@@ -50,10 +50,10 @@ final class CoreDataService: ObservableObject {
         description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
         
         // CloudKit (deferred). When you’re ready, we’ll set:
-        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.your.bundle.id")
+        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar)
         // and ensure entitlements are set up. For now, leave it nil.
         if enableCloudKitSync {
-            // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.your.bundle.id")
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar")
         }
         
         container.persistentStoreDescriptions = [description]
