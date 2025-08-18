@@ -29,5 +29,20 @@ struct RootTabView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .onAppear(perform: updateTabBarAppearance)
+        .onChange(of: themeManager.selectedTheme) { _ in updateTabBarAppearance() }
+    }
+
+    /// Ensures the tab bar always matches the current theme and hides the default top border.
+    private func updateTabBarAppearance() {
+        #if canImport(UIKit)
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+        appearance.shadowColor = .clear
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
+        #endif
     }
 }
