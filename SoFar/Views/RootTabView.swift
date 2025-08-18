@@ -29,36 +29,22 @@ struct RootTabView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .onAppear(perform: updateAppearance)
+        .onAppear(perform: updateTabBarAppearance)
         .onChange(of: themeManager.selectedTheme) {
-            updateAppearance()
+            updateTabBarAppearance()
         }
     }
 
-    /// Applies the selected theme to both the tab bar and navigation bar so the
-    /// chrome consistently reflects user preferences.
-    private func updateAppearance() {
+    /// Ensures the tab bar always matches the current theme and hides the default top border.
+    private func updateTabBarAppearance() {
         #if canImport(UIKit)
-        // ---- Tab Bar ----
-        let tabAppearance = UITabBarAppearance()
-        tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
-        tabAppearance.shadowColor = .clear
-        UITabBar.appearance().standardAppearance = tabAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+        appearance.shadowColor = .clear
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
-
-        // ---- Navigation Bar ----
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
-        navAppearance.shadowColor = .clear
-        navAppearance.titleTextAttributes = [.foregroundColor: UIColor(themeManager.selectedTheme.accent)]
-        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor(themeManager.selectedTheme.accent)]
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
-        UINavigationBar.appearance().compactAppearance = navAppearance
-        UINavigationBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
         #endif
     }
 }
