@@ -25,6 +25,7 @@ struct ExpenseCategoryManagerView: View {
 
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Sorting (extracted to avoid heavy type inference)
     /// Keeping sort descriptors as a static constant helps Swift’s type-checker.
@@ -51,9 +52,11 @@ struct ExpenseCategoryManagerView: View {
             Section {
                 if categories.isEmpty {
                     emptyState
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                 } else {
                     ForEach(categories, id: \.objectID) { category in
                         categoryRow(for: category)
+                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
                     .onDelete(perform: deleteCategories)
                 }
@@ -62,7 +65,10 @@ struct ExpenseCategoryManagerView: View {
             } footer: {
                 Text("These categories appear when adding unplanned expenses. Colors help visually group spending.")
             }
+            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
+        .listStyle(.insetGrouped)
+        .applyIfAvailableScrollContentBackgroundHidden()
         .navigationTitle("Manage Categories")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -73,6 +79,9 @@ struct ExpenseCategoryManagerView: View {
                 }
             }
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .accentColor(themeManager.selectedTheme.accent)
+        .tint(themeManager.selectedTheme.accent)
         .sheet(isPresented: $isPresentingAddSheet) {
             ExpenseCategoryEditorSheet(
                 initialName: "",
@@ -179,6 +188,19 @@ struct ExpenseCategoryManagerView: View {
             #if DEBUG
             print("Failed to save categories:", error.localizedDescription)
             #endif
+        }
+    }
+}
+
+// MARK: - Availability Helpers
+private extension View {
+    /// Hides list background on supported OS versions; no-ops on older targets.
+    @ViewBuilder
+    func applyIfAvailableScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            scrollContentBackground(.hidden)
+        } else {
+            self
         }
     }
 }
