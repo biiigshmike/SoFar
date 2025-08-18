@@ -7,13 +7,9 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
-// MARK: - UIKit imports (iOS/iPadOS) for haptics and colour math
+#if os(iOS)
+// MARK: - iOS-only import for haptics
 import UIKit
-#endif
-#if canImport(AppKit)
-// MARK: - AppKit imports (macOS) for colour math
-import AppKit
 #endif
 
 // MARK: - UnifiedSwipeConfig
@@ -39,10 +35,8 @@ public struct UnifiedSwipeConfig {
     /// SF Symbol used for Edit.
     public var editSystemImageName: String
 
-    /// Tint color used for Edit. Defaults to a lighter variant of the
-    /// accent colour so it remains related to the active theme while still
-    /// differentiating itself from the primary accent used for Delete.
-    public var editTint: Color
+    /// Tint color used for Edit.
+    public var editTint: Color = .accentColor.opacity(0.01)
 
     /// When supported, a full swipe should trigger the first destructive action automatically; set to `true` for Mail-like behavior.
     public var allowsFullSwipeToDelete: Bool
@@ -62,9 +56,7 @@ public struct UnifiedSwipeConfig {
         deleteTint: Color = .accentColor,
         editTitle: String = "Edit",
         editSystemImageName: String = "pencil",
-        // Use a lightened version of the accent color for Edit so it doesn't
-        // visually compete with Delete while still matching the active theme.
-        editTint: Color = Color.accentColor.lightened(by: 0.35),
+        editTint: Color = .accentColor,
         allowsFullSwipeToDelete: Bool = true,
         playHapticOnDelete: Bool = true,
         deleteAccessibilityID: String? = "swipe_delete",
@@ -306,34 +298,5 @@ private extension View {
         } else {
             self
         }
-    }
-}
-
-// MARK: - Color Helpers
-private extension Color {
-    /// Returns a lightened version of the color by blending it with white.
-    /// - Parameter amount: 0 (no change) through 1 (white).
-    func lightened(by amount: CGFloat) -> Color {
-        #if canImport(UIKit)
-        let ui = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        ui.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return Color(red: Double(r + (1 - r) * amount),
-                     green: Double(g + (1 - g) * amount),
-                     blue: Double(b + (1 - b) * amount),
-                     opacity: Double(a))
-        #elseif canImport(AppKit)
-        let ns = NSColor(self)
-        let converted = ns.usingColorSpace(.sRGB) ?? ns
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        converted.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return Color(red: Double(r + (1 - r) * amount),
-                     green: Double(g + (1 - g) * amount),
-                     blue: Double(b + (1 - b) * amount),
-                     opacity: Double(a))
-        #else
-        // Other platforms: return the original colour.
-        return self
-        #endif
     }
 }
