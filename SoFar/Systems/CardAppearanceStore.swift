@@ -21,11 +21,13 @@ final class CardAppearanceStore {
 
     /// In-memory cache for quick lookups.
     private var cache: [UUID: CardTheme] = [:]
+    private var defaultsObserver: NSObjectProtocol?
+    private var cloudObserver: NSObjectProtocol?
 
     /// Whether cloud syncing is enabled via settings.
     private var isSyncEnabled: Bool {
-        let cardSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? true
-        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        let cardSync = UserDefaults.standard.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        let cloud = UserDefaults.standard.bool(forKey: AppSettingsKeys.enableCloudSync.rawValue)
         return cardSync && cloud
     }
 
@@ -33,14 +35,24 @@ final class CardAppearanceStore {
     init(userDefaults: UserDefaults = .standard, ubiquitousStore: NSUbiquitousKeyValueStore = .default) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
-        load()
+        configureSync()
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(storeChanged(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore
-        )
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.configureSync()
+        }
+    }
+
+    deinit {
+        if let defaultsObserver {
+            NotificationCenter.default.removeObserver(defaultsObserver)
+        }
+        if let cloudObserver {
+            NotificationCenter.default.removeObserver(cloudObserver)
+        }
     }
 
     // MARK: load()
@@ -111,5 +123,29 @@ final class CardAppearanceStore {
         // Propagate the change so views can refresh themes immediately.
 
         NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: nil)
+    }
+
+    /// Configure syncing when settings change.
+    private func configureSync() {
+        if isSyncEnabled {
+            ubiquitousStore.synchronize()
+            load()
+            if cloudObserver == nil {
+                cloudObserver = NotificationCenter.default.addObserver(
+                    forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+                    object: ubiquitousStore,
+                    queue: .main
+                ) { [weak self] note in
+                    self?.storeChanged(note)
+                }
+            }
+            save()
+        } else {
+            if let cloudObserver {
+                NotificationCenter.default.removeObserver(cloudObserver)
+                self.cloudObserver = nil
+            }
+            load()
+        }
     }
 }
