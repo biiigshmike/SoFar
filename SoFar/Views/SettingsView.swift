@@ -61,7 +61,7 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "paintpalette",
                     title: "Appearance",
-                    subtitle: "Select a colour theme for the app.",
+                    subtitle: "Select a color theme for the app.",
                 ) {
                     VStack(spacing: 0) {
                         SettingsRow(title: "Theme") {

@@ -6,7 +6,7 @@
 //  typography and spacing across iOS, iPadOS and macOS.  By using this
 //  component instead of bare `Section` declarations, you ensure that
 //  every form header uses a small caps footnote font with a secondary
-//  colour, matching the look of the Add Card form and other grouped
+//  color, matching the look of the Add Card form and other grouped
 //  editors.  You can drop this into any `Form` to avoid rewriting
 //  header modifiers repeatedly.
 //
@@ -23,7 +23,7 @@ import SwiftUI
 /// A cross‑platform `Section` wrapper that standardises form headers.
 /// - Parameters:
 ///   - title: The string to display above the section’s content.  The title
-///     is rendered in a footnote font, with a secondary foreground colour
+///     is rendered in a footnote font, with a secondary foreground color
 ///     and uppercased by default (to match Apple’s grouped forms).  If you
 ///     wish to disable automatic uppercase, set `isUppercased` to false.
 ///   - isUppercased: When true (default), the title is uppercased using

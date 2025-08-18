@@ -58,7 +58,7 @@ enum DesignSystem {
         static let cardFill       = Color.gray.opacity(0.08)
 
         // MARK: System‑Aware Container Background
-        /// A dynamic background colour that adapts to light/dark mode on each platform.
+        /// A dynamic background color that adapts to light/dark mode on each platform.
         /// On iOS/tvOS this is `secondarySystemBackground`; on macOS it maps to
         /// `underPageBackgroundColor` (fallback to `windowBackgroundColor` on older targets).
         static var containerBackground: Color {
@@ -76,7 +76,7 @@ enum DesignSystem {
         }
 
         // MARK: Chip and Pill Fills
-        /// Default fill colour for unselected category chips and pills.  This neutral
+        /// Default fill color for unselected category chips and pills.  This neutral
         /// tone ensures that chips sit comfortably on top of the form’s grouped
         /// background on all platforms.  Increase or decrease the opacity to tune
         /// the visual weight of chips globally.
@@ -85,8 +85,8 @@ enum DesignSystem {
             return Color.primary.opacity(0.06)
         }
 
-        /// Fill colour for selected category chips and pills.  This uses a slightly
-        /// higher opacity of the primary colour to indicate selection without
+        /// Fill color for selected category chips and pills.  This uses a slightly
+        /// higher opacity of the primary color to indicate selection without
         /// overpowering the interface.  If you wish to refine the selection
         /// contrast across themes, update this constant instead of hardcoding
         /// values in your views.
@@ -94,7 +94,7 @@ enum DesignSystem {
             return Color.primary.opacity(0.12)
         }
 
-        /// Stroke colour for the selection outline around a chip or pill.  Using
+        /// Stroke color for the selection outline around a chip or pill.  Using
         /// a separate constant allows you to globally adjust the stroke strength
         /// independent of the fill opacity.  When unselected, you may choose to
         /// return `.clear` or a low‑opacity stroke for subtle definition.

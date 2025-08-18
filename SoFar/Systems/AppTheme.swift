@@ -8,7 +8,7 @@ import AppKit
 
 // MARK: - AppTheme
 /// Centralized color palette for the application. Each case defines a
-/// complete set of colours used across the UI so that switching themes is
+/// complete set of color used across the UI so that switching themes is
 /// consistent everywhere.
 enum AppTheme: String, CaseIterable, Identifiable, Codable {
     case classic
@@ -40,7 +40,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Accent colour applied to interactive elements.
+    /// Accent color applied to interactive elements.
     var accent: Color {
         switch self {
         case .classic: return .blue
@@ -56,7 +56,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Secondary accent colour derived from the primary accent. Used for
+    /// Secondary accent color derived from the primary accent. Used for
     /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
     /// remaining harmonious with the selected theme.
     var secondaryAccent: Color {
@@ -76,7 +76,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         #endif
     }
 
-    /// Primary background colour for views.
+    /// Primary background color for views.
     var background: Color {
         switch self {
         case .classic:
@@ -184,7 +184,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Preferred system colour scheme for the theme.
+    /// Preferred system color scheme for the theme.
     var colorScheme: ColorScheme {
         switch self {
         case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:

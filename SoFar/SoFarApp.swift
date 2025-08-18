@@ -20,7 +20,7 @@ struct SoFarApp: App {
             RootTabView()
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                 .environmentObject(themeManager)
-                // Apply the selected theme's accent colour to all controls.
+                // Apply the selected theme's accent color to all controls.
                 // `tint` covers most modern SwiftUI controls, while `accentColor`
                 // is still required for some AppKit-backed macOS components
                 // (e.g., checkboxes, date pickers) to respect the theme.
