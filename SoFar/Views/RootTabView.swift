@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct RootTabView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+
     var body: some View {
         TabView {
             NavigationStack { HomeView() }
@@ -26,5 +28,6 @@ struct RootTabView: View {
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 }
