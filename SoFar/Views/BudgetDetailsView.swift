@@ -22,6 +22,9 @@ struct BudgetDetailsView: View {
     // MARK: View Model
     @StateObject private var vm: BudgetDetailsViewModel
 
+    // MARK: Theme
+    @EnvironmentObject private var themeManager: ThemeManager
+
     // MARK: UI State
     /// Controls the presentation of the “Add…” menu + sheets.
     @State private var isShowingAddMenu = false
@@ -114,6 +117,7 @@ struct BudgetDetailsView: View {
                 }
             }
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .confirmationDialog("Add",
                             isPresented: $isShowingAddMenu,
                             titleVisibility: .visible) {
@@ -205,6 +209,7 @@ private struct PlannedListFR: View {
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
         self.sort = sort
@@ -229,6 +234,7 @@ private struct PlannedListFR: View {
                 List {
                     Text("No planned expenses in this range.")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                 }
                 .styledList()
             } else {
@@ -254,7 +260,7 @@ private struct PlannedListFR: View {
                         // MARK: Unified swipe → Delete (Edit can be added later)
                         .unifiedSwipeActions(.deleteOnly, onDelete: { deletePlanned(item) })
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
@@ -311,6 +317,7 @@ private struct VariableListFR: View {
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
         self.sort = sort
@@ -341,6 +348,7 @@ private struct VariableListFR: View {
                 List {
                     Text("No variable expenses in this range.")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                 }
                 .styledList()
             } else {
@@ -376,12 +384,12 @@ private struct VariableListFR: View {
                         // MARK: Unified swipe → Delete (Edit can be added later)
                         .unifiedSwipeActions(.deleteOnly, onDelete: { deleteUnplanned(item) })
                         .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
 
                         Divider() // keep your visual rhythm if desired
                             .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
