@@ -25,6 +25,8 @@ struct IncomeView: View {
     @State private var addIncomeInitialDate: Date? = nil
     /// Holds the objectID of the income being edited; used to prefill the edit sheet.
     @State private var editingIncomeObjectID: NSManagedObjectID? = nil
+    /// Controls which date the calendar should scroll to when navigation buttons are used.
+    @State private var calendarScrollDate: Date? = Date()
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -92,7 +94,9 @@ struct IncomeView: View {
         .onAppear {
             // Ensure the calendar opens on today's date and load entries
             if viewModel.selectedDate == nil { viewModel.selectedDate = Date() }
-            viewModel.load(day: viewModel.selectedDate ?? Date())
+            let initial = viewModel.selectedDate ?? Date()
+            calendarScrollDate = initial
+            viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
@@ -105,46 +109,51 @@ struct IncomeView: View {
         let today = Date()
         let start = Calendar.current.date(byAdding: .year, value: -5, to: today)!
         let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
-        #if os(macOS)
-        // macOS: attach the configuration closure directly to the call
-        MCalendarView(
-            selectedDate: $viewModel.selectedDate,
-            selectedRange: .constant(nil)
-        ) { config in
-            config
-                .dayView(UBDayView.init)
-                .weekdaysView(UBWeekdaysView.init)
-                .monthLabel(UBMonthLabel.init)
-                .startMonth(start)
-                .endMonth(end)
-                .scrollTo(date: today)
-        }
-        .frame(maxWidth: .infinity)
-        .layoutPriority(1)
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(themeManager.selectedTheme.secondaryBackground)
-        )
-        .accessibilityIdentifier("IncomeCalendar")
-        // MARK: Double-click calendar to add income (macOS)
-        .simultaneousGesture(
-            TapGesture(count: 2).onEnded {
-                addIncomeInitialDate = viewModel.selectedDate ?? today
-                isPresentingAddIncome = true
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Button("<<") { goToPreviousMonth() }
+                Button("<") { goToPreviousDay() }
+                Button("Today") { goToToday() }
+                Button(">") { goToNextDay() }
+                Button(">>") { goToNextMonth() }
             }
-        )
-        #else
-        // iOS
-        MCalendarView(
-            selectedDate: $viewModel.selectedDate,
-            selectedRange: .constant(nil)
-        ) { config in
-            config
-                .monthLabel(UBMonthLabel.init)
-                .startMonth(start)
-                .endMonth(end)
-                .scrollTo(date: today)
+            .font(.subheadline)
+            #if os(macOS)
+            // macOS: attach the configuration closure directly to the call
+            MCalendarView(
+                selectedDate: $viewModel.selectedDate,
+                selectedRange: .constant(nil)
+            ) { config in
+                config
+                    .dayView(UBDayView.init)
+                    .weekdaysView(UBWeekdaysView.init)
+                    .monthLabel(UBMonthLabel.init)
+                    .startMonth(start)
+                    .endMonth(end)
+                    .scrollTo(date: calendarScrollDate)
+            }
+            .accessibilityIdentifier("IncomeCalendar")
+            // MARK: Double-click calendar to add income (macOS)
+            .simultaneousGesture(
+                TapGesture(count: 2).onEnded {
+                    addIncomeInitialDate = viewModel.selectedDate ?? today
+                    isPresentingAddIncome = true
+                }
+            )
+            #else
+            // iOS
+            MCalendarView(
+                selectedDate: $viewModel.selectedDate,
+                selectedRange: .constant(nil)
+            ) { config in
+                config
+                    .monthLabel(UBMonthLabel.init)
+                    .startMonth(start)
+                    .endMonth(end)
+                    .scrollTo(date: calendarScrollDate)
+            }
+            .accessibilityIdentifier("IncomeCalendar")
+            #endif
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -153,8 +162,6 @@ struct IncomeView: View {
             RoundedRectangle(cornerRadius: DS.Radius.card)
                 .fill(themeManager.selectedTheme.secondaryBackground)
         )
-        .accessibilityIdentifier("IncomeCalendar")
-        #endif
     }
 
     // MARK: - Weekly Summary Bar
@@ -233,6 +240,49 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
+    }
+
+    // MARK: - Calendar Navigation Helpers
+    /// Updates the selected date and scroll target for the calendar.
+    private func navigate(to date: Date) {
+        viewModel.selectedDate = date
+        calendarScrollDate = date
+    }
+    /// Scrolls to the first day of the previous month.
+    private func goToPreviousMonth() {
+        let cal = Calendar.current
+        let current = viewModel.selectedDate ?? Date()
+        if let startOfCurrent = cal.date(from: cal.dateComponents([.year, .month], from: current)),
+           let prev = cal.date(byAdding: .month, value: -1, to: startOfCurrent) {
+            navigate(to: prev)
+        }
+    }
+    /// Moves selection to the previous day.
+    private func goToPreviousDay() {
+        let cal = Calendar.current
+        let current = viewModel.selectedDate ?? Date()
+        if let prev = cal.date(byAdding: .day, value: -1, to: current) {
+            navigate(to: prev)
+        }
+    }
+    /// Centers the calendar on today.
+    private func goToToday() { navigate(to: Date()) }
+    /// Moves selection to the next day.
+    private func goToNextDay() {
+        let cal = Calendar.current
+        let current = viewModel.selectedDate ?? Date()
+        if let next = cal.date(byAdding: .day, value: 1, to: current) {
+            navigate(to: next)
+        }
+    }
+    /// Scrolls to the first day of the next month.
+    private func goToNextMonth() {
+        let cal = Calendar.current
+        let current = viewModel.selectedDate ?? Date()
+        if let startOfCurrent = cal.date(from: cal.dateComponents([.year, .month], from: current)),
+           let next = cal.date(byAdding: .month, value: 1, to: startOfCurrent) {
+            navigate(to: next)
+        }
     }
 
     // MARK: - Edit Flow Helpers
