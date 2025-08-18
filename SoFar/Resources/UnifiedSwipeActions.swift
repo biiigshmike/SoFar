@@ -36,7 +36,7 @@ public struct UnifiedSwipeConfig {
     public var editSystemImageName: String
 
     /// Tint color used for Edit.
-    public var editTint: Color
+    public var editTint: Color = .accentColor.opacity(0.01)
 
     /// When supported, a full swipe should trigger the first destructive action automatically; set to `true` for Mail-like behavior.
     public var allowsFullSwipeToDelete: Bool
