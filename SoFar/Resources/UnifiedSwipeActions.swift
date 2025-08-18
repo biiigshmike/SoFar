@@ -28,6 +28,8 @@ public struct UnifiedSwipeConfig {
 
     /// Tint color used for Delete in non-destructive contexts; role still sets the red style on iOS automatically.
     public var deleteTint: Color
+    /// Opacity applied to the Delete action.
+    public var deleteOpacity: Double
 
     /// Title for the Edit button.
     public var editTitle: String
@@ -37,6 +39,8 @@ public struct UnifiedSwipeConfig {
 
     /// Tint color used for Edit.
     public var editTint: Color
+    /// Opacity applied to the Edit action.
+    public var editOpacity: Double
 
     /// When supported, a full swipe should trigger the first destructive action automatically; set to `true` for Mail-like behavior.
     public var allowsFullSwipeToDelete: Bool
@@ -54,9 +58,11 @@ public struct UnifiedSwipeConfig {
         deleteTitle: String = "Delete",
         deleteSystemImageName: String = "trash",
         deleteTint: Color = .accentColor,
+        deleteOpacity: Double = 1.0,
         editTitle: String = "Edit",
         editSystemImageName: String = "pencil",
         editTint: Color = .accentColor,
+        editOpacity: Double = 0.85,
         allowsFullSwipeToDelete: Bool = true,
         playHapticOnDelete: Bool = true,
         deleteAccessibilityID: String? = "swipe_delete",
@@ -66,9 +72,11 @@ public struct UnifiedSwipeConfig {
         self.deleteTitle = deleteTitle
         self.deleteSystemImageName = deleteSystemImageName
         self.deleteTint = deleteTint
+        self.deleteOpacity = deleteOpacity
         self.editTitle = editTitle
         self.editSystemImageName = editSystemImageName
         self.editTint = editTint
+        self.editOpacity = editOpacity
         self.allowsFullSwipeToDelete = allowsFullSwipeToDelete
         self.playHapticOnDelete = playHapticOnDelete
         self.deleteAccessibilityID = deleteAccessibilityID
@@ -207,6 +215,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             Label(config.deleteTitle, systemImage: config.deleteSystemImageName)
         }
         .tint(config.deleteTint)
+        .opacity(config.deleteOpacity)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
@@ -219,6 +228,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             Label(config.editTitle, systemImage: config.editSystemImageName)
         }
         .tint(config.editTint)
+        .opacity(config.editOpacity)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
