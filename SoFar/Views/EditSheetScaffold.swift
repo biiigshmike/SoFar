@@ -87,8 +87,6 @@ struct EditSheetScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             Form { content }
-                .scrollContentBackground(.hidden)
-                .background(themeManager.selectedTheme.background)
                 .navigationTitle(title)
                 .toolbar {
                     // MARK: Cancel
@@ -110,8 +108,6 @@ struct EditSheetScaffold<Content: View>: View {
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .preferredColorScheme(themeManager.selectedTheme.colorScheme)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)

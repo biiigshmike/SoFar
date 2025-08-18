@@ -117,13 +117,13 @@ struct AddIncomeFormView: View {
                 TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
                     .ub_noAutoCapsAndCorrection()
                     .multilineTextAlignment(.leading)
-                    .ub_formTextFieldLeading()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Source")
             } else {
                 TextField("e.g., Paycheck", text: $viewModel.source)
                     .ub_noAutoCapsAndCorrection()
                     .multilineTextAlignment(.leading)
-                    .ub_formTextFieldLeading()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Source")
             }
         }
@@ -139,13 +139,13 @@ struct AddIncomeFormView: View {
                 TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
                     .ub_decimalKeyboard()
                     .multilineTextAlignment(.leading)
-                    .ub_formTextFieldLeading()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Amount")
             } else {
                 TextField("e.g., 1,234.56", text: $viewModel.amountInput)
                     .ub_decimalKeyboard()
                     .multilineTextAlignment(.leading)
-                    .ub_formTextFieldLeading()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Amount")
             }
         }

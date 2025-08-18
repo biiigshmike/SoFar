@@ -95,13 +95,13 @@ struct AddUnplannedExpenseView: View {
                     TextField("", text: $vm.descriptionText, prompt: Text("e.g., coffee"))
                         .ub_noAutoCapsAndCorrection()
                         .multilineTextAlignment(.leading)
-                        .ub_formTextFieldLeading()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Expense Description")
                 } else {
                     TextField("e.g., coffee", text: $vm.descriptionText)
                         .ub_noAutoCapsAndCorrection()
                         .multilineTextAlignment(.leading)
-                        .ub_formTextFieldLeading()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Expense Description")
                 }
             }
@@ -112,13 +112,13 @@ struct AddUnplannedExpenseView: View {
                     TextField("", text: $vm.amountString, prompt: Text("e.g., 4.75"))
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .ub_formTextFieldLeading()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Amount")
                 } else {
                     TextField("e.g., 4.75", text: $vm.amountString)
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .ub_formTextFieldLeading()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Amount")
                 }
             }
