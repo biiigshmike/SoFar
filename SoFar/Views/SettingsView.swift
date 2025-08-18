@@ -134,6 +134,8 @@ struct SettingsView: View {
             .padding(.vertical, 20)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .accentColor(themeManager.selectedTheme.accent)
+        .tint(themeManager.selectedTheme.accent)
         .navigationTitle("Settings")
     }
 

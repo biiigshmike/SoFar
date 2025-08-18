@@ -51,6 +51,7 @@ struct EditSheetScaffold<Content: View>: View {
 
     // MARK: Environment
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Init
     init(
@@ -95,6 +96,9 @@ struct EditSheetScaffold<Content: View>: View {
                     }
                 }
         }
+        // Ensure embedded forms respect the selected theme on all platforms.
+        .accentColor(themeManager.selectedTheme.accent)
+        .tint(themeManager.selectedTheme.accent)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents))
