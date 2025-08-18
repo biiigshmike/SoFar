@@ -21,6 +21,7 @@ struct SoFarApp: App {
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                 .environmentObject(themeManager)
                 .tint(themeManager.selectedTheme.accent)
+                .preferredColorScheme(themeManager.selectedTheme.colorScheme)
         }
     }
 }

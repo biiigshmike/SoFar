@@ -19,6 +19,7 @@ struct BudgetCardView: View {
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Local State (computed income overrides)
     /// When computed, these override the incoming summary’s income values.
@@ -107,7 +108,14 @@ struct BudgetCardView: View {
             .padding(.top, DS.Spacing.s)
         }
         .padding(sidePadding)
-        .cardBackground()
+        .background(
+            themeManager.selectedTheme.secondaryBackground,
+            in: RoundedRectangle(cornerRadius: DS.Radius.card)
+        )
+        .shadow(color: .black.opacity(DS.Shadow.card.opacity),
+                radius: DS.Shadow.card.radius,
+                x: 0,
+                y: DS.Shadow.card.y)
         .accessibilityElement(children: .contain)
         .onAppear { computeIncomeOverridesIfPossible() } // MARK: Trigger computation on appear
     }

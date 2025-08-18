@@ -48,10 +48,12 @@ struct PresetsView: View {
                                 }
                             )
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         }
                         .onDelete(perform: deleteTemplates(_:))
                     }
                     .listStyle(.plain)
+                    .applyIfAvailableScrollContentBackgroundHidden()
                 }
             }
             .navigationTitle("Presets")
@@ -260,5 +262,18 @@ final class DateFormatterCache {
 
     func mediumDate(_ date: Date) -> String {
         medium.string(from: date)
+    }
+}
+
+// MARK: - Availability Helpers
+private extension View {
+    /// Hides list background on supported OS versions; no-ops on older targets.
+    @ViewBuilder
+    func applyIfAvailableScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }

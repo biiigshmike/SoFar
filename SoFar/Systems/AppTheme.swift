@@ -100,6 +100,16 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.07, green: 0.16, blue: 0.12)
         }
     }
+
+    /// Preferred system colour scheme for the theme.
+    var colorScheme: ColorScheme {
+        switch self {
+        case .classic:
+            return .light
+        case .midnight, .forest:
+            return .dark
+        }
+    }
 }
 
 // MARK: - ThemeManager
