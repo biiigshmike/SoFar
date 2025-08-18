@@ -79,12 +79,9 @@ struct UBWeekdaysView: WeekdaysView {
     }
 }
 
-#endif
-
 // MARK: - Month title (e.g., "August 2025")
-/// Shared month label used across platforms to display "Month Year".
 struct UBMonthLabel: MonthLabel {
-    // Required attribute (from MonthLabel)
+    // Required attribute (from MonthLabel) :contentReference[oaicite:12]{index=12}
     let month: Date
 
     @Environment(\.colorScheme) private var scheme
@@ -92,9 +89,11 @@ struct UBMonthLabel: MonthLabel {
     func createContent() -> AnyView {
         let base = scheme == .dark ? Color.white : Color.black
         return AnyView(
-            Text(getString(format: "MMMM y"))
+            Text(getString(format: "MMMM y"))  // helper from MonthLabel :contentReference[oaicite:13]{index=13}
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(base)
         )
     }
 }
+
+#endif
