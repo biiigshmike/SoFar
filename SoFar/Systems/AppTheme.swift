@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -204,18 +205,58 @@ final class ThemeManager: ObservableObject {
     }
 
     private let storageKey = "selectedTheme"
+    private let ubiquitousStore = NSUbiquitousKeyValueStore.default
+
+    /// Determines if theme syncing is enabled via Settings and iCloud.
+    private var isSyncEnabled: Bool {
+        let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? true
+        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        return themeSync && cloud
+    }
 
     init() {
-        if let raw = UserDefaults.standard.string(forKey: storageKey),
-           let theme = AppTheme(rawValue: raw) {
-            selectedTheme = theme
+        if isSyncEnabled {
+            ubiquitousStore.synchronize()
+            if let raw = ubiquitousStore.string(forKey: storageKey),
+               let theme = AppTheme(rawValue: raw) {
+                selectedTheme = theme
+            } else if let raw = UserDefaults.standard.string(forKey: storageKey),
+                      let theme = AppTheme(rawValue: raw) {
+                selectedTheme = theme
+            } else {
+                selectedTheme = .classic
+            }
+
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(storeChanged(_:)),
+                name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+                object: ubiquitousStore
+            )
         } else {
-            selectedTheme = .classic
+            if let raw = UserDefaults.standard.string(forKey: storageKey),
+               let theme = AppTheme(rawValue: raw) {
+                selectedTheme = theme
+            } else {
+                selectedTheme = .classic
+            }
         }
     }
 
     private func save() {
         UserDefaults.standard.set(selectedTheme.rawValue, forKey: storageKey)
+        guard isSyncEnabled else { return }
+        ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
+        ubiquitousStore.synchronize()
+    }
+
+    @objc private func storeChanged(_ note: Notification) {
+        guard isSyncEnabled else { return }
+        if let raw = ubiquitousStore.string(forKey: storageKey),
+           let theme = AppTheme(rawValue: raw),
+           theme != selectedTheme {
+            selectedTheme = theme
+        }
     }
 }
 

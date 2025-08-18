@@ -16,21 +16,45 @@ final class CardAppearanceStore {
 
     // MARK: Storage Backbone
     private let userDefaults: UserDefaults
+    private let ubiquitousStore: NSUbiquitousKeyValueStore
     private let storageKey = "card.appearance.v1"
 
     /// In-memory cache for quick lookups.
     private var cache: [UUID: CardTheme] = [:]
 
+    /// Whether cloud syncing is enabled via settings.
+    private var isSyncEnabled: Bool {
+        let cardSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? true
+        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        return cardSync && cloud
+    }
+
     // MARK: Init
-    init(userDefaults: UserDefaults = .standard) {
+    init(userDefaults: UserDefaults = .standard, ubiquitousStore: NSUbiquitousKeyValueStore = .default) {
         self.userDefaults = userDefaults
+        self.ubiquitousStore = ubiquitousStore
         load()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(storeChanged(_:)),
+            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: ubiquitousStore
+        )
     }
 
     // MARK: load()
-    /// Hydrates the in-memory cache from UserDefaults.
+    /// Hydrates the in-memory cache from UserDefaults and optionally iCloud.
     private func load() {
-        guard let data = userDefaults.data(forKey: storageKey) else { return }
+        var data: Data?
+        if isSyncEnabled {
+            ubiquitousStore.synchronize()
+            data = ubiquitousStore.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
+        } else {
+            data = userDefaults.data(forKey: storageKey)
+        }
+
+        guard let data else { return }
         do {
             let decoded = try JSONDecoder().decode([String: CardTheme].self, from: data)
             self.cache = Dictionary(uniqueKeysWithValues: decoded.compactMap { (key, theme) in
@@ -44,13 +68,17 @@ final class CardAppearanceStore {
     }
 
     // MARK: save()
-    /// Writes the current cache to UserDefaults.
+    /// Writes the current cache to UserDefaults and optionally iCloud.
     private func save() {
         let dict = Dictionary(uniqueKeysWithValues: cache.map { (id, theme) in
             (id.uuidString, theme)
         })
         if let data = try? JSONEncoder().encode(dict) {
             userDefaults.set(data, forKey: storageKey)
+            if isSyncEnabled {
+                ubiquitousStore.set(data, forKey: storageKey)
+                ubiquitousStore.synchronize()
+            }
         }
     }
 
@@ -72,5 +100,11 @@ final class CardAppearanceStore {
     func removeTheme(for id: UUID) {
         cache.removeValue(forKey: id)
         save()
+    }
+
+    /// Respond to external iCloud changes.
+    @objc private func storeChanged(_ note: Notification) {
+        guard isSyncEnabled else { return }
+        load()
     }
 }

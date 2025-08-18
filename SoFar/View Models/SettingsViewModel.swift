@@ -8,16 +8,6 @@
 import SwiftUI
 import Combine
 
-// MARK: - AppSettingsKeys
-/// Centralizes all UserDefaults keys used by Settings.
-/// Edit keys with care; changing raw values will reset users' stored preferences.
-enum AppSettingsKeys: String {
-    case confirmBeforeDelete
-    case enableHaptics
-    case calendarHorizontal
-    case presetsDefaultUseInFutureBudgets
-}
-
 // MARK: - SettingsViewModel
 /// Observable settings source of truth. Persists via @AppStorage for simplicity.
 /// Properties trigger view updates by sending `objectWillChange` on write.
@@ -40,6 +30,18 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue)
     var presetsDefaultUseInFutureBudgets: Bool = true { willSet { objectWillChange.send() } }
 
+    /// Sync per-card themes across devices using iCloud.
+    @AppStorage(AppSettingsKeys.syncCardThemes.rawValue)
+    var syncCardThemes: Bool = true { willSet { objectWillChange.send() } }
+
+    /// Sync the overall app theme selection via iCloud.
+    @AppStorage(AppSettingsKeys.syncAppTheme.rawValue)
+    var syncAppTheme: Bool = true { willSet { objectWillChange.send() } }
+
+    /// Enable iCloud/CloudKit synchronization for Core Data.
+    @AppStorage(AppSettingsKeys.enableCloudSync.rawValue)
+    var enableCloudSync: Bool = true { willSet { objectWillChange.send() } }
+
     /// Convenience for platform-specific UI.
     var shouldShowHapticsRow: Bool {
         #if os(iOS)
@@ -50,7 +52,17 @@ final class SettingsViewModel: ObservableObject {
     }
 
     // MARK: - Init
-    init() { }
+    init() {
+        UserDefaults.standard.register(defaults: [
+            AppSettingsKeys.confirmBeforeDelete.rawValue: true,
+            AppSettingsKeys.enableHaptics.rawValue: true,
+            AppSettingsKeys.calendarHorizontal.rawValue: true,
+            AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue: true,
+            AppSettingsKeys.syncCardThemes.rawValue: true,
+            AppSettingsKeys.syncAppTheme.rawValue: true,
+            AppSettingsKeys.enableCloudSync.rawValue: true
+        ])
+    }
 }
 
 // MARK: - Cross-Platform Colors
