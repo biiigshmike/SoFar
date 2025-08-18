@@ -32,6 +32,9 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     @Published var transactionDate: Date = Date()
     @Published var saveAsGlobalPreset: Bool = false
 
+    /// Tracks whether the item being edited was originally a global template.
+    private var editingOriginalIsGlobal: Bool = false
+
     // MARK: Init
     init(plannedExpenseID: NSManagedObjectID? = nil,
          preselectedBudgetID: NSManagedObjectID? = nil,
@@ -57,6 +60,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             actualAmountString = formatAmount(existing.actualAmount)
             transactionDate = existing.transactionDate ?? Date()
             saveAsGlobalPreset = existing.isGlobal
+            editingOriginalIsGlobal = existing.isGlobal
         } else {
             // If preselected not provided, default to most-recent budget by start date
             if selectedBudgetID == nil { selectedBudgetID = allBudgets.first?.objectID }
@@ -65,36 +69,81 @@ final class AddPlannedExpenseViewModel: ObservableObject {
 
     // MARK: Validation
     var canSave: Bool {
-        selectedBudgetID != nil
-        && !descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        && (Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) != nil)
+        let amountValid = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) != nil
+        let textValid = !descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if isEditing && editingOriginalIsGlobal {
+            // Editing a parent template does not require selecting a budget.
+            return textValid && amountValid
+        } else {
+            return selectedBudgetID != nil && textValid && amountValid
+        }
     }
 
     // MARK: save()
     func save() throws {
-        guard let budgetID = selectedBudgetID,
-              let targetBudget = context.object(with: budgetID) as? Budget else {
-            throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
-        }
-
         let plannedAmt = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
         let actualAmt  = Double(actualAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
 
-        let item: PlannedExpense
-        if let id = plannedExpenseID,
+        if isEditing,
+           let id = plannedExpenseID,
            let existing = try? context.existingObject(with: id) as? PlannedExpense {
-            item = existing
+            existing.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+            existing.plannedAmount = plannedAmt
+            existing.actualAmount = actualAmt
+            existing.transactionDate = transactionDate
+            if editingOriginalIsGlobal {
+                // Editing a parent template; keep it global and unattached.
+                existing.isGlobal = true
+                existing.budget = nil
+            } else {
+                guard let budgetID = selectedBudgetID,
+                      let targetBudget = context.object(with: budgetID) as? Budget else {
+                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
+                }
+                existing.isGlobal = false
+                existing.budget = targetBudget
+            }
         } else {
-            item = PlannedExpense(context: context)
-            item.id = item.id ?? UUID()
-        }
+            guard let budgetID = selectedBudgetID,
+                  let targetBudget = context.object(with: budgetID) as? Budget else {
+                throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
+            }
 
-        item.descriptionText = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        item.plannedAmount = plannedAmt
-        item.actualAmount = actualAmt
-        item.transactionDate = transactionDate
-        item.isGlobal = saveAsGlobalPreset
-        item.budget = targetBudget
+            let trimmed = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if saveAsGlobalPreset {
+                // Create a global parent template
+                let parent = PlannedExpense(context: context)
+                parent.id = parent.id ?? UUID()
+                parent.descriptionText = trimmed
+                parent.plannedAmount = plannedAmt
+                parent.actualAmount = 0
+                parent.transactionDate = transactionDate
+                parent.isGlobal = true
+                parent.budget = nil
+
+                // Create the child/clone attached to the budget
+                let child = PlannedExpense(context: context)
+                child.id = child.id ?? UUID()
+                child.descriptionText = trimmed
+                child.plannedAmount = plannedAmt
+                child.actualAmount = actualAmt
+                child.transactionDate = transactionDate
+                child.isGlobal = false
+                child.globalTemplateID = parent.id
+                child.budget = targetBudget
+            } else {
+                // Standard single planned expense
+                let item = PlannedExpense(context: context)
+                item.id = item.id ?? UUID()
+                item.descriptionText = trimmed
+                item.plannedAmount = plannedAmt
+                item.actualAmount = actualAmt
+                item.transactionDate = transactionDate
+                item.isGlobal = false
+                item.budget = targetBudget
+            }
+        }
 
         try context.save()
     }

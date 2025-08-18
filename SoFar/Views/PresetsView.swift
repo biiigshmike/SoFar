@@ -233,7 +233,7 @@ final class PresetsViewModel: ObservableObject {
 
             let planned = t.plannedAmount
             let actual = children.reduce(0.0) { $0 + $1.actualAmount }
-            let assignedCount = Set(children.compactMap { $0.budget }).count
+            let assignedCount = children.count
 
             // Next upcoming date among children; safely unwrap optionals
             let futureDates: [Date] = children
