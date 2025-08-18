@@ -106,6 +106,10 @@ final class CardAppearanceStore {
     @objc private func storeChanged(_ note: Notification) {
         guard isSyncEnabled else { return }
         load()
+
+
+        // Propagate the change so views can refresh themes immediately.
+
         NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: nil)
     }
 }

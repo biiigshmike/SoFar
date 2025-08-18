@@ -201,11 +201,14 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 /// so the chosen theme survives app relaunches.
 final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme {
-        didSet { save() }
+        didSet {
+            if !isApplyingRemoteChange { save() }
+        }
     }
 
     private let storageKey = "selectedTheme"
     private let ubiquitousStore = NSUbiquitousKeyValueStore.default
+    private var isApplyingRemoteChange = false
 
     /// Determines if theme syncing is enabled via Settings and iCloud.
     ///
@@ -257,10 +260,13 @@ final class ThemeManager: ObservableObject {
 
     @objc private func storeChanged(_ note: Notification) {
         guard Self.isSyncEnabled else { return }
+        ubiquitousStore.synchronize()
         if let raw = ubiquitousStore.string(forKey: storageKey),
            let theme = AppTheme(rawValue: raw),
            theme != selectedTheme {
+            isApplyingRemoteChange = true
             selectedTheme = theme
+            isApplyingRemoteChange = false
         }
     }
 }
