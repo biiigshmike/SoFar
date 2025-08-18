@@ -108,8 +108,6 @@ struct IncomeView: View {
             selectedRange: .constant(nil)
         ) { config in
             config
-                .startMonth(.distantPast)
-                .endMonth(.distantFuture)
                 .dayView(UBDayView.init)
                 .weekdaysView(UBWeekdaysView.init)
                 .monthLabel(UBMonthLabel.init)
@@ -137,8 +135,6 @@ struct IncomeView: View {
         ) { config in
             // iOS: use library defaults for Day/Weekdays/Month appearances
             config
-                .startMonth(.distantPast)
-                .endMonth(.distantFuture)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
