@@ -107,6 +107,21 @@ final class CardsViewModel: ObservableObject {
         }
     }
 
+    // MARK: refresh()
+    /// Rebuilds the observer to force a manual reload of cards.
+    func refresh() async {
+        guard hasStarted else {
+            startIfNeeded()
+            return
+        }
+
+        observer?.stop()
+        observer = nil
+
+        await CoreDataService.shared.waitUntilStoresLoaded(timeout: 3.0, pollInterval: 0.05)
+        configureAndStartObserver()
+    }
+
     // MARK: configureAndStartObserver()
     /// Builds the fetch request/observer and starts streaming updates.
     private func configureAndStartObserver() {

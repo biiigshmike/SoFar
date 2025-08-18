@@ -51,6 +51,8 @@ struct CardsView: View {
             .animation(.default, value: viewModel.state)
             // MARK: Start observing when view appears
             .onAppear { viewModel.startIfNeeded() }
+            // Pull to refresh to manually reload cards
+            .refreshable { await viewModel.refresh() }
             // MARK: App Toolbar
             .navigationTitle("Cards")
             .toolbar {

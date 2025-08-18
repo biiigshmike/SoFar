@@ -128,6 +128,8 @@ struct BudgetDetailsView: View {
             CoreDataService.shared.ensureLoaded()
             Task { await vm.load() }
         }
+        // Pull to refresh to reload expenses with current filters
+        .refreshable { await vm.refreshRows() }
         .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search"))
         // MARK: Add Sheets
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
