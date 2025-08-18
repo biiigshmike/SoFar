@@ -17,6 +17,7 @@ import CoreData
 struct AddUnplannedExpenseView: View {
 
     // MARK: Inputs
+    let unplannedExpenseID: NSManagedObjectID?
     let allowedCardIDs: Set<NSManagedObjectID>?
     let initialDate: Date?
     let onSaved: () -> Void
@@ -37,14 +38,17 @@ struct AddUnplannedExpenseView: View {
 
 
     // MARK: Init
-    init(allowedCardIDs: Set<NSManagedObjectID>? = nil,
+    init(unplannedExpenseID: NSManagedObjectID? = nil,
+         allowedCardIDs: Set<NSManagedObjectID>? = nil,
          initialDate: Date? = nil,
          onSaved: @escaping () -> Void) {
+        self.unplannedExpenseID = unplannedExpenseID
         self.allowedCardIDs = allowedCardIDs
         self.initialDate = initialDate
         self.onSaved = onSaved
 
         let model = AddUnplannedExpenseViewModel(
+            unplannedExpenseID: unplannedExpenseID,
             allowedCardIDs: allowedCardIDs,
             initialDate: initialDate
         )
@@ -54,7 +58,8 @@ struct AddUnplannedExpenseView: View {
     // MARK: Body
     var body: some View {
         EditSheetScaffold(
-            title: "Add Variable Expense",
+            title: vm.isEditing ? "Edit Variable Expense" : "Add Variable Expense",
+            saveButtonTitle: vm.isEditing ? "Save Changes" : "Save",
             isSaveEnabled: vm.canSave,
             onSave: { trySave() }
         ) {

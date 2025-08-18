@@ -206,6 +206,7 @@ private struct FilterBar: View {
 private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
+    @State private var editingItem: PlannedExpense?
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
@@ -257,8 +258,12 @@ private struct PlannedListFR: View {
                         }
                         .padding(.vertical, 6)
                         .contentShape(Rectangle())
-                        // MARK: Unified swipe → Delete (Edit can be added later)
-                        .unifiedSwipeActions(.deleteOnly, onDelete: { deletePlanned(item) })
+                        // MARK: Unified swipe → Edit & Delete
+                        .unifiedSwipeActions(
+                            .standard,
+                            onEdit: { editingItem = item },
+                            onDelete: { deletePlanned(item) }
+                        )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
@@ -269,6 +274,14 @@ private struct PlannedListFR: View {
                 }
                 .styledList()
             }
+        }
+        .sheet(item: $editingItem) { expense in
+            AddPlannedExpenseView(
+                plannedExpenseID: expense.objectID,
+                preselectedBudgetID: expense.budget?.objectID,
+                onSaved: {}
+            )
+            .environment(\.managedObjectContext, viewContext)
         }
     }
 
@@ -314,6 +327,8 @@ private struct PlannedListFR: View {
 private struct VariableListFR: View {
     @FetchRequest private var rows: FetchedResults<UnplannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
+    private let attachedCards: [Card]
+    @State private var editingItem: UnplannedExpense?
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
@@ -321,6 +336,7 @@ private struct VariableListFR: View {
 
     init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
         self.sort = sort
+        self.attachedCards = attachedCards
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<UnplannedExpense> = NSFetchRequest(entityName: "UnplannedExpense")
@@ -381,8 +397,12 @@ private struct VariableListFR: View {
                         }
                         .padding(.vertical, 6)
                         .contentShape(Rectangle())
-                        // MARK: Unified swipe → Delete (Edit can be added later)
-                        .unifiedSwipeActions(.deleteOnly, onDelete: { deleteUnplanned(item) })
+                        // MARK: Unified swipe → Edit & Delete
+                        .unifiedSwipeActions(
+                            .standard,
+                            onEdit: { editingItem = item },
+                            onDelete: { deleteUnplanned(item) }
+                        )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
 
@@ -398,6 +418,15 @@ private struct VariableListFR: View {
                 }
                 .styledList()
             }
+        }
+        .sheet(item: $editingItem) { expense in
+            AddUnplannedExpenseView(
+                unplannedExpenseID: expense.objectID,
+                allowedCardIDs: Set(attachedCards.map { $0.objectID }),
+                initialDate: expense.transactionDate,
+                onSaved: {}
+            )
+            .environment(\.managedObjectContext, viewContext)
         }
     }
 
