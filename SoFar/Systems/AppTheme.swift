@@ -247,11 +247,17 @@ final class ThemeManager: ObservableObject {
         if isSyncEnabled {
             ubiquitousStore.synchronize()
             if let raw = ubiquitousStore.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
+               let theme = AppTheme(rawValue: raw),
+               theme != selectedTheme {
+                DispatchQueue.main.async { [weak self] in
+                    self?.selectedTheme = theme
+                }
             } else if let raw = UserDefaults.standard.string(forKey: storageKey),
-                      let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
+                      let theme = AppTheme(rawValue: raw),
+                      theme != selectedTheme {
+                DispatchQueue.main.async { [weak self] in
+                    self?.selectedTheme = theme
+                }
             }
 
             if cloudObserver == nil {
@@ -274,8 +280,11 @@ final class ThemeManager: ObservableObject {
 
             // Ensure we use the locally stored theme when sync is disabled.
             if let raw = UserDefaults.standard.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
+               let theme = AppTheme(rawValue: raw),
+               theme != selectedTheme {
+                DispatchQueue.main.async { [weak self] in
+                    self?.selectedTheme = theme
+                }
             }
         }
     }
@@ -294,8 +303,10 @@ final class ThemeManager: ObservableObject {
            let theme = AppTheme(rawValue: raw),
            theme != selectedTheme {
             isApplyingRemoteChange = true
-            selectedTheme = theme
-            isApplyingRemoteChange = false
+            DispatchQueue.main.async { [weak self] in
+                self?.selectedTheme = theme
+                self?.isApplyingRemoteChange = false
+            }
         }
     }
 }
