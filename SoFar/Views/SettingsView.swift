@@ -17,6 +17,7 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -51,6 +52,25 @@ struct SettingsView: View {
                                 Toggle("", isOn: $viewModel.enableHaptics)
                                     .labelsHidden()
                             }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                // MARK: Appearance Card
+                SettingsCard(
+                    iconSystemName: "paintpalette",
+                    title: "Appearance",
+                    subtitle: "Select a colour theme for the app.",
+                ) {
+                    VStack(spacing: 0) {
+                        SettingsRow(title: "Theme") {
+                            Picker("", selection: $themeManager.selectedTheme) {
+                                ForEach(AppTheme.allCases) { theme in
+                                    Text(theme.displayName).tag(theme)
+                                }
+                            }
+                            .labelsHidden()
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -113,7 +133,7 @@ struct SettingsView: View {
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 20)
         }
-        .background(groupedBackground.ignoresSafeArea())
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .navigationTitle("Settings")
     }
 
@@ -128,14 +148,6 @@ struct SettingsView: View {
         #endif
     }
 
-    /// Matches iOS grouped background feel on all platforms.
-    private var groupedBackground: Color {
-        #if os(macOS)
-        return Color(nsColor: .clear)
-        #else
-        return Color(.clear)
-        #endif
-    }
 }
 
 // MARK: - Platform-Safe Modifiers

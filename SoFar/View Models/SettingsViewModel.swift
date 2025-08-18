@@ -56,39 +56,20 @@ final class SettingsViewModel: ObservableObject {
 // MARK: - Cross-Platform Colors
 /// iOS has `UIColor.secondarySystemBackground/tertiarySystemBackground`; macOS does not.
 /// These helpers map to sensible AppKit equivalents so our views compile everywhere.
-extension Color {
-    static var sfSecondaryBackground: Color {
-        #if os(macOS)
-        return Color(nsColor: .controlBackgroundColor)
-        #else
-        return Color(UIColor.secondarySystemBackground)
-        #endif
-    }
-
-    static var sfTertiaryBackground: Color {
-        #if os(macOS)
-        return Color(nsColor: .windowBackgroundColor)
-        #else
-        return Color(UIColor.tertiarySystemBackground)
-        #endif
-    }
-}
-
 // MARK: - SettingsIcon
 /// Rounded square icon that mimics iOS Settings iconography.
 /// - Parameters:
 ///   - systemName: SFSymbol name (e.g., "gearshape").
 ///   - tint: Foreground tint; defaults to primary.
-///   - background: Background fill; adapts to platform + theme.
 struct SettingsIcon: View {
     let systemName: String
     var tint: Color = .primary
-    var background: Color = .sfSecondaryBackground
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(background)
+                .fill(themeManager.selectedTheme.secondaryBackground)
             Image(systemName: systemName)
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(tint)
@@ -111,6 +92,7 @@ struct SettingsCard<Content: View>: View {
     let title: String
     let subtitle: String
     @ViewBuilder var content: Content
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -132,13 +114,13 @@ struct SettingsCard<Content: View>: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.sfSecondaryBackground)
+                    .fill(themeManager.selectedTheme.secondaryBackground)
             )
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.sfTertiaryBackground)
+                .fill(themeManager.selectedTheme.tertiaryBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
