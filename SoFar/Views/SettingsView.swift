@@ -132,7 +132,9 @@ struct SettingsView: View {
             .frame(maxWidth: maxReadableWidth)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 20)
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
