@@ -64,6 +64,8 @@ struct IncomeView: View {
         }
         // Keep list in sync without deprecated APIs
         .modifier(SelectionChangeHandler(viewModel: viewModel))
+        // Pull to refresh to reload entries for the selected day
+        .refreshable { viewModel.reloadForSelectedDay() }
         // MARK: Present Add Income Form
         .sheet(isPresented: $isPresentingAddIncome, onDismiss: {
             // Reload entries for the selected day after adding/saving

@@ -78,6 +78,8 @@ struct PresetsView: View {
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange)) { _ in
                 viewModel.loadTemplates(using: viewContext)
             }
+            // Pull to refresh to force reload of templates
+            .refreshable { viewModel.loadTemplates(using: viewContext) }
             // MARK: Add Preset Sheet
             .sheet(isPresented: $isPresentingAddSheet) {
                 AddGlobalPlannedExpenseSheet(onSaved: {
