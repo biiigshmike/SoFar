@@ -111,7 +111,9 @@ struct IncomeEditorView: View {
             Section {
                 TextField("Source (e.g., Paycheck, Side Gig)", text: $form.source)
                     .ub_noAutoCapsAndCorrection()   // cross-platform fix
-                
+                    .multilineTextAlignment(.leading)
+                    .ub_formTextFieldLeading()
+
                 amountField
                 DatePicker("Date", selection: $form.date, displayedComponents: .date)
                 
@@ -176,11 +178,18 @@ struct IncomeEditorView: View {
     // MARK: Amount Field
     /// Right-aligned numeric entry with decimal keyboard on iOS; cross-platform safe.
     private var amountField: some View {
-        HStack {
-            Text("Amount")
-            Spacer()
+        if #available(iOS 15.0, macOS 12.0, *) {
+            TextField("", text: $form.amountString, prompt: Text("0.00"))
+                .multilineTextAlignment(.leading)
+                .ub_formTextFieldLeading()
+                .submitLabel(.done)
+            #if os(iOS)
+                .keyboardType(.decimalPad)
+            #endif
+        } else {
             TextField("0.00", text: $form.amountString)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
+                .ub_formTextFieldLeading()
                 .submitLabel(.done)
             #if os(iOS)
                 .keyboardType(.decimalPad)

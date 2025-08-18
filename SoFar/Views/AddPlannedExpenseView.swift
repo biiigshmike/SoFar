@@ -110,16 +110,16 @@ struct AddPlannedExpenseView: View {
                         // Align text to the leading edge and make the field
                         // expand to fill available row width.  Without this,
                         // macOS tends to shrink the field and right‑align the
-                        // placeholder.  The frame ensures left alignment on
+                        // placeholder.  The modifier ensures left alignment on
                         // all platforms.
-//                        .multilineTextAlignment(.leading)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Expense Description")
                 } else {
                     TextField("e.g., groceries", text: $vm.descriptionText)
                         .ub_noAutoCapsAndCorrection()
-//                        .multilineTextAlignment(.leading)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Expense Description")
                 }
             }
@@ -130,13 +130,13 @@ struct AddPlannedExpenseView: View {
                     TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Planned Amount")
                 } else {
                     TextField("e.g., 25.00", text: $vm.plannedAmountString)
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Planned Amount")
                 }
             }
@@ -147,13 +147,13 @@ struct AddPlannedExpenseView: View {
                     TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Actual Amount")
                 } else {
                     TextField("102.50", text: $vm.actualAmountString)
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .ub_formTextFieldLeading()
                         .accessibilityLabel("Actual Amount")
                 }
             }

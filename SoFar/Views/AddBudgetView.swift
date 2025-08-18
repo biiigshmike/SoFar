@@ -110,7 +110,7 @@ struct AddBudgetView: View {
                 )
                 .ub_noAutoCapsAndCorrection()
                 .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .ub_formTextFieldLeading()
                 .accessibilityLabel("Budget Name")
             }
 

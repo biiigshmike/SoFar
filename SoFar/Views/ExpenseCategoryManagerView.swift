@@ -263,8 +263,8 @@ struct ExpenseCategoryEditorSheet: View {
                 // Use an empty label to align the field correctly in the form row.
                 TextField("", text: $name, prompt: Text("e.g., Groceries"))
                     .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .ub_noAutoCapsAndCorrection()
+                    .ub_formTextFieldLeading()
             }
 
             // Color picker
