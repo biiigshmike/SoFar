@@ -14,6 +14,13 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     case classic
     case midnight
     case forest
+    case sunset
+    case nebula
+    case ocean
+    case sunrise
+    case blossom
+    case lavender
+    case mint
 
     var id: String { rawValue }
 
@@ -23,6 +30,13 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .classic: return "Classic"
         case .midnight: return "Midnight"
         case .forest: return "Forest"
+        case .sunset: return "Sunset"
+        case .nebula: return "Nebula"
+        case .ocean: return "Ocean"
+        case .sunrise: return "Sunrise"
+        case .blossom: return "Blossom"
+        case .lavender: return "Lavender"
+        case .mint: return "Mint"
         }
     }
 
@@ -32,6 +46,13 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .classic: return .blue
         case .midnight: return .purple
         case .forest: return .green
+        case .sunset: return .orange
+        case .nebula: return .pink
+        case .ocean: return Color(red: 0.0, green: 0.6, blue: 0.7)
+        case .sunrise: return .yellow
+        case .blossom: return Color(red: 1.0, green: 0.4, blue: 0.7)
+        case .lavender: return .purple
+        case .mint: return Color(red: 0.0, green: 0.7, blue: 0.5)
         }
     }
 
@@ -54,6 +75,20 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color.black
         case .forest:
             return Color(red: 0.05, green: 0.14, blue: 0.10)
+        case .sunset:
+            return Color(red: 0.12, green: 0.05, blue: 0.02)
+        case .nebula:
+            return Color(red: 0.05, green: 0.02, blue: 0.10)
+        case .ocean:
+            return Color(red: 0.90, green: 0.95, blue: 1.0)
+        case .sunrise:
+            return Color(red: 1.0, green: 0.95, blue: 0.90)
+        case .blossom:
+            return Color(red: 1.0, green: 0.95, blue: 0.98)
+        case .lavender:
+            return Color(red: 0.95, green: 0.94, blue: 1.0)
+        case .mint:
+            return Color(red: 0.93, green: 1.0, blue: 0.94)
         }
     }
 
@@ -76,6 +111,20 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.15, green: 0.15, blue: 0.18)
         case .forest:
             return Color(red: 0.09, green: 0.20, blue: 0.15)
+        case .sunset:
+            return Color(red: 0.18, green: 0.09, blue: 0.04)
+        case .nebula:
+            return Color(red: 0.10, green: 0.04, blue: 0.18)
+        case .ocean:
+            return Color(red: 0.80, green: 0.90, blue: 0.95)
+        case .sunrise:
+            return Color(red: 1.0, green: 0.90, blue: 0.85)
+        case .blossom:
+            return Color(red: 1.0, green: 0.90, blue: 0.95)
+        case .lavender:
+            return Color(red: 0.90, green: 0.88, blue: 0.98)
+        case .mint:
+            return Color(red: 0.88, green: 0.98, blue: 0.90)
         }
     }
 
@@ -98,15 +147,29 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.12, green: 0.12, blue: 0.15)
         case .forest:
             return Color(red: 0.07, green: 0.16, blue: 0.12)
+        case .sunset:
+            return Color(red: 0.15, green: 0.08, blue: 0.03)
+        case .nebula:
+            return Color(red: 0.08, green: 0.03, blue: 0.15)
+        case .ocean:
+            return Color(red: 0.70, green: 0.85, blue: 0.95)
+        case .sunrise:
+            return Color(red: 0.98, green: 0.85, blue: 0.80)
+        case .blossom:
+            return Color(red: 0.98, green: 0.85, blue: 0.92)
+        case .lavender:
+            return Color(red: 0.85, green: 0.83, blue: 0.95)
+        case .mint:
+            return Color(red: 0.83, green: 0.95, blue: 0.86)
         }
     }
 
     /// Preferred system colour scheme for the theme.
     var colorScheme: ColorScheme {
         switch self {
-        case .classic:
+        case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
             return .light
-        case .midnight, .forest:
+        case .midnight, .forest, .sunset, .nebula:
             return .dark
         }
     }
