@@ -111,24 +111,6 @@ extension View {
         }
     }
 
-    // MARK: ub_formTextFieldLeading()
-    /// Ensures `TextField`s inside `Form` rows align to the leading edge on macOS.
-    /// SwiftUI forms on macOS reserve space for a label column and push controls
-    /// to the trailing side. Wrapping the field in an `HStack` with a trailing
-    /// spacer lets the field expand full‑width and match the left alignment seen
-    /// on iOS and iPadOS. On other platforms this is a no‑op.
-    @ViewBuilder
-    func ub_formTextFieldLeading() -> some View {
-        #if os(macOS)
-        HStack {
-            self.frame(maxWidth: .infinity, alignment: .leading)
-            Spacer(minLength: 0)
-        }
-        #else
-        self
-        #endif
-    }
-
     // MARK: ub_sheetPadding()
     /// Adds a subtle inner padding around sheet content on macOS.  On other
     /// platforms this returns `self` unchanged.  Use this at the end of your
