@@ -90,7 +90,8 @@ struct IncomeView: View {
             )
         }
         .onAppear {
-            // Initial load (today or previously selected date)
+            // Ensure the calendar opens on today's date and load entries
+            if viewModel.selectedDate == nil { viewModel.selectedDate = Date() }
             viewModel.load(day: viewModel.selectedDate ?? Date())
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
@@ -101,6 +102,9 @@ struct IncomeView: View {
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
     @ViewBuilder
     private var calendarSection: some View {
+        let today = Date()
+        let start = Calendar.current.date(byAdding: .year, value: -5, to: today)!
+        let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
         #if os(macOS)
         // macOS: attach the configuration closure directly to the call
         MCalendarView(
@@ -111,6 +115,9 @@ struct IncomeView: View {
                 .dayView(UBDayView.init)
                 .weekdaysView(UBWeekdaysView.init)
                 .monthLabel(UBMonthLabel.init)
+                .startMonth(start)
+                .endMonth(end)
+                .scrollTo(date: today)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -123,7 +130,7 @@ struct IncomeView: View {
         // MARK: Double-click calendar to add income (macOS)
         .simultaneousGesture(
             TapGesture(count: 2).onEnded {
-                addIncomeInitialDate = viewModel.selectedDate ?? Date()
+                addIncomeInitialDate = viewModel.selectedDate ?? today
                 isPresentingAddIncome = true
             }
         )
@@ -133,8 +140,11 @@ struct IncomeView: View {
             selectedDate: $viewModel.selectedDate,
             selectedRange: .constant(nil)
         ) { config in
-            // iOS: use library defaults for Day/Weekdays/Month appearances
             config
+                .monthLabel(UBMonthLabel.init)
+                .startMonth(start)
+                .endMonth(end)
+                .scrollTo(date: today)
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
