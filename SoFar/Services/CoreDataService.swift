@@ -24,8 +24,10 @@ final class CoreDataService: ObservableObject {
     /// IMPORTANT: Ensure your model is named "SoFarModel.xcdatamodeld".
     private let modelName = "SoFarModel"
     
-    /// Flip this to true later when we’re ready to enable CloudKit store options & entitlements.
-    private let enableCloudKitSync = true
+    /// Determines whether CloudKit-backed sync is enabled via user settings.
+    private var enableCloudKitSync: Bool {
+        UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+    }
     
     // MARK: Load State
     /// Tracks whether persistent stores have been loaded at least once.

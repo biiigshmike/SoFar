@@ -76,6 +76,31 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
+                // MARK: Sync Card
+                SettingsCard(
+                    iconSystemName: "icloud",
+                    title: "Sync",
+                    subtitle: "Control theme syncing and iCloud use.",
+                ) {
+                    VStack(spacing: 0) {
+                        SettingsRow(title: "Sync Card Themes Across Devices") {
+                            Toggle("", isOn: $viewModel.syncCardThemes)
+                                .labelsHidden()
+                        }
+
+                        SettingsRow(title: "Sync App Theme Across Devices") {
+                            Toggle("", isOn: $viewModel.syncAppTheme)
+                                .labelsHidden()
+                        }
+
+                        SettingsRow(title: "Enable iCloud Sync") {
+                            Toggle("", isOn: $viewModel.enableCloudSync)
+                                .labelsHidden()
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
                 // MARK: Calendar Card
                 SettingsCard(
                     iconSystemName: "calendar",
