@@ -27,6 +27,13 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
+
+
+
+import SwiftUI
 
 // MARK: - EditSheetScaffold
 /// Generic wrapper that provides a consistent edit sheet layout and controls.
@@ -40,6 +47,11 @@ import SwiftUI
 ///   - onSave: Return `true` to dismiss the sheet, `false` to keep it open (e.g., validation failed).
 ///   - content: The form/body of your editor.
 struct EditSheetScaffold<Content: View>: View {
+    
+#if os(macOS)
+@State private var previousTextFieldAlignment: NSTextAlignment? = nil
+#endif
+
 
     // MARK: Inputs
     let title: String

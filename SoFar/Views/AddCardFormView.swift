@@ -118,11 +118,16 @@ struct AddCardFormView: View {
                 if #available(iOS 15.0, macOS 12.0, *) {
                     TextField("", text: $cardName, prompt: Text("Apple Card"))
                         .ub_noAutoCapsAndCorrection()
+                        // Align to the leading edge and expand to fill the row
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .submitLabel(.done)
                         .accessibilityLabel("Card Name")
                 } else {
                     TextField("e.g., Apple Card", text: $cardName)
                         .ub_noAutoCapsAndCorrection()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .submitLabel(.done)
                         .accessibilityLabel("Card Name")
                 }
