@@ -30,7 +30,7 @@ struct RootTabView: View {
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) {
+        .onChange(of: themeManager.selectedTheme) { 
             updateTabBarAppearance()
         }
     }
@@ -38,13 +38,15 @@ struct RootTabView: View {
     /// Ensures the tab bar always matches the current theme and hides the default top border.
     private func updateTabBarAppearance() {
         #if canImport(UIKit)
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
-        appearance.shadowColor = .clear
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-        UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
+        DispatchQueue.main.async {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+            appearance.shadowColor = .clear
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+            UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
+        }
         #endif
     }
 }
