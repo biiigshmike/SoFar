@@ -87,6 +87,8 @@ struct EditSheetScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             Form { content }
+                .ub_formStyleGrouped()
+                .applyIfAvailableScrollContentBackgroundHidden()
                 .navigationTitle(title)
                 .toolbar {
                     // MARK: Cancel
@@ -108,6 +110,8 @@ struct EditSheetScaffold<Content: View>: View {
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .preferredColorScheme(themeManager.selectedTheme.colorScheme)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
@@ -116,5 +120,18 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(macOS)
         .frame(minWidth: 680)
         #endif
+    }
+}
+
+// MARK: - Availability Helpers
+private extension View {
+    /// Hides list background on supported OS versions; no-ops on older targets.
+    @ViewBuilder
+    func applyIfAvailableScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }
