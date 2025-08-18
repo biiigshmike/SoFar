@@ -29,13 +29,9 @@ struct RootTabView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .onAppear {
+        .onAppear(perform: updateTabBarAppearance)
+        .onChange(of: themeManager.selectedTheme) {
             updateTabBarAppearance()
-            updateNavigationBarAppearance()
-        }
-        .onChange(of: themeManager.selectedTheme) { _ in
-            updateTabBarAppearance()
-            updateNavigationBarAppearance()
         }
     }
 
@@ -49,21 +45,6 @@ struct RootTabView: View {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
-        #endif
-    }
-
-    /// Applies the current theme to the navigation bar so changes take effect immediately.
-    private func updateNavigationBarAppearance() {
-        #if canImport(UIKit)
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
-        appearance.titleTextAttributes = [.foregroundColor: UIColor(themeManager.selectedTheme.accent)]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor(themeManager.selectedTheme.accent)]
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
         #endif
     }
 }
