@@ -2,12 +2,29 @@
 //  IncomeCalendarPalette_v2.swift
 //  SoFar
 //
-//  macOS-only custom views for MijickCalendarView using the package protocols.
-//  Forces high-contrast black/white styling to match iOS behavior.
+//  Custom views for MijickCalendarView.
+//  Provides a shared MonthLabel and macOS-specific day/weekday styling.
 //
 
 import SwiftUI
 import MijickCalendarView
+
+// MARK: - Month title (e.g., "August 2025")
+struct UBMonthLabel: MonthLabel {
+    // Required attribute (from MonthLabel)
+    let month: Date
+
+    @Environment(\.colorScheme) private var scheme
+
+    func createContent() -> AnyView {
+        let base = scheme == .dark ? Color.white : Color.black
+        return AnyView(
+            Text(getString(format: "MMMM y"))
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(base)
+        )
+    }
+}
 
 #if os(macOS)
 
@@ -73,26 +90,9 @@ struct UBWeekdayLabel: WeekdayLabel {
 
 // MARK: - Weekdays row
 struct UBWeekdaysView: WeekdaysView {
-    func createContent() -> AnyView { AnyView(createWeekdaysView()) } // provided helper :contentReference[oaicite:10]{index=10}
+    func createContent() -> AnyView { AnyView(createWeekdaysView()) }
     func createWeekdayLabel(_ weekday: MWeekday) -> AnyWeekdayLabel {
-        UBWeekdayLabel(weekday: weekday).erased()                      // helper from WeekdayLabel :contentReference[oaicite:11]{index=11}
-    }
-}
-
-// MARK: - Month title (e.g., "August 2025")
-struct UBMonthLabel: MonthLabel {
-    // Required attribute (from MonthLabel) :contentReference[oaicite:12]{index=12}
-    let month: Date
-
-    @Environment(\.colorScheme) private var scheme
-
-    func createContent() -> AnyView {
-        let base = scheme == .dark ? Color.white : Color.black
-        return AnyView(
-            Text(getString(format: "MMMM y"))  // helper from MonthLabel :contentReference[oaicite:13]{index=13}
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(base)
-        )
+        UBWeekdayLabel(weekday: weekday).erased()
     }
 }
 
