@@ -90,6 +90,8 @@ struct IncomeView: View {
             )
         }
         .onAppear {
+            // Allow navigation into past months by extending the calendar's start date
+            MCalendar.startDate = Date.distantPast.start(of: .month)
             // Initial load (today or previously selected date)
             viewModel.load(day: viewModel.selectedDate ?? Date())
         }
