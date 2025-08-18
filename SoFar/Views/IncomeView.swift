@@ -27,7 +27,6 @@ struct IncomeView: View {
     @State private var editingIncomeObjectID: NSManagedObjectID? = nil
 
     // MARK: Environment
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -116,7 +115,7 @@ struct IncomeView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .fill(themeManager.selectedTheme.secondaryBackground)
         )
         .accessibilityIdentifier("IncomeCalendar")
         // MARK: Double-click calendar to add income (macOS)
@@ -140,7 +139,7 @@ struct IncomeView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .fill(themeManager.selectedTheme.secondaryBackground)
         )
         .accessibilityIdentifier("IncomeCalendar")
         #endif
@@ -166,7 +165,7 @@ struct IncomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
     }
@@ -219,7 +218,7 @@ struct IncomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
     }
