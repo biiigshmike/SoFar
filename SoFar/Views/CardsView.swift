@@ -26,6 +26,7 @@ struct CardsView: View {
 
     // MARK: State & Dependencies
     @StateObject private var viewModel = CardsViewModel()
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
 
@@ -107,6 +108,7 @@ struct CardsView: View {
                     onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
                 )
             }
+            .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 
     // MARK: - Content View (Type-Safe)

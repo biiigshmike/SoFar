@@ -29,6 +29,7 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
@@ -91,6 +92,7 @@ struct IncomeView: View {
             // Initial load (today or previously selected date)
             viewModel.load(day: viewModel.selectedDate ?? Date())
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 
     // MARK: - Calendar Section

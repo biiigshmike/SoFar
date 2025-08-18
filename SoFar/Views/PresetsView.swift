@@ -15,6 +15,7 @@ import CoreData
 struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -85,8 +86,8 @@ struct PresetsView: View {
                 .environment(\.managedObjectContext, viewContext)
                 .presentationDetents([.medium, .large])
             }
-            
         }
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 
     // MARK: - Actions
