@@ -30,7 +30,9 @@ struct RootTabView: View {
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { _ in updateTabBarAppearance() }
+        .onChange(of: themeManager.selectedTheme) {
+            updateTabBarAppearance()
+        }
     }
 
     /// Ensures the tab bar always matches the current theme and hides the default top border.

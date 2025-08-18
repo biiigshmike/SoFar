@@ -67,7 +67,11 @@ struct ExpenseCategoryManagerView: View {
             }
             .listRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
+        #if os(macOS)
+        .listStyle(.inset)
+        #else
         .listStyle(.insetGrouped)
+        #endif
         .applyIfAvailableScrollContentBackgroundHidden()
         .navigationTitle("Manage Categories")
         .toolbar {
