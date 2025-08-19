@@ -16,6 +16,7 @@ import CoreData
 ///
 /// Methods:
 /// - `save(in:)` → creates/updates an `Income` managed object
+@MainActor
 final class AddIncomeFormViewModel: ObservableObject {
 
     // MARK: Inputs / Identity
