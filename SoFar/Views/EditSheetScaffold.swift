@@ -31,10 +31,6 @@ import SwiftUI
 import AppKit
 #endif
 
-
-
-import SwiftUI
-
 // MARK: - EditSheetScaffold
 /// Generic wrapper that provides a consistent edit sheet layout and controls.
 /// - Parameters:
@@ -98,28 +94,57 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: body
     var body: some View {
         NavigationStack {
-            Form { content }
-                .navigationTitle(title)
-                .toolbar {
-                    // MARK: Cancel
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(cancelButtonTitle) {
-                            onCancel?()
-                            dismiss()
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Form { content }
+                    .scrollContentBackground(.hidden)
+                    .background(themeManager.selectedTheme.background)
+                    .navigationTitle(title)
+                    .toolbar {
+                        // MARK: Cancel
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(cancelButtonTitle) {
+                                onCancel?()
+                                dismiss()
+                            }
+                            .tint(themeManager.selectedTheme.accent)
+                        }
+                        // MARK: Save
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(saveButtonTitle) {
+                                if onSave() { dismiss() }
+                            }
+                            .tint(themeManager.selectedTheme.accent)
+                            .disabled(!isSaveEnabled)
                         }
                     }
-                    // MARK: Save
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(saveButtonTitle) {
-                            if onSave() { dismiss() }
+            } else {
+                Form { content }
+                    .background(themeManager.selectedTheme.background)
+                    .navigationTitle(title)
+                    .toolbar {
+                        // MARK: Cancel
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(cancelButtonTitle) {
+                                onCancel?()
+                                dismiss()
+                            }
+                            .tint(themeManager.selectedTheme.accent)
                         }
-                        .disabled(!isSaveEnabled)
+                        // MARK: Save
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(saveButtonTitle) {
+                                if onSave() { dismiss() }
+                            }
+                            .tint(themeManager.selectedTheme.accent)
+                            .disabled(!isSaveEnabled)
+                        }
                     }
-                }
+            }
         }
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
+        .background(themeManager.selectedTheme.background)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
