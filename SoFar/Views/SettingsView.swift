@@ -39,7 +39,7 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "gearshape",
                     title: "General",
-                    subtitle: "Manage the app’s behavior, confirmations, and feedback."
+                    subtitle: "Manage behavior, confirmations, and feedback."
                 ) {
                     VStack(spacing: 0) {
                         SettingsRow(title: "Confirm Before Deleting") {
@@ -72,10 +72,14 @@ struct SettingsView: View {
                 // MARK: Sync Card
                 SettingsCard(
                     iconSystemName: "icloud",
-                    title: "Sync",
-                    subtitle: "Control theme syncing and iCloud use.",
+                    title: "iCloud Services",
+                    subtitle: "Sync your data and settings across your devices signed into the same iCloud account.",
                 ) {
                     VStack(spacing: 0) {
+                        SettingsRow(title: "Enable iCloud Sync") {
+                            Toggle("", isOn: $viewModel.enableCloudSync)
+                                .labelsHidden()
+                        }
                         SettingsRow(title: "Sync Card Themes Across Devices") {
                             Toggle("", isOn: $viewModel.syncCardThemes)
                                 .labelsHidden()
@@ -85,35 +89,30 @@ struct SettingsView: View {
                             Toggle("", isOn: $viewModel.syncAppTheme)
                                 .labelsHidden()
                         }
-
-                        SettingsRow(title: "Enable iCloud Sync") {
-                            Toggle("", isOn: $viewModel.enableCloudSync)
-                                .labelsHidden()
-                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
-                // MARK: Calendar Card
-                SettingsCard(
-                    iconSystemName: "calendar",
-                    title: "Calendar",
-                    subtitle: "Choose how your income calendar is presented."
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Horizontal Scrolling") {
-                            Toggle("", isOn: $viewModel.calendarHorizontal)
-                                .labelsHidden()
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
+//                // MARK: Calendar Card
+//                SettingsCard(
+//                    iconSystemName: "calendar",
+//                    title: "Calendar",
+//                    subtitle: "Choose how your income calendar is presented."
+//                ) {
+//                    VStack(spacing: 0) {
+//                        SettingsRow(title: "Horizontal Scrolling") {
+//                            Toggle("", isOn: $viewModel.calendarHorizontal)
+//                                .labelsHidden()
+//                        }
+//                    }
+//                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+//                }
 
                 // MARK: Presets Card
                 SettingsCard(
                     iconSystemName: "list.bullet.rectangle",
                     title: "Presets",
-                    subtitle: "Defaults applied when adding from Presets."
+                    subtitle: "Planned Expenses default to being created as a Preset Planned Expense."
                 ) {
                     VStack(spacing: 0) {
                         SettingsRow(title: "Use in Future Budgets by Default") {
@@ -128,7 +127,7 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "tag",
                     title: "Expense Categories",
-                    subtitle: "Create, rename, reorder, and color your categories."
+                    subtitle: "Manage expense categories for Variable Expenses."
                 ) {
                     VStack(spacing: 0) {
                         NavigationLink {
