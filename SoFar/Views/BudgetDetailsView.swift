@@ -55,7 +55,7 @@ struct BudgetDetailsView: View {
                 }
 
                 if let summary = vm.summary {
-                    SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
+                    SummarySection(summary: summary)
                 }
 
                 // MARK: Segment Picker
@@ -166,7 +166,6 @@ struct BudgetDetailsView: View {
 // MARK: - SummarySection
 private struct SummarySection: View {
     let summary: BudgetSummary
-    let selectedSegment: BudgetDetailsViewModel.Segment
 
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
 
@@ -191,51 +190,40 @@ private struct SummarySection: View {
                 .padding(.top, 6)
             }
 
-            HStack(alignment: .top, spacing: DS.Spacing.l) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedSegment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    Text(
-                        selectedSegment == .planned ? summary.plannedExpensesPlannedTotal : summary.variableExpensesTotal,
-                        format: .currency(code: currencyCode)
-                    )
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: 12) {
+                Grid(horizontalSpacing: 20, verticalSpacing: 10) {
+                    GridRow {
+                        metric(title: "PLANNED EXPENSES", value: summary.plannedExpensesPlannedTotal, tint: .primary)
+                        metric(title: "VARIABLE EXPENSES", value: summary.variableExpensesTotal, tint: .primary)
+                    }
 
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    HStack(alignment: .top, spacing: DS.Spacing.l) {
-                        compactMetric(title: "PLANNED INCOME", value: summary.plannedIncomeTotal, tint: DS.Colors.plannedIncome)
-                        compactMetric(title: "PLANNED SAVINGS", value: summary.plannedSavingsTotal, tint: DS.Colors.savingsGood)
+                    GridRow {
+                        metric(title: "PLANNED INCOME", value: summary.plannedIncomeTotal, tint: DS.Colors.plannedIncome)
+                        metric(title: "ACTUAL INCOME", value: summary.actualIncomeTotal, tint: DS.Colors.actualIncome)
                     }
-                    HStack(alignment: .top, spacing: DS.Spacing.l) {
-                        compactMetric(title: "ACTUAL INCOME", value: summary.actualIncomeTotal, tint: DS.Colors.actualIncome)
-                        compactMetric(
-                            title: "SAVINGS... SO FAR",
-                            value: summary.actualSavingsTotal,
-                            tint: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
-                        )
+
+                    GridRow {
+                        metric(title: "PLANNED SAVINGS", value: summary.plannedSavingsTotal, tint: DS.Colors.savingsGood)
+                        metric(title: "SAVINGS... SO FAR", value: summary.actualSavingsTotal, tint: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.top, DS.Spacing.s)
         }
     }
 
-    private func compactMetric(title: String, value: Double, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func metric(title: String, value: Double, tint: Color) -> some View {
+        VStack(spacing: 4) {
             Text(title)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
             Text(value, format: .currency(code: currencyCode))
-                .font(.body.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(tint)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
