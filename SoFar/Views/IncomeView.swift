@@ -117,7 +117,11 @@ struct IncomeView: View {
                 Button(">") { goToNextDay() }
                 Button(">>") { goToNextMonth() }
             }
+#if os(macOS)
+            .buttonStyle(.borderedProminent)
+#else
             .buttonStyle(.bordered)
+#endif
             .accentColor(themeManager.selectedTheme.accent)
             .tint(themeManager.selectedTheme.accent)
             .font(.subheadline)
