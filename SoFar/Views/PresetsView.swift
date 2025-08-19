@@ -218,7 +218,6 @@ struct PresetListItem: Identifiable, Equatable {
 
 // MARK: - PresetsViewModel
 /// Loads global PlannedExpense templates and composes row items.
-@MainActor
 final class PresetsViewModel: ObservableObject {
     // MARK: Published
     @Published private(set) var items: [PresetListItem] = []
