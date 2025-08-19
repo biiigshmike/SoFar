@@ -51,21 +51,17 @@ final class MotionMonitor: ObservableObject {
     func start() {
         provider.start { [weak self] r, p, y in
             guard let self else { return }
-            // Ensure all published values are updated on the main actor even if
-            // the motion provider calls back on a background thread.
-            Task { @MainActor in
-                self.roll = r
-                self.pitch = p
-                self.yaw = y
+            self.roll = r
+            self.pitch = p
+            self.yaw = y
 
-                // Scale amplitude down first (gentler background).
-                let targetR = r * self.amplitudeScale
-                let targetP = p * self.amplitudeScale
+            // Scale amplitude down first (gentler background).
+            let targetR = r * self.amplitudeScale
+            let targetP = p * self.amplitudeScale
 
-                // Exponential smoothing: new = old + α * (target - old)
-                self.displayRoll  = self.displayRoll  + self.smoothingAlpha * (targetR - self.displayRoll)
-                self.displayPitch = self.displayPitch + self.smoothingAlpha * (targetP - self.displayPitch)
-            }
+            // Exponential smoothing: new = old + α * (target - old)
+            self.displayRoll  = self.displayRoll  + self.smoothingAlpha * (targetR - self.displayRoll)
+            self.displayPitch = self.displayPitch + self.smoothingAlpha * (targetP - self.displayPitch)
         }
     }
 
