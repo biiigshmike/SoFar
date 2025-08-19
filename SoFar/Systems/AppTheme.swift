@@ -264,14 +264,9 @@ final class ThemeManager: ObservableObject {
         if let raw = ubiquitousStore.string(forKey: storageKey),
            let theme = AppTheme(rawValue: raw),
            theme != selectedTheme {
-            // Changes from iCloud may arrive on a background thread. Ensure
-            // `selectedTheme` is always mutated on the main thread to keep
-            // `@Published` updates safe.
-            DispatchQueue.main.async {
-                self.isApplyingRemoteChange = true
-                self.selectedTheme = theme
-                self.isApplyingRemoteChange = false
-            }
+            isApplyingRemoteChange = true
+            selectedTheme = theme
+            isApplyingRemoteChange = false
         }
     }
 }
