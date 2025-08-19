@@ -20,6 +20,8 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     // MARK: Identity
     private let plannedExpenseID: NSManagedObjectID?
     let isEditing: Bool
+    /// When false, a budget is optional (used for preset-only creation).
+    private let requiresBudgetSelection: Bool
 
     // MARK: Loaded Data
     @Published private(set) var allBudgets: [Budget] = []
@@ -38,11 +40,13 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     // MARK: Init
     init(plannedExpenseID: NSManagedObjectID? = nil,
          preselectedBudgetID: NSManagedObjectID? = nil,
+         requiresBudgetSelection: Bool = true,
          initialDate: Date? = nil,
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.context = context
         self.plannedExpenseID = plannedExpenseID
         self.isEditing = plannedExpenseID != nil
+        self.requiresBudgetSelection = requiresBudgetSelection
         self.selectedBudgetID = preselectedBudgetID
         if let d = initialDate { self.transactionDate = d }
     }
@@ -62,8 +66,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             saveAsGlobalPreset = existing.isGlobal
             editingOriginalIsGlobal = existing.isGlobal
         } else {
-            // If preselected not provided, default to most-recent budget by start date
-            if selectedBudgetID == nil { selectedBudgetID = allBudgets.first?.objectID }
+            // If preselected not provided, default to most-recent budget by start date.
+            // For preset creation where a budget is optional, we intentionally
+            // leave `selectedBudgetID` nil until the user opts to assign one.
+            if requiresBudgetSelection && selectedBudgetID == nil {
+                selectedBudgetID = allBudgets.first?.objectID
+            }
         }
     }
 
@@ -74,9 +82,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         if isEditing && editingOriginalIsGlobal {
             // Editing a parent template does not require selecting a budget.
             return textValid && amountValid
-        } else {
-            return selectedBudgetID != nil && textValid && amountValid
         }
+        if !requiresBudgetSelection && saveAsGlobalPreset {
+            // Adding a new global preset without attaching to a budget.
+            return textValid && amountValid
+        }
+        return selectedBudgetID != nil && textValid && amountValid
     }
 
     // MARK: save()
@@ -104,11 +115,6 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 existing.budget = targetBudget
             }
         } else {
-            guard let budgetID = selectedBudgetID,
-                  let targetBudget = context.object(with: budgetID) as? Budget else {
-                throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
-            }
-
             let trimmed = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if saveAsGlobalPreset {
@@ -122,17 +128,25 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 parent.isGlobal = true
                 parent.budget = nil
 
-                // Create the child/clone attached to the budget
-                let child = PlannedExpense(context: context)
-                child.id = child.id ?? UUID()
-                child.descriptionText = trimmed
-                child.plannedAmount = plannedAmt
-                child.actualAmount = actualAmt
-                child.transactionDate = transactionDate
-                child.isGlobal = false
-                child.globalTemplateID = parent.id
-                child.budget = targetBudget
+                if let budgetID = selectedBudgetID,
+                   let targetBudget = context.object(with: budgetID) as? Budget {
+                    // Optionally create a child attached to a budget if one was selected
+                    let child = PlannedExpense(context: context)
+                    child.id = child.id ?? UUID()
+                    child.descriptionText = trimmed
+                    child.plannedAmount = plannedAmt
+                    child.actualAmount = actualAmt
+                    child.transactionDate = transactionDate
+                    child.isGlobal = false
+                    child.globalTemplateID = parent.id
+                    child.budget = targetBudget
+                }
             } else {
+                guard let budgetID = selectedBudgetID,
+                      let targetBudget = context.object(with: budgetID) as? Budget else {
+                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
+                }
+
                 // Standard single planned expense
                 let item = PlannedExpense(context: context)
                 item.id = item.id ?? UUID()

@@ -18,6 +18,8 @@ struct AddPlannedExpenseView: View {
     let preselectedBudgetID: NSManagedObjectID?
     /// If true, the "Use in future budgets?" toggle will start ON when the view first appears.
     let defaultSaveAsGlobalPreset: Bool
+    /// When true, shows a toggle allowing the user to optionally assign a budget.
+    let showAssignBudgetToggle: Bool
     /// Called after a successful save.
     let onSaved: () -> Void
 
@@ -26,6 +28,7 @@ struct AddPlannedExpenseView: View {
     /// but we keep this in case future platform-specific work needs it.
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: AddPlannedExpenseViewModel
+    @State private var isAssigningToBudget: Bool
 
     /// Guard to apply `defaultSaveAsGlobalPreset` only once on first load.
     @State private var didApplyDefaultGlobal = false
@@ -51,16 +54,20 @@ struct AddPlannedExpenseView: View {
         plannedExpenseID: NSManagedObjectID? = nil,
         preselectedBudgetID: NSManagedObjectID? = nil,
         defaultSaveAsGlobalPreset: Bool = false,
+        showAssignBudgetToggle: Bool = false,
         onSaved: @escaping () -> Void
     ) {
         self.plannedExpenseID = plannedExpenseID
         self.preselectedBudgetID = preselectedBudgetID
         self.defaultSaveAsGlobalPreset = defaultSaveAsGlobalPreset
+        self.showAssignBudgetToggle = showAssignBudgetToggle
         self.onSaved = onSaved
+        _isAssigningToBudget = State(initialValue: !showAssignBudgetToggle)
         _vm = StateObject(
             wrappedValue: AddPlannedExpenseViewModel(
                 plannedExpenseID: plannedExpenseID,
-                preselectedBudgetID: preselectedBudgetID
+                preselectedBudgetID: preselectedBudgetID,
+                requiresBudgetSelection: !showAssignBudgetToggle
             )
         )
     }
@@ -73,25 +80,48 @@ struct AddPlannedExpenseView: View {
             isSaveEnabled: vm.canSave,
             onSave: { trySave() }
         ) {
-            // MARK: Budget Picker (horizontal)
-            UBFormSection("Choose Budget", isUppercased: true) {
-                // Horizontal picker of budgets.  Constrain the height explicitly
-                // so the row doesn’t take up the majority of the sheet on macOS.
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: DS.Spacing.m) {
-                        ForEach(vm.allBudgets, id: \.objectID) { budget in
-                            SelectCard(
-                                title: budget.name ?? "Untitled",
-                                isSelected: vm.selectedBudgetID == budget.objectID
-                            )
-                            .onTapGesture { vm.selectedBudgetID = budget.objectID }
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.l)
+            // MARK: Budget Assignment
+            if showAssignBudgetToggle {
+                UBFormSection("Add to a budget now?", isUppercased: true) {
+                    Toggle("Add to a budget now?", isOn: $isAssigningToBudget)
                 }
-                .frame(height: budgetPickerHeight)
-                .ub_pickerBackground()
-                .ub_hideScrollIndicators()
+                if isAssigningToBudget {
+                    UBFormSection("Choose Budget", isUppercased: true) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            LazyHStack(spacing: DS.Spacing.m) {
+                                ForEach(vm.allBudgets, id: \.objectID) { budget in
+                                    SelectCard(
+                                        title: budget.name ?? "Untitled",
+                                        isSelected: vm.selectedBudgetID == budget.objectID
+                                    )
+                                    .onTapGesture { vm.selectedBudgetID = budget.objectID }
+                                }
+                            }
+                            .padding(.horizontal, DS.Spacing.l)
+                        }
+                        .frame(height: budgetPickerHeight)
+                        .ub_pickerBackground()
+                        .ub_hideScrollIndicators()
+                    }
+                }
+            } else {
+                UBFormSection("Choose Budget", isUppercased: true) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: DS.Spacing.m) {
+                            ForEach(vm.allBudgets, id: \.objectID) { budget in
+                                SelectCard(
+                                    title: budget.name ?? "Untitled",
+                                    isSelected: vm.selectedBudgetID == budget.objectID
+                                )
+                                .onTapGesture { vm.selectedBudgetID = budget.objectID }
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.l)
+                    }
+                    .frame(height: budgetPickerHeight)
+                    .ub_pickerBackground()
+                    .ub_hideScrollIndicators()
+                }
             }
 
             // MARK: Individual Fields
@@ -180,6 +210,13 @@ struct AddPlannedExpenseView: View {
             if !vm.isEditing && !didApplyDefaultGlobal {
                 vm.saveAsGlobalPreset = defaultSaveAsGlobalPreset
                 didApplyDefaultGlobal = true
+            }
+        }
+        .onChange(of: isAssigningToBudget) { newValue in
+            if newValue {
+                vm.selectedBudgetID = vm.allBudgets.first?.objectID
+            } else {
+                vm.selectedBudgetID = nil
             }
         }
         // Apply cross‑platform form styling and sheet padding

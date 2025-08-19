@@ -158,6 +158,7 @@ private struct AddGlobalPlannedExpenseSheet: View {
         AddPlannedExpenseView(
             preselectedBudgetID: nil,
             defaultSaveAsGlobalPreset: true,   // <-- default ON when adding from Presets
+            showAssignBudgetToggle: true,
             onSaved: {
                 onSaved()
                 dismiss()
