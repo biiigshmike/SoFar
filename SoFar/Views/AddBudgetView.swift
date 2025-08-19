@@ -6,7 +6,7 @@
 //  - Name text field
 //  - Start/End date pickers
 //  - Toggle list of Cards to track in this budget
-//  - (ADD only) Toggle list of global Planned Expense presets to clone
+//  - Toggle list of global Planned Expense presets to clone
 //  - Save/Cancel actions (standardized via EditSheetScaffold)
 //
 //  Notes:
@@ -148,26 +148,24 @@ struct AddBudgetView: View {
                 }
             }
 
-            // ---- Preset Planned Expenses (ADD only)
-            if !vm.isEditing {
-                UBFormSection("Preset Planned Expenses", isUppercased: true) {
-                    if vm.globalPlannedExpenseTemplates.isEmpty {
-                        Text("No presets yet. You can add them later.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(vm.globalPlannedExpenseTemplates, id: \.objectID) { template in
-                            let isSelected = Binding(
-                                get: { vm.selectedTemplateObjectIDs.contains(template.objectID) },
-                                set: { newValue in
-                                    if newValue {
-                                        vm.selectedTemplateObjectIDs.insert(template.objectID)
-                                    } else {
-                                        vm.selectedTemplateObjectIDs.remove(template.objectID)
-                                    }
+            // ---- Preset Planned Expenses
+            UBFormSection("Preset Planned Expenses", isUppercased: true) {
+                if vm.globalPlannedExpenseTemplates.isEmpty {
+                    Text("No presets yet. You can add them later.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(vm.globalPlannedExpenseTemplates, id: \.objectID) { template in
+                        let isSelected = Binding(
+                            get: { vm.selectedTemplateObjectIDs.contains(template.objectID) },
+                            set: { newValue in
+                                if newValue {
+                                    vm.selectedTemplateObjectIDs.insert(template.objectID)
+                                } else {
+                                    vm.selectedTemplateObjectIDs.remove(template.objectID)
                                 }
-                            )
-                            Toggle(template.descriptionText ?? "Untitled", isOn: isSelected)
-                        }
+                            }
+                        )
+                        Toggle(template.descriptionText ?? "Untitled", isOn: isSelected)
                     }
                 }
             }
