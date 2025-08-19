@@ -111,21 +111,6 @@ extension View {
         }
     }
 
-    // MARK: ub_sheetPadding()
-    /// Adds a subtle inner padding around sheet content on macOS.  On other
-    /// platforms this returns `self` unchanged.  Use this at the end of your
-    /// sheet view chain to avoid flush edges on macOS sheets without
-    /// duplicating `#if os(macOS)` in every view.
-    func ub_sheetPadding() -> some View {
-        #if os(macOS)
-        return self
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-        #else
-        return self
-        #endif
-    }
-
     // MARK: ub_pickerBackground()
     /// Applies the app’s container background behind a scrollable picker (e.g.
     /// card or budget pickers).  Without a background, horizontal `ScrollView`s
