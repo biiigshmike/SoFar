@@ -46,13 +46,6 @@ struct SettingsView: View {
                             Toggle("", isOn: $viewModel.confirmBeforeDelete)
                                 .labelsHidden()
                         }
-
-                        if viewModel.shouldShowHapticsRow {
-                            SettingsRow(title: "Enable Haptics") {
-                                Toggle("", isOn: $viewModel.enableHaptics)
-                                    .labelsHidden()
-                            }
-                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }

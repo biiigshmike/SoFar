@@ -45,6 +45,8 @@ struct ExpenseCategoryManagerView: View {
     // MARK: UI State
     @State private var isPresentingAddSheet: Bool = false
     @State private var categoryToEdit: ExpenseCategory?
+    @State private var categoryToDelete: ExpenseCategory?
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
     // MARK: - Body
     var body: some View {
@@ -58,7 +60,14 @@ struct ExpenseCategoryManagerView: View {
                         categoryRow(for: category)
                             .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
-                    .onDelete(perform: deleteCategories)
+                    .onDelete { offsets in
+                        let targets = offsets.map { categories[$0] }
+                        if confirmBeforeDelete, let first = targets.first {
+                            categoryToDelete = first
+                        } else {
+                            targets.forEach(deleteCategory(_:))
+                        }
+                    }
                 }
             } header: {
                 Text("Categories")
@@ -104,6 +113,16 @@ struct ExpenseCategoryManagerView: View {
                     category.color = hex
                     saveContext()
                 }
+            )
+        }
+        .alert(item: $categoryToDelete) { cat in
+            Alert(
+                title: Text("Delete \(cat.name ?? "Category")?"),
+                message: Text("This will remove the category."),
+                primaryButton: .destructive(Text("Delete")) {
+                    deleteCategory(cat)
+                },
+                secondaryButton: .cancel()
             )
         }
     }
@@ -176,11 +195,8 @@ struct ExpenseCategoryManagerView: View {
     }
 
     /// Deletes selected categories from the fetch request.
-    private func deleteCategories(at offsets: IndexSet) {
-        for index in offsets {
-            let cat = categories[index]
-            viewContext.delete(cat)
-        }
+    private func deleteCategory(_ cat: ExpenseCategory) {
+        viewContext.delete(cat)
         saveContext()
     }
 

@@ -33,6 +33,9 @@ struct IncomeView: View {
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
+    @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
+    @State private var incomeToDelete: Income? = nil
 
     // MARK: Body
     var body: some View {
@@ -244,6 +247,14 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
+        .alert(item: $incomeToDelete) { income in
+            Alert(
+                title: Text("Delete \(income.source ?? "Income")?"),
+                message: Text("This will remove the income entry."),
+                primaryButton: .destructive(Text("Delete")) { viewModel.delete(income: income) },
+                secondaryButton: .cancel()
+            )
+        }
     }
 
     // MARK: - Calendar Navigation Helpers
@@ -333,7 +344,11 @@ struct IncomeView: View {
     ///   - entries: A snapshot array used by the current `ForEach`.
     private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
-        targets.forEach { viewModel.delete(income: $0) }
+        if confirmBeforeDelete, let first = targets.first {
+            incomeToDelete = first
+        } else {
+            targets.forEach { viewModel.delete(income: $0) }
+        }
     }
 }
 
@@ -346,6 +361,8 @@ private struct IncomeRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
+    @State private var showDeleteAlert = false
 
     // MARK: Body
     var body: some View {
@@ -364,8 +381,18 @@ private struct IncomeRow: View {
         .unifiedSwipeActions(
             UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
             onEdit: onEdit,
-            onDelete: onDelete
+            onDelete: {
+                if confirmBeforeDelete {
+                    showDeleteAlert = true
+                } else {
+                    onDelete()
+                }
+            }
         )
+        .alert("Delete Income?", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) { onDelete() }
+            Button("Cancel", role: .cancel) { }
+        }
     }
 
     // MARK: Helpers

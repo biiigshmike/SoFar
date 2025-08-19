@@ -40,6 +40,7 @@ struct HomeView: View {
         let id: NSManagedObjectID
     }
     @State private var budgetToDelete: BudgetToDelete? = nil
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
     // MARK: Layout Constants
     private let cardMinWidth: CGFloat = 340
@@ -200,7 +201,11 @@ struct HomeView: View {
                                     budgetToEdit = .init(id: summary.id)
                                 }
                                 Button(role: .destructive) {
-                                    budgetToDelete = .init(id: summary.id)
+                                    if confirmBeforeDelete {
+                                        budgetToDelete = .init(id: summary.id)
+                                    } else {
+                                        Task { await vm.deleteBudget(objectID: summary.id) }
+                                    }
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -210,7 +215,11 @@ struct HomeView: View {
                             #if os(iOS) || targetEnvironment(macCatalyst)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
-                                    budgetToDelete = .init(id: summary.id)
+                                    if confirmBeforeDelete {
+                                        budgetToDelete = .init(id: summary.id)
+                                    } else {
+                                        Task { await vm.deleteBudget(objectID: summary.id) }
+                                    }
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }

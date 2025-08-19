@@ -22,6 +22,8 @@ struct PresetsView: View {
     @State private var isPresentingAddSheet = false
     @State private var sheetTemplateToAssign: PlannedExpense? = nil
     @State private var editingTemplate: PlannedExpense? = nil
+    @State private var templateToDelete: PlannedExpense? = nil
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
     // MARK: Body
     var body: some View {
@@ -53,10 +55,23 @@ struct PresetsView: View {
                             .unifiedSwipeActions(
                                 UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                                 onEdit: { editingTemplate = item.template },
-                                onDelete: { delete(template: item.template) }
+                                onDelete: {
+                                    if confirmBeforeDelete {
+                                        templateToDelete = item.template
+                                    } else {
+                                        delete(template: item.template)
+                                    }
+                                }
                             )
                         }
-                        .onDelete(perform: deleteTemplates(_:))
+                        .onDelete { indexSet in
+                            let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
+                            if confirmBeforeDelete, let first = targets.first {
+                                templateToDelete = first
+                            } else {
+                                targets.forEach(delete(template:))
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .applyIfAvailableScrollContentBackgroundHidden()
@@ -110,22 +125,22 @@ struct PresetsView: View {
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .alert(item: $templateToDelete) { template in
+            Alert(
+                title: Text("Delete \(template.descriptionText ?? "Preset")?"),
+                message: Text("This will remove the preset and its assignments."),
+                primaryButton: .destructive(Text("Delete")) {
+                    delete(template: template)
+                },
+                secondaryButton: .cancel()
+            )
+        }
     }
 
     // MARK: - Actions
 
     /// Deletes selected global templates (and their children).
     /// - Parameter indexSet: indices from the List.
-    private func deleteTemplates(_ indexSet: IndexSet) {
-        let targets = indexSet.compactMap { idx in viewModel.items[safe: idx]?.template }
-        for t in targets {
-            PlannedExpenseService.shared.deleteTemplateAndChildren(template: t, in: viewContext)
-        }
-        saveContext()
-        viewModel.loadTemplates(using: viewContext)
-    }
-
-    /// Delete a single template via swipe.
     private func delete(template: PlannedExpense) {
         PlannedExpenseService.shared.deleteTemplateAndChildren(template: template, in: viewContext)
         saveContext()

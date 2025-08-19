@@ -5,7 +5,6 @@ import Foundation
 /// Defaults for new keys are `true` so features are enabled out of the box.
 enum AppSettingsKeys: String {
     case confirmBeforeDelete
-    case enableHaptics
     case calendarHorizontal
     case presetsDefaultUseInFutureBudgets
     case syncCardThemes

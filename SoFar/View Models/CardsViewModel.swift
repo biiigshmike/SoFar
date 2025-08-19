@@ -210,7 +210,12 @@ final class CardsViewModel: ObservableObject {
     // MARK: requestDelete(card:)
     /// Presents confirmation to delete a card.
     func requestDelete(card: CardItem) {
-        alert = CardsViewAlert(kind: .confirmDelete(card: card))
+        let confirm = UserDefaults.standard.bool(forKey: AppSettingsKeys.confirmBeforeDelete.rawValue)
+        if confirm {
+            alert = CardsViewAlert(kind: .confirmDelete(card: card))
+        } else {
+            Task { await confirmDelete(card: card) }
+        }
     }
 
     // MARK: confirmDelete(card:)
