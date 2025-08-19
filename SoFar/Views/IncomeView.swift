@@ -95,10 +95,7 @@ struct IncomeView: View {
             // Ensure the calendar opens on today's date and load entries
             if viewModel.selectedDate == nil { viewModel.selectedDate = Date() }
             let initial = viewModel.selectedDate ?? Date()
-            calendarScrollDate = nil
-            DispatchQueue.main.async {
-                calendarScrollDate = initial
-            }
+            calendarScrollDate = initial
             viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
@@ -256,10 +253,7 @@ struct IncomeView: View {
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
         viewModel.selectedDate = date
-        calendarScrollDate = nil
-        DispatchQueue.main.async {
-            calendarScrollDate = date
-        }
+        calendarScrollDate = date
     }
     /// Scrolls to the first day of the previous month.
     private func goToPreviousMonth() {
