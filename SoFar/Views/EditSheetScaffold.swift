@@ -99,6 +99,8 @@ struct EditSheetScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             Form { content }
+                .textFieldStyle(ThemedTextFieldStyle())
+                .applyIfAvailableScrollContentBackgroundHidden()
                 .navigationTitle(title)
                 .toolbar {
                     // MARK: Cancel
@@ -117,6 +119,8 @@ struct EditSheetScaffold<Content: View>: View {
                     }
                 }
         }
+        .applyIfAvailableToolbarBackground(themeManager.selectedTheme.background)
+        .background(themeManager.selectedTheme.background)
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
@@ -128,5 +132,43 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(macOS)
         .frame(minWidth: 680)
         #endif
+    }
+}
+
+// MARK: - Theming Helpers
+private struct ThemedTextFieldStyle: TextFieldStyle {
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    func _body(configuration: TextField<_Label>) -> some View {
+        configuration
+            .padding(8)
+            .background(themeManager.selectedTheme.secondaryBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(themeManager.selectedTheme.accent, lineWidth: 1)
+            )
+    }
+}
+
+private extension View {
+    /// Hides the underlying `Form` background on supported OS versions so the
+    /// theme's background color can show through.
+    @ViewBuilder
+    func applyIfAvailableScrollContentBackgroundHidden() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            scrollContentBackground(.hidden)
+        } else {
+            self
+        }
+    }
+
+    /// Applies a themed toolbar background when the API is available.
+    @ViewBuilder
+    func applyIfAvailableToolbarBackground(_ color: Color) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            toolbarBackground(color, for: .automatic)
+        } else {
+            self
+        }
     }
 }
