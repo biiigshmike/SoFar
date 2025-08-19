@@ -98,12 +98,28 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: body
     var body: some View {
         NavigationStack {
-            themedForm
+            Form { content }
+                .navigationTitle(title)
+                .toolbar {
+                    // MARK: Cancel
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(cancelButtonTitle) {
+                            onCancel?()
+                            dismiss()
+                        }
+                    }
+                    // MARK: Save
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(saveButtonTitle) {
+                            if onSave() { dismiss() }
+                        }
+                        .disabled(!isSaveEnabled)
+                    }
+                }
         }
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
-        .background(themeManager.selectedTheme.background)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
@@ -112,43 +128,5 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(macOS)
         .frame(minWidth: 680)
         #endif
-    }
-}
-
-// MARK: - Private Helpers
-private extension EditSheetScaffold {
-    /// Form with standard toolbar and navigation styling that also
-    /// applies the current theme's colors to backgrounds and text fields.
-    @ViewBuilder
-    var themedForm: some View {
-        let base = Form { content }
-            .navigationTitle(title)
-            .toolbar {
-                // MARK: Cancel
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(cancelButtonTitle) {
-                        onCancel?()
-                        dismiss()
-                    }
-                }
-                // MARK: Save
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(saveButtonTitle) {
-                        if onSave() { dismiss() }
-                    }
-                    .disabled(!isSaveEnabled)
-                }
-            }
-            .textFieldStyle(ThemedTextFieldStyle(
-                accent: themeManager.selectedTheme.accent,
-                fill: themeManager.selectedTheme.background
-            ))
-            .background(themeManager.selectedTheme.secondaryBackground)
-
-        if #available(iOS 16.0, macOS 13.0, *) {
-            base.scrollContentBackground(.hidden)
-        } else {
-            base
-        }
     }
 }
