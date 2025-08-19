@@ -55,7 +55,7 @@ struct BudgetDetailsView: View {
                 }
 
                 if let summary = vm.summary {
-                    SummarySection(summary: summary)
+                    SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
                 }
 
                 // MARK: Segment Picker
@@ -166,64 +166,59 @@ struct BudgetDetailsView: View {
 // MARK: - SummarySection
 private struct SummarySection: View {
     let summary: BudgetSummary
+    let selectedSegment: BudgetDetailsViewModel.Segment
 
     private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            if !summary.categoryBreakdown.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(summary.categoryBreakdown.prefix(6)) { cat in
-                        HStack {
-                            HStack(spacing: 10) {
-                                Circle()
-                                    .fill(Color(hex: cat.hexColor) ?? .accentColor.opacity(0.7))
-                                    .frame(width: 12, height: 12)
-                                Text(cat.categoryName)
-                            }
-                            Spacer(minLength: 8)
-                            Text(cat.amount, format: .currency(code: currencyCode))
-                                .font(.callout.weight(.semibold))
-                        }
-                    }
-                }
-                .padding(.top, 6)
+        HStack(alignment: .top, spacing: DS.Spacing.l) {
+            // MARK: Sum of Expenses
+            VStack(alignment: .leading, spacing: 4) {
+                Text(selectedSegment == .planned ? "Planned Expenses" : "Variable Expenses")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                Text(selectedSegment == .planned ? summary.plannedExpensesPlannedTotal : summary.variableExpensesTotal, format: .currency(code: currencyCode))
+                    .font(.title3.weight(.semibold))
             }
 
-            VStack(spacing: 12) {
-                Grid(horizontalSpacing: 20, verticalSpacing: 10) {
-                    GridRow {
-                        metric(title: "PLANNED EXPENSES", value: summary.plannedExpensesPlannedTotal, tint: .primary)
-                        metric(title: "VARIABLE EXPENSES", value: summary.variableExpensesTotal, tint: .primary)
-                    }
+            Spacer(minLength: 0)
 
-                    GridRow {
-                        metric(title: "PLANNED INCOME", value: summary.plannedIncomeTotal, tint: DS.Colors.plannedIncome)
-                        metric(title: "ACTUAL INCOME", value: summary.actualIncomeTotal, tint: DS.Colors.actualIncome)
-                    }
-
-                    GridRow {
-                        metric(title: "PLANNED SAVINGS", value: summary.plannedSavingsTotal, tint: DS.Colors.savingsGood)
-                        metric(title: "SAVINGS... SO FAR", value: summary.actualSavingsTotal, tint: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
-                    }
+            // MARK: Income/Savings Grid
+            Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 4) {
+                GridRow {
+                    Text("Planned Income")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Planned Savings")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                GridRow {
+                    Text(summary.plannedIncomeTotal, format: .currency(code: currencyCode))
+                        .font(.callout.weight(.semibold))
+                    Text(summary.plannedSavingsTotal, format: .currency(code: currencyCode))
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(DS.Colors.savingsGood)
+                }
+                GridRow {
+                    Text("Actual Income")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Savings... so far")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                GridRow {
+                    Text(summary.actualIncomeTotal, format: .currency(code: currencyCode))
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(DS.Colors.actualIncome)
+                    Text(summary.actualSavingsTotal, format: .currency(code: currencyCode))
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
                 }
             }
-            .padding(.top, DS.Spacing.s)
         }
-    }
-
-    private func metric(title: String, value: Double, tint: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            Text(value, format: .currency(code: currencyCode))
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
