@@ -109,58 +109,64 @@ struct IncomeView: View {
         let today = Date()
         let start = Calendar.current.date(byAdding: .year, value: -5, to: today)!
         let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-//                Button("<<") { goToPreviousMonth() }
-//                Button("<") { goToPreviousDay() }
-//                Button("Today") { goToToday() }
-//                Button(">") { goToNextDay() }
-//                Button(">>") { goToNextMonth() }
-            }
+        let calendarView: AnyView = {
 #if os(macOS)
-            .buttonStyle(.borderedProminent)
-#else
-            .buttonStyle(.bordered)
-#endif
-            .accentColor(themeManager.selectedTheme.accent)
-            .tint(themeManager.selectedTheme.accent)
-            .font(.subheadline)
-            #if os(macOS)
             // macOS: attach the configuration closure directly to the call
-            MCalendarView(
-                selectedDate: $viewModel.selectedDate,
-                selectedRange: .constant(nil)
-            ) { config in
-                config
-                    .dayView(UBDayView.init)
-                    .weekdaysView(UBWeekdaysView.init)
-                    .monthLabel(UBMonthLabel.init)
-                    .startMonth(start)
-                    .endMonth(end)
-                    .scrollTo(date: calendarScrollDate)
-            }
-            .accessibilityIdentifier("IncomeCalendar")
-            // MARK: Double-click calendar to add income (macOS)
-            .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    addIncomeInitialDate = viewModel.selectedDate ?? today
-                    isPresentingAddIncome = true
+            AnyView(
+                MCalendarView(
+                    selectedDate: $viewModel.selectedDate,
+                    selectedRange: .constant(nil)
+                ) { config in
+                    config
+                        .dayView(UBDayView.init)
+                        .weekdaysView(UBWeekdaysView.init)
+                        .monthLabel(UBMonthLabel.init)
+                        .startMonth(start)
+                        .endMonth(end)
+                        .scrollTo(date: calendarScrollDate)
                 }
+                .accessibilityIdentifier("IncomeCalendar")
+                // MARK: Double-click calendar to add income (macOS)
+                .simultaneousGesture(
+                    TapGesture(count: 2).onEnded {
+                        addIncomeInitialDate = viewModel.selectedDate ?? today
+                        isPresentingAddIncome = true
+                    }
+                )
             )
-            #else
+#else
             // iOS
-            MCalendarView(
-                selectedDate: $viewModel.selectedDate,
-                selectedRange: .constant(nil)
-            ) { config in
-                config
-                    .monthLabel(UBMonthLabel.init)
-                    .startMonth(start)
-                    .endMonth(end)
-                    .scrollTo(date: calendarScrollDate)
+            AnyView(
+                MCalendarView(
+                    selectedDate: $viewModel.selectedDate,
+                    selectedRange: .constant(nil)
+                ) { config in
+                    config
+                        .monthLabel(UBMonthLabel.init)
+                        .startMonth(start)
+                        .endMonth(end)
+                        .scrollTo(date: calendarScrollDate)
+                }
+                .accessibilityIdentifier("IncomeCalendar")
+            )
+#endif
+        }()
+
+        return VStack(spacing: 8) {
+            if calendarHorizontal {
+                // Experimental horizontal scrolling wrapper
+                GeometryReader { geo in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 0) {
+                            calendarView
+                                .frame(width: geo.size.width)
+                        }
+                    }
+                }
+                .frame(height: 300)
+            } else {
+                calendarView
             }
-            .accessibilityIdentifier("IncomeCalendar")
-            #endif
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
