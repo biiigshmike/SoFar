@@ -114,6 +114,18 @@ struct BudgetDetailsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
         }
         .toolbar {
+#if os(iOS)
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                TextField("Search", text: $vm.searchQuery)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 150)
+                Button {
+                    isShowingAddMenu = true
+                } label: {
+                    Label("Add Expense", systemImage: "plus")
+                }
+            }
+#else
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     isShowingAddMenu = true
@@ -121,6 +133,7 @@ struct BudgetDetailsView: View {
                     Label("Add Expense", systemImage: "plus")
                 }
             }
+#endif
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .confirmationDialog("Add",
@@ -135,7 +148,9 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
+#if os(macOS)
         .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search"))
+#endif
         // MARK: Add Sheets
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
