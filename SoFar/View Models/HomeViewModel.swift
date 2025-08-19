@@ -2,10 +2,10 @@
 //  HomeViewModel.swift
 //  SoFar
 //
-//  Drives the home screen: loads budgets for the selected month,
-//  computes per-budget summaries (planned/actual income & expenses,
-//  variable spend by category), and exposes filtered results for the grid.
-//  NOTE: Income is fetched by DATE RANGE only; there is no Budget↔Income link.
+//  Drives the home screen: loads budgets for the selected month and
+//  computes per-budget summaries (planned/actual income & expenses and
+//  variable spend by category). NOTE: Income is fetched by DATE RANGE
+//  only; there is no Budget↔Income link.
 //
 
 import Foundation
@@ -105,7 +105,6 @@ final class HomeViewModel: ObservableObject {
     @Published var selectedMonth: Date = Month.start(of: Date()) {
         didSet { Task { await refresh() } }
     }
-    @Published var searchQuery: String = ""
     @Published private(set) var state: BudgetLoadState = .initial
 
     // MARK: Dependencies
@@ -171,24 +170,6 @@ final class HomeViewModel: ObservableObject {
         if let newDate = Calendar.current.date(byAdding: .month, value: delta, to: selectedMonth) {
             selectedMonth = Month.start(of: newDate)
         }
-    }
-
-    // MARK: Derived Results
-    /// Filters budgets by budget name (case-insensitive). Empty query returns all.
-    var filteredBudgets: [BudgetSummary] {
-        let budgets: [BudgetSummary]
-        switch state {
-        case .loaded(let items):
-            budgets = items
-        default:
-            budgets = []
-        }
-        
-        guard !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return budgets
-        }
-        let query = searchQuery.lowercased()
-        return budgets.filter { $0.budgetName.lowercased().contains(query) }
     }
 
     // MARK: - Private: Fetching
