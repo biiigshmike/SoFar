@@ -41,7 +41,7 @@ struct BudgetDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // MARK: Header (name + period) + Segmented + Filters
+            // MARK: Header (name + summary + controls)
             VStack(alignment: .leading, spacing: DS.Spacing.l) {
 
                 // MARK: Title + Date Range
@@ -52,6 +52,10 @@ struct BudgetDetailsView: View {
                         Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
                             .foregroundStyle(.secondary)
                     }
+                }
+
+                if let summary = vm.summary {
+                    SummarySection(summary: summary)
                 }
 
                 // MARK: Segment Picker
@@ -109,7 +113,6 @@ struct BudgetDetailsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
         }
-        .navigationTitle("Budget Details")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -157,6 +160,70 @@ struct BudgetDetailsView: View {
         let f = DateFormatter()
         f.dateStyle = .medium
         return f.string(from: d)
+    }
+}
+
+// MARK: - SummarySection
+private struct SummarySection: View {
+    let summary: BudgetSummary
+
+    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            if !summary.categoryBreakdown.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(summary.categoryBreakdown.prefix(6)) { cat in
+                        HStack {
+                            HStack(spacing: 10) {
+                                Circle()
+                                    .fill(Color(hex: cat.hexColor) ?? .accentColor.opacity(0.7))
+                                    .frame(width: 12, height: 12)
+                                Text(cat.categoryName)
+                            }
+                            Spacer(minLength: 8)
+                            Text(cat.amount, format: .currency(code: currencyCode))
+                                .font(.callout.weight(.semibold))
+                        }
+                    }
+                }
+                .padding(.top, 6)
+            }
+
+            VStack(spacing: 12) {
+                Grid(horizontalSpacing: 20, verticalSpacing: 10) {
+                    GridRow {
+                        metric(title: "PLANNED EXPENSES", value: summary.plannedExpensesPlannedTotal, tint: .primary)
+                        metric(title: "VARIABLE EXPENSES", value: summary.variableExpensesTotal, tint: .primary)
+                    }
+
+                    GridRow {
+                        metric(title: "PLANNED INCOME", value: summary.plannedIncomeTotal, tint: DS.Colors.plannedIncome)
+                        metric(title: "ACTUAL INCOME", value: summary.actualIncomeTotal, tint: DS.Colors.actualIncome)
+                    }
+
+                    GridRow {
+                        metric(title: "PLANNED SAVINGS", value: summary.plannedSavingsTotal, tint: DS.Colors.savingsGood)
+                        metric(title: "SAVINGS... SO FAR", value: summary.actualSavingsTotal, tint: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                    }
+                }
+            }
+            .padding(.top, DS.Spacing.s)
+        }
+    }
+
+    private func metric(title: String, value: Double, tint: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Text(value, format: .currency(code: currencyCode))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 

@@ -47,6 +47,44 @@ final class BudgetDetailsViewModel: ObservableObject {
     @Published private(set) var plannedExpenses: [PlannedExpense] = []
     @Published private(set) var unplannedExpenses: [UnplannedExpense] = []
 
+    // MARK: Summary
+    /// Computed summary of totals used by the header.
+    var summary: BudgetSummary? {
+        guard let budget else { return nil }
+
+        let plannedPlanned = plannedExpenses.reduce(0) { $0 + $1.plannedAmount }
+        let plannedActual  = plannedExpenses.reduce(0) { $0 + $1.actualAmount }
+
+        var categoryMap: [String: (hex: String?, total: Double)] = [:]
+        var variableTotal: Double = 0
+        for e in unplannedExpenses {
+            let amt = e.amount
+            variableTotal += amt
+            let name = e.expenseCategory?.name ?? "Uncategorized"
+            let hex = e.expenseCategory?.color
+            let existing = categoryMap[name] ?? (hex: hex, total: 0)
+            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+        }
+        let categoryBreakdown = categoryMap
+            .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
+            .sorted { $0.amount > $1.amount }
+
+        let incomeTotals = (try? BudgetIncomeCalculator.totals(for: DateInterval(start: startDate, end: endDate), context: context)) ?? (planned: 0, actual: 0)
+
+        return BudgetSummary(
+            id: budget.objectID,
+            budgetName: budget.name ?? "Untitled",
+            periodStart: startDate,
+            periodEnd: endDate,
+            categoryBreakdown: categoryBreakdown,
+            variableExpensesTotal: variableTotal,
+            plannedExpensesPlannedTotal: plannedPlanned,
+            plannedExpensesActualTotal: plannedActual,
+            plannedIncomeTotal: incomeTotals.planned,
+            actualIncomeTotal: incomeTotals.actual
+        )
+    }
+
     // MARK: Derived filtered/sorted
     var plannedFilteredSorted: [PlannedExpense] {
         var rows = plannedExpenses
