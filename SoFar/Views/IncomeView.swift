@@ -117,6 +117,9 @@ struct IncomeView: View {
                 Button(">") { goToNextDay() }
                 Button(">>") { goToNextMonth() }
             }
+            .buttonStyle(.bordered)
+            .accentColor(themeManager.selectedTheme.accent)
+            .tint(themeManager.selectedTheme.accent)
             .font(.subheadline)
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call
