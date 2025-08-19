@@ -31,9 +31,21 @@ import SwiftUI
 import AppKit
 #endif
 
+// MARK: - Themed text field style
+/// A text field style that applies the current `AppTheme` colors.
+private struct ThemedTextFieldStyle: TextFieldStyle {
+    let theme: AppTheme
 
-
-import SwiftUI
+    func _body(configuration: TextField<_Label>) -> some View {
+        configuration
+            .padding(8)
+            .background(theme.secondaryBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(theme.secondaryAccent, lineWidth: 1)
+            )
+    }
+}
 
 // MARK: - EditSheetScaffold
 /// Generic wrapper that provides a consistent edit sheet layout and controls.
@@ -99,6 +111,8 @@ struct EditSheetScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             Form { content }
+                .textFieldStyle(ThemedTextFieldStyle(theme: themeManager.selectedTheme))
+                .scrollContentBackground(.hidden)
                 .navigationTitle(title)
                 .toolbar {
                     // MARK: Cancel
@@ -117,6 +131,17 @@ struct EditSheetScaffold<Content: View>: View {
                     }
                 }
         }
+#if os(macOS)
+        .padding()
+        .background(themeManager.selectedTheme.background)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(themeManager.selectedTheme.secondaryAccent, lineWidth: 1)
+        )
+        .frame(minWidth: 680)
+#else
+        .background(themeManager.selectedTheme.background)
+#endif
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
@@ -124,9 +149,6 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
         .presentationDragIndicator(.visible)
-        #endif
-        #if os(macOS)
-        .frame(minWidth: 680)
         #endif
     }
 }
