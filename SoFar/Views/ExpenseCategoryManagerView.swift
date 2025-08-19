@@ -275,7 +275,8 @@ struct ExpenseCategoryEditorSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        // Apply our consistent form styling.
+        // Apply our consistent form styling and sheet padding.
+        .ub_sheetPadding()
         .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
     }
