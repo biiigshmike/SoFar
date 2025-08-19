@@ -177,6 +177,7 @@ struct AddBudgetView: View {
         // Apply cross‑platform form styling and sheet padding so this sheet
         // matches other editors (e.g. Add Card, Add Expense).  Grouped
         // styling yields a light container background on iOS/iPadOS and macOS.
+        .ub_sheetPadding()
         .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
         // Present any save error in a standard alert.

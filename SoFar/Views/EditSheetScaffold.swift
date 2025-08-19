@@ -31,6 +31,10 @@ import SwiftUI
 import AppKit
 #endif
 
+
+
+import SwiftUI
+
 // MARK: - EditSheetScaffold
 /// Generic wrapper that provides a consistent edit sheet layout and controls.
 /// - Parameters:
@@ -95,9 +99,6 @@ struct EditSheetScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             Form { content }
-                .applyIfAvailableScrollContentBackgroundHidden()
-                .background(themeManager.selectedTheme.background)
-                .textFieldStyle(ThemedTextFieldStyle(accentColor: themeManager.selectedTheme.accent))
                 .navigationTitle(title)
                 .toolbar {
                     // MARK: Cancel
@@ -119,29 +120,13 @@ struct EditSheetScaffold<Content: View>: View {
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
-        #if os(macOS)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .frame(minWidth: 680)
-        #endif
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
         .presentationDragIndicator(.visible)
         #endif
-    }
-}
-
-// MARK: - Local Helpers
-private extension View {
-    /// Hides the scroll content background on supported OS versions; no-op otherwise.
-    @ViewBuilder
-    func applyIfAvailableScrollContentBackgroundHidden() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            scrollContentBackground(.hidden)
-        } else {
-            self
-        }
+        #if os(macOS)
+        .frame(minWidth: 680)
+        #endif
     }
 }
