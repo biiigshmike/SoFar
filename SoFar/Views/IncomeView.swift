@@ -19,12 +19,10 @@ struct IncomeView: View {
     // MARK: State
     /// Controls the Add Income sheet presentation.
     @State private var isPresentingAddIncome: Bool = false
-    /// Controls the Edit Income sheet presentation.
-    @State private var isPresentingEditIncome: Bool = false
     /// Prefill date for AddIncomeFormView; derived from the selected calendar date or today.
     @State private var addIncomeInitialDate: Date? = nil
-    /// Holds the objectID of the income being edited; used to prefill the edit sheet.
-    @State private var editingIncomeObjectID: NSManagedObjectID? = nil
+    /// Holds the income being edited; presenting this non-nil value triggers the edit sheet.
+    @State private var editingIncome: Income? = nil
     /// Controls which date the calendar should scroll to when navigation buttons are used.
     @State private var calendarScrollDate: Date? = Date()
 
@@ -79,14 +77,13 @@ struct IncomeView: View {
                 initialDate: addIncomeInitialDate
             )
         }
-        // MARK: Present Edit Income Form
-        .sheet(isPresented: $isPresentingEditIncome, onDismiss: {
+        // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
+        .sheet(item: $editingIncome, onDismiss: {
             // Reload after edit
             viewModel.reloadForSelectedDay()
-            editingIncomeObjectID = nil
-        }) {
+        }) { income in
             AddIncomeFormView(
-                incomeObjectID: editingIncomeObjectID,
+                incomeObjectID: income.objectID,
                 budgetObjectID: nil,
                 initialDate: nil
             )
@@ -296,8 +293,7 @@ struct IncomeView: View {
     /// Begins editing for a given income; sets state used by the edit sheet.
     /// - Parameter income: The Core Data `Income` instance to edit; its `objectID` is passed to the form.
     private func beginEditingIncome(_ income: Income) {
-        editingIncomeObjectID = income.objectID
-        isPresentingEditIncome = true
+        editingIncome = income
     }
 
     // MARK: - Formatting Helpers
