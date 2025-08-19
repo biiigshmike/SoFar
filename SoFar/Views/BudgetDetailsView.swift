@@ -81,7 +81,8 @@ struct BudgetDetailsView: View {
                             budget: budget,
                             startDate: vm.startDate,
                             endDate: vm.endDate,
-                            sort: vm.sort
+                            sort: vm.sort,
+                            onAddTapped: { isPresentingAddPlannedSheet = true }
                         )
                     } else {
                         Text("Loading…")
@@ -95,7 +96,8 @@ struct BudgetDetailsView: View {
                             attachedCards: Array(cards),
                             startDate: vm.startDate,
                             endDate: vm.endDate,
-                            sort: vm.sort
+                            sort: vm.sort,
+                            onAddTapped: { isPresentingAddUnplannedSheet = true }
                         )
                     } else {
                         Text("Loading…")
@@ -209,6 +211,7 @@ private struct FilterBar: View {
 private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
+    private let onAddTapped: () -> Void
     @State private var editingItem: PlannedExpense?
     @State private var itemToDelete: PlannedExpense?
 
@@ -217,8 +220,9 @@ private struct PlannedListFR: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
+    init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void) {
         self.sort = sort
+        self.onAddTapped = onAddTapped
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<PlannedExpense> = NSFetchRequest(entityName: "PlannedExpense")
@@ -237,12 +241,13 @@ private struct PlannedListFR: View {
         Group {
             if rows.isEmpty {
                 // MARK: Empty state
-                List {
-                    Text("No planned expenses in this range.")
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                }
-                .styledList()
+                UBEmptyState(
+                    iconSystemName: "list.bullet.rectangle",
+                    title: "Planned Expenses",
+                    message: "No planned expenses in this range.",
+                    primaryButtonTitle: "Add Planned Expense",
+                    onPrimaryTap: onAddTapped
+                )
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -351,6 +356,7 @@ private struct VariableListFR: View {
     @FetchRequest private var rows: FetchedResults<UnplannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
     private let attachedCards: [Card]
+    private let onAddTapped: () -> Void
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
 
@@ -359,9 +365,10 @@ private struct VariableListFR: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
+    init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void) {
         self.sort = sort
         self.attachedCards = attachedCards
+        self.onAddTapped = onAddTapped
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<UnplannedExpense> = NSFetchRequest(entityName: "UnplannedExpense")
@@ -386,12 +393,13 @@ private struct VariableListFR: View {
         Group {
             if rows.isEmpty {
                 // MARK: Empty state
-                List {
-                    Text("No variable expenses in this range.")
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                }
-                .styledList()
+                UBEmptyState(
+                    iconSystemName: "creditcard",
+                    title: "Variable Expenses",
+                    message: "No variable expenses in this range.",
+                    primaryButtonTitle: "Add Variable Expense",
+                    onPrimaryTap: onAddTapped
+                )
             } else {
                 // MARK: Real List for native swipe
                 List {
