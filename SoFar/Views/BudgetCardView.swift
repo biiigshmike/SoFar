@@ -99,7 +99,7 @@ struct BudgetCardView: View {
                         Metric(title: "PLANNED SAVINGS",
                                value: summary.plannedSavingsTotal,
                                tint: DS.Colors.savingsGood)
-                        Metric(title: "ACTUAL SAVINGS",
+                        Metric(title: "SAVINGS... SO FAR",
                                value: summary.actualSavingsTotal,
                                tint: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
                     }
