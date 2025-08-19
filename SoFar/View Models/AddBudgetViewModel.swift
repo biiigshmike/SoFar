@@ -65,6 +65,15 @@ final class AddBudgetViewModel: ObservableObject {
                 if let set = existing.cards as? Set<Card> {
                     selectedCardObjectIDs = Set(set.map { $0.objectID })
                 }
+
+                // Preload global templates and current selections so the first frame isn't blank.
+                globalPlannedExpenseTemplates = fetchGlobalPlannedExpenseTemplates()
+                let existingInstances = fetchPlannedExpenses(for: existing)
+                selectedTemplateObjectIDs = Set(globalPlannedExpenseTemplates.compactMap { template in
+                    existingInstances.contains(where: { $0.globalTemplateID == template.id })
+                        ? template.objectID
+                        : nil
+                })
             }
         }
     }
@@ -76,13 +85,14 @@ final class AddBudgetViewModel: ObservableObject {
     }
 
     // MARK: load()
-    /// Loads cards and (if adding) global planned-expense templates.
-    /// When editing, it preloads the Budget fields + selected cards (async refresh).
+    /// Loads cards and global planned-expense templates.
+    /// When editing, refreshes the Budget fields and current template selections.
     func load() async {
         CoreDataService.shared.ensureLoaded()
         await CoreDataService.shared.waitUntilStoresLoaded()
 
         allCards = fetchCards()
+        globalPlannedExpenseTemplates = fetchGlobalPlannedExpenseTemplates()
 
         if isEditing, let id = editingBudgetObjectID {
             // Async refresh in case data changed after the sync preload
@@ -93,12 +103,13 @@ final class AddBudgetViewModel: ObservableObject {
                 if let set = existing.cards as? Set<Card> {
                     selectedCardObjectIDs = Set(set.map { $0.objectID })
                 }
+                let existingInstances = fetchPlannedExpenses(for: existing)
+                selectedTemplateObjectIDs = Set(globalPlannedExpenseTemplates.compactMap { template in
+                    existingInstances.contains(where: { $0.globalTemplateID == template.id })
+                        ? template.objectID
+                        : nil
+                })
             }
-            globalPlannedExpenseTemplates = []
-            selectedTemplateObjectIDs = []
-        } else {
-            // Adding a new budget → load global templates
-            globalPlannedExpenseTemplates = fetchGlobalPlannedExpenseTemplates()
         }
     }
 
@@ -162,6 +173,35 @@ final class AddBudgetViewModel: ObservableObject {
         if !toAttach.isEmpty {
             budget.addToCards(NSSet(array: toAttach))
         }
+        // Handle preset planned expense templates
+        let existingInstances = fetchPlannedExpenses(for: budget)
+
+        // Add instances for newly selected templates
+        let templatesToEnsure = globalPlannedExpenseTemplates.filter { selectedTemplateObjectIDs.contains($0.objectID) }
+        for template in templatesToEnsure {
+            let tid = template.id
+            let already = existingInstances.contains { $0.globalTemplateID == tid }
+            if !already {
+                let cloned = PlannedExpense(context: context)
+                cloned.id = cloned.id ?? UUID()
+                cloned.descriptionText = template.descriptionText
+                cloned.plannedAmount = template.plannedAmount
+                cloned.actualAmount = 0.0
+                cloned.transactionDate = startDate
+                cloned.isGlobal = false
+                cloned.globalTemplateID = tid
+                cloned.budget = budget
+            }
+        }
+
+        // Remove instances for templates that are no longer selected
+        for instance in existingInstances {
+            if let templateID = instance.globalTemplateID,
+               let template = globalPlannedExpenseTemplates.first(where: { $0.id == templateID }),
+               !selectedTemplateObjectIDs.contains(template.objectID) {
+                context.delete(instance)
+            }
+        }
 
         try context.save()
     }
@@ -181,6 +221,12 @@ final class AddBudgetViewModel: ObservableObject {
         req.sortDescriptors = [
             NSSortDescriptor(key: "descriptionText", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
+        return (try? context.fetch(req)) ?? []
+    }
+
+    private func fetchPlannedExpenses(for budget: Budget) -> [PlannedExpense] {
+        let req = NSFetchRequest<PlannedExpense>(entityName: "PlannedExpense")
+        req.predicate = NSPredicate(format: "budget == %@", budget)
         return (try? context.fetch(req)) ?? []
     }
 }
