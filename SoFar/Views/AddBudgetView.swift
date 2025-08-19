@@ -37,6 +37,7 @@ struct AddBudgetView: View {
     // MARK: Local UI State
     /// Populated if saving fails; presented in a SwiftUI alert.
     @State private var saveErrorMessage: String?
+    @State private var isPresentingCustomRecurrenceEditor: Bool = false
 
     // MARK: Init (ADD)
     /// Use this initializer when **adding** a budget.
@@ -126,6 +127,14 @@ struct AddBudgetView: View {
                 }
             }
 
+            // ---- Recurrence
+            UBFormSection("Recurrence (Optional)", isUppercased: true) {
+                RecurrencePickerView(
+                    rule: $vm.recurrenceRule,
+                    isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
+                )
+            }
+
             // ---- Cards to Track
             UBFormSection("Cards to Track", isUppercased: true) {
                 if vm.allCards.isEmpty {
@@ -178,6 +187,13 @@ struct AddBudgetView: View {
         .ub_sheetPadding()
         .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
+        .sheet(isPresented: $isPresentingCustomRecurrenceEditor) {
+            CustomRecurrenceEditorView(
+                initial: vm.customRuleSeed,
+                onCancel: { },
+                onSave: { vm.applyCustomRecurrence($0) }
+            )
+        }
         // Present any save error in a standard alert.
         .alert("Couldn’t Save Budget",
                isPresented: Binding(
