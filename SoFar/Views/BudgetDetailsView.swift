@@ -187,10 +187,10 @@ private struct SummarySection: View {
             // MARK: Income/Savings Grid
             Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 4) {
                 GridRow {
-                    Text("Planned Income")
+                    Text("PLANNED INCOME")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    Text("Planned Savings")
+                    Text("PLANNED SAVINGS")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -202,10 +202,10 @@ private struct SummarySection: View {
                         .foregroundStyle(DS.Colors.savingsGood)
                 }
                 GridRow {
-                    Text("Actual Income")
+                    Text("ACTUAL INCOME")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    Text("Savings... so far")
+                    Text("SAVINGS... SO FAR")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
