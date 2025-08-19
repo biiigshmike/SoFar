@@ -128,7 +128,7 @@ final class HomeViewModel: ObservableObject {
 
         // After a 200ms delay, if we are still in the `initial` state,
         // we transition to the `loading` state.
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(nanoseconds: 200_000_000)
             if case .initial = self.state {
                 self.state = .loading

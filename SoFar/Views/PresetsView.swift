@@ -75,7 +75,11 @@ struct PresetsView: View {
             }
             // MARK: Data lifecycle
             .onAppear { viewModel.loadTemplates(using: viewContext) }
-            .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange)) { _ in
+            .onReceive(
+                NotificationCenter.default
+                    .publisher(for: .NSManagedObjectContextObjectsDidChange)
+                    .receive(on: RunLoop.main)
+            ) { _ in
                 viewModel.loadTemplates(using: viewContext)
             }
             // Pull to refresh to force reload of templates
@@ -218,6 +222,7 @@ struct PresetListItem: Identifiable, Equatable {
 
 // MARK: - PresetsViewModel
 /// Loads global PlannedExpense templates and composes row items.
+@MainActor
 final class PresetsViewModel: ObservableObject {
     // MARK: Published
     @Published private(set) var items: [PresetListItem] = []
