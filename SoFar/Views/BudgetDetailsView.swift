@@ -191,9 +191,13 @@ private struct SummarySection: View {
                     Text("PLANNED INCOME")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     Text("PLANNED SAVINGS")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 GridRow {
                     Text(summary.plannedIncomeTotal, format: .currency(code: currencyCode))
@@ -206,9 +210,13 @@ private struct SummarySection: View {
                     Text("ACTUAL INCOME")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     Text("SAVINGS... SO FAR")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 GridRow {
                     Text(summary.actualIncomeTotal, format: .currency(code: currencyCode))
