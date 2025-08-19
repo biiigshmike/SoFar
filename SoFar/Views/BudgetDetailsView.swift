@@ -135,6 +135,7 @@ struct BudgetDetailsView: View {
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
                 preselectedBudgetID: vm.budget?.objectID,
+                defaultSaveAsGlobalPreset: UserDefaults.standard.bool(forKey: AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue),
                 onSaved: { /* lists auto-update via @FetchRequest */ }
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
@@ -209,10 +210,12 @@ private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
     @State private var editingItem: PlannedExpense?
+    @State private var itemToDelete: PlannedExpense?
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
     init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
         self.sort = sort
@@ -264,14 +267,24 @@ private struct PlannedListFR: View {
                         .unifiedSwipeActions(
                             UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                             onEdit: { editingItem = item },
-                            onDelete: { deletePlanned(item) }
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    itemToDelete = item
+                                } else {
+                                    deletePlanned(item)
+                                }
+                            }
                         )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
-                        items.forEach(deletePlanned(_:))
+                        if confirmBeforeDelete, let first = items.first {
+                            itemToDelete = first
+                        } else {
+                            items.forEach(deletePlanned(_:))
+                        }
                     }
                 }
                 .styledList()
@@ -284,6 +297,14 @@ private struct PlannedListFR: View {
                 onSaved: {}
             )
             .environment(\.managedObjectContext, viewContext)
+        }
+        .alert(item: $itemToDelete) { item in
+            Alert(
+                title: Text("Delete \(item.descriptionText ?? "Expense")?"),
+                message: Text("This will remove the planned expense."),
+                primaryButton: .destructive(Text("Delete")) { deletePlanned(item) },
+                secondaryButton: .cancel()
+            )
         }
     }
 
@@ -331,10 +352,12 @@ private struct VariableListFR: View {
     private let sort: BudgetDetailsViewModel.SortOption
     private let attachedCards: [Card]
     @State private var editingItem: UnplannedExpense?
+    @State private var itemToDelete: UnplannedExpense?
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
     init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption) {
         self.sort = sort
@@ -403,7 +426,13 @@ private struct VariableListFR: View {
                         .unifiedSwipeActions(
                             UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
                             onEdit: { editingItem = item },
-                            onDelete: { deleteUnplanned(item) }
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    itemToDelete = item
+                                } else {
+                                    deleteUnplanned(item)
+                                }
+                            }
                         )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
@@ -415,7 +444,11 @@ private struct VariableListFR: View {
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
-                        items.forEach(deleteUnplanned(_:))
+                        if confirmBeforeDelete, let first = items.first {
+                            itemToDelete = first
+                        } else {
+                            items.forEach(deleteUnplanned(_:))
+                        }
                     }
                 }
                 .styledList()
@@ -429,6 +462,14 @@ private struct VariableListFR: View {
                 onSaved: {}
             )
             .environment(\.managedObjectContext, viewContext)
+        }
+        .alert(item: $itemToDelete) { item in
+            Alert(
+                title: Text("Delete \(item.descriptionText ?? "Expense")?"),
+                message: Text("This will remove the expense."),
+                primaryButton: .destructive(Text("Delete")) { deleteUnplanned(item) },
+                secondaryButton: .cancel()
+            )
         }
     }
 

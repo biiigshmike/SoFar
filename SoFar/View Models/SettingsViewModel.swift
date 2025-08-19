@@ -18,10 +18,6 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue)
     var confirmBeforeDelete: Bool = true { willSet { objectWillChange.send() } }
 
-    /// iOS only; toggle haptics. Hidden on macOS automatically.
-    @AppStorage(AppSettingsKeys.enableHaptics.rawValue)
-    var enableHaptics: Bool = true { willSet { objectWillChange.send() } }
-
     /// Controls whether the income calendar presents horizontally.
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue)
     var calendarHorizontal: Bool = true { willSet { objectWillChange.send() } }
@@ -42,20 +38,10 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.enableCloudSync.rawValue)
     var enableCloudSync: Bool = true { willSet { objectWillChange.send() } }
 
-    /// Convenience for platform-specific UI.
-    var shouldShowHapticsRow: Bool {
-        #if os(iOS)
-        return true
-        #else
-        return false
-        #endif
-    }
-
     // MARK: - Init
     init() {
         UserDefaults.standard.register(defaults: [
             AppSettingsKeys.confirmBeforeDelete.rawValue: true,
-            AppSettingsKeys.enableHaptics.rawValue: true,
             AppSettingsKeys.calendarHorizontal.rawValue: true,
             AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue: true,
             AppSettingsKeys.syncCardThemes.rawValue: true,
