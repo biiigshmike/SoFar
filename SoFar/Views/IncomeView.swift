@@ -125,46 +125,42 @@ struct IncomeView: View {
             .accentColor(themeManager.selectedTheme.accent)
             .tint(themeManager.selectedTheme.accent)
             .font(.subheadline)
-            if calendarHorizontal {
-                horizontalCalendarView(start: start, end: end)
-            } else {
-#if os(macOS)
-                // macOS: attach the configuration closure directly to the call
-                MCalendarView(
-                    selectedDate: $viewModel.selectedDate,
-                    selectedRange: .constant(nil)
-                ) { config in
-                    config
-                        .dayView(UBDayView.init)
-                        .weekdaysView(UBWeekdaysView.init)
-                        .monthLabel(UBMonthLabel.init)
-                        .startMonth(start)
-                        .endMonth(end)
-                        .scrollTo(date: calendarScrollDate)
-                }
-                .accessibilityIdentifier("IncomeCalendar")
-                // MARK: Double-click calendar to add income (macOS)
-                .simultaneousGesture(
-                    TapGesture(count: 2).onEnded {
-                        addIncomeInitialDate = viewModel.selectedDate ?? today
-                        isPresentingAddIncome = true
-                    }
-                )
-#else
-                // iOS
-                MCalendarView(
-                    selectedDate: $viewModel.selectedDate,
-                    selectedRange: .constant(nil)
-                ) { config in
-                    config
-                        .monthLabel(UBMonthLabel.init)
-                        .startMonth(start)
-                        .endMonth(end)
-                        .scrollTo(date: calendarScrollDate)
-                }
-                .accessibilityIdentifier("IncomeCalendar")
-#endif
+            #if os(macOS)
+            // macOS: attach the configuration closure directly to the call
+            MCalendarView(
+                selectedDate: $viewModel.selectedDate,
+                selectedRange: .constant(nil)
+            ) { config in
+                config
+                    .dayView(UBDayView.init)
+                    .weekdaysView(UBWeekdaysView.init)
+                    .monthLabel(UBMonthLabel.init)
+                    .startMonth(start)
+                    .endMonth(end)
+                    .scrollTo(date: calendarScrollDate)
             }
+            .accessibilityIdentifier("IncomeCalendar")
+            // MARK: Double-click calendar to add income (macOS)
+            .simultaneousGesture(
+                TapGesture(count: 2).onEnded {
+                    addIncomeInitialDate = viewModel.selectedDate ?? today
+                    isPresentingAddIncome = true
+                }
+            )
+            #else
+            // iOS
+            MCalendarView(
+                selectedDate: $viewModel.selectedDate,
+                selectedRange: .constant(nil)
+            ) { config in
+                config
+                    .monthLabel(UBMonthLabel.init)
+                    .startMonth(start)
+                    .endMonth(end)
+                    .scrollTo(date: calendarScrollDate)
+            }
+            .accessibilityIdentifier("IncomeCalendar")
+            #endif
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -173,81 +169,6 @@ struct IncomeView: View {
             RoundedRectangle(cornerRadius: DS.Radius.card)
                 .fill(themeManager.selectedTheme.secondaryBackground)
         )
-    }
-
-    // MARK: - Horizontal Calendar Implementation
-    /// Provides a horizontal, paged calendar composed of individual months.
-    /// Each month is its own `MCalendarView`, arranged in a `LazyHStack` within a horizontal `ScrollView`.
-    @ViewBuilder
-    private func horizontalCalendarView(start: Date, end: Date) -> some View {
-        let months = monthsBetween(start: start, end: end)
-        ScrollViewReader { proxy in
-            GeometryReader { geo in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 0) {
-                        ForEach(months, id: \.self) { month in
-#if os(macOS)
-                            MCalendarView(
-                                selectedDate: $viewModel.selectedDate,
-                                selectedRange: .constant(nil)
-                            ) { config in
-                                config
-                                    .dayView(UBDayView.init)
-                                    .weekdaysView(UBWeekdaysView.init)
-                                    .monthLabel(UBMonthLabel.init)
-                                    .startMonth(month)
-                                    .endMonth(month)
-                            }
-#else
-                            MCalendarView(
-                                selectedDate: $viewModel.selectedDate,
-                                selectedRange: .constant(nil)
-                            ) { config in
-                                config
-                                    .monthLabel(UBMonthLabel.init)
-                                    .startMonth(month)
-                                    .endMonth(month)
-                            }
-#endif
-                            .frame(width: geo.size.width)
-                            .id(month)
-                        }
-                    }
-                }
-                .accessibilityIdentifier("IncomeCalendar")
-#if os(macOS)
-                .simultaneousGesture(
-                    TapGesture(count: 2).onEnded {
-                        addIncomeInitialDate = viewModel.selectedDate ?? Date()
-                        isPresentingAddIncome = true
-                    }
-                )
-#endif
-                .onAppear {
-                    if let date = calendarScrollDate {
-                        proxy.scrollTo(startOfMonth(for: date), anchor: .center)
-                    }
-                }
-            }
-            .frame(height: 320)
-        }
-    }
-
-    /// Returns first-of-month dates between `start` and `end` (inclusive).
-    private func monthsBetween(start: Date, end: Date) -> [Date] {
-        var months: [Date] = []
-        var current = startOfMonth(for: start)
-        let last = startOfMonth(for: end)
-        while current <= last {
-            months.append(current)
-            current = Calendar.current.date(byAdding: .month, value: 1, to: current)!
-        }
-        return months
-    }
-
-    /// Returns the first day of the month containing `date`.
-    private func startOfMonth(for date: Date) -> Date {
-        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date))!
     }
 
     // MARK: - Weekly Summary Bar
