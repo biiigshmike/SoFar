@@ -212,7 +212,7 @@ struct AddPlannedExpenseView: View {
                 didApplyDefaultGlobal = true
             }
         }
-        .onChange(of: isAssigningToBudget) { newValue in
+        .onChange(of: isAssigningToBudget) { _, newValue in
             if newValue {
                 vm.selectedBudgetID = vm.allBudgets.first?.objectID
             } else {
