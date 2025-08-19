@@ -11,7 +11,7 @@ import CoreData
 
 // MARK: - AddUnplannedExpenseViewModel
 @MainActor
-final class AddUnplannedExpenseViewModel: ObservableObject, RecurrenceHandling {
+final class AddUnplannedExpenseViewModel: ObservableObject {
 
     // MARK: Dependencies
     private let context: NSManagedObjectContext
@@ -33,10 +33,6 @@ final class AddUnplannedExpenseViewModel: ObservableObject, RecurrenceHandling {
     @Published var descriptionText: String = ""
     @Published var amountString: String = ""
     @Published var transactionDate: Date = Date()
-
-    // MARK: Recurrence
-    @Published var recurrenceRule: RecurrenceRule = .none
-    var customRuleSeed: CustomRecurrence = CustomRecurrence()
 
     // MARK: Init
     init(unplannedExpenseID: NSManagedObjectID? = nil,
@@ -63,19 +59,6 @@ final class AddUnplannedExpenseViewModel: ObservableObject, RecurrenceHandling {
             descriptionText = existing.descriptionText ?? ""
             amountString = formatAmount(existing.amount)
             transactionDate = existing.transactionDate ?? Date()
-
-            // Recurrence
-            let rruleString = existing.recurrence ?? ""
-            let end = existing.recurrenceEndDate
-            let secondDay = (existing.value(forKey: "secondBiMonthlyDate") as? Int16).map { Int($0) } ?? 0
-            if rruleString.isEmpty {
-                recurrenceRule = .none
-            } else if let parsed = RecurrenceRule.parse(from: rruleString, endDate: end, secondBiMonthlyPayDay: secondDay) {
-                recurrenceRule = parsed
-            } else {
-                recurrenceRule = .custom(rruleString, endDate: end)
-            }
-            customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
         } else {
             // Default selections
             if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
@@ -137,15 +120,6 @@ final class AddUnplannedExpenseViewModel: ObservableObject, RecurrenceHandling {
         item.transactionDate = transactionDate
         item.card = card
         item.expenseCategory = category
-
-        // Recurrence
-        let rrule = recurrenceRule.toRRule(starting: transactionDate)
-        item.recurrence = rrule?.string
-        item.recurrenceEndDate = rrule?.until
-        if let second = rrule?.secondBiMonthlyPayDay,
-           item.entity.propertiesByName.keys.contains("secondBiMonthlyDate") {
-            item.setValue(Int16(second), forKey: "secondBiMonthlyDate")
-        }
 
         // Optional: support a boolean "isRecurring" if it exists in your model
         if let hasRecurring = item.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {

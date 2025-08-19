@@ -76,13 +76,6 @@ struct AddIncomeFormView: View {
         .ub_sheetPadding()
         .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
-        .sheet(isPresented: $isPresentingCustomRecurrenceEditor) {
-            CustomRecurrenceEditorView(
-                initial: viewModel.customRuleSeed,
-                onCancel: { },
-                onSave: { viewModel.applyCustomRecurrence($0) }
-            )
-        }
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
     }
