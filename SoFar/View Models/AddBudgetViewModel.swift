@@ -13,16 +13,12 @@ import SwiftUI
 
 // MARK: - AddBudgetViewModel
 @MainActor
-final class AddBudgetViewModel: ObservableObject, RecurrenceHandling {
+final class AddBudgetViewModel: ObservableObject {
 
     // MARK: Inputs (bound to UI)
     @Published var budgetName: String = ""
     @Published var startDate: Date
     @Published var endDate: Date
-
-    // MARK: Recurrence
-    @Published var recurrenceRule: RecurrenceRule = .none
-    var customRuleSeed: CustomRecurrence = CustomRecurrence()
 
     // MARK: Loaded Data (Core Data)
     @Published private(set) var allCards: [Card] = []
@@ -78,18 +74,6 @@ final class AddBudgetViewModel: ObservableObject, RecurrenceHandling {
                         ? template.objectID
                         : nil
                 })
-
-                // Recurrence
-                let rruleString = existing.recurrenceType ?? ""
-                let endDate = existing.recurrenceEndDate
-                if rruleString.isEmpty {
-                    recurrenceRule = .none
-                } else if let parsed = RecurrenceRule.parse(from: rruleString, endDate: endDate, secondBiMonthlyPayDay: 0) {
-                    recurrenceRule = parsed
-                } else {
-                    recurrenceRule = .custom(rruleString, endDate: endDate)
-                }
-                customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
             }
         }
     }
@@ -125,18 +109,6 @@ final class AddBudgetViewModel: ObservableObject, RecurrenceHandling {
                         ? template.objectID
                         : nil
                 })
-
-                // Recurrence
-                let rruleString = existing.recurrenceType ?? ""
-                let endDate = existing.recurrenceEndDate
-                if rruleString.isEmpty {
-                    recurrenceRule = .none
-                } else if let parsed = RecurrenceRule.parse(from: rruleString, endDate: endDate, secondBiMonthlyPayDay: 0) {
-                    recurrenceRule = parsed
-                } else {
-                    recurrenceRule = .custom(rruleString, endDate: endDate)
-                }
-                customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
             }
         }
     }
@@ -159,12 +131,6 @@ final class AddBudgetViewModel: ObservableObject, RecurrenceHandling {
         newBudget.name = budgetName.trimmingCharacters(in: .whitespacesAndNewlines)
         newBudget.startDate = startDate
         newBudget.endDate = endDate
-
-        // Recurrence
-        let rrule = recurrenceRule.toRRule(starting: startDate)
-        newBudget.isRecurring = rrule != nil
-        newBudget.recurrenceType = rrule?.string
-        newBudget.recurrenceEndDate = rrule?.until
 
         // Attach selected Cards
         let cardsToAttach = allCards.filter { selectedCardObjectIDs.contains($0.objectID) }
@@ -196,14 +162,8 @@ final class AddBudgetViewModel: ObservableObject, RecurrenceHandling {
         }
 
         budget.name = budgetName.trimmingCharacters(in: .whitespacesAndNewlines)
-       budget.startDate = startDate
-       budget.endDate = endDate
-
-        // Recurrence
-        let rrule = recurrenceRule.toRRule(starting: startDate)
-        budget.isRecurring = rrule != nil
-        budget.recurrenceType = rrule?.string
-        budget.recurrenceEndDate = rrule?.until
+        budget.startDate = startDate
+        budget.endDate = endDate
 
         // Replace attached Cards with current selection
         let toAttach = allCards.filter { selectedCardObjectIDs.contains($0.objectID) }

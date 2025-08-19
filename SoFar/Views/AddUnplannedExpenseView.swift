@@ -24,7 +24,6 @@ struct AddUnplannedExpenseView: View {
 
     // MARK: State
     @StateObject private var vm: AddUnplannedExpenseViewModel
-    @State private var isPresentingCustomRecurrenceEditor: Bool = false
     
     // MARK: - Layout
     /// Height of the card picker row.  This matches the tile height defined in
@@ -131,14 +130,6 @@ struct AddUnplannedExpenseView: View {
                     .ub_compactDatePickerStyle()
                     .accessibilityLabel("Transaction Date")
             }
-
-            // Recurrence
-            UBFormSection("Recurrence (Optional)", isUppercased: false) {
-                RecurrencePickerView(
-                    rule: $vm.recurrenceRule,
-                    isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
-                )
-            }
         }
         .onAppear { CoreDataService.shared.ensureLoaded() }
         .task { await vm.load() }
@@ -147,13 +138,6 @@ struct AddUnplannedExpenseView: View {
         // Apply cross‑platform form styling and sheet padding
         .ub_sheetPadding()
         .ub_formStyleGrouped()
-        .sheet(isPresented: $isPresentingCustomRecurrenceEditor) {
-            CustomRecurrenceEditorView(
-                initial: vm.customRuleSeed,
-                onCancel: { },
-                onSave: { vm.applyCustomRecurrence($0) }
-            )
-        }
         .ub_hideScrollIndicators()
     }
 

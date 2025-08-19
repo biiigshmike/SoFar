@@ -16,7 +16,7 @@ import CoreData
 ///
 /// Methods:
 /// - `save(in:)` → creates/updates an `Income` managed object
-final class AddIncomeFormViewModel: ObservableObject, RecurrenceHandling {
+final class AddIncomeFormViewModel: ObservableObject {
 
     // MARK: Inputs / Identity
     let incomeObjectID: NSManagedObjectID?
