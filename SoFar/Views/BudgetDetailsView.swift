@@ -76,6 +76,7 @@ struct BudgetDetailsView: View {
             }
             .padding(.horizontal, DS.Spacing.l)
             .padding(.top, DS.Spacing.m)
+            .padding(.bottom, DS.Spacing.m)
 
             // MARK: Lists
             Group {
@@ -135,7 +136,7 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
-        .searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
+        //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
         // MARK: Add Sheets
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
@@ -185,7 +186,7 @@ private struct SummarySection: View {
             Spacer(minLength: 0)
 
             // MARK: Income/Savings Grid
-            Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 4) {
+            Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
                 GridRow {
                     Text("PLANNED INCOME")
                         .font(.caption.weight(.semibold))

@@ -145,14 +145,14 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
 
-            DatePicker(
-                "",
-                selection: Binding(
-                    get: { vm.selectedMonth },
-                    set: { vm.selectedMonth = Month.start(of: $0) }
-                ),
-                displayedComponents: [.date]
-            )
+//            DatePicker(
+//                "",
+//                selection: Binding(
+//                    get: { vm.selectedMonth },
+//                    set: { vm.selectedMonth = Month.start(of: $0) }
+//                ),
+//                displayedComponents: [.date]
+//            )
             .labelsHidden()
             .ub_compactDatePickerStyle()
         }
