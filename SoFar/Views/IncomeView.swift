@@ -125,42 +125,12 @@ struct IncomeView: View {
             .accentColor(themeManager.selectedTheme.accent)
             .tint(themeManager.selectedTheme.accent)
             .font(.subheadline)
-            #if os(macOS)
-            // macOS: attach the configuration closure directly to the call
-            MCalendarView(
-                selectedDate: $viewModel.selectedDate,
-                selectedRange: .constant(nil)
-            ) { config in
-                config
-                    .dayView(UBDayView.init)
-                    .weekdaysView(UBWeekdaysView.init)
-                    .monthLabel(UBMonthLabel.init)
-                    .startMonth(start)
-                    .endMonth(end)
-                    .scrollTo(date: calendarScrollDate)
+
+            if calendarHorizontal {
+                horizontalCalendar(start: start, end: end, today: today)
+            } else {
+                verticalCalendar(start: start, end: end, today: today)
             }
-            .accessibilityIdentifier("IncomeCalendar")
-            // MARK: Double-click calendar to add income (macOS)
-            .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    addIncomeInitialDate = viewModel.selectedDate ?? today
-                    isPresentingAddIncome = true
-                }
-            )
-            #else
-            // iOS
-            MCalendarView(
-                selectedDate: $viewModel.selectedDate,
-                selectedRange: .constant(nil)
-            ) { config in
-                config
-                    .monthLabel(UBMonthLabel.init)
-                    .startMonth(start)
-                    .endMonth(end)
-                    .scrollTo(date: calendarScrollDate)
-            }
-            .accessibilityIdentifier("IncomeCalendar")
-            #endif
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -169,6 +139,101 @@ struct IncomeView: View {
             RoundedRectangle(cornerRadius: DS.Radius.card)
                 .fill(themeManager.selectedTheme.secondaryBackground)
         )
+    }
+
+    @ViewBuilder
+    private func verticalCalendar(start: Date, end: Date, today: Date) -> some View {
+        #if os(macOS)
+        MCalendarView(
+            selectedDate: $viewModel.selectedDate,
+            selectedRange: .constant(nil)
+        ) { config in
+            config
+                .dayView(UBDayView.init)
+                .weekdaysView(UBWeekdaysView.init)
+                .monthLabel(UBMonthLabel.init)
+                .startMonth(start)
+                .endMonth(end)
+                .scrollTo(date: calendarScrollDate)
+        }
+        .accessibilityIdentifier("IncomeCalendar")
+        .simultaneousGesture(
+            TapGesture(count: 2).onEnded {
+                addIncomeInitialDate = viewModel.selectedDate ?? today
+                isPresentingAddIncome = true
+            }
+        )
+        #else
+        MCalendarView(
+            selectedDate: $viewModel.selectedDate,
+            selectedRange: .constant(nil)
+        ) { config in
+            config
+                .monthLabel(UBMonthLabel.init)
+                .startMonth(start)
+                .endMonth(end)
+                .scrollTo(date: calendarScrollDate)
+        }
+        .accessibilityIdentifier("IncomeCalendar")
+        #endif
+    }
+
+    @ViewBuilder
+    private func horizontalCalendar(start: Date, end: Date, today: Date) -> some View {
+        GeometryReader { geo in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(monthsBetween(start: start, end: end), id: \.self) { month in
+                        #if os(macOS)
+                        MCalendarView(
+                            selectedDate: $viewModel.selectedDate,
+                            selectedRange: .constant(nil)
+                        ) { config in
+                            config
+                                .dayView(UBDayView.init)
+                                .weekdaysView(UBWeekdaysView.init)
+                                .monthLabel(UBMonthLabel.init)
+                                .startMonth(month)
+                                .endMonth(month)
+                        }
+                        .frame(width: geo.size.width)
+                        .accessibilityIdentifier("IncomeCalendar")
+                        .simultaneousGesture(
+                            TapGesture(count: 2).onEnded {
+                                addIncomeInitialDate = viewModel.selectedDate ?? today
+                                isPresentingAddIncome = true
+                            }
+                        )
+                        #else
+                        MCalendarView(
+                            selectedDate: $viewModel.selectedDate,
+                            selectedRange: .constant(nil)
+                        ) { config in
+                            config
+                                .monthLabel(UBMonthLabel.init)
+                                .startMonth(month)
+                                .endMonth(month)
+                        }
+                        .frame(width: geo.size.width)
+                        .accessibilityIdentifier("IncomeCalendar")
+                        #endif
+                    }
+                }
+            }
+        }
+        .frame(height: 320)
+    }
+
+    private func monthsBetween(start: Date, end: Date) -> [Date] {
+        var months: [Date] = []
+        var current = start
+        let calendar = Calendar.current
+        while current <= end {
+            months.append(current)
+            guard let next = calendar.date(byAdding: .month, value: 1, to: current) else { break }
+            current = next
+        }
+        return months
     }
 
     // MARK: - Weekly Summary Bar
