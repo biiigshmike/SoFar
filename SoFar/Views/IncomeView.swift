@@ -114,11 +114,11 @@ struct IncomeView: View {
         let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: 12) {
-                Button("<<") { goToPreviousMonth() }
-                Button("<") { goToPreviousDay() }
-                Button("Today") { goToToday() }
-                Button(">") { goToNextDay() }
-                Button(">>") { goToNextMonth() }
+//                Button("<<") { goToPreviousMonth() }
+//                Button("<") { goToPreviousDay() }
+//                Button("Today") { goToToday() }
+//                Button(">") { goToNextDay() }
+//                Button(">>") { goToNextMonth() }
             }
 #if os(macOS)
             .buttonStyle(.borderedProminent)
