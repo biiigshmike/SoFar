@@ -135,7 +135,7 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
-        .searchable(text: $vm.searchQuery, placement: .automatic, prompt: Text("Search"))
+        .searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
         // MARK: Add Sheets
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
