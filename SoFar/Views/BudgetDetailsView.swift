@@ -322,7 +322,8 @@ private struct PlannedListFR: View {
             } else {
                 // MARK: Real List for native swipe
                 List {
-                    ForEach(sorted(rows), id: \.objectID) { item in
+                    let items = sorted(rows)
+                    ForEach(Array(items.enumerated()), id: \.element.objectID) { idx, item in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.transactionDate ?? Date(), style: .date)
                                 .font(.headline)
@@ -338,6 +339,7 @@ private struct PlannedListFR: View {
                             }
                         }
                         .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
@@ -354,15 +356,17 @@ private struct PlannedListFR: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .overlay(alignment: .bottom) {
-                            Divider()
+                            if idx < items.count - 1 {
+                                Divider()
+                            }
                         }
                     }
                     .onDelete { indexSet in
-                        let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
-                        if confirmBeforeDelete, let first = items.first {
+                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+                        if confirmBeforeDelete, let first = itemsToDelete.first {
                             itemToDelete = first
                         } else {
-                            items.forEach(deletePlanned(_:))
+                            itemsToDelete.forEach(deletePlanned(_:))
                         }
                     }
                 }
@@ -477,7 +481,8 @@ private struct VariableListFR: View {
             } else {
                 // MARK: Real List for native swipe
                 List {
-                    ForEach(sorted(rows), id: \.objectID) { item in
+                    let items = sorted(rows)
+                    ForEach(Array(items.enumerated()), id: \.element.objectID) { idx, item in
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                             Circle()
                                 .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
@@ -519,15 +524,17 @@ private struct VariableListFR: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .overlay(alignment: .bottom) {
-                            Divider()
+                            if idx < items.count - 1 {
+                                Divider()
+                            }
                         }
                     }
                     .onDelete { indexSet in
-                        let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
-                        if confirmBeforeDelete, let first = items.first {
+                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+                        if confirmBeforeDelete, let first = itemsToDelete.first {
                             itemToDelete = first
                         } else {
-                            items.forEach(deleteUnplanned(_:))
+                            itemsToDelete.forEach(deleteUnplanned(_:))
                         }
                     }
                 }
