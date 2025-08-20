@@ -47,9 +47,11 @@ struct AddPlannedExpenseView: View {
     // MARK: Init
     /// Designated initializer.
     /// - Parameters:
-    ///   - preselectedBudgetID: Optional budget objectID to preselect.
+    ///   - plannedExpenseID: ID of expense.
+    ///  - preselectedBudgetID: Optional budget objectID to preselect.
     ///   - defaultSaveAsGlobalPreset: When true, defaults the "Use in future budgets?" toggle to ON on first load.
-    ///   - onSaved: Closure invoked after `vm.save()` succeeds.
+    ///   - showAssignBudgetToggle: Toggle whether or not adding to budget now or later.
+    ///  - onSaved: Closure invoked after `vm.save()` succeeds.
     init(
         plannedExpenseID: NSManagedObjectID? = nil,
         preselectedBudgetID: NSManagedObjectID? = nil,

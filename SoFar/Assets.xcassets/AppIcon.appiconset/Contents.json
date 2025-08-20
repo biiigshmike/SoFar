@@ -61,13 +61,13 @@
       "size" : "128x128"
     },
     {
-      "filename" : "256x256 1.png",
+      "filename" : "256x256.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
-      "filename" : "256x256.png",
+      "filename" : "256x256 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"

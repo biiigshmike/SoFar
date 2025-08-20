@@ -18,6 +18,7 @@ struct BudgetIncomeCalculator {
     /// - Parameters:
     ///   - range: DateInterval for the budget window.
     ///   - isPlanned: Optional filter; pass true for planned only, false for actual only, nil for both.
+    ///  - context: CoreData/App context
     static func fetchIncomes(in range: DateInterval,
                              isPlanned: Bool? = nil,
                              context: NSManagedObjectContext) throws -> [Income] {
