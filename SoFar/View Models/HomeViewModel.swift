@@ -64,11 +64,15 @@ struct BudgetSummary: Identifiable, Equatable {
     let plannedExpensesActualTotal: Double
 
     // MARK: Income (date-based; no relationship)
-    let plannedIncomeTotal: Double
+    /// Total income expected for the period (e.g. paychecks not yet received).
+    let potentialIncomeTotal: Double
+    /// Income actually received so far in the period.
     let actualIncomeTotal: Double
 
     // MARK: Savings
-    var plannedSavingsTotal: Double { plannedIncomeTotal - plannedExpensesPlannedTotal }
+    /// Savings you could have if all potential income arrives and only planned expenses occur.
+    var potentialSavingsTotal: Double { potentialIncomeTotal - plannedExpensesPlannedTotal }
+    /// Savings based on actual income received minus both actual planned expenses and variable expenses.
     var actualSavingsTotal: Double {
         actualIncomeTotal - (plannedExpensesActualTotal + variableExpensesTotal)
     }
@@ -251,8 +255,8 @@ final class HomeViewModel: ObservableObject {
         let incomeFetch = NSFetchRequest<Income>(entityName: "Income")
         incomeFetch.predicate = NSPredicate(format: "date >= %@ AND date <= %@", periodStart as NSDate, periodEnd as NSDate)
         let incomes: [Income] = (try? context.fetch(incomeFetch)) ?? []
-        let plannedIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
-        let actualIncomeTotal  = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
+        let potentialIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
+        let actualIncomeTotal    = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
 
         // MARK: Variable (Unplanned) Expenses (from tracked cards, within window)
         let cards = (budget.cards as? Set<Card>) ?? []
@@ -291,7 +295,7 @@ final class HomeViewModel: ObservableObject {
             variableExpensesTotal: variableTotal,
             plannedExpensesPlannedTotal: plannedExpensesPlannedTotal,
             plannedExpensesActualTotal: plannedExpensesActualTotal,
-            plannedIncomeTotal: plannedIncomeTotal,
+            potentialIncomeTotal: potentialIncomeTotal,
             actualIncomeTotal: actualIncomeTotal
         )
     }
