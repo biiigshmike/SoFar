@@ -199,6 +199,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 // MARK: - ThemeManager
 /// Observable theme source of truth. Persists selection via `UserDefaults`
 /// so the chosen theme survives app relaunches.
+@MainActor
 final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme {
         didSet {
@@ -264,9 +265,11 @@ final class ThemeManager: ObservableObject {
         if let raw = ubiquitousStore.string(forKey: storageKey),
            let theme = AppTheme(rawValue: raw),
            theme != selectedTheme {
-            isApplyingRemoteChange = true
-            selectedTheme = theme
-            isApplyingRemoteChange = false
+            DispatchQueue.main.async {
+                self.isApplyingRemoteChange = true
+                self.selectedTheme = theme
+                self.isApplyingRemoteChange = false
+            }
         }
     }
 }
