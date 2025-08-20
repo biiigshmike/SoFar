@@ -64,11 +64,15 @@ struct BudgetSummary: Identifiable, Equatable {
     let plannedExpensesActualTotal: Double
 
     // MARK: Income (date-based; no relationship)
-    let plannedIncomeTotal: Double
+    /// Potential income represents planned/expected earnings for the period.
+    let potentialIncomeTotal: Double
+    /// Actual income represents real earnings received within the period.
     let actualIncomeTotal: Double
 
     // MARK: Savings
-    var plannedSavingsTotal: Double { plannedIncomeTotal - plannedExpensesPlannedTotal }
+    /// Potential savings = potential income minus planned expenses.
+    var potentialSavingsTotal: Double { potentialIncomeTotal - plannedExpensesPlannedTotal }
+    /// Actual savings so far = actual income minus actual planned expenses and variable expenses.
     var actualSavingsTotal: Double {
         actualIncomeTotal - (plannedExpensesActualTotal + variableExpensesTotal)
     }
@@ -251,7 +255,7 @@ final class HomeViewModel: ObservableObject {
         let incomeFetch = NSFetchRequest<Income>(entityName: "Income")
         incomeFetch.predicate = NSPredicate(format: "date >= %@ AND date <= %@", periodStart as NSDate, periodEnd as NSDate)
         let incomes: [Income] = (try? context.fetch(incomeFetch)) ?? []
-        let plannedIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
+        let potentialIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
         let actualIncomeTotal  = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
 
         // MARK: Variable (Unplanned) Expenses (from tracked cards, within window)
@@ -291,7 +295,7 @@ final class HomeViewModel: ObservableObject {
             variableExpensesTotal: variableTotal,
             plannedExpensesPlannedTotal: plannedExpensesPlannedTotal,
             plannedExpensesActualTotal: plannedExpensesActualTotal,
-            plannedIncomeTotal: plannedIncomeTotal,
+            potentialIncomeTotal: potentialIncomeTotal,
             actualIncomeTotal: actualIncomeTotal
         )
     }
