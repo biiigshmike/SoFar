@@ -84,11 +84,15 @@ struct SettingsView: View {
                             Toggle("", isOn: $viewModel.syncCardThemes)
                                 .labelsHidden()
                         }
+                        .disabled(!viewModel.enableCloudSync)
+                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
 
                         SettingsRow(title: "Sync App Theme Across Devices") {
                             Toggle("", isOn: $viewModel.syncAppTheme)
                                 .labelsHidden()
                         }
+                        .disabled(!viewModel.enableCloudSync)
+                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }

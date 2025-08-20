@@ -35,8 +35,17 @@ final class SettingsViewModel: ObservableObject {
     var syncAppTheme: Bool = true { willSet { objectWillChange.send() } }
 
     /// Enable iCloud/CloudKit synchronization for Core Data.
+    /// When turned off, dependent sync options are also disabled.
     @AppStorage(AppSettingsKeys.enableCloudSync.rawValue)
-    var enableCloudSync: Bool = true { willSet { objectWillChange.send() } }
+    var enableCloudSync: Bool = true {
+        willSet { objectWillChange.send() }
+        didSet {
+            if !enableCloudSync {
+                syncCardThemes = false
+                syncAppTheme = false
+            }
+        }
+    }
 
     // MARK: - Init
     init() {
