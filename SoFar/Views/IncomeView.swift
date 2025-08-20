@@ -113,7 +113,7 @@ struct IncomeView: View {
             HStack(spacing: 12) {
 //                Button("<<") { goToPreviousMonth() }
 //                Button("<") { goToPreviousDay() }
-//                Button("Today") { goToToday() }
+                Button("Today") { goToToday() }
 //                Button(">") { goToNextDay() }
 //                Button(">>") { goToNextMonth() }
             }
