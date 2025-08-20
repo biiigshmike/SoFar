@@ -55,6 +55,18 @@ struct HomeView: View {
                         Label("Add Budget", systemImage: "plus")
                     }
                 }
+            } else if case .loaded(let summaries) = vm.state, let first = summaries.first {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(role: .destructive) {
+                            vm.requestDelete(budgetID: first.id)
+                        } label: {
+                            Label("Delete Budget", systemImage: "trash")
+                        }
+                    } label: {
+                        Label("Actions", systemImage: "ellipsis.circle")
+                    }
+                }
             }
         }
         .refreshable { await vm.refresh() }
@@ -74,7 +86,23 @@ struct HomeView: View {
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
             .presentationDetents([.large, .medium])
         }
-
+        .alert(item: $vm.alert) { alert in
+            switch alert.kind {
+            case .error(let message):
+                return Alert(
+                    title: Text("Error"),
+                    message: Text(message),
+                    dismissButton: .default(Text("OK"))
+                )
+            case .confirmDelete(let id):
+                return Alert(
+                    title: Text("Delete Budget?"),
+                    message: Text("This action cannot be undone."),
+                    primaryButton: .destructive(Text("Delete"), action: { Task { await vm.confirmDelete(budgetID: id) } }),
+                    secondaryButton: .cancel()
+                )
+            }
+        }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
 
