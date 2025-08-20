@@ -80,7 +80,7 @@ final class BudgetDetailsViewModel: ObservableObject {
             variableExpensesTotal: variableTotal,
             plannedExpensesPlannedTotal: plannedPlanned,
             plannedExpensesActualTotal: plannedActual,
-            potentialIncomeTotal: incomeTotals.planned,
+            plannedIncomeTotal: incomeTotals.planned,
             actualIncomeTotal: incomeTotals.actual
         )
     }
