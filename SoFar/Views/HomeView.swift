@@ -28,6 +28,7 @@ struct HomeView: View {
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
+    @State private var editingBudget: BudgetSummary?
 
     // MARK: Body
     var body: some View {
@@ -58,6 +59,11 @@ struct HomeView: View {
             } else if case .loaded(let summaries) = vm.state, let first = summaries.first {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        Button {
+                            editingBudget = first
+                        } label: {
+                            Label("Edit Budget", systemImage: "pencil")
+                        }
                         Button(role: .destructive) {
                             vm.requestDelete(budgetID: first.id)
                         } label: {
@@ -81,6 +87,16 @@ struct HomeView: View {
             AddBudgetView(
                 initialStartDate: start,
                 initialEndDate: end,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            .presentationDetents([.large, .medium])
+        }
+        .sheet(item: $editingBudget) { summary in
+            AddBudgetView(
+                editingBudgetObjectID: summary.id,
+                fallbackStartDate: summary.periodStart,
+                fallbackEndDate: summary.periodEnd,
                 onSaved: { Task { await vm.refresh() } }
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
