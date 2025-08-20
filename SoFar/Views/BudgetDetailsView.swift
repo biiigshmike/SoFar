@@ -87,7 +87,8 @@ struct BudgetDetailsView: View {
                             startDate: vm.startDate,
                             endDate: vm.endDate,
                             sort: vm.sort,
-                            onAddTapped: { isPresentingAddPlannedSheet = true }
+                            onAddTapped: { isPresentingAddPlannedSheet = true },
+                            onTotalsChanged: { Task { await vm.refreshRows() } }
                         )
                     } else {
                         Text("Loading…")
@@ -102,7 +103,8 @@ struct BudgetDetailsView: View {
                             startDate: vm.startDate,
                             endDate: vm.endDate,
                             sort: vm.sort,
-                            onAddTapped: { isPresentingAddUnplannedSheet = true }
+                            onAddTapped: { isPresentingAddUnplannedSheet = true },
+                            onTotalsChanged: { Task { await vm.refreshRows() } }
                         )
                     } else {
                         Text("Loading…")
@@ -142,7 +144,7 @@ struct BudgetDetailsView: View {
             AddPlannedExpenseView(
                 preselectedBudgetID: vm.budget?.objectID,
                 defaultSaveAsGlobalPreset: UserDefaults.standard.bool(forKey: AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue),
-                onSaved: { /* lists auto-update via @FetchRequest */ }
+                onSaved: { Task { await vm.refreshRows() } }
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
@@ -150,7 +152,7 @@ struct BudgetDetailsView: View {
             AddUnplannedExpenseView(
                 allowedCardIDs: Set(((vm.budget?.cards as? Set<Card>) ?? []).map { $0.objectID }),
                 initialDate: vm.startDate,
-                onSaved: { /* lists auto-update via @FetchRequest */ }
+                onSaved: { Task { await vm.refreshRows() } }
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
@@ -283,6 +285,7 @@ private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
     private let onAddTapped: () -> Void
+    private let onTotalsChanged: () -> Void
     @State private var editingItem: PlannedExpense?
     @State private var itemToDelete: PlannedExpense?
 
@@ -291,9 +294,10 @@ private struct PlannedListFR: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void) {
+    init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void, onTotalsChanged: @escaping () -> Void) {
         self.sort = sort
         self.onAddTapped = onAddTapped
+        self.onTotalsChanged = onTotalsChanged
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<PlannedExpense> = NSFetchRequest(entityName: "PlannedExpense")
@@ -371,7 +375,7 @@ private struct PlannedListFR: View {
             AddPlannedExpenseView(
                 plannedExpenseID: expense.objectID,
                 preselectedBudgetID: expense.budget?.objectID,
-                onSaved: {}
+                onSaved: { onTotalsChanged() }
             )
             .environment(\.managedObjectContext, viewContext)
         }
@@ -417,7 +421,7 @@ private struct PlannedListFR: View {
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
             viewContext.delete(item)
-            do { try viewContext.save() }
+            do { try viewContext.save(); onTotalsChanged() }
             catch { print("Failed to delete planned expense: \(error.localizedDescription)") }
         }
     }
@@ -429,6 +433,7 @@ private struct VariableListFR: View {
     private let sort: BudgetDetailsViewModel.SortOption
     private let attachedCards: [Card]
     private let onAddTapped: () -> Void
+    private let onTotalsChanged: () -> Void
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
 
@@ -437,10 +442,11 @@ private struct VariableListFR: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void) {
+    init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void, onTotalsChanged: @escaping () -> Void) {
         self.sort = sort
         self.attachedCards = attachedCards
         self.onAddTapped = onAddTapped
+        self.onTotalsChanged = onTotalsChanged
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<UnplannedExpense> = NSFetchRequest(entityName: "UnplannedExpense")
@@ -534,7 +540,7 @@ private struct VariableListFR: View {
                 unplannedExpenseID: expense.objectID,
                 allowedCardIDs: Set(attachedCards.map { $0.objectID }),
                 initialDate: expense.transactionDate,
-                onSaved: {}
+                onSaved: { onTotalsChanged() }
             )
             .environment(\.managedObjectContext, viewContext)
         }
@@ -586,7 +592,7 @@ private struct VariableListFR: View {
     private func deleteUnplanned(_ item: UnplannedExpense) {
         withAnimation {
             viewContext.delete(item)
-            do { try viewContext.save() }
+            do { try viewContext.save(); onTotalsChanged() }
             catch { print("Failed to delete unplanned expense: \(error.localizedDescription)") }
         }
     }
