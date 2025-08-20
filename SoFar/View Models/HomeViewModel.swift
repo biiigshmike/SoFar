@@ -25,6 +25,17 @@ enum BudgetLoadState: Equatable {
     case loaded([BudgetSummary])
 }
 
+// MARK: - HomeViewAlert
+/// Alert types surfaced by the home screen.
+struct HomeViewAlert: Identifiable {
+    enum Kind {
+        case error(message: String)
+        case confirmDelete(budgetID: NSManagedObjectID)
+    }
+    let id = UUID()
+    let kind: Kind
+}
+
 // MARK: - BudgetSummary (View Model DTO)
 /// Immutable data passed to the card view for rendering.
 struct BudgetSummary: Identifiable, Equatable {
@@ -106,9 +117,11 @@ final class HomeViewModel: ObservableObject {
         didSet { Task { await refresh() } }
     }
     @Published private(set) var state: BudgetLoadState = .initial
+    @Published var alert: HomeViewAlert?
 
     // MARK: Dependencies
     private let context: NSManagedObjectContext
+    private let budgetService = BudgetService()
     private var hasStarted = false
 
     // MARK: init()
@@ -169,6 +182,29 @@ final class HomeViewModel: ObservableObject {
     func adjustSelectedMonth(byMonths delta: Int) {
         if let newDate = Calendar.current.date(byAdding: .month, value: delta, to: selectedMonth) {
             selectedMonth = Month.start(of: newDate)
+        }
+    }
+
+    // MARK: Deletion
+    /// Requests deletion for the provided budget object ID, honoring the user's confirm setting.
+    func requestDelete(budgetID: NSManagedObjectID) {
+        let confirm = UserDefaults.standard.bool(forKey: AppSettingsKeys.confirmBeforeDelete.rawValue)
+        if confirm {
+            alert = HomeViewAlert(kind: .confirmDelete(budgetID: budgetID))
+        } else {
+            Task { await confirmDelete(budgetID: budgetID) }
+        }
+    }
+
+    /// Permanently deletes a budget and refreshes state.
+    func confirmDelete(budgetID: NSManagedObjectID) async {
+        do {
+            if let budget = try context.existingObject(with: budgetID) as? Budget {
+                try budgetService.deleteBudget(budget)
+                await refresh()
+            }
+        } catch {
+            alert = HomeViewAlert(kind: .error(message: error.localizedDescription))
         }
     }
 
