@@ -353,13 +353,7 @@ private struct PlannedListFR: View {
                                 }
                             }
                         )
-                        .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                        .overlay(alignment: .bottom) {
-                            if idx < items.count - 1 {
-                                Divider()
-                            }
-                        }
                     }
                     .onDelete { indexSet in
                         let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
@@ -521,13 +515,7 @@ private struct VariableListFR: View {
                                 }
                             }
                         )
-                        .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                        .overlay(alignment: .bottom) {
-                            if idx < items.count - 1 {
-                                Divider()
-                            }
-                        }
                     }
                     .onDelete { indexSet in
                         let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
