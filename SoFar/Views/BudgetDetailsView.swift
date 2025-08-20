@@ -353,6 +353,9 @@ private struct PlannedListFR: View {
                         )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .overlay(alignment: .bottom) {
+                            Divider()
+                        }
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
@@ -515,11 +518,9 @@ private struct VariableListFR: View {
                         )
                         .listRowSeparator(.hidden)
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-
-                        Divider() // keep your visual rhythm if desired
-                            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .overlay(alignment: .bottom) {
+                            Divider()
+                        }
                     }
                     .onDelete { indexSet in
                         let items = indexSet.compactMap { idx in sorted(rows).indices.contains(idx) ? sorted(rows)[idx] : nil }
