@@ -151,18 +151,20 @@ final class PlannedExpenseService {
     /// - Parameters:
     ///   - titleOrDescription: Display text.
     ///   - plannedAmount: Planned amount baked into the template.
+    ///   - actualAmount: Optional actual amount (defaults to 0).
     ///   - defaultTransactionDate: Some UIs want a default date (e.g., next due date). If your model
     ///                             makes this non-optional, pass something meaningful (default = now).
     /// - Returns: The template PlannedExpense (isGlobal = true).
     @discardableResult
     func createGlobalTemplate(titleOrDescription: String,
                               plannedAmount: Double,
+                              actualAmount: Double = 0,
                               defaultTransactionDate: Date = Date()) throws -> PlannedExpense {
         let template = expenseRepo.create { exp in
             exp.setValue(UUID(), forKey: "id")
             Self.setTitleOrDescription(on: exp, value: titleOrDescription)
             exp.plannedAmount   = plannedAmount
-            exp.actualAmount    = 0
+            exp.actualAmount    = actualAmount
             exp.transactionDate = defaultTransactionDate
             exp.isGlobal        = true
             exp.globalTemplateID = nil

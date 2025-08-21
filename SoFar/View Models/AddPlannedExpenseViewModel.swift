@@ -123,7 +123,9 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 parent.id = parent.id ?? UUID()
                 parent.descriptionText = trimmed
                 parent.plannedAmount = plannedAmt
-                parent.actualAmount = 0
+                // Preserve any actual amount entered when creating the preset so it
+                // can be edited later and displayed in PresetsView
+                parent.actualAmount = actualAmt
                 parent.transactionDate = transactionDate
                 parent.isGlobal = true
                 parent.budget = nil
