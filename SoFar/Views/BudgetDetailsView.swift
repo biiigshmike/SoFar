@@ -288,6 +288,7 @@ private struct PlannedListFR: View {
     private let onTotalsChanged: () -> Void
     @State private var editingItem: PlannedExpense?
     @State private var itemToDelete: PlannedExpense?
+    @State private var showDeleteAlert = false
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
@@ -358,6 +359,7 @@ private struct PlannedListFR: View {
                             onDelete: {
                                 if confirmBeforeDelete {
                                     itemToDelete = item
+                                    showDeleteAlert = true
                                 } else {
                                     deletePlanned(item)
                                 }
@@ -369,6 +371,7 @@ private struct PlannedListFR: View {
                         let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
                         if confirmBeforeDelete, let first = itemsToDelete.first {
                             itemToDelete = first
+                            showDeleteAlert = true
                         } else {
                             itemsToDelete.forEach(deletePlanned(_:))
                         }
@@ -385,15 +388,22 @@ private struct PlannedListFR: View {
             )
             .environment(\.managedObjectContext, viewContext)
         }
-        .alert(item: $itemToDelete) { item in
-            Alert(
-                title: Text("Delete \(item.descriptionText ?? "Expense")?"),
-                message: Text("This will remove the planned expense."),
-                primaryButton: .destructive(Text("Delete")) { deletePlanned(item) },
-                secondaryButton: .cancel()
-            )
+        .alert(
+            "Delete \(itemToDelete?.descriptionText ?? "Expense")?",
+            isPresented: $showDeleteAlert
+        ) {
+            Button("Delete", role: .destructive) {
+                if let itemToDelete {
+                    deletePlanned(itemToDelete)
+                }
+                itemToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+            }
+        } message: {
+            Text("This will remove the planned expense.")
         }
-    }
 
     // MARK: Sorting applied after fetch to honor user choice
     private func sorted(_ arr: FetchedResults<PlannedExpense>) -> [PlannedExpense] {
@@ -457,6 +467,7 @@ private struct VariableListFR: View {
     private let onTotalsChanged: () -> Void
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
+    @State private var showDeleteAlert = false
 
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
@@ -541,6 +552,7 @@ private struct VariableListFR: View {
                             onDelete: {
                                 if confirmBeforeDelete {
                                     itemToDelete = item
+                                    showDeleteAlert = true
                                 } else {
                                     deleteUnplanned(item)
                                 }
@@ -552,6 +564,7 @@ private struct VariableListFR: View {
                         let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
                         if confirmBeforeDelete, let first = itemsToDelete.first {
                             itemToDelete = first
+                            showDeleteAlert = true
                         } else {
                             itemsToDelete.forEach(deleteUnplanned(_:))
                         }
@@ -569,15 +582,22 @@ private struct VariableListFR: View {
             )
             .environment(\.managedObjectContext, viewContext)
         }
-        .alert(item: $itemToDelete) { item in
-            Alert(
-                title: Text("Delete \(item.descriptionText ?? "Expense")?"),
-                message: Text("This will remove the expense."),
-                primaryButton: .destructive(Text("Delete")) { deleteUnplanned(item) },
-                secondaryButton: .cancel()
-            )
+        .alert(
+            "Delete \(itemToDelete?.descriptionText ?? "Expense")?",
+            isPresented: $showDeleteAlert
+        ) {
+            Button("Delete", role: .destructive) {
+                if let itemToDelete {
+                    deleteUnplanned(itemToDelete)
+                }
+                itemToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+            }
+        } message: {
+            Text("This will remove the expense.")
         }
-    }
 
     // MARK: Sorting
     private func sorted(_ arr: FetchedResults<UnplannedExpense>) -> [UnplannedExpense] {
