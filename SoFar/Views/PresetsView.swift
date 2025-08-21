@@ -204,13 +204,15 @@ struct PresetListItem: Identifiable, Equatable {
     // MARK: Display
     let name: String
     let plannedAmount: Double
-    let actualAmountAggregated: Double
+    /// Actual amount set on the preset template itself. This should remain
+    /// unchanged when child expenses are added or modified.
+    let actualAmount: Double
     let assignedCount: Int
     let nextDate: Date?
 
     // MARK: Formatting Helpers
     var plannedCurrency: String { CurrencyFormatter.shared.string(plannedAmount) }
-    var actualCurrency: String { CurrencyFormatter.shared.string(actualAmountAggregated) }
+    var actualCurrency: String { CurrencyFormatter.shared.string(actualAmount) }
     var nextDateLabel: String {
         guard let d = nextDate else { return "Complete" }
         return DateFormatterCache.shared.mediumDate(d)
@@ -219,14 +221,14 @@ struct PresetListItem: Identifiable, Equatable {
     // MARK: Init
     init(template: PlannedExpense,
          plannedAmount: Double,
-         actualAmountAggregated: Double,
+         actualAmount: Double,
          assignedCount: Int,
          nextDate: Date?) {
         self.id = template.id ?? UUID()
         self.template = template
         self.name = template.descriptionText ?? "Untitled"
         self.plannedAmount = plannedAmount
-        self.actualAmountAggregated = actualAmountAggregated
+        self.actualAmount = actualAmount
         self.assignedCount = assignedCount
         self.nextDate = nextDate
     }
@@ -248,7 +250,9 @@ final class PresetsViewModel: ObservableObject {
             let children = PlannedExpenseService.shared.fetchChildren(of: t, in: context)
 
             let planned = t.plannedAmount
-            let actual = children.reduce(0.0) { $0 + $1.actualAmount }
+            // Use the template's stored actual amount rather than summing children
+            // so presets reflect the default value entered by the user.
+            let actual = t.actualAmount
             let assignedCount = children.count
 
             // Next upcoming date among children; safely unwrap optionals
@@ -261,7 +265,7 @@ final class PresetsViewModel: ObservableObject {
                 PresetListItem(
                     template: t,
                     plannedAmount: planned,
-                    actualAmountAggregated: actual,
+                    actualAmount: actual,
                     assignedCount: assignedCount,
                     nextDate: nextDate
                 )
