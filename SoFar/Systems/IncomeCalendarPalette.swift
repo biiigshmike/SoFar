@@ -1,9 +1,9 @@
 //
-//  IncomeCalendarPalette_v2.swift
+//  IncomeCalendarPalette.swift
 //  SoFar
 //
-//  Custom views for MijickCalendarView.
-//  Provides a shared MonthLabel and macOS-specific day/weekday styling.
+//  Shared calendar components for MijickCalendarView.
+//  Provides custom month and day views plus macOS-specific weekday styling.
 //
 
 import SwiftUI
@@ -26,17 +26,43 @@ struct UBMonthLabel: MonthLabel {
     }
 }
 
-#if os(macOS)
-
-// MARK: - Day cell (black/white theme)
+// MARK: - Day cell with income summaries
+/// Displays the day number plus optional planned/actual income amounts.
 struct UBDayView: DayView {
-    // Required attributes (from DayView) :contentReference[oaicite:4]{index=4}
+    // Required attributes (from DayView)
     let date: Date
     let isCurrentMonth: Bool
     var selectedDate: Binding<Date?>?
     var selectedRange: Binding<MDateRange?>?
+    let summary: (planned: Double, actual: Double)?
 
     @Environment(\.colorScheme) private var scheme
+
+    func createContent() -> AnyView {
+        AnyView(
+            VStack(spacing: 2) {
+                ZStack {
+                    createSelectionView()
+                    createRangeSelectionView()
+                    createDayLabel()
+                }
+                if let summary = summary {
+                    VStack(spacing: 1) {
+                        if summary.planned > 0 {
+                            Text(currencyString(summary.planned))
+                                .font(.system(size: 8, weight: .regular))
+                                .foregroundColor(DS.Colors.plannedIncome)
+                        }
+                        if summary.actual > 0 {
+                            Text(currencyString(summary.actual))
+                                .font(.system(size: 8, weight: .regular))
+                                .foregroundColor(DS.Colors.actualIncome)
+                        }
+                    }
+                }
+            }
+        )
+    }
 
     // Text: 16pt semibold; black in light, white in dark; flips on selection
     func createDayLabel() -> AnyView {
@@ -44,7 +70,7 @@ struct UBDayView: DayView {
         let selected = scheme == .dark ? Color.black : Color.white
         let color = isSelected() ? selected : base
         return AnyView(
-            Text(getStringFromDay(format: "d")) // helper from DayView :contentReference[oaicite:5]{index=5}
+            Text(getStringFromDay(format: "d"))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(color)
                 .opacity(isCurrentMonth ? 1 : 0.28)
@@ -54,26 +80,29 @@ struct UBDayView: DayView {
     // Selection circle: white in dark mode; black in light mode
     func createSelectionView() -> AnyView {
         let fill = scheme == .dark ? Color.white : Color.black
-        if isSelected() {
-            return AnyView(
-                Circle()
-                    .fill(fill)
-                    .frame(width: 32, height: 32)
-            )
-        } else {
-            return AnyView(EmptyView())
-        }
+        return AnyView(
+            Circle()
+                .fill(fill)
+                .frame(width: 32, height: 32)
+                .opacity(isSelected() ? 1 : 0)
+        )
     }
-
 
     // We do not use range selection; return empty.
     func createRangeSelectionView() -> AnyView { AnyView(EmptyView()) }
-    // Default `onSelection()` already sets selectedDate = date. :contentReference[oaicite:7]{index=7}
+
+    private func currencyString(_ amount: Double) -> String {
+        let nf = NumberFormatter()
+        nf.numberStyle = .currency
+        nf.maximumFractionDigits = 0
+        return nf.string(from: amount as NSNumber) ?? ""
+    }
 }
 
+#if os(macOS)
 // MARK: - Weekday label (M T W T F S S)
 struct UBWeekdayLabel: WeekdayLabel {
-    // Required attribute (from WeekdayLabel) :contentReference[oaicite:8]{index=8}
+    // Required attribute (from WeekdayLabel)
     let weekday: MWeekday
 
     @Environment(\.colorScheme) private var scheme
@@ -81,7 +110,7 @@ struct UBWeekdayLabel: WeekdayLabel {
     func createContent() -> AnyView {
         let base = scheme == .dark ? Color.white : Color.black
         return AnyView(
-            Text(getString(with: .veryShort)) // helper from WeekdayLabel :contentReference[oaicite:9]{index=9}
+            Text(getString(with: .veryShort))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(base.opacity(0.45))
         )
@@ -95,5 +124,5 @@ struct UBWeekdaysView: WeekdaysView {
         UBWeekdayLabel(weekday: weekday).erased()
     }
 }
-
 #endif
+
