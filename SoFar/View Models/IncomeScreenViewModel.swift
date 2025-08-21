@@ -9,6 +9,7 @@ import Foundation
 import CoreData
 
 // MARK: - IncomeScreenViewModel
+@MainActor
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
     @Published var selectedDate: Date? = nil
