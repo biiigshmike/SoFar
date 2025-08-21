@@ -331,7 +331,7 @@ private struct PlannedListFR: View {
                     // Using enumerated() can interfere with SwiftUI's List deletion behaviour
                     // because the view identity is tied to the tuple rather than the underlying
                     // model object. Providing the objectID as the identifier keeps the list
-                    // stable and ensures built‑in swipe–to–delete works correctly.
+                    // stable and ensures built‑in swipe–to‑delete works correctly.
                     ForEach(items, id: \.objectID) { item in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.transactionDate ?? Date(), style: .date)
@@ -364,14 +364,7 @@ private struct PlannedListFR: View {
                         )
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
-                    .onDelete { indexSet in
-                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
-                        if confirmBeforeDelete, let first = itemsToDelete.first {
-                            itemToDelete = first
-                        } else {
-                            itemsToDelete.forEach(deletePlanned(_:))
-                        }
-                    }
+                    .onDelete(perform: handleDelete)
                 }
                 .styledList()
             }
@@ -433,6 +426,19 @@ private struct PlannedListFR: View {
                 print("Failed to delete planned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
+        }
+    }
+
+    /// Handles swipe‑to‑delete from the List's built‑in controls.
+    private func handleDelete(_ offsets: IndexSet) {
+        let items = sorted(rows)
+        let toDelete = offsets.compactMap { index in
+            items.indices.contains(index) ? items[index] : nil
+        }
+        if confirmBeforeDelete, let first = toDelete.first {
+            itemToDelete = first
+        } else {
+            toDelete.forEach(deletePlanned(_:))
         }
     }
 }
@@ -537,14 +543,7 @@ private struct VariableListFR: View {
                         )
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
-                    .onDelete { indexSet in
-                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
-                        if confirmBeforeDelete, let first = itemsToDelete.first {
-                            itemToDelete = first
-                        } else {
-                            itemsToDelete.forEach(deleteUnplanned(_:))
-                        }
-                    }
+                    .onDelete(perform: handleDelete)
                 }
                 .styledList()
             }
@@ -613,6 +612,19 @@ private struct VariableListFR: View {
                 print("Failed to delete unplanned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
+        }
+    }
+
+    /// Handles deletions triggered by the List's swipe actions.
+    private func handleDelete(_ offsets: IndexSet) {
+        let items = sorted(rows)
+        let toDelete = offsets.compactMap { index in
+            items.indices.contains(index) ? items[index] : nil
+        }
+        if confirmBeforeDelete, let first = toDelete.first {
+            itemToDelete = first
+        } else {
+            toDelete.forEach(deleteUnplanned(_:))
         }
     }
 }
