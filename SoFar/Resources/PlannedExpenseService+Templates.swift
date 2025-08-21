@@ -135,12 +135,16 @@ extension PlannedExpenseService {
 
     // MARK: Delete Template + Children
     /// Deletes a global template and any children linked to it.
-    func deleteTemplateAndChildren(template: PlannedExpense, in context: NSManagedObjectContext) {
+    func deleteTemplateAndChildren(template: PlannedExpense, in context: NSManagedObjectContext) throws {
         let kids = fetchChildren(of: template, in: context)
         for k in kids {
             context.delete(k)
         }
         context.delete(template)
+
+        if context.hasChanges {
+            try context.save()
+        }
     }
 
     // MARK: Update Template + Propagate

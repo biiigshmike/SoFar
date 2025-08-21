@@ -54,8 +54,8 @@
         <attribute name="secondBiMonthlyDate" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="transactionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="card" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Card" inverseName="unplannedExpenses" inverseEntity="Card"/>
-        <relationship name="childExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="parentExpense" inverseEntity="UnplannedExpense"/>
+        <relationship name="childExpense" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UnplannedExpense" inverseName="parentExpense" inverseEntity="UnplannedExpense"/>
         <relationship name="expenseCategory" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ExpenseCategory" inverseName="unplannedExpense" inverseEntity="ExpenseCategory"/>
-        <relationship name="parentExpense" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="UnplannedExpense" inverseName="childExpense" inverseEntity="UnplannedExpense"/>
+        <relationship name="parentExpense" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="childExpense" inverseEntity="UnplannedExpense"/>
     </entity>
 </model>
