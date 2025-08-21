@@ -142,18 +142,14 @@ struct PresetsView: View {
     /// Deletes selected global templates (and their children).
     /// - Parameter indexSet: indices from the List.
     private func delete(template: PlannedExpense) {
-        PlannedExpenseService.shared.deleteTemplateAndChildren(template: template, in: viewContext)
-        saveContext()
-        viewModel.loadTemplates(using: viewContext)
-    }
-
-    /// Saves Core Data context.
-    private func saveContext() {
-        guard viewContext.hasChanges else { return }
-        do { try viewContext.save() } catch {
+        do {
+            try PlannedExpenseService.shared.deleteTemplateAndChildren(template: template, in: viewContext)
+            viewModel.loadTemplates(using: viewContext)
+        } catch {
             #if DEBUG
-            print("PresetsView save error: \(error)")
+            print("PresetsView delete error: \(error)")
             #endif
+            viewContext.rollback()
         }
     }
 }
