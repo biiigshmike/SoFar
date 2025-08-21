@@ -16,7 +16,7 @@ import SwiftUI
 final class AddBudgetViewModel: ObservableObject {
 
     // MARK: Inputs (bound to UI)
-    @Published var budgetName: String = ""
+    @Published var budgetName: String = "Monthly Budget"
     @Published var startDate: Date
     @Published var endDate: Date
 
