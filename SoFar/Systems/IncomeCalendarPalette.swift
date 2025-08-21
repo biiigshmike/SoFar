@@ -46,19 +46,19 @@ struct UBDayView: DayView {
                     createRangeSelectionView()
                     createDayLabel()
                 }
-                if let summary = summary {
-                    VStack(spacing: 1) {
-                        if summary.planned > 0 {
-                            Text(currencyString(summary.planned))
-                                .font(.system(size: 8, weight: .regular))
-                                .foregroundColor(DS.Colors.plannedIncome)
-                        }
-                        if summary.actual > 0 {
-                            Text(currencyString(summary.actual))
-                                .font(.system(size: 8, weight: .regular))
-                                .foregroundColor(DS.Colors.actualIncome)
-                        }
-                    }
+                let planned = summary?.planned ?? 0
+                let actual = summary?.actual ?? 0
+
+                VStack(spacing: 1) {
+                    Text(currencyString(planned))
+                        .font(.system(size: 8, weight: .regular))
+                        .foregroundColor(DS.Colors.plannedIncome)
+                        .opacity(planned > 0 ? 1 : 0)
+
+                    Text(currencyString(actual))
+                        .font(.system(size: 8, weight: .regular))
+                        .foregroundColor(DS.Colors.actualIncome)
+                        .opacity(actual > 0 ? 1 : 0)
                 }
             }
         )
