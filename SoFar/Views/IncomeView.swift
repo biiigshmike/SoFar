@@ -36,6 +36,7 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
+    @State private var showDeleteAlert: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -94,12 +95,7 @@ struct IncomeView: View {
         .onAppear {
             // Ensure the calendar opens on today's date and load entries
             let initial = viewModel.selectedDate ?? Date()
-            viewModel.selectedDate = initial
-            // Force the calendar to scroll after the view appears
-            calendarScrollDate = nil
-            DispatchQueue.main.async {
-                calendarScrollDate = initial
-            }
+            calendarScrollDate = initial
             viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
@@ -136,7 +132,15 @@ struct IncomeView: View {
                 selectedRange: .constant(nil)
             ) { config in
                 config
-                    .dayView(UBDayView.init)
+                    .dayView { date, isCurrentMonth, selectedDate, selectedRange in
+                        UBDayView(
+                            date: date,
+                            isCurrentMonth: isCurrentMonth,
+                            selectedDate: selectedDate,
+                            selectedRange: selectedRange,
+                            summary: viewModel.summary(for: date)
+                        )
+                    }
                     .weekdaysView(UBWeekdaysView.init)
                     .monthLabel(UBMonthLabel.init)
                     .startMonth(start)
@@ -158,6 +162,15 @@ struct IncomeView: View {
                 selectedRange: .constant(nil)
             ) { config in
                 config
+                    .dayView { date, isCurrentMonth, selectedDate, selectedRange in
+                        UBDayView(
+                            date: date,
+                            isCurrentMonth: isCurrentMonth,
+                            selectedDate: selectedDate,
+                            selectedRange: selectedRange,
+                            summary: viewModel.summary(for: date)
+                        )
+                    }
                     .monthLabel(UBMonthLabel.init)
                     .startMonth(start)
                     .endMonth(end)
@@ -251,13 +264,16 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
-        .alert(item: $incomeToDelete) { income in
-            Alert(
-                title: Text("Delete \(income.source ?? "Income")?"),
-                message: Text("This will remove the income entry."),
-                primaryButton: .destructive(Text("Delete")) { viewModel.delete(income: income) },
-                secondaryButton: .cancel()
-            )
+        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
+            Button("Delete", role: .destructive) {
+                viewModel.delete(income: income)
+                incomeToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                incomeToDelete = nil
+            }
+        } message: { _ in
+            Text("This will remove the income entry.")
         }
     }
 
@@ -350,6 +366,7 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         if confirmBeforeDelete, let first = targets.first {
             incomeToDelete = first
+            showDeleteAlert = true
         } else {
             targets.forEach { viewModel.delete(income: $0) }
         }
@@ -383,7 +400,8 @@ private struct IncomeRow: View {
         .padding(.vertical, 6)
         // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
         .unifiedSwipeActions(
-            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                               allowsFullSwipeToDelete: false),
             onEdit: onEdit,
             onDelete: {
                 if confirmBeforeDelete {

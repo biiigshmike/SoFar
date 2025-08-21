@@ -12,9 +12,10 @@ import CoreData
 @MainActor
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
-    @Published var selectedDate: Date? = nil
+    @Published var selectedDate: Date? = Date()
     @Published private(set) var incomesForDay: [Income] = []
     @Published private(set) var totalForSelectedDate: Double = 0
+    @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
     // MARK: Private
     private let incomeService: IncomeService
@@ -45,12 +46,14 @@ final class IncomeScreenViewModel: ObservableObject {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
+            eventsByDay = (try? incomeService.eventsByDay(inMonthContaining: day)) ?? [:]
         } catch {
             #if DEBUG
             print("Income fetch error:", error)
             #endif
             incomesForDay = []
             totalForSelectedDate = 0
+            eventsByDay = [:]
         }
     }
     
@@ -70,6 +73,16 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Formatting
     func currencyString(for amount: Double) -> String {
         NumberFormatter.currency.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+    }
+
+    // MARK: Events Summary
+    func summary(for date: Date) -> (planned: Double, actual: Double)? {
+        let day = calendar.startOfDay(for: date)
+        guard let events = eventsByDay[day] else { return nil }
+        let planned = events.filter { $0.isPlanned }.reduce(0) { $0 + $1.amount }
+        let actual = events.filter { !$0.isPlanned }.reduce(0) { $0 + $1.amount }
+        if planned == 0 && actual == 0 { return nil }
+        return (planned, actual)
     }
 }
 
