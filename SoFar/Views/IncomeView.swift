@@ -24,7 +24,7 @@ struct IncomeView: View {
     /// Holds the income being edited; presenting this non-nil value triggers the edit sheet.
     @State private var editingIncome: Income? = nil
     /// Controls which date the calendar should scroll to when navigation buttons are used.
-    @State private var calendarScrollDate: Date? = Date()
+    @State private var calendarScrollDate: Date? = nil
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -36,6 +36,9 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
+    @State private var showDeleteAlert = false
+    @StateObject private var eventStore = IncomeCalendarEventStore()
+    private let incomeService = IncomeService()
 
     // MARK: Body
     var body: some View {
@@ -66,7 +69,9 @@ struct IncomeView: View {
             }
         }
         // Keep list in sync without deprecated APIs
-        .modifier(SelectionChangeHandler(viewModel: viewModel))
+        .modifier(SelectionChangeHandler(viewModel: viewModel) { date in
+            loadEvents(forMonthContaining: date ?? Date())
+        })
         // Pull to refresh to reload entries for the selected day
         .refreshable { viewModel.reloadForSelectedDay() }
         // MARK: Present Add Income Form
@@ -93,14 +98,11 @@ struct IncomeView: View {
         }
         .onAppear {
             // Ensure the calendar opens on today's date and load entries
-            let initial = viewModel.selectedDate ?? Date()
-            viewModel.selectedDate = initial
-            // Force the calendar to scroll after the view appears
-            calendarScrollDate = nil
-            DispatchQueue.main.async {
-                calendarScrollDate = initial
-            }
-            viewModel.load(day: initial)
+            let today = Date()
+            viewModel.selectedDate = today
+            calendarScrollDate = today
+            loadEvents(forMonthContaining: today)
+            viewModel.load(day: today)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
@@ -143,6 +145,7 @@ struct IncomeView: View {
                     .endMonth(end)
                     .scrollTo(date: calendarScrollDate)
             }
+            .environmentObject(eventStore)
             .accessibilityIdentifier("IncomeCalendar")
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
@@ -158,11 +161,13 @@ struct IncomeView: View {
                 selectedRange: .constant(nil)
             ) { config in
                 config
+                    .dayView(UBDayView.init)
                     .monthLabel(UBMonthLabel.init)
                     .startMonth(start)
                     .endMonth(end)
                     .scrollTo(date: calendarScrollDate)
             }
+            .environmentObject(eventStore)
             .accessibilityIdentifier("IncomeCalendar")
             #endif
         }
@@ -225,8 +230,15 @@ struct IncomeView: View {
                     ForEach(entries, id: \.objectID) { income in
                         IncomeRow(
                             income: income,
-                            onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: { viewModel.delete(income: income) }
+                            onEdit: { beginEditingIncome(income) },
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    incomeToDelete = income
+                                    showDeleteAlert = true
+                                } else {
+                                    viewModel.delete(income: income)
+                                }
+                            }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
@@ -251,13 +263,14 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
-        .alert(item: $incomeToDelete) { income in
-            Alert(
-                title: Text("Delete \(income.source ?? "Income")?"),
-                message: Text("This will remove the income entry."),
-                primaryButton: .destructive(Text("Delete")) { viewModel.delete(income: income) },
-                secondaryButton: .cancel()
-            )
+        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
+            Button("Delete", role: .destructive) {
+                viewModel.delete(income: income)
+                incomeToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { incomeToDelete = nil }
+        } message: { _ in
+            Text("This will remove the income entry.")
         }
     }
 
@@ -350,9 +363,16 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         if confirmBeforeDelete, let first = targets.first {
             incomeToDelete = first
+            showDeleteAlert = true
         } else {
             targets.forEach { viewModel.delete(income: $0) }
         }
+    }
+
+    /// Loads income events for the month containing `date` to display on the calendar.
+    private func loadEvents(forMonthContaining date: Date) {
+        let events = (try? incomeService.eventsByDay(inMonthContaining: date)) ?? [:]
+        eventStore.eventsByDay = events
     }
 }
 
@@ -365,8 +385,6 @@ private struct IncomeRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     @EnvironmentObject private var themeManager: ThemeManager
-    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
-    @State private var showDeleteAlert = false
 
     // MARK: Body
     var body: some View {
@@ -383,20 +401,11 @@ private struct IncomeRow: View {
         .padding(.vertical, 6)
         // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
         .unifiedSwipeActions(
-            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                               allowsFullSwipeToDelete: false),
             onEdit: onEdit,
-            onDelete: {
-                if confirmBeforeDelete {
-                    showDeleteAlert = true
-                } else {
-                    onDelete()
-                }
-            }
+            onDelete: onDelete
         )
-        .alert("Delete Income?", isPresented: $showDeleteAlert) {
-            Button("Delete", role: .destructive) { onDelete() }
-            Button("Cancel", role: .cancel) { }
-        }
     }
 
     // MARK: Helpers
@@ -413,14 +422,17 @@ private struct IncomeRow: View {
 /// Behavior: Calls `viewModel.reloadForSelectedDay()` whenever `selectedDate` changes.
 private struct SelectionChangeHandler: ViewModifier {
     @ObservedObject var viewModel: IncomeScreenViewModel
+    var onChange: (Date?) -> Void = { _ in }
     func body(content: Content) -> some View {
         if #available(iOS 17.0, macOS 14.0, *) {
-            return content.onChange(of: viewModel.selectedDate) {
+            return content.onChange(of: viewModel.selectedDate) { newValue in
                 viewModel.reloadForSelectedDay()
+                onChange(newValue)
             }
         } else {
-            return content.onChange(of: viewModel.selectedDate) { _ in
+            return content.onChange(of: viewModel.selectedDate) { newValue in
                 viewModel.reloadForSelectedDay()
+                onChange(newValue)
             }
         }
     }
