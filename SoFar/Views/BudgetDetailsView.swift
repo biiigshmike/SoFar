@@ -244,26 +244,26 @@ private struct FilterBar: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.m) {
-            HStack(spacing: DS.Spacing.m) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Start Date").font(.caption).foregroundStyle(.secondary)
-                    DatePicker("", selection: $startDate, displayedComponents: [.date])
-                        .labelsHidden().ub_compactDatePickerStyle()
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("End Date").font(.caption).foregroundStyle(.secondary)
-                    DatePicker("", selection: $endDate, in: startDate..., displayedComponents: [.date])
-                        .labelsHidden().ub_compactDatePickerStyle()
-                }
-                .frame(maxWidth: .infinity)
-
-                Spacer().frame(maxWidth: .infinity)
-
-                Button("Reset") { onResetDate() }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
+//            HStack(spacing: DS.Spacing.m) {
+//                VStack(alignment: .leading, spacing: 4) {
+//                    Text("Start Date").font(.caption).foregroundStyle(.secondary)
+//                    DatePicker("", selection: $startDate, displayedComponents: [.date])
+//                        .labelsHidden().ub_compactDatePickerStyle()
+//                }
+//                .frame(maxWidth: .infinity)
+//
+//                VStack(alignment: .leading, spacing: 4) {
+//                    Text("End Date").font(.caption).foregroundStyle(.secondary)
+//                    DatePicker("", selection: $endDate, in: startDate..., displayedComponents: [.date])
+//                        .labelsHidden().ub_compactDatePickerStyle()
+//                }
+//                .frame(maxWidth: .infinity)
+//
+//                Spacer().frame(maxWidth: .infinity)
+//
+//                Button("Reset") { onResetDate() }
+//                    .frame(maxWidth: .infinity, alignment: .trailing)
+//            }
 
             Picker("Sort", selection: $sort) {
                 Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
