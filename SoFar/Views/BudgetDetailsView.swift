@@ -327,7 +327,12 @@ private struct PlannedListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     let items = sorted(rows)
-                    ForEach(Array(items.enumerated()), id: \.element.objectID) { idx, item in
+                    // Iterate directly over the sorted items rather than using enumerated().
+                    // Using enumerated() can interfere with SwiftUI's List deletion behaviour
+                    // because the view identity is tied to the tuple rather than the underlying
+                    // model object. Providing the objectID as the identifier keeps the list
+                    // stable and ensures built‑in swipe–to–delete works correctly.
+                    ForEach(items, id: \.objectID) { item in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.transactionDate ?? Date(), style: .date)
                                 .font(.headline)
@@ -487,7 +492,11 @@ private struct VariableListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     let items = sorted(rows)
-                    ForEach(Array(items.enumerated()), id: \.element.objectID) { idx, item in
+                    // Iterate directly over `items` rather than using `enumerated()` to ensure
+                    // each row's identity is stable and tied to the `UnplannedExpense` itself. Using
+                    // `enumerated()` produces tuple identities, which can break SwiftUI's diffing and
+                    // built‑in deletion gestures.
+                    ForEach(items, id: \.objectID) { item in
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                             Circle()
                                 .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
