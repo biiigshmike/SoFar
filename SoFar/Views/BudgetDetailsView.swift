@@ -313,8 +313,12 @@ private struct PlannedListFR: View {
     }
 
     var body: some View {
+        // Compute the sorted array once outside of the List to avoid unintended
+        // recomputations during the list diffing. This also makes the `isEmpty`
+        // check straightforward.
+        let items = sorted(rows)
         Group {
-            if rows.isEmpty {
+            if items.isEmpty {
                 // MARK: Empty state
                 UBEmptyState(
                     iconSystemName: "list.bullet.rectangle",
@@ -326,12 +330,6 @@ private struct PlannedListFR: View {
             } else {
                 // MARK: Real List for native swipe
                 List {
-                    let items = sorted(rows)
-                    // Iterate directly over the sorted items rather than using enumerated().
-                    // Using enumerated() can interfere with SwiftUI's List deletion behaviour
-                    // because the view identity is tied to the tuple rather than the underlying
-                    // model object. Providing the objectID as the identifier keeps the list
-                    // stable and ensures built‑in swipe–to‑delete works correctly.
                     ForEach(items, id: \.objectID) { item in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.transactionDate ?? Date(), style: .date)
@@ -352,7 +350,10 @@ private struct PlannedListFR: View {
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
-                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+                            // Disable full swipe-to-delete to prevent unintended automatic deletes. Only
+                            // tapping the Delete button will confirm removal.
+                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                                               allowsFullSwipeToDelete: false),
                             onEdit: { editingItem = item },
                             onDelete: {
                                 if confirmBeforeDelete {
@@ -364,7 +365,14 @@ private struct PlannedListFR: View {
                         )
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
-                    .onDelete(perform: handleDelete)
+                    .onDelete { indexSet in
+                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+                        if confirmBeforeDelete, let first = itemsToDelete.first {
+                            itemToDelete = first
+                        } else {
+                            itemsToDelete.forEach(deletePlanned(_:))
+                        }
+                    }
                 }
                 .styledList()
             }
@@ -415,30 +423,27 @@ private struct PlannedListFR: View {
     }
 
     // MARK: Delete helper
-    /// Deletes a planned expense directly from the context so changes persist immediately.
+    /// Deletes a planned expense using the `PlannedExpenseService`. This ensures any
+    /// additional business logic (such as cascading template children) runs
+    /// consistently. The deletion is wrapped in an animation and followed by
+    /// refreshing totals. Errors are logged and rolled back on failure.
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
-            viewContext.delete(item)
+            // Step 1: Log that deletion was triggered. This helps verify that the
+            // swipe or context‑menu action is correctly invoking this helper.
+            print("deletePlanned called for: \(item.descriptionText ?? "<no description>")")
             do {
-                try viewContext.save()
-                onTotalsChanged()
+                try PlannedExpenseService.shared.delete(item)
+                // Defer the totals refresh to the next run loop. Updating the view model
+                // immediately inside the delete animation can cause extra refreshes. This
+                // async dispatch schedules the update after the current cycle completes.
+                DispatchQueue.main.async {
+                    onTotalsChanged()
+                }
             } catch {
                 print("Failed to delete planned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
-        }
-    }
-
-    /// Handles swipe‑to‑delete from the List's built‑in controls.
-    private func handleDelete(_ offsets: IndexSet) {
-        let items = sorted(rows)
-        let toDelete = offsets.compactMap { index in
-            items.indices.contains(index) ? items[index] : nil
-        }
-        if confirmBeforeDelete, let first = toDelete.first {
-            itemToDelete = first
-        } else {
-            toDelete.forEach(deletePlanned(_:))
         }
     }
 }
@@ -484,8 +489,12 @@ private struct VariableListFR: View {
     }
 
     var body: some View {
+        // Compute the sorted array once outside of the List to avoid unintended
+        // recomputations during the list diffing and to enable a straightforward
+        // isEmpty check.
+        let items = sorted(rows)
         Group {
-            if rows.isEmpty {
+            if items.isEmpty {
                 // MARK: Empty state
                 UBEmptyState(
                     iconSystemName: "creditcard",
@@ -497,11 +506,6 @@ private struct VariableListFR: View {
             } else {
                 // MARK: Real List for native swipe
                 List {
-                    let items = sorted(rows)
-                    // Iterate directly over `items` rather than using `enumerated()` to ensure
-                    // each row's identity is stable and tied to the `UnplannedExpense` itself. Using
-                    // `enumerated()` produces tuple identities, which can break SwiftUI's diffing and
-                    // built‑in deletion gestures.
                     ForEach(items, id: \.objectID) { item in
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                             Circle()
@@ -531,7 +535,8 @@ private struct VariableListFR: View {
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
-                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                                               allowsFullSwipeToDelete: false),
                             onEdit: { editingItem = item },
                             onDelete: {
                                 if confirmBeforeDelete {
@@ -543,7 +548,14 @@ private struct VariableListFR: View {
                         )
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                     }
-                    .onDelete(perform: handleDelete)
+                    .onDelete { indexSet in
+                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+                        if confirmBeforeDelete, let first = itemsToDelete.first {
+                            itemToDelete = first
+                        } else {
+                            itemsToDelete.forEach(deleteUnplanned(_:))
+                        }
+                    }
                 }
                 .styledList()
             }
@@ -601,30 +613,26 @@ private struct VariableListFR: View {
     }
 
     // MARK: Delete helper
-    /// Deletes a variable (unplanned) expense directly from the context.
+    /// Deletes a variable (unplanned) expense. We delegate to the
+    /// `UnplannedExpenseService` so that any children are cascaded
+    /// appropriately and other invariants (e.g. recurrence handling) are
+    /// maintained. On success totals are refreshed; on failure the
+    /// context is rolled back and the error is logged.
     private func deleteUnplanned(_ item: UnplannedExpense) {
         withAnimation {
-            viewContext.delete(item)
+            let service = UnplannedExpenseService()
             do {
-                try viewContext.save()
-                onTotalsChanged()
+                // Step 1: Log that deletion was triggered for debugging purposes.
+                print("deleteUnplanned called for: \(item.descriptionText ?? "<no description>")")
+                try service.delete(item, cascadeChildren: true)
+                // Defer totals refresh to the next run loop to avoid view update loops.
+                DispatchQueue.main.async {
+                    onTotalsChanged()
+                }
             } catch {
                 print("Failed to delete unplanned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
-        }
-    }
-
-    /// Handles deletions triggered by the List's swipe actions.
-    private func handleDelete(_ offsets: IndexSet) {
-        let items = sorted(rows)
-        let toDelete = offsets.compactMap { index in
-            items.indices.contains(index) ? items[index] : nil
-        }
-        if confirmBeforeDelete, let first = toDelete.first {
-            itemToDelete = first
-        } else {
-            toDelete.forEach(deleteUnplanned(_:))
         }
     }
 }
