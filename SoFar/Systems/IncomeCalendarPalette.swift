@@ -26,55 +26,38 @@ struct UBMonthLabel: MonthLabel {
     }
 }
 
-// MARK: - Day cell with optional income amounts
+#if os(macOS)
+
+// MARK: - Day cell (black/white theme)
 struct UBDayView: DayView {
-    // Required attributes (from DayView)
+    // Required attributes (from DayView) :contentReference[oaicite:4]{index=4}
     let date: Date
     let isCurrentMonth: Bool
     var selectedDate: Binding<Date?>?
     var selectedRange: Binding<MDateRange?>?
 
     @Environment(\.colorScheme) private var scheme
-    @EnvironmentObject private var themeManager: ThemeManager
-    @EnvironmentObject private var eventStore: IncomeCalendarEventStore
 
-    // Text + income amounts stacked vertically
+    // Text: 16pt semibold; black in light, white in dark; flips on selection
     func createDayLabel() -> AnyView {
         let base = scheme == .dark ? Color.white : Color.black
         let selected = scheme == .dark ? Color.black : Color.white
         let color = isSelected() ? selected : base
-
-        let day = Calendar.current.startOfDay(for: date)
-        let events = eventStore.eventsByDay[day] ?? []
-        let planned = events.filter { $0.isPlanned }.reduce(0) { $0 + $1.amount }
-        let actual  = events.filter { !$0.isPlanned }.reduce(0) { $0 + $1.amount }
-
         return AnyView(
-            VStack(spacing: 1) {
-                Text(getStringFromDay(format: "d"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(color)
-                    .opacity(isCurrentMonth ? 1 : 0.28)
-                if planned > 0 {
-                    Text(currencyString(planned))
-                        .font(.system(size: 9))
-                        .foregroundColor(DS.Colors.plannedIncome)
-                }
-                if actual > 0 {
-                    Text(currencyString(actual))
-                        .font(.system(size: 9))
-                        .foregroundColor(DS.Colors.actualIncome)
-                }
-            }
+            Text(getStringFromDay(format: "d")) // helper from DayView :contentReference[oaicite:5]{index=5}
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(color)
+                .opacity(isCurrentMonth ? 1 : 0.28)
         )
     }
 
-    // Selection circle tinted with theme accent
+    // Selection circle: white in dark mode; black in light mode
     func createSelectionView() -> AnyView {
+        let fill = scheme == .dark ? Color.white : Color.black
         if isSelected() {
             return AnyView(
                 Circle()
-                    .fill(themeManager.selectedTheme.accent)
+                    .fill(fill)
                     .frame(width: 32, height: 32)
             )
         } else {
@@ -82,23 +65,15 @@ struct UBDayView: DayView {
         }
     }
 
+
     // We do not use range selection; return empty.
     func createRangeSelectionView() -> AnyView { AnyView(EmptyView()) }
-
-    // MARK: Helpers
-    private func currencyString(_ amount: Double) -> String {
-        let nf = NumberFormatter()
-        nf.numberStyle = .currency
-        nf.locale = .current
-        return nf.string(from: amount as NSNumber) ?? ""
-    }
+    // Default `onSelection()` already sets selectedDate = date. :contentReference[oaicite:7]{index=7}
 }
-
-#if os(macOS)
 
 // MARK: - Weekday label (M T W T F S S)
 struct UBWeekdayLabel: WeekdayLabel {
-    // Required attribute (from WeekdayLabel)
+    // Required attribute (from WeekdayLabel) :contentReference[oaicite:8]{index=8}
     let weekday: MWeekday
 
     @Environment(\.colorScheme) private var scheme
@@ -106,7 +81,7 @@ struct UBWeekdayLabel: WeekdayLabel {
     func createContent() -> AnyView {
         let base = scheme == .dark ? Color.white : Color.black
         return AnyView(
-            Text(getString(with: .veryShort))
+            Text(getString(with: .veryShort)) // helper from WeekdayLabel :contentReference[oaicite:9]{index=9}
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(base.opacity(0.45))
         )

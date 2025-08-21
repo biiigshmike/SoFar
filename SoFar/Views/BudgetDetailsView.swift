@@ -204,7 +204,6 @@ private struct SummarySection: View {
                 GridRow {
                     Text(summary.potentialIncomeTotal, format: .currency(code: currencyCode))
                         .font(.callout.weight(.semibold))
-                        .foregroundStyle(DS.Colors.plannedIncome)
                     Text(summary.potentialSavingsTotal, format: .currency(code: currencyCode))
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(DS.Colors.savingsGood)
