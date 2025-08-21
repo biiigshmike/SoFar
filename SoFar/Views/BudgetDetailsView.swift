@@ -418,11 +418,22 @@ private struct PlannedListFR: View {
 
     // MARK: Delete helper
     /// Deletes a planned expense and saves the context.
+    ///
+    /// Using `performAndWait` keeps Core Data on its expected queue and ensures the
+    /// delete is committed before we refresh any totals.  If saving fails we roll
+    /// back the change so the list and store stay in sync.
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
-            viewContext.delete(item)
-            do { try viewContext.save(); onTotalsChanged() }
-            catch { print("Failed to delete planned expense: \(error.localizedDescription)") }
+            viewContext.performAndWait {
+                viewContext.delete(item)
+                do {
+                    try viewContext.save()
+                    onTotalsChanged()
+                } catch {
+                    viewContext.rollback()
+                    print("Failed to delete planned expense: \(error.localizedDescription)")
+                }
+            }
         }
     }
 }
@@ -589,11 +600,20 @@ private struct VariableListFR: View {
 
     // MARK: Delete helper
     /// Deletes a variable (unplanned) expense and saves the context.
+    /// Uses `performAndWait` to commit the deletion synchronously and rolls back
+    /// on failure so objects do not reappear after navigation.
     private func deleteUnplanned(_ item: UnplannedExpense) {
         withAnimation {
-            viewContext.delete(item)
-            do { try viewContext.save(); onTotalsChanged() }
-            catch { print("Failed to delete unplanned expense: \(error.localizedDescription)") }
+            viewContext.performAndWait {
+                viewContext.delete(item)
+                do {
+                    try viewContext.save()
+                    onTotalsChanged()
+                } catch {
+                    viewContext.rollback()
+                    print("Failed to delete unplanned expense: \(error.localizedDescription)")
+                }
+            }
         }
     }
 }
