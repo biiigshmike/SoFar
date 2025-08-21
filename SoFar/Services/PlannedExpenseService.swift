@@ -193,7 +193,7 @@ final class PlannedExpenseService {
         let instance = try create(inBudgetID: budgetID,
                                   titleOrDescription: title,
                                   plannedAmount: template.plannedAmount,
-                                  actualAmount: 0,
+                                  actualAmount: template.actualAmount,
                                   transactionDate: date,
                                   isGlobal: false,
                                   globalTemplateID: template.value(forKey: "id") as? UUID)

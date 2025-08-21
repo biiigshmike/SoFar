@@ -74,7 +74,7 @@ extension PlannedExpenseService {
         child.id = UUID()
         child.descriptionText = template.descriptionText
         child.plannedAmount = template.plannedAmount
-        child.actualAmount = 0
+        child.actualAmount = template.actualAmount
         // Use the template's transactionDate as a default due date if present; otherwise, align to budget start.
         child.transactionDate = template.transactionDate ?? budget.startDate ?? Date()
         child.isGlobal = false
@@ -141,5 +141,95 @@ extension PlannedExpenseService {
             context.delete(k)
         }
         context.delete(template)
+    }
+
+    // MARK: Update Template + Propagate
+    /// Updates a global template and optionally propagates the same changes to
+    /// all existing children starting from a specific date.
+    /// - Parameters:
+    ///   - template: The global template to update.
+    ///   - title: Optional new description/title.
+    ///   - plannedAmount: Optional new planned amount.
+    ///   - actualAmount: Optional new actual amount.
+    ///   - transactionDate: Optional new transaction date.
+    ///   - startDate: If provided, child instances with a `transactionDate`
+    ///                on/after this date will receive the same updates. Pass
+    ///                `nil` to leave existing children untouched.
+    ///   - context: NSManagedObjectContext used for fetches.
+    func updateTemplate(_ template: PlannedExpense,
+                        title: String? = nil,
+                        plannedAmount: Double? = nil,
+                        actualAmount: Double? = nil,
+                        transactionDate: Date? = nil,
+                        propagateToChildrenFrom startDate: Date? = nil,
+                        in context: NSManagedObjectContext) {
+        // Update the template itself
+        if let title { template.descriptionText = title }
+        if let plannedAmount { template.plannedAmount = plannedAmount }
+        if let actualAmount { template.actualAmount = actualAmount }
+        if let transactionDate { template.transactionDate = transactionDate }
+
+        // Optionally propagate to children
+        guard let startDate else { return }
+        let children = fetchChildren(of: template, in: context)
+        for child in children {
+            if let childDate = child.transactionDate, childDate < startDate { continue }
+            if let title { child.descriptionText = title }
+            if let plannedAmount { child.plannedAmount = plannedAmount }
+            if let actualAmount { child.actualAmount = actualAmount }
+            if let transactionDate { child.transactionDate = transactionDate }
+        }
+    }
+
+    // MARK: Update Child + Optionally Parent/Future Siblings
+    /// Updates a child PlannedExpense. When `applyToFutureInstances` is true
+    /// the parent template (if any) is updated and the same changes are applied
+    /// to all sibling instances with a `transactionDate` on/after the current
+    /// child's date.
+    func updateChild(_ child: PlannedExpense,
+                     title: String? = nil,
+                     plannedAmount: Double? = nil,
+                     actualAmount: Double? = nil,
+                     transactionDate: Date? = nil,
+                     applyToFutureInstances: Bool = false,
+                     in context: NSManagedObjectContext) {
+        // Update the child itself
+        if let title { child.descriptionText = title }
+        if let plannedAmount { child.plannedAmount = plannedAmount }
+        if let actualAmount { child.actualAmount = actualAmount }
+        if let transactionDate { child.transactionDate = transactionDate }
+
+        guard applyToFutureInstances, let templateID = child.globalTemplateID else { return }
+
+        // Fetch the parent template
+        let req: NSFetchRequest<PlannedExpense> = PlannedExpense.fetchRequest()
+        req.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "id == %@", templateID as CVarArg),
+            NSPredicate(format: "isGlobal == YES")
+        ])
+        req.fetchLimit = 1
+        guard let parent = try? context.fetch(req).first else { return }
+
+        // Update parent with the same fields
+        if let title { parent.descriptionText = title }
+        if let plannedAmount { parent.plannedAmount = plannedAmount }
+        if let actualAmount { parent.actualAmount = actualAmount }
+        if let transactionDate { parent.transactionDate = transactionDate }
+
+        // Propagate to other future siblings
+        let siblings = fetchChildren(of: parent, in: context)
+        for sib in siblings {
+            // Skip the child we already updated
+            if sib == child { continue }
+            if let childDate = child.transactionDate,
+               let sibDate = sib.transactionDate,
+               sibDate < childDate {
+                continue
+            }
+            if let title { sib.descriptionText = title }
+            if let plannedAmount { sib.plannedAmount = plannedAmount }
+            if let actualAmount { sib.actualAmount = actualAmount }
+            if let transactionDate { sib.transactionDate = transactionDate }
+        }
     }
 }
