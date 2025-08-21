@@ -417,12 +417,16 @@ private struct PlannedListFR: View {
     }
 
     // MARK: Delete helper
-    /// Deletes a planned expense and saves the context.
+    /// Deletes a planned expense using the service layer so changes persist.
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
-            viewContext.delete(item)
-            do { try viewContext.save(); onTotalsChanged() }
-            catch { print("Failed to delete planned expense: \(error.localizedDescription)") }
+            do {
+                try PlannedExpenseService.shared.delete(item)
+                onTotalsChanged()
+            } catch {
+                print("Failed to delete planned expense: \(error.localizedDescription)")
+                viewContext.rollback()
+            }
         }
     }
 }
@@ -434,6 +438,7 @@ private struct VariableListFR: View {
     private let attachedCards: [Card]
     private let onAddTapped: () -> Void
     private let onTotalsChanged: () -> Void
+    private let unplannedService = UnplannedExpenseService()
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
 
@@ -588,12 +593,16 @@ private struct VariableListFR: View {
     }
 
     // MARK: Delete helper
-    /// Deletes a variable (unplanned) expense and saves the context.
+    /// Deletes a variable (unplanned) expense using the service layer.
     private func deleteUnplanned(_ item: UnplannedExpense) {
         withAnimation {
-            viewContext.delete(item)
-            do { try viewContext.save(); onTotalsChanged() }
-            catch { print("Failed to delete unplanned expense: \(error.localizedDescription)") }
+            do {
+                try unplannedService.delete(item)
+                onTotalsChanged()
+            } catch {
+                print("Failed to delete unplanned expense: \(error.localizedDescription)")
+                viewContext.rollback()
+            }
         }
     }
 }
