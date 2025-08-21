@@ -93,9 +93,13 @@ struct IncomeView: View {
         }
         .onAppear {
             // Ensure the calendar opens on today's date and load entries
-            if viewModel.selectedDate == nil { viewModel.selectedDate = Date() }
             let initial = viewModel.selectedDate ?? Date()
-            calendarScrollDate = initial
+            viewModel.selectedDate = initial
+            // Force the calendar to scroll after the view appears
+            calendarScrollDate = nil
+            DispatchQueue.main.async {
+                calendarScrollDate = initial
+            }
             viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
