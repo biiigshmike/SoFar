@@ -145,7 +145,7 @@ final class AddBudgetViewModel: ObservableObject {
             cloned.id = cloned.id ?? UUID()
             cloned.descriptionText = template.descriptionText
             cloned.plannedAmount = template.plannedAmount
-            cloned.actualAmount = 0.0
+            cloned.actualAmount = template.actualAmount
             cloned.transactionDate = startDate
             cloned.isGlobal = false
             cloned.globalTemplateID = template.id
@@ -186,7 +186,7 @@ final class AddBudgetViewModel: ObservableObject {
                 cloned.id = cloned.id ?? UUID()
                 cloned.descriptionText = template.descriptionText
                 cloned.plannedAmount = template.plannedAmount
-                cloned.actualAmount = 0.0
+                cloned.actualAmount = template.actualAmount
                 cloned.transactionDate = startDate
                 cloned.isGlobal = false
                 cloned.globalTemplateID = tid
