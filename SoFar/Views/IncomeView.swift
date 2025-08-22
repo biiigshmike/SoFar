@@ -93,10 +93,17 @@ struct IncomeView: View {
             )
         }
         .onAppear {
-            // Ensure the calendar opens on today's date and load entries
-            let initial = viewModel.selectedDate ?? Date()
-            calendarScrollDate = initial
-            viewModel.load(day: initial)
+            // Ensure the calendar opens on today's month/year.
+            let today = Date()
+            if let selected = viewModel.selectedDate,
+               Calendar.current.isDate(selected, equalTo: today, toGranularity: .month) {
+                calendarScrollDate = selected
+                viewModel.load(day: selected)
+            } else {
+                viewModel.selectedDate = today
+                calendarScrollDate = today
+                viewModel.load(day: today)
+            }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
