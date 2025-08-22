@@ -167,12 +167,17 @@ struct EditSheetScaffold<Content: View>: View {
         // flush to the trailing edge.  Store the previous global alignment so we
         // can restore it when the sheet is dismissed.
         .onAppear {
-            previousTextFieldAlignment = NSTextFieldCell.appearance().alignment
-            NSTextFieldCell.appearance().alignment = .left
+            // Prior to macOS 13, `NSTextField` defaults to right-aligned text
+            // when embedded inside a `Form`. Use AppKit's appearance proxy to
+            // force a leading alignment while the edit sheet is presented and
+            // restore whatever alignment was previously configured when the
+            // sheet is dismissed.
+            previousTextFieldAlignment = NSTextField.appearance().alignment
+            NSTextField.appearance().alignment = .left
         }
         .onDisappear {
             if let previousTextFieldAlignment {
-                NSTextFieldCell.appearance().alignment = previousTextFieldAlignment
+                NSTextField.appearance().alignment = previousTextFieldAlignment
                 self.previousTextFieldAlignment = nil
             }
         }
