@@ -39,6 +39,9 @@ struct UBFormSection<Content: View>: View {
     private let footer: String?
     @ViewBuilder private var content: Content
 
+    // MARK: Environment
+    @EnvironmentObject private var themeManager: ThemeManager
+
     // MARK: Init
     init(_ title: String,
          isUppercased: Bool = true,
@@ -64,5 +67,13 @@ struct UBFormSection<Content: View>: View {
                 Text(footer)
             }
         }
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                .fill(themeManager.selectedTheme.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                        .stroke(themeManager.selectedTheme.secondaryBackground, lineWidth: 1)
+                )
+        )
     }
 }
