@@ -106,24 +106,6 @@ struct AddPlannedExpenseView: View {
                         .ub_hideScrollIndicators()
                     }
                 }
-            } else {
-                UBFormSection("Choose Budget", isUppercased: true) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(spacing: DS.Spacing.m) {
-                            ForEach(vm.allBudgets, id: \.objectID) { budget in
-                                SelectCard(
-                                    title: budget.name ?? "Untitled",
-                                    isSelected: vm.selectedBudgetID == budget.objectID
-                                )
-                                .onTapGesture { vm.selectedBudgetID = budget.objectID }
-                            }
-                        }
-                        .padding(.horizontal, DS.Spacing.l)
-                    }
-                    .frame(height: budgetPickerHeight)
-                    .ub_pickerBackground()
-                    .ub_hideScrollIndicators()
-                }
             }
 
             // MARK: Individual Fields
@@ -215,6 +197,7 @@ struct AddPlannedExpenseView: View {
             }
         }
         .onChange(of: isAssigningToBudget) { _, newValue in
+            guard showAssignBudgetToggle else { return }
             if newValue {
                 vm.selectedBudgetID = vm.allBudgets.first?.objectID
             } else {
