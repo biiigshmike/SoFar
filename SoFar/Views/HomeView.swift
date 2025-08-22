@@ -91,6 +91,9 @@ struct HomeView: View {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
         }
+        .onChange(of: budgetPeriodRawValue) { _ in
+            vm.updateBudgetPeriod(to: budgetPeriod)
+        }
 
         // MARK: ADD SHEET — present new budget UI for the selected period
         .sheet(isPresented: $isPresentingAddBudget) {
