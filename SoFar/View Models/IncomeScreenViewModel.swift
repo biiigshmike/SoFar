@@ -59,9 +59,13 @@ final class IncomeScreenViewModel: ObservableObject {
     
     // MARK: CRUD
     func delete(income: Income) {
+        // Capture the day before deleting because accessing properties on a
+        // deleted managed object can crash or yield nil. The selected date is
+        // preferred, but if it's unexpectedly nil fall back to the income's
+        // own date, and finally to today.
+        let day = selectedDate ?? income.date ?? Date()
         do {
             try incomeService.deleteIncome(income)
-            let day = selectedDate ?? income.date ?? Date()
             load(day: day)
         } catch {
             #if DEBUG
