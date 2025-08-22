@@ -290,7 +290,10 @@ struct IncomeView: View {
     // MARK: - Calendar Navigation Helpers
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
-        let day = Calendar.current.startOfDay(for: date)
+        // Use noon to match the calendar's internal date representation so the
+        // day circle reflects programmatic jumps (e.g., "Today" button).
+        let cal = Calendar.current
+        guard let day = cal.date(bySettingHour: 12, minute: 0, second: 0, of: date) else { return }
         calendarScrollDate = day
         // After the calendar scrolls, ensure the target day becomes the active selection
         DispatchQueue.main.async { [day] in
