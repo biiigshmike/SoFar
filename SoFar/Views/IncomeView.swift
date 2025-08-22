@@ -290,8 +290,9 @@ struct IncomeView: View {
     // MARK: - Calendar Navigation Helpers
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
-        viewModel.selectedDate = date
-        calendarScrollDate = date
+        let day = Calendar.current.startOfDay(for: date)
+        viewModel.selectedDate = day
+        calendarScrollDate = day
         // Reset the scroll target after the calendar moves so it doesn't jump on future refreshes.
         DispatchQueue.main.async {
             calendarScrollDate = nil
