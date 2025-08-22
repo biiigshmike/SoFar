@@ -20,12 +20,10 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Private
     private let incomeService: IncomeService
     private let calendar: Calendar = .current
-
+    
     // MARK: Init
     init(incomeService: IncomeService = IncomeService()) {
         self.incomeService = incomeService
-        // Preload data so the view has content without requiring an initial tap.
-        load(day: selectedDate ?? Date())
     }
     
     // MARK: Titles
