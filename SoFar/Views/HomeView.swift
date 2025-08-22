@@ -153,7 +153,7 @@ struct HomeView: View {
                 UBEmptyState(
                     iconSystemName: "rectangle.on.rectangle.slash",
                     title: "Budgets",
-                    message: "No budgets in \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
+                    message: "No budget found for \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
                     primaryButtonTitle: "Create a budget",
                     onPrimaryTap: { isPresentingAddBudget = true }
                 )
@@ -171,7 +171,7 @@ struct HomeView: View {
                     UBEmptyState(
                         iconSystemName: "rectangle.on.rectangle.slash",
                         title: "Budgets",
-                        message: "No budgets in \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
+                        message: "No budget found for \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
                         primaryButtonTitle: "Create a budget",
                         onPrimaryTap: { isPresentingAddBudget = true }
                     )
