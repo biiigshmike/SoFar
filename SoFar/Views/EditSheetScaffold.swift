@@ -172,12 +172,12 @@ struct EditSheetScaffold<Content: View>: View {
             // force a leading alignment while the edit sheet is presented and
             // restore whatever alignment was previously configured when the
             // sheet is dismissed.
-            previousTextFieldAlignment = NSTextField.appearance.alignment
-            NSTextField.appearance().alignment = .left
+            previousTextFieldAlignment = NSTextFieldCell.appearance().alignment
+            NSTextFieldCell.appearance().alignment = .left
         }
         .onDisappear {
             if let previousTextFieldAlignment {
-                NSTextField.appearance.alignment = previousTextFieldAlignment
+                NSTextFieldCell.appearance().alignment = previousTextFieldAlignment
                 self.previousTextFieldAlignment = nil
             }
         }
