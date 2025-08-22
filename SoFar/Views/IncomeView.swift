@@ -100,7 +100,7 @@ struct IncomeView: View {
             // Ensure the calendar opens on today's date and load entries
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
-            viewModel.load(day: initial)
+            viewModel.reloadForSelectedDay()
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
