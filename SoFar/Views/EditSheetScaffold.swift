@@ -169,7 +169,22 @@ struct EditSheetScaffold<Content: View>: View {
             .fill(themeManager.selectedTheme.secondaryBackground)
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(themeManager.selectedTheme.tertiaryBackground, lineWidth: 1)
+                    .stroke(separatorColor, lineWidth: 1)
             )
+    }
+
+    /// Platform-aware separator color used for row borders.
+    private var separatorColor: Color {
+#if canImport(UIKit)
+        return Color(uiColor: .separator)
+#elseif canImport(AppKit)
+        if #available(macOS 10.14, *) {
+            return Color(nsColor: .separatorColor)
+        } else {
+            return Color.primary.opacity(0.2)
+        }
+#else
+        return Color.primary.opacity(0.2)
+#endif
     }
 }
