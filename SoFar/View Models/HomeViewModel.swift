@@ -196,6 +196,13 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
+    // MARK: updateBudgetPeriod(to:)
+    /// Updates the budget period preference and triggers a refresh.
+    /// - Parameter newPeriod: The newly selected budget period.
+    func updateBudgetPeriod(to newPeriod: BudgetPeriod) {
+        budgetPeriodRawValue = newPeriod.rawValue
+    }
+
     // MARK: adjustSelectedPeriod(by:)
     /// Moves the selected period forward/backward.
     /// - Parameter delta: Positive to go forward, negative to go backward.
