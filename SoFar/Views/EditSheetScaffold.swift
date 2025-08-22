@@ -97,6 +97,14 @@ struct EditSheetScaffold<Content: View>: View {
             if #available(iOS 16.0, macOS 13.0, *) {
                 Form { content }
                     .scrollContentBackground(.hidden)
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(themeManager.selectedTheme.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(themeManager.selectedTheme.secondaryBackground, lineWidth: 1)
+                            )
+                    )
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
@@ -119,6 +127,14 @@ struct EditSheetScaffold<Content: View>: View {
                     }
             } else {
                 Form { content }
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(themeManager.selectedTheme.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(themeManager.selectedTheme.secondaryBackground, lineWidth: 1)
+                            )
+                    )
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
