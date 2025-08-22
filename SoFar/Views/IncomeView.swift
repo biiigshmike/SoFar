@@ -10,6 +10,12 @@ import MijickCalendarView
 import CoreData
 import Combine
 
+/// Wrapper to provide `Identifiable` conformance for sheet presentation.
+private struct AddIncomeSheetDate: Identifiable {
+    let id = UUID()
+    let value: Date
+}
+
 // MARK: - IncomeView
 /// Shows a calendar (MijickCalendarView). Tap a date to add income (Planned/Actual; optional recurrence).
 /// Below the calendar, displays incomes for the selected day with edit/delete.
@@ -17,10 +23,8 @@ import Combine
 struct IncomeView: View {
 
     // MARK: State
-    /// Controls the Add Income sheet presentation.
-    @State private var isPresentingAddIncome: Bool = false
     /// Prefill date for AddIncomeFormView; derived from the selected calendar date or today.
-    @State private var addIncomeInitialDate: Date? = nil
+    @State private var addIncomeInitialDate: AddIncomeSheetDate? = nil
     /// Holds the income being edited; presenting this non-nil value triggers the edit sheet.
     @State private var editingIncome: Income? = nil
     /// Controls which date the calendar should scroll to when navigation buttons are used.
@@ -59,8 +63,7 @@ struct IncomeView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    addIncomeInitialDate = viewModel.selectedDate ?? Date()
-                    isPresentingAddIncome = true
+                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
                 } label: {
                     Label("Add Income", systemImage: "plus")
                 }
@@ -72,14 +75,14 @@ struct IncomeView: View {
         // Pull to refresh to reload entries for the selected day
         .refreshable { viewModel.reloadForSelectedDay() }
         // MARK: Present Add Income Form
-        .sheet(isPresented: $isPresentingAddIncome, onDismiss: {
+        .sheet(item: $addIncomeInitialDate, onDismiss: {
             // Reload entries for the selected day after adding/saving
             viewModel.reloadForSelectedDay()
-        }) {
+        }) { item in
             AddIncomeFormView(
                 incomeObjectID: nil,
                 budgetObjectID: nil,
-                initialDate: addIncomeInitialDate
+                initialDate: item.value
             )
         }
         // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
@@ -152,8 +155,7 @@ struct IncomeView: View {
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
-                    addIncomeInitialDate = viewModel.selectedDate ?? today
-                    isPresentingAddIncome = true
+                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? today)
                 }
             )
             #else
