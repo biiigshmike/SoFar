@@ -26,6 +26,15 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue)
     var presetsDefaultUseInFutureBudgets: Bool = true { willSet { objectWillChange.send() } }
 
+    /// Preferred budgeting period for the home view.
+    @AppStorage(AppSettingsKeys.budgetPeriod.rawValue)
+    private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue { willSet { objectWillChange.send() } }
+
+    var budgetPeriod: BudgetPeriod {
+        get { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
+        set { budgetPeriodRawValue = newValue.rawValue }
+    }
+
     /// Sync per-card themes across devices using iCloud.
     @AppStorage(AppSettingsKeys.syncCardThemes.rawValue)
     var syncCardThemes: Bool = true { willSet { objectWillChange.send() } }
@@ -33,6 +42,10 @@ final class SettingsViewModel: ObservableObject {
     /// Sync the overall app theme selection via iCloud.
     @AppStorage(AppSettingsKeys.syncAppTheme.rawValue)
     var syncAppTheme: Bool = true { willSet { objectWillChange.send() } }
+
+    /// Sync selected budget period across devices.
+    @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue)
+    var syncBudgetPeriod: Bool = true { willSet { objectWillChange.send() } }
 
     /// Enable iCloud/CloudKit synchronization for Core Data.
     /// When turned off, dependent sync options are also disabled.
@@ -43,6 +56,7 @@ final class SettingsViewModel: ObservableObject {
             if !enableCloudSync {
                 syncCardThemes = false
                 syncAppTheme = false
+                syncBudgetPeriod = false
             }
         }
     }
@@ -53,8 +67,10 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.confirmBeforeDelete.rawValue: true,
             AppSettingsKeys.calendarHorizontal.rawValue: true,
             AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue: true,
+            AppSettingsKeys.budgetPeriod.rawValue: BudgetPeriod.monthly.rawValue,
             AppSettingsKeys.syncCardThemes.rawValue: true,
             AppSettingsKeys.syncAppTheme.rawValue: true,
+            AppSettingsKeys.syncBudgetPeriod.rawValue: true,
             AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }

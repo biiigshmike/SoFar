@@ -46,6 +46,14 @@ struct SettingsView: View {
                             Toggle("", isOn: $viewModel.confirmBeforeDelete)
                                 .labelsHidden()
                         }
+                        SettingsRow(title: "Budget Period") {
+                            Picker("", selection: $viewModel.budgetPeriod) {
+                                ForEach(BudgetPeriod.selectableCases) { period in
+                                    Text(period.displayName).tag(period)
+                                }
+                            }
+                            .labelsHidden()
+                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
@@ -89,6 +97,12 @@ struct SettingsView: View {
 
                         SettingsRow(title: "Sync App Theme Across Devices") {
                             Toggle("", isOn: $viewModel.syncAppTheme)
+                                .labelsHidden()
+                        }
+                        .disabled(!viewModel.enableCloudSync)
+                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                        SettingsRow(title: "Sync Budget Period Across Devices") {
+                            Toggle("", isOn: $viewModel.syncBudgetPeriod)
                                 .labelsHidden()
                         }
                         .disabled(!viewModel.enableCloudSync)

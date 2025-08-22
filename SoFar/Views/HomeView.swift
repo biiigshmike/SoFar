@@ -25,6 +25,8 @@ struct HomeView: View {
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
+    private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -48,6 +50,15 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Home")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Menu {
+                    ForEach(BudgetPeriod.selectableCases) { period in
+                        Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                    }
+                } label: {
+                    Label(budgetPeriod.displayName, systemImage: "calendar")
+                }
+            }
             if case .empty = vm.state {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -81,9 +92,9 @@ struct HomeView: View {
             vm.startIfNeeded()
         }
 
-        // MARK: ADD SHEET — present new budget UI for the selected month
+        // MARK: ADD SHEET — present new budget UI for the selected period
         .sheet(isPresented: $isPresentingAddBudget) {
-            let (start, end) = Month.range(for: vm.selectedMonth)
+            let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
             AddBudgetView(
                 initialStartDate: start,
                 initialEndDate: end,
@@ -139,7 +150,7 @@ struct HomeView: View {
                 UBEmptyState(
                     iconSystemName: "rectangle.on.rectangle.slash",
                     title: "Budgets",
-                    message: "No budgets in \(title(for: vm.selectedMonth)). Tap + to create a new budget for this month.",
+                    message: "No budgets in \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
                     primaryButtonTitle: "Create a budget",
                     onPrimaryTap: { isPresentingAddBudget = true }
                 )
@@ -157,7 +168,7 @@ struct HomeView: View {
                     UBEmptyState(
                         iconSystemName: "rectangle.on.rectangle.slash",
                         title: "Budgets",
-                        message: "No budgets in \(title(for: vm.selectedMonth)). Tap + to create a new budget for this month.",
+                        message: "No budgets in \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
                         primaryButtonTitle: "Create a budget",
                         onPrimaryTap: { isPresentingAddBudget = true }
                     )
@@ -174,15 +185,15 @@ struct HomeView: View {
     // MARK: Header
     private var header: some View {
         HStack(spacing: DS.Spacing.s) {
-            Button { vm.adjustSelectedMonth(byMonths: -1) } label: {
+            Button { vm.adjustSelectedPeriod(by: -1) } label: {
                 Image(systemName: "chevron.left")
             }
             .buttonStyle(.plain)
 
-            Text(title(for: vm.selectedMonth))
+            Text(title(for: vm.selectedDate))
                 .font(.title2).bold()
 
-            Button { vm.adjustSelectedMonth(byMonths: +1) } label: {
+            Button { vm.adjustSelectedPeriod(by: +1) } label: {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(.plain)
@@ -205,9 +216,7 @@ struct HomeView: View {
 
     // MARK: Helpers
     private func title(for date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "LLLL yyyy"
-        return f.string(from: date)
+        budgetPeriod.title(for: date)
     }
 }
 

@@ -117,7 +117,19 @@ enum Month {
 final class HomeViewModel: ObservableObject {
 
     // MARK: Published State
-    @Published var selectedMonth: Date = Month.start(of: Date()) {
+    @AppStorage(AppSettingsKeys.budgetPeriod.rawValue)
+    private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue {
+        didSet {
+            selectedDate = period.start(of: Date())
+            Task { await refresh() }
+        }
+    }
+
+    private var period: BudgetPeriod {
+        BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly
+    }
+
+    @Published var selectedDate: Date = BudgetPeriod.monthly.start(of: Date()) {
         didSet { Task { await refresh() } }
     }
     @Published private(set) var state: BudgetLoadState = .initial
@@ -132,6 +144,7 @@ final class HomeViewModel: ObservableObject {
     /// - Parameter context: The Core Data context to use (defaults to main viewContext).
     init(context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.context = context
+        self.selectedDate = period.start(of: Date())
     }
 
     // MARK: startIfNeeded()
@@ -156,12 +169,12 @@ final class HomeViewModel: ObservableObject {
     }
 
     // MARK: refresh()
-    /// Loads budgets that overlap the selected month and computes summaries.
+    /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
     func refresh() async {
-        let (start, end) = Month.range(for: selectedMonth)
+        let (start, end) = period.range(containing: selectedDate)
 
-        // Fetch budgets overlapping month
+        // Fetch budgets overlapping period
         let budgets: [Budget] = fetchBudgets(overlapping: start...end)
 
         // Build summaries
@@ -180,13 +193,11 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    // MARK: adjustSelectedMonth(byMonths:)
-    /// Moves the selected month forward/backward.
+    // MARK: adjustSelectedPeriod(by:)
+    /// Moves the selected period forward/backward.
     /// - Parameter delta: Positive to go forward, negative to go backward.
-    func adjustSelectedMonth(byMonths delta: Int) {
-        if let newDate = Calendar.current.date(byAdding: .month, value: delta, to: selectedMonth) {
-            selectedMonth = Month.start(of: newDate)
-        }
+    func adjustSelectedPeriod(by delta: Int) {
+        selectedDate = period.advance(selectedDate, by: delta)
     }
 
     // MARK: Deletion
@@ -216,11 +227,11 @@ final class HomeViewModel: ObservableObject {
 
     // MARK: fetchBudgets(overlapping:)
     /// Returns budgets that overlap the given date range.
-    /// - Parameter month: The month window to match against budget start/end.
-    private func fetchBudgets(overlapping month: ClosedRange<Date>) -> [Budget] {
+    /// - Parameter range: The date window to match against budget start/end.
+    private func fetchBudgets(overlapping range: ClosedRange<Date>) -> [Budget] {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
-        let start = month.lowerBound
-        let end = month.upperBound
+        let start = range.lowerBound
+        let end = range.upperBound
 
         // Overlap predicate: (startDate <= end) AND (endDate >= start)
         req.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
