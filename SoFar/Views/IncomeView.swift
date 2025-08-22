@@ -24,7 +24,8 @@ struct IncomeView: View {
     /// Holds the income being edited; presenting this non-nil value triggers the edit sheet.
     @State private var editingIncome: Income? = nil
     /// Controls which date the calendar should scroll to when navigation buttons are used.
-    @State private var calendarScrollDate: Date? = Date()
+    /// A `nil` value means no programmatic scroll is requested.
+    @State private var calendarScrollDate: Date? = nil
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -95,7 +96,7 @@ struct IncomeView: View {
         .onAppear {
             // Ensure the calendar opens on today's date and load entries
             let initial = viewModel.selectedDate ?? Date()
-            calendarScrollDate = initial
+            navigate(to: initial)
             viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
@@ -289,6 +290,10 @@ struct IncomeView: View {
     private func navigate(to date: Date) {
         viewModel.selectedDate = date
         calendarScrollDate = date
+        // Reset the scroll target after the calendar moves so it doesn't jump on future refreshes.
+        DispatchQueue.main.async {
+            calendarScrollDate = nil
+        }
     }
     /// Scrolls to the first day of the previous month.
     private func goToPreviousMonth() {
