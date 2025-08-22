@@ -48,17 +48,24 @@ struct UBDayView: DayView {
                 }
                 let planned = summary?.planned ?? 0
                 let actual = summary?.actual ?? 0
-
                 VStack(spacing: 1) {
-                    Text(currencyString(planned))
-                        .font(.system(size: 8, weight: .regular))
-                        .foregroundColor(DS.Colors.plannedIncome)
-                        .opacity(planned > 0 ? 1 : 0)
+                    if planned > 0 && actual > 0 {
+                        Text(currencyString(planned))
+                            .font(.system(size: 8, weight: .regular))
+                            .foregroundColor(DS.Colors.plannedIncome)
 
-                    Text(currencyString(actual))
-                        .font(.system(size: 8, weight: .regular))
-                        .foregroundColor(DS.Colors.actualIncome)
-                        .opacity(actual > 0 ? 1 : 0)
+                        Text(currencyString(actual))
+                            .font(.system(size: 8, weight: .regular))
+                            .foregroundColor(DS.Colors.actualIncome)
+                    } else if planned > 0 {
+                        Text(currencyString(planned))
+                            .font(.system(size: 8, weight: .regular))
+                            .foregroundColor(DS.Colors.plannedIncome)
+                    } else if actual > 0 {
+                        Text(currencyString(actual))
+                            .font(.system(size: 8, weight: .regular))
+                            .foregroundColor(DS.Colors.actualIncome)
+                    }
                 }
             }
         )
