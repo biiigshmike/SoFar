@@ -17,6 +17,8 @@ import Combine
 struct IncomeView: View {
 
     // MARK: State
+    /// Controls the Add Income sheet presentation.
+    @State private var isPresentingAddIncome: Bool = false
     /// Prefill date for AddIncomeFormView; derived from the selected calendar date or today.
     @State private var addIncomeInitialDate: Date? = nil
     /// Holds the income being edited; presenting this non-nil value triggers the edit sheet.
@@ -58,6 +60,7 @@ struct IncomeView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     addIncomeInitialDate = viewModel.selectedDate ?? Date()
+                    isPresentingAddIncome = true
                 } label: {
                     Label("Add Income", systemImage: "plus")
                 }
@@ -69,14 +72,14 @@ struct IncomeView: View {
         // Pull to refresh to reload entries for the selected day
         .refreshable { viewModel.reloadForSelectedDay() }
         // MARK: Present Add Income Form
-        .sheet(item: $addIncomeInitialDate, onDismiss: {
+        .sheet(isPresented: $isPresentingAddIncome, onDismiss: {
             // Reload entries for the selected day after adding/saving
             viewModel.reloadForSelectedDay()
-        }) { date in
+        }) {
             AddIncomeFormView(
                 incomeObjectID: nil,
                 budgetObjectID: nil,
-                initialDate: date
+                initialDate: addIncomeInitialDate
             )
         }
         // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
@@ -150,6 +153,7 @@ struct IncomeView: View {
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
                     addIncomeInitialDate = viewModel.selectedDate ?? today
+                    isPresentingAddIncome = true
                 }
             )
             #else
