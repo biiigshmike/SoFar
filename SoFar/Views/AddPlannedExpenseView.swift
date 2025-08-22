@@ -85,7 +85,7 @@ struct AddPlannedExpenseView: View {
             // MARK: Budget Assignment
             if showAssignBudgetToggle {
                 UBFormSection("Add to a budget now?", isUppercased: true) {
-                    Toggle("Add to a budget now?", isOn: $isAssigningToBudget)
+                    Toggle("Select a Budget", isOn: $isAssigningToBudget)
                 }
                 if isAssigningToBudget {
                     UBFormSection("Choose Budget", isUppercased: true) {
@@ -148,7 +148,7 @@ struct AddPlannedExpenseView: View {
 //                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Expense Description")
                 } else {
-                    TextField("e.g., groceries", text: $vm.descriptionText)
+                    TextField("Rent", text: $vm.descriptionText)
                         .ub_noAutoCapsAndCorrection()
 //                        .multilineTextAlignment(.leading)
 //                        .frame(maxWidth: .infinity, alignment: .leading)
@@ -165,7 +165,7 @@ struct AddPlannedExpenseView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Planned Amount")
                 } else {
-                    TextField("e.g., 25.00", text: $vm.plannedAmountString)
+                    TextField("2000", text: $vm.plannedAmountString)
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)

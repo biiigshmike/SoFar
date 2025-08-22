@@ -114,7 +114,7 @@ struct AddIncomeFormView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Source")
             } else {
-                TextField("e.g., Paycheck", text: $viewModel.source)
+                TextField("Paycheck", text: $viewModel.source)
                     .ub_noAutoCapsAndCorrection()
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -136,7 +136,7 @@ struct AddIncomeFormView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Income Amount")
             } else {
-                TextField("e.g., 1,234.56", text: $viewModel.amountInput)
+                TextField("1542.75", text: $viewModel.amountInput)
                     .ub_decimalKeyboard()
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)

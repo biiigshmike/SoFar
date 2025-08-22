@@ -124,7 +124,7 @@ struct AddCardFormView: View {
                         .submitLabel(.done)
                         .accessibilityLabel("Card Name")
                 } else {
-                    TextField("e.g., Apple Card", text: $cardName)
+                    TextField("]pple Card", text: $cardName)
                         .ub_noAutoCapsAndCorrection()
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)

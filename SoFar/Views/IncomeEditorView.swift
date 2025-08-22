@@ -109,7 +109,7 @@ struct IncomeEditorView: View {
         ) {
             // MARK: Details
             Section {
-                TextField("Source (e.g., Paycheck, Side Gig)", text: $form.source)
+                TextField("Paycheck", text: $form.source)
                     .ub_noAutoCapsAndCorrection()   // cross-platform fix
                 
                 amountField

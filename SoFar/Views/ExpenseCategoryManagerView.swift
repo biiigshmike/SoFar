@@ -277,7 +277,7 @@ struct ExpenseCategoryEditorSheet: View {
             // Name field
             UBFormSection("Name") {
                 // Use an empty label to align the field correctly in the form row.
-                TextField("", text: $name, prompt: Text("e.g., Groceries"))
+                TextField("", text: $name, prompt: Text("Shopping"))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .ub_noAutoCapsAndCorrection()
