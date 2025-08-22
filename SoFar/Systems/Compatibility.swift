@@ -149,18 +149,6 @@ extension View {
             return self
         }
     }
-
-    // MARK: ub_hideListRowSeparators()
-    /// Hides list row separators on platforms that support it. On older
-    /// systems this returns the original view unchanged so callers don't need
-    /// to sprinkle availability checks throughout their form layouts.
-    func ub_hideListRowSeparators() -> some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
-            return self.listRowSeparator(.hidden)
-        } else {
-            return self
-        }
-    }
 }
 
 // MARK: - UBColor (Cross-Platform Neutrals)
