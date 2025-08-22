@@ -60,7 +60,9 @@ struct IncomeView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     addIncomeInitialDate = viewModel.selectedDate ?? Date()
-                    isPresentingAddIncome = true
+                    DispatchQueue.main.async {
+                        isPresentingAddIncome = true
+                    }
                 } label: {
                     Label("Add Income", systemImage: "plus")
                 }
@@ -153,7 +155,9 @@ struct IncomeView: View {
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
                     addIncomeInitialDate = viewModel.selectedDate ?? today
-                    isPresentingAddIncome = true
+                    DispatchQueue.main.async {
+                        isPresentingAddIncome = true
+                    }
                 }
             )
             #else
