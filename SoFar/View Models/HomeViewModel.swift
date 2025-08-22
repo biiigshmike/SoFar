@@ -174,11 +174,8 @@ final class HomeViewModel: ObservableObject {
     func refresh() async {
         let (start, end) = period.range(containing: selectedDate)
 
-        // Fetch budgets overlapping period and matching the selected budget period
-        let budgets: [Budget] = fetchBudgets(overlapping: start...end).filter { budget in
-            guard let s = budget.startDate, let e = budget.endDate else { return false }
-            return period.matches(startDate: s, endDate: e)
-        }
+        // Fetch budgets overlapping period
+        let budgets: [Budget] = fetchBudgets(overlapping: start...end)
 
         // Build summaries
         let summaries: [BudgetSummary] = budgets.compactMap { (budget: Budget) -> BudgetSummary? in

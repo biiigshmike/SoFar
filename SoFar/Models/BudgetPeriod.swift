@@ -105,18 +105,6 @@ enum BudgetPeriod: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Determines whether the provided date range exactly matches this period's canonical range.
-    /// - Parameters:
-    ///   - startDate: Proposed start of the period.
-    ///   - endDate: Proposed end of the period.
-    /// - Returns: `true` if the dates align with the period's start and end.
-    func matches(startDate: Date, endDate: Date) -> Bool {
-        let cal = Calendar.current
-        let canonical = range(containing: startDate)
-        return cal.isDate(canonical.start, inSameDayAs: startDate) &&
-               cal.isDate(canonical.end, inSameDayAs: endDate)
-    }
-
     /// Human-readable title for the period containing `date`.
     func title(for date: Date) -> String {
         let f = DateFormatter()
