@@ -99,6 +99,8 @@ struct EditSheetScaffold<Content: View>: View {
                     .scrollContentBackground(.hidden)
                     .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
+                    .ub_formStyleGrouped()
+                    .ub_hideScrollIndicators()
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
@@ -122,6 +124,8 @@ struct EditSheetScaffold<Content: View>: View {
                 Form { content }
                     .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
+                    .ub_formStyleGrouped()
+                    .ub_hideScrollIndicators()
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
@@ -155,6 +159,7 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(macOS)
         .frame(minWidth: 680)
         #endif
+        .ub_sheetPadding()
     }
 
     // MARK: Row Background
