@@ -160,28 +160,6 @@ struct EditSheetScaffold<Content: View>: View {
         .frame(minWidth: 680)
         #endif
         .ub_sheetPadding()
-#if os(macOS)
-        // Force all text fields within edit sheets to align text to the leading edge.
-        // Without this, AppKit-backed `NSTextField` instances in `Form` rows
-        // default to right alignment on macOS, causing user input to appear
-        // flush to the trailing edge.  Store the previous global alignment so we
-        // can restore it when the sheet is dismissed.
-        .onAppear {
-            // Prior to macOS 13, `NSTextField` defaults to right-aligned text
-            // when embedded inside a `Form`. Use AppKit's appearance proxy to
-            // force a leading alignment while the edit sheet is presented and
-            // restore whatever alignment was previously configured when the
-            // sheet is dismissed.
-            previousTextFieldAlignment = NSTextField.appearance.alignment
-            NSTextField.appearance().alignment = .left
-        }
-        .onDisappear {
-            if let previousTextFieldAlignment {
-                NSTextField.appearance.alignment = previousTextFieldAlignment
-                self.previousTextFieldAlignment = nil
-            }
-        }
-#endif
     }
 
     // MARK: Row Background
