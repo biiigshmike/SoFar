@@ -135,10 +135,6 @@ struct AddUnplannedExpenseView: View {
         .task { await vm.load() }
         // Make sure our chips & sheet share the same context.
         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-        // Apply cross‑platform form styling and sheet padding
-        .ub_sheetPadding()
-        .ub_formStyleGrouped()
-        .ub_hideScrollIndicators()
     }
 
     // MARK: - trySave()

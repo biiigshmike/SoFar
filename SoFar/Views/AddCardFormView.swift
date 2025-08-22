@@ -155,12 +155,6 @@ struct AddCardFormView: View {
                     .textCase(.uppercase)
             }
         }
-        // MARK: macOS window padding + grouped form style
-        // Adds a subtle inner gutter on Mac so content isn’t flush to sheet edges.
-        .modifier(MacSheetInnerPadding())
-        .applyGroupedFormStyle()
-        .scrollIndicators(.hidden)
-
         // Error alert (if validation or save logic fails)
         .alert("Error", isPresented: .constant(saveErrorMessage != nil), actions: {
             Button("OK", role: .cancel) { saveErrorMessage = nil }
@@ -225,36 +219,5 @@ private struct ThemeSwatch: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("\(theme.displayName) theme"))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-// MARK: - View Modifiers (macOS padding + grouped form style)
-
-/// Adds subtle inner padding around the entire sheet on macOS; no-op on iOS.
-/// How to use: `.modifier(MacSheetInnerPadding())`
-private struct MacSheetInnerPadding: ViewModifier {
-    func body(content: Content) -> some View {
-        #if os(macOS)
-        content
-            .padding(.horizontal, 16) // left/right gutter
-            .padding(.top, 8)         // top gutter
-            // bottom gutter is usually provided by the scaffold toolbar area
-        #else
-        content
-        #endif
-    }
-}
-
-private extension View {
-    // MARK: applyGroupedFormStyle()
-    /// Applies a grouped form style where available; keeps iOS/macOS parity.
-    /// How to use: `.applyGroupedFormStyle()`
-    @ViewBuilder
-    func applyGroupedFormStyle() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            self.formStyle(.grouped)
-        } else {
-            self
-        }
     }
 }

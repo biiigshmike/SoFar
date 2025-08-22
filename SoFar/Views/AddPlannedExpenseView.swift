@@ -221,10 +221,6 @@ struct AddPlannedExpenseView: View {
                 vm.selectedBudgetID = nil
             }
         }
-        // Apply cross‑platform form styling and sheet padding
-        .ub_sheetPadding()
-        .ub_formStyleGrouped()
-        .ub_hideScrollIndicators()
     }
 
     // MARK: Actions
