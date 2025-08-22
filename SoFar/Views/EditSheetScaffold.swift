@@ -167,12 +167,12 @@ struct EditSheetScaffold<Content: View>: View {
         // flush to the trailing edge.  Store the previous global alignment so we
         // can restore it when the sheet is dismissed.
         .onAppear {
-            previousTextFieldAlignment = NSTextField.appearance().alignment
-            NSTextField.appearance().alignment = .left
+            previousTextFieldAlignment = NSTextFieldCell.appearance().alignment
+            NSTextFieldCell.appearance().alignment = .left
         }
         .onDisappear {
             if let previousTextFieldAlignment {
-                NSTextField.appearance().alignment = previousTextFieldAlignment
+                NSTextFieldCell.appearance().alignment = previousTextFieldAlignment
                 self.previousTextFieldAlignment = nil
             }
         }
