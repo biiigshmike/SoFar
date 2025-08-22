@@ -50,6 +50,19 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Home")
         .toolbar {
+            // Budget period picker varies by platform because
+            // `.navigationBarLeading` is unavailable on macOS.
+#if os(macOS)
+            ToolbarItem(placement: .navigation) {
+                Menu {
+                    ForEach(BudgetPeriod.selectableCases) { period in
+                        Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                    }
+                } label: {
+                    Label(budgetPeriod.displayName, systemImage: "calendar")
+                }
+            }
+#else
             ToolbarItem(placement: .navigationBarLeading) {
                 Menu {
                     ForEach(BudgetPeriod.selectableCases) { period in
@@ -59,6 +72,7 @@ struct HomeView: View {
                     Label(budgetPeriod.displayName, systemImage: "calendar")
                 }
             }
+#endif
             if case .empty = vm.state {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -91,8 +105,9 @@ struct HomeView: View {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
         }
-        .onChange(of: budgetPeriodRawValue) { _ in
-            vm.updateBudgetPeriod(to: budgetPeriod)
+        .onChange(of: budgetPeriodRawValue) { _, newValue in
+            let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly
+            vm.updateBudgetPeriod(to: newPeriod)
         }
 
         // MARK: ADD SHEET — present new budget UI for the selected period
