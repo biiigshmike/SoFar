@@ -46,7 +46,13 @@ final class IncomeScreenViewModel: ObservableObject {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
-            eventsByDay = (try? incomeService.eventsByDay(inMonthContaining: day)) ?? [:]
+            // Preload events for the full calendar range so each month displays
+            // income summaries without requiring an explicit selection.
+            let today = Date()
+            let start = calendar.date(byAdding: .year, value: -5, to: today) ?? today
+            let end = calendar.date(byAdding: .year, value: 5, to: today) ?? today
+            let interval = DateInterval(start: start, end: end)
+            eventsByDay = (try? incomeService.eventsByDay(in: interval)) ?? [:]
         } catch {
             #if DEBUG
             print("Income fetch error:", error)
