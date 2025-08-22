@@ -176,7 +176,6 @@ struct AddBudgetView: View {
         // matches other editors (e.g. Add Card, Add Expense).  Grouped
         // styling yields a light container background on iOS/iPadOS and macOS.
         .ub_sheetPadding()
-        .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
         // Present any save error in a standard alert.
         .alert("Couldn’t Save Budget",
