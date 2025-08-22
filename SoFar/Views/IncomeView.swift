@@ -239,7 +239,14 @@ struct IncomeView: View {
                         IncomeRow(
                             income: income,
                             onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: { viewModel.delete(income: income) }
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    incomeToDelete = income
+                                    showDeleteAlert = true
+                                } else {
+                                    viewModel.delete(income: income)
+                                }
+                            }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
@@ -382,8 +389,6 @@ private struct IncomeRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     @EnvironmentObject private var themeManager: ThemeManager
-    @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
-    @State private var showDeleteAlert = false
 
     // MARK: Body
     var body: some View {
@@ -403,18 +408,8 @@ private struct IncomeRow: View {
             UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
                                allowsFullSwipeToDelete: false),
             onEdit: onEdit,
-            onDelete: {
-                if confirmBeforeDelete {
-                    showDeleteAlert = true
-                } else {
-                    onDelete()
-                }
-            }
+            onDelete: onDelete
         )
-        .alert("Delete Income?", isPresented: $showDeleteAlert) {
-            Button("Delete", role: .destructive) { onDelete() }
-            Button("Cancel", role: .cancel) { }
-        }
     }
 
     // MARK: Helpers
