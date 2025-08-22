@@ -82,7 +82,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .classic:
             #if canImport(UIKit)
-            return Color(UIColor.systemBackground)
+            // Use the grouped background so form rows stand out against the
+            // surrounding view, matching the native Settings appearance.
+            return Color(UIColor.systemGroupedBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
                 return Color(nsColor: NSColor.windowBackgroundColor)
@@ -118,7 +120,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .classic:
             #if canImport(UIKit)
-            return Color(UIColor.secondarySystemBackground)
+            // Provide a subtle card color that contrasts with the grouped
+            // sheet background on iOS.
+            return Color(UIColor.secondarySystemGroupedBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
                 return Color(nsColor: NSColor.controlBackgroundColor)
@@ -154,7 +158,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .classic:
             #if canImport(UIKit)
-            return Color(UIColor.tertiarySystemBackground)
+            return Color(UIColor.tertiarySystemGroupedBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
                 return Color(nsColor: NSColor.controlBackgroundColor)
