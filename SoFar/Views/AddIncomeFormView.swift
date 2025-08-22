@@ -74,7 +74,6 @@ struct AddIncomeFormView: View {
         // style yields a neutral background on all platforms.  Hide scroll
         // indicators for a cleaner look.
         .ub_sheetPadding()
-        .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook

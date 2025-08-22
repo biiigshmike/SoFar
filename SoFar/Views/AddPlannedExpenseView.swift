@@ -223,7 +223,6 @@ struct AddPlannedExpenseView: View {
         }
         // Apply cross‑platform form styling and sheet padding
         .ub_sheetPadding()
-        .ub_formStyleGrouped()
         .ub_hideScrollIndicators()
     }
 
