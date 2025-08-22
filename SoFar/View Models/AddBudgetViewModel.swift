@@ -16,7 +16,7 @@ import SwiftUI
 final class AddBudgetViewModel: ObservableObject {
 
     // MARK: Inputs (bound to UI)
-    @Published var budgetName: String = "Monthly Budget"
+    @Published var budgetName: String
     @Published var startDate: Date
     @Published var endDate: Date
 
@@ -37,6 +37,9 @@ final class AddBudgetViewModel: ObservableObject {
     private let editingBudgetObjectID: NSManagedObjectID?
     var isEditing: Bool { editingBudgetObjectID != nil }
 
+    /// Default title based on the suggested dates/period.
+    let defaultBudgetName: String
+
     // MARK: Init
     /// - Parameters:
     ///   - context: Core Data context (defaults to app viewContext)
@@ -53,6 +56,10 @@ final class AddBudgetViewModel: ObservableObject {
         self.startDate = startDate
         self.endDate = endDate
         self.editingBudgetObjectID = editingBudgetObjectID
+
+        // Compute default name based on the provided period.
+        self.defaultBudgetName = Self.makeDefaultName(startDate: startDate, endDate: endDate)
+        self.budgetName = defaultBudgetName
 
         // FIX: Synchronous preload so the first frame of the sheet isn't blank.
         // This does not require the async .load(); it gives us non-empty fields immediately.
@@ -76,6 +83,14 @@ final class AddBudgetViewModel: ObservableObject {
                 })
             }
         }
+    }
+
+    /// Generates a default budget name based on the period implied by the
+    /// provided start and end dates.
+    private static func makeDefaultName(startDate: Date, endDate: Date) -> String {
+        let period = BudgetPeriod.selectableCases.first { $0.matches(startDate: startDate, endDate: endDate) } ?? .custom
+        let title = period.title(for: startDate)
+        return title.isEmpty ? "\(period.displayName) Budget" : "\(title) Budget"
     }
 
     // MARK: Validation

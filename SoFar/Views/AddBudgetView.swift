@@ -106,7 +106,7 @@ struct AddBudgetView: View {
                 TextField(
                     "",
                     text: $vm.budgetName,
-                    prompt: Text("Monthly Budget")
+                    prompt: Text(vm.defaultBudgetName)
                 )
                 .ub_noAutoCapsAndCorrection()
                 .multilineTextAlignment(.leading)
