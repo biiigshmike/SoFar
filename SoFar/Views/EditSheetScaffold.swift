@@ -97,6 +97,7 @@ struct EditSheetScaffold<Content: View>: View {
             if #available(iOS 16.0, macOS 13.0, *) {
                 Form { content }
                     .scrollContentBackground(.hidden)
+                    .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
@@ -119,6 +120,7 @@ struct EditSheetScaffold<Content: View>: View {
                     }
             } else {
                 Form { content }
+                    .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
@@ -153,5 +155,16 @@ struct EditSheetScaffold<Content: View>: View {
         #if os(macOS)
         .frame(minWidth: 680)
         #endif
+    }
+
+    // MARK: Row Background
+    /// Provides a consistent background and border for form rows across themes.
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(themeManager.selectedTheme.secondaryBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(themeManager.selectedTheme.tertiaryBackground, lineWidth: 1)
+            )
     }
 }
