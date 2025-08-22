@@ -97,6 +97,7 @@ struct EditSheetScaffold<Content: View>: View {
             if #available(iOS 16.0, macOS 13.0, *) {
                 Form { content }
                     .scrollContentBackground(.hidden)
+                    .formStyle(.grouped)
                     .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
