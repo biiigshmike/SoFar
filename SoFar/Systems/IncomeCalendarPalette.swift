@@ -67,7 +67,11 @@ struct UBDayView: DayView {
                             .foregroundColor(DS.Colors.actualIncome)
                     }
                 }
+                // Reserve space so day numbers align even when income is absent
+                .frame(height: 20, alignment: .top)
             }
+            // Fill the available cell space and pin content to the top
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         )
     }
 
