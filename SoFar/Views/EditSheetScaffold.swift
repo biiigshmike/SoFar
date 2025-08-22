@@ -98,6 +98,7 @@ struct EditSheetScaffold<Content: View>: View {
                 Form { content }
                     .scrollContentBackground(.hidden)
                     .listRowBackground(rowBackground)
+                    .ub_formStyleGrouped()
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
@@ -121,6 +122,7 @@ struct EditSheetScaffold<Content: View>: View {
             } else {
                 Form { content }
                     .listRowBackground(rowBackground)
+                    .ub_formStyleGrouped()
                     .background(themeManager.selectedTheme.background)
                     .navigationTitle(title)
                     .toolbar {
