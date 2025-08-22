@@ -239,7 +239,7 @@ struct IncomeView: View {
                         IncomeRow(
                             income: income,
                             onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: { withAnimation { viewModel.delete(income: income) } }
+                            onDelete: { viewModel.delete(income: income) }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
@@ -368,9 +368,7 @@ struct IncomeView: View {
             incomeToDelete = first
             showDeleteAlert = true
         } else {
-            withAnimation {
-                targets.forEach { viewModel.delete(income: $0) }
-            }
+            targets.forEach { viewModel.delete(income: $0) }
         }
     }
 }
