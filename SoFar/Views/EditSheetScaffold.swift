@@ -66,18 +66,6 @@ struct EditSheetScaffold<Content: View>: View {
     @State private var detentSelection: PresentationDetent
 #endif
 
-    // MARK: Row styling
-    /// Background and border applied to each form row so that rows remain
-    /// visible on light themes where the default background is white.
-    private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(themeManager.selectedTheme.background)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.primary.opacity(0.15), lineWidth: 1)
-            )
-    }
-
     // MARK: Init
     init(
         title: String,
@@ -110,8 +98,6 @@ struct EditSheetScaffold<Content: View>: View {
                 Form { content }
                     .scrollContentBackground(.hidden)
                     .background(themeManager.selectedTheme.background)
-                    .ub_hideListRowSeparators()
-                    .listRowBackground(rowBackground)
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
@@ -134,8 +120,6 @@ struct EditSheetScaffold<Content: View>: View {
             } else {
                 Form { content }
                     .background(themeManager.selectedTheme.background)
-                    .ub_hideListRowSeparators()
-                    .listRowBackground(rowBackground)
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
