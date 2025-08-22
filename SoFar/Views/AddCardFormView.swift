@@ -158,6 +158,7 @@ struct AddCardFormView: View {
         // MARK: macOS window padding + grouped form style
         // Adds a subtle inner gutter on Mac so content isn’t flush to sheet edges.
         .modifier(MacSheetInnerPadding())
+        .applyGroupedFormStyle()
         .scrollIndicators(.hidden)
 
         // Error alert (if validation or save logic fails)
@@ -241,5 +242,19 @@ private struct MacSheetInnerPadding: ViewModifier {
         #else
         content
         #endif
+    }
+}
+
+private extension View {
+    // MARK: applyGroupedFormStyle()
+    /// Applies a grouped form style where available; keeps iOS/macOS parity.
+    /// How to use: `.applyGroupedFormStyle()`
+    @ViewBuilder
+    func applyGroupedFormStyle() -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            self.formStyle(.grouped)
+        } else {
+            self
+        }
     }
 }
