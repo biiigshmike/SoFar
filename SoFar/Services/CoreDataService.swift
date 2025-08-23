@@ -154,4 +154,17 @@ final class CoreDataService: ObservableObject {
             try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
         }
     }
+
+    // MARK: Reset
+    /// Destroy all persistent stores and recreate them.
+    func resetStores() throws {
+        let coordinator = container.persistentStoreCoordinator
+        for store in coordinator.persistentStores {
+            if let url = store.url {
+                try coordinator.destroyPersistentStore(at: url, ofType: store.type, options: nil)
+            }
+        }
+        storesLoaded = false
+        ensureLoaded()
+    }
 }

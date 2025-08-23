@@ -20,6 +20,7 @@ struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
+    @State private var showResetConfirm: Bool = false
 
     // MARK: Layout Constants
     private var maxReadableWidth: CGFloat {
@@ -160,6 +161,22 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                  .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                // MARK: Reset Card
+                SettingsCard(
+                    iconSystemName: "arrow.counterclockwise",
+                    title: "Reset",
+                    subtitle: "Clear all data and start fresh.",
+                ) {
+                    VStack(spacing: 0) {
+                        SettingsRow(title: "Reset All Data") {
+                            Button("Reset", role: .destructive) {
+                                showResetConfirm = true
+                            }
+                        }
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
@@ -174,6 +191,14 @@ struct SettingsView: View {
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
         .navigationTitle("Settings")
+        .alert("Reset All Data?", isPresented: $showResetConfirm) {
+            Button("Reset", role: .destructive) {
+                viewModel.resetAllData()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will remove all stored data.")
+        }
     }
 
     // MARK: - Helpers
