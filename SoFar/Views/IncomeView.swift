@@ -41,7 +41,7 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
-    @State private var showDeleteDialog: Bool = false
+    @State private var showDeleteAlert: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -253,9 +253,9 @@ struct IncomeView: View {
                             onDelete: {
                                 if confirmBeforeDelete {
                                     incomeToDelete = income
-                                    showDeleteDialog = true
+                                    showDeleteAlert = true
                                 } else {
-                                    viewModel.delete(income: income, scope: .onlyThis)
+                                    viewModel.delete(income: income)
                                 }
                             }
                         )
@@ -282,25 +282,10 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
-        .confirmationDialog("Delete Income?", isPresented: $showDeleteDialog, presenting: incomeToDelete) { income in
-            if isRecurring(income) {
-                Button("This Occurrence", role: .destructive) {
-                    viewModel.delete(income: income, scope: .onlyThis)
-                    incomeToDelete = nil
-                }
-                Button("This and Future", role: .destructive) {
-                    viewModel.delete(income: income, scope: .thisAndFuture)
-                    incomeToDelete = nil
-                }
-                Button("All Occurrences", role: .destructive) {
-                    viewModel.delete(income: income, scope: .all)
-                    incomeToDelete = nil
-                }
-            } else {
-                Button("Delete", role: .destructive) {
-                    viewModel.delete(income: income, scope: .onlyThis)
-                    incomeToDelete = nil
-                }
+        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
+            Button("Delete", role: .destructive) {
+                viewModel.delete(income: income)
+                incomeToDelete = nil
             }
             Button("Cancel", role: .cancel) {
                 incomeToDelete = nil
@@ -332,12 +317,6 @@ struct IncomeView: View {
            let prev = cal.date(byAdding: .month, value: -1, to: startOfCurrent) {
             navigate(to: prev)
         }
-    }
-
-    private func isRecurring(_ income: Income) -> Bool {
-        if let r = income.recurrence, !r.isEmpty { return true }
-        if income.parentID != nil { return true }
-        return false
     }
     /// Moves selection to the previous day.
     private func goToPreviousDay() {
@@ -413,9 +392,9 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         if confirmBeforeDelete, let first = targets.first {
             incomeToDelete = first
-            showDeleteDialog = true
+            showDeleteAlert = true
         } else {
-            targets.forEach { viewModel.delete(income: $0, scope: .onlyThis) }
+            targets.forEach { viewModel.delete(income: $0) }
         }
     }
 }
