@@ -127,4 +127,16 @@ final class BudgetService {
         repo.delete(budget)
         try repo.saveIfNeeded()
     }
+
+    // MARK: projectedDates(for:in:)
+    /// Generate projected start dates for a recurring budget within the given interval.
+    /// Useful for displaying future budget periods based on `recurrenceType`.
+    func projectedDates(for budget: Budget,
+                        in interval: DateInterval,
+                        calendar: Calendar = .current) -> [Date] {
+        RecurrenceEngine.projectedDates(recurrence: budget.recurrenceType,
+                                        baseDate: budget.startDate ?? Date(),
+                                        in: interval,
+                                        calendar: calendar)
+    }
 }
