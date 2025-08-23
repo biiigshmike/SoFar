@@ -100,7 +100,6 @@ final class AddIncomeFormViewModel: ObservableObject {
         }
 
         // Always save on the context's queue so we don't trip concurrency protections.
-        var baseIncome: Income?
         var thrown: Error?
         context.performAndWait {
             do {
@@ -126,7 +125,6 @@ final class AddIncomeFormViewModel: ObservableObject {
 
                 // Attempt save
                 try context.save()
-                baseIncome = income
             } catch let nsError as NSError {
                 thrown = SaveError.coreData(nsError).asPublicError()
             } catch {
@@ -134,20 +132,6 @@ final class AddIncomeFormViewModel: ObservableObject {
             }
         }
         if let thrown { throw thrown }
-
-        // Persist recurring instances only when creating a new income with a recurrence rule.
-        if !isEditing, let income = baseIncome, let recurrence = income.recurrence, !recurrence.isEmpty {
-            var recurError: Error?
-            context.performAndWait {
-                do {
-                    try RecurrenceEngine.persistIncomeSeries(base: income, in: context)
-                    try context.save()
-                } catch {
-                    recurError = error
-                }
-            }
-            if let recurError { throw recurError }
-        }
     }
 
     // MARK: Parsing & Formatting
