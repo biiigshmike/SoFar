@@ -152,13 +152,12 @@ final class IncomeService {
     
     // MARK: events(in:includeProjectedRecurrences:)
     /// Return calendar-friendly events for all incomes in `interval`.
-    /// If `includeProjectedRecurrences` is true, also returns non-persisted “projected” events
-    /// that fall inside the interval based on simple recurrence rules.
+    /// Recurring incomes are expected to be fully persisted; no projection is performed.
     func events(in interval: DateInterval,
                 includeProjectedRecurrences: Bool = true) throws -> [IncomeEvent] {
         let base = try fetchIncomes(in: interval)
-        
-        var events: [IncomeEvent] = base.map {
+
+        let events: [IncomeEvent] = base.map {
             IncomeEvent(objectID: $0.objectID,
                         date: $0.date ?? Date.distantPast,
                         source: $0.source ?? "",
@@ -166,37 +165,8 @@ final class IncomeService {
                         isPlanned: $0.isPlanned,
                         isProjected: false)
         }
-        
-        guard includeProjectedRecurrences else { return events }
-        
-        // Expand recurrences for items whose base date is <= interval.end.
-        for inc in base {
-            guard let recurrence = inc.recurrence?.lowercased(), !recurrence.isEmpty else { continue }
-            let startDate = inc.date ?? Date()
-            let lastDate = effectiveRecurrenceEndDate(for: inc, fallback: interval.end)
-            let expansionWindow = DateInterval(start: interval.start, end: min(interval.end, lastDate))
-            let secondDay = Self.optionalInt16IfAttributeExists(on: inc, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"])
-            
-            let projectedDates = RecurrenceEngine.projectedDates(recurrence: recurrence,
-                                                                 baseDate: startDate,
-                                                                 in: expansionWindow,
-                                                                 calendar: calendar,
-                                                                 secondBiMonthlyDay: secondDay)
-            for d in projectedDates {
-                // Skip the base persisted date to avoid duplicates.
-                if calendar.isDate(d, inSameDayAs: startDate) { continue }
-                events.append(IncomeEvent(objectID: nil,
-                                          date: d,
-                                          source: inc.source ?? "",
-                                          amount: inc.amount,
-                                          isPlanned: inc.isPlanned,
-                                          isProjected: true))
-            }
-        }
-        
-        // Sort by date ASC for stable rendering
-        events.sort { $0.date < $1.date }
-        return events
+
+        return events.sorted { $0.date < $1.date }
     }
     
     // MARK: eventsByDay(in:)

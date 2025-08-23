@@ -64,9 +64,14 @@ final class IncomeScreenViewModel: ObservableObject {
     }
     
     // MARK: CRUD
-    func delete(income: Income) {
+    func delete(income: Income, scope: RecurrenceEngine.SeriesScope = .instance) {
         do {
-            try incomeService.deleteIncome(income)
+            if let ctx = income.managedObjectContext {
+                try RecurrenceEngine.delete(income: income, scope: scope, in: ctx)
+                try ctx.save()
+            } else {
+                try incomeService.deleteIncome(income)
+            }
             let day = selectedDate ?? income.date ?? Date()
             load(day: day)
         } catch {
