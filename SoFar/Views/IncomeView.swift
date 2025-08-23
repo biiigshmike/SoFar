@@ -230,7 +230,7 @@ struct IncomeView: View {
     private var selectedDaySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
-            let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
+            let entries: [IncomeService.IncomeEvent] = viewModel.eventsForDay   // Explicit type trims solver work
 
             // MARK: Section Title — Selected Day
             Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
@@ -246,22 +246,30 @@ struct IncomeView: View {
             } else {
                 // MARK: Scrollable List with Unified Swipe Actions
                 List {
-                    ForEach(entries, id: \.objectID) { income in
-                        IncomeRow(
-                            income: income,
-                            onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    incomeToDelete = income
-                                    showDeleteAlert = true
-                                } else {
-                                    viewModel.delete(income: income)
+                    ForEach(entries, id: \.self) { event in
+                        if let objectID = event.objectID,
+                           let income = try? viewContext.existingObject(with: objectID) as? Income {
+                            IncomeRow(
+                                income: income,
+                                onEdit: { beginEditingIncome(income) },
+                                onDelete: {
+                                    if confirmBeforeDelete {
+                                        incomeToDelete = income
+                                        showDeleteAlert = true
+                                    } else {
+                                        viewModel.delete(income: income)
+                                    }
                                 }
-                            }
-                        )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                            )
+                            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        } else {
+                            ProjectedIncomeRow(event: event)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                        }
                     }
                     .onDelete { indexSet in
                         handleDelete(indexSet, in: entries)
@@ -388,8 +396,11 @@ struct IncomeView: View {
     /// - Parameters:
     ///   - indexSet: The set of indices from the `List` to delete.
     ///   - entries: A snapshot array used by the current `ForEach`.
-    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
-        let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
+    private func handleDelete(_ indexSet: IndexSet, in entries: [IncomeService.IncomeEvent]) {
+        let targets: [Income] = indexSet.compactMap { idx in
+            guard entries.indices.contains(idx), let id = entries[idx].objectID else { return nil }
+            return try? viewContext.existingObject(with: id) as? Income
+        }
         if confirmBeforeDelete, let first = targets.first {
             incomeToDelete = first
             showDeleteAlert = true
@@ -432,6 +443,34 @@ private struct IncomeRow: View {
     }
 
     // MARK: Helpers
+    private func currencyString(for amount: Double) -> String {
+        let nf = NumberFormatter()
+        nf.numberStyle = .currency
+        nf.locale = .current
+        return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+    }
+}
+
+// MARK: - ProjectedIncomeRow
+/// Displays a non-editable projected income event.
+private struct ProjectedIncomeRow: View {
+    let event: IncomeService.IncomeEvent
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(event.source)
+                    .font(.headline)
+                Text(currencyString(for: event.amount))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 6)
+    }
+
     private func currencyString(for amount: Double) -> String {
         let nf = NumberFormatter()
         nf.numberStyle = .currency

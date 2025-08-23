@@ -13,7 +13,7 @@ import CoreData
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
     @Published var selectedDate: Date? = Date()
-    @Published private(set) var incomesForDay: [Income] = []
+    @Published private(set) var eventsForDay: [IncomeService.IncomeEvent] = []
     @Published private(set) var totalForSelectedDate: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
@@ -44,8 +44,16 @@ final class IncomeScreenViewModel: ObservableObject {
     
     func load(day: Date) {
         do {
-            incomesForDay = try incomeService.fetchIncomes(on: day)
-            totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
+            let dayStart = calendar.startOfDay(for: day)
+            guard let dayEnd = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: dayStart) else {
+                eventsForDay = []
+                totalForSelectedDate = 0
+                return
+            }
+            let dayInterval = DateInterval(start: dayStart, end: dayEnd)
+            eventsForDay = try incomeService.events(in: dayInterval)
+            totalForSelectedDate = eventsForDay.reduce(0) { $0 + $1.amount }
+
             // Preload events for the full calendar range so each month displays
             // income summaries without requiring an explicit selection.
             let today = Date()
@@ -57,7 +65,7 @@ final class IncomeScreenViewModel: ObservableObject {
             #if DEBUG
             print("Income fetch error:", error)
             #endif
-            incomesForDay = []
+            eventsForDay = []
             totalForSelectedDate = 0
             eventsByDay = [:]
         }
