@@ -154,4 +154,19 @@ final class CoreDataService: ObservableObject {
             try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
         }
     }
+
+    // MARK: - Reset
+    /// Completely remove all data from the persistent store.
+    func wipeAllData() throws {
+        let context = viewContext
+        try context.performAndWait {
+            for entity in container.managedObjectModel.entities {
+                guard let name = entity.name else { continue }
+                let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
+                let request = NSBatchDeleteRequest(fetchRequest: fetch)
+                try context.execute(request)
+            }
+            try context.save()
+        }
+    }
 }

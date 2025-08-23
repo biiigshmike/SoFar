@@ -20,6 +20,7 @@ struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
+    @State private var showResetAlert: Bool = false
 
     // MARK: Layout Constants
     private var maxReadableWidth: CGFloat {
@@ -163,6 +164,23 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
+                // MARK: Reset Card
+                SettingsCard(
+                    iconSystemName: "trash",
+                    title: "Reset",
+                    subtitle: "Clear all stored data."
+                ) {
+                    VStack(spacing: 0) {
+                        Button(role: .destructive) {
+                            showResetAlert = true
+                        } label: {
+                            SettingsRow(title: "Erase All Data") { EmptyView() }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
             }
             .frame(maxWidth: maxReadableWidth)
             .padding(.horizontal, horizontalPadding)
@@ -174,6 +192,14 @@ struct SettingsView: View {
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
         .navigationTitle("Settings")
+        .alert("Erase All Data?", isPresented: $showResetAlert) {
+            Button("Erase", role: .destructive) {
+                try? CoreDataService.shared.wipeAllData()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove all budgets, cards, incomes, and expenses.")
+        }
     }
 
     // MARK: - Helpers
