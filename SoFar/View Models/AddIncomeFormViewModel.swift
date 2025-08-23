@@ -38,13 +38,6 @@ final class AddIncomeFormViewModel: ObservableObject {
     /// Exposes a simple seed model for CustomRecurrenceEditor
     var customRuleSeed: CustomRecurrence = CustomRecurrence()
 
-    // Retain parentID of original income to detect series membership
-    private var originalParentID: UUID? = nil
-
-    var isPartOfSeries: Bool {
-        return originalParentID != nil || !(recurrenceRule == .none)
-    }
-
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
     var currencyCode: String {
@@ -92,16 +85,13 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         // Seed the custom editor roughly from existing rule (best-effort)
         self.customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
-
-        // Remember original parentID
-        self.originalParentID = income.parentID
     }
 
     // MARK: Save
     /// Creates or updates an `Income` managed object using current state.
     /// - Parameter context: Core Data context to use.
     /// - Throws: Any Core Data error during save (with detailed, user-friendly message).
-    func save(in context: NSManagedObjectContext, scope: IncomeService.RecurrenceScope = .all) throws {
+    func save(in context: NSManagedObjectContext) throws {
         // Ensure edit state loaded if needed
         try loadIfNeeded(from: context)
 
@@ -113,40 +103,31 @@ final class AddIncomeFormViewModel: ObservableObject {
         var thrown: Error?
         context.performAndWait {
             do {
+                let income: Income
                 if let objectID = incomeObjectID,
                    let existing = try? context.existingObject(with: objectID) as? Income {
-                    let rrule = recurrenceRule.toRRule(starting: firstDate)
-                    switch scope {
-                    case .all, .thisAndFuture:
-                        try IncomeService(stack: CoreDataService.shared).updateIncome(existing,
-                                                                                     scope: scope,
-                                                                                     source: source.trimmingCharacters(in: .whitespacesAndNewlines),
-                                                                                     amount: amount,
-                                                                                     date: firstDate,
-                                                                                     isPlanned: isPlanned,
-                                                                                     recurrence: rrule?.string,
-                                                                                     recurrenceEndDate: rrule?.until,
-                                                                                     secondBiMonthlyDay: nil)
-                    case .onlyThis:
-                        existing.isPlanned = isPlanned
-                        existing.source = source.trimmingCharacters(in: .whitespacesAndNewlines)
-                        existing.amount = amount
-                        existing.date = firstDate
-                        let rrule = recurrenceRule.toRRule(starting: firstDate)
-                        existing.recurrence = rrule?.string ?? ""
-                        existing.recurrenceEndDate = rrule?.until
-                        try context.save()
-                    }
+                    income = existing
                 } else {
-                    let rrule = recurrenceRule.toRRule(starting: firstDate)
-                    let _ = try IncomeService(stack: CoreDataService.shared).createIncome(source: source.trimmingCharacters(in: .whitespacesAndNewlines),
-                                                                                         amount: amount,
-                                                                                         date: firstDate,
-                                                                                         isPlanned: isPlanned,
-                                                                                         recurrence: rrule?.string,
-                                                                                         recurrenceEndDate: rrule?.until,
-                                                                                         secondBiMonthlyDay: nil)
+                    income = Income(context: context)
+                    income.id = UUID()
                 }
+
+                // Core fields
+                income.isPlanned = isPlanned
+                income.source = source.trimmingCharacters(in: .whitespacesAndNewlines)
+                income.amount = amount
+                income.date = firstDate
+
+                // Recurrence → Core Data storage
+                let rrule = recurrenceRule.toRRule(starting: firstDate)
+                income.recurrence = rrule?.string ?? ""
+                income.recurrenceEndDate = rrule?.until
+
+                // Regenerate persisted recurrence children
+                try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: context)
+
+                // Attempt save
+                try context.save()
             } catch let nsError as NSError {
                 thrown = SaveError.coreData(nsError).asPublicError()
             } catch {
