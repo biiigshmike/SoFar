@@ -111,6 +111,7 @@ struct CardsView: View {
                 )
             }
             .background(themeManager.selectedTheme.background.ignoresSafeArea())
+            .appHint(.cards, message: "Add and manage cards here.")
     }
 
     // MARK: - Content View (Type-Safe)
