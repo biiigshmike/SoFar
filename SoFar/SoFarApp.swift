@@ -10,7 +10,6 @@ import SwiftUI
 @main
 struct SoFarApp: App {
     @StateObject private var themeManager = ThemeManager()
-    @StateObject private var hintManager = HintManager()
 
     init() {
         CoreDataService.shared.ensureLoaded()
@@ -21,7 +20,6 @@ struct SoFarApp: App {
             RootTabView()
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                 .environmentObject(themeManager)
-                .environmentObject(hintManager)
                 // Apply the selected theme's accent color to all controls.
                 // `tint` covers most modern SwiftUI controls, while `accentColor`
                 // is still required for some AppKit-backed macOS components

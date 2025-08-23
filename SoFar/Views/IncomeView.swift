@@ -34,7 +34,6 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @EnvironmentObject private var hintManager: HintManager
 
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
@@ -102,7 +101,6 @@ struct IncomeView: View {
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
             viewModel.load(day: initial)
-            hintManager.present(.income)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
