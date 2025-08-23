@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var tourManager: AppTourManager
 
     var body: some View {
         TabView {
@@ -28,6 +29,7 @@ struct RootTabView: View {
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
+        .appHint("rootTab", manager: tourManager, message: "Navigate SoFar using the tabs below.")
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .onAppear(perform: updateTabBarAppearance)
         .onChange(of: themeManager.selectedTheme) { 
