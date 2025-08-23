@@ -41,7 +41,7 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
-    @State private var showDeleteDialog: Bool = false
+    @State private var showDeleteAlert: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -251,11 +251,11 @@ struct IncomeView: View {
                             income: income,
                             onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
                             onDelete: {
-                                incomeToDelete = income
                                 if confirmBeforeDelete {
-                                    showDeleteDialog = true
+                                    incomeToDelete = income
+                                    showDeleteAlert = true
                                 } else {
-                                    viewModel.delete(income: income, scope: .instance)
+                                    viewModel.delete(income: income)
                                 }
                             }
                         )
@@ -282,22 +282,16 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
-        .confirmationDialog("Delete Income?", isPresented: $showDeleteDialog, presenting: incomeToDelete, titleVisibility: .visible) { income in
-            Button("Delete This Income", role: .destructive) {
-                viewModel.delete(income: income, scope: .instance)
-                incomeToDelete = nil
-            }
-            Button("Delete This and Future", role: .destructive) {
-                viewModel.delete(income: income, scope: .future)
-                incomeToDelete = nil
-            }
-            Button("Delete All", role: .destructive) {
-                viewModel.delete(income: income, scope: .all)
+        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
+            Button("Delete", role: .destructive) {
+                viewModel.delete(income: income)
                 incomeToDelete = nil
             }
             Button("Cancel", role: .cancel) {
                 incomeToDelete = nil
             }
+        } message: { _ in
+            Text("This will remove the income entry.")
         }
     }
 
@@ -398,9 +392,9 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         if confirmBeforeDelete, let first = targets.first {
             incomeToDelete = first
-            showDeleteDialog = true
+            showDeleteAlert = true
         } else {
-            targets.forEach { viewModel.delete(income: $0, scope: .instance) }
+            targets.forEach { viewModel.delete(income: $0) }
         }
     }
 }

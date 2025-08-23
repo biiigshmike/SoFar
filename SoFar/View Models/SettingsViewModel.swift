@@ -74,18 +74,6 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }
-
-    // MARK: Reset
-    /// Deletes all objects from the Core Data store.
-    func resetAllData() {
-        do {
-            try CoreDataService.shared.wipeAllData()
-        } catch {
-            #if DEBUG
-            print("Reset data error:", error)
-            #endif
-        }
-    }
 }
 
 // MARK: - Cross-Platform Colors

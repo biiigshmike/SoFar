@@ -137,41 +137,15 @@ final class IncomeService {
         try repo.saveIfNeeded()
     }
     
-    // MARK: deleteIncome(_:scope:)
-    enum DeletionScope {
-        case instance
-        case future
-        case all
-    }
-
-    /// Delete an income record with optional series scope.
-    func deleteIncome(_ income: Income, scope: DeletionScope = .instance) throws {
-        let context = repo.context
-        let date = income.date ?? Date.distantPast
-        let seriesID = income.parentID ?? income.id
-
-        switch scope {
-        case .instance:
-            repo.delete(income)
-        case .future:
-            if let id = seriesID {
-                let request: NSFetchRequest<Income> = Income.fetchRequest()
-                request.predicate = NSPredicate(format: "(id == %@ OR parentID == %@) AND date >= %@", id as CVarArg, id as CVarArg, date as CVarArg)
-                let targets = try context.fetch(request)
-                for t in targets { repo.delete(t) }
-            } else {
-                repo.delete(income)
-            }
-        case .all:
-            if let id = seriesID {
-                let request: NSFetchRequest<Income> = Income.fetchRequest()
-                request.predicate = NSPredicate(format: "id == %@ OR parentID == %@", id as CVarArg, id as CVarArg)
-                let targets = try context.fetch(request)
-                for t in targets { repo.delete(t) }
-            } else {
-                repo.delete(income)
-            }
+    // MARK: deleteIncome(_:)
+    /// Delete an income record.
+    func deleteIncome(_ income: Income) throws {
+        if income.parentID == nil, let id = income.id {
+            let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
+            let children = try repo.fetchAll(predicate: predicate)
+            for child in children { repo.delete(child) }
         }
+        repo.delete(income)
         try repo.saveIfNeeded()
     }
     
