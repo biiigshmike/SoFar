@@ -123,6 +123,9 @@ final class AddIncomeFormViewModel: ObservableObject {
                 income.recurrence = rrule?.string ?? ""
                 income.recurrenceEndDate = rrule?.until
 
+                // Regenerate persisted recurrence children
+                try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: context)
+
                 // Attempt save
                 try context.save()
             } catch let nsError as NSError {

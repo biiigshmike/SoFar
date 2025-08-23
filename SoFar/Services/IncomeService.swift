@@ -107,6 +107,7 @@ final class IncomeService {
                                                    keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"],
                                                    value: secondBiMonthlyDay)
         }
+        try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
         try repo.saveIfNeeded()
         return income
     }
@@ -132,12 +133,18 @@ final class IncomeService {
                                                    keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"],
                                                    value: secondBiMonthlyDay)
         }
+        try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
         try repo.saveIfNeeded()
     }
     
     // MARK: deleteIncome(_:)
     /// Delete an income record.
     func deleteIncome(_ income: Income) throws {
+        if income.parentID == nil, let id = income.id {
+            let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
+            let children = try repo.fetchAll(predicate: predicate)
+            for child in children { repo.delete(child) }
+        }
         repo.delete(income)
         try repo.saveIfNeeded()
     }
@@ -152,13 +159,11 @@ final class IncomeService {
     
     // MARK: events(in:includeProjectedRecurrences:)
     /// Return calendar-friendly events for all incomes in `interval`.
-    /// If `includeProjectedRecurrences` is true, also returns non-persisted “projected” events
-    /// that fall inside the interval based on simple recurrence rules.
+    /// Recurrent incomes are already persisted, so this simply maps each Income to an `IncomeEvent`.
     func events(in interval: DateInterval,
                 includeProjectedRecurrences: Bool = true) throws -> [IncomeEvent] {
         let base = try fetchIncomes(in: interval)
-        
-        var events: [IncomeEvent] = base.map {
+        let events: [IncomeEvent] = base.map {
             IncomeEvent(objectID: $0.objectID,
                         date: $0.date ?? Date.distantPast,
                         source: $0.source ?? "",
@@ -166,37 +171,7 @@ final class IncomeService {
                         isPlanned: $0.isPlanned,
                         isProjected: false)
         }
-        
-        guard includeProjectedRecurrences else { return events }
-        
-        // Expand recurrences for items whose base date is <= interval.end.
-        for inc in base {
-            guard let recurrence = inc.recurrence?.lowercased(), !recurrence.isEmpty else { continue }
-            let startDate = inc.date ?? Date()
-            let lastDate = effectiveRecurrenceEndDate(for: inc, fallback: interval.end)
-            let expansionWindow = DateInterval(start: interval.start, end: min(interval.end, lastDate))
-            let secondDay = Self.optionalInt16IfAttributeExists(on: inc, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"])
-            
-            let projectedDates = RecurrenceEngine.projectedDates(recurrence: recurrence,
-                                                                 baseDate: startDate,
-                                                                 in: expansionWindow,
-                                                                 calendar: calendar,
-                                                                 secondBiMonthlyDay: secondDay)
-            for d in projectedDates {
-                // Skip the base persisted date to avoid duplicates.
-                if calendar.isDate(d, inSameDayAs: startDate) { continue }
-                events.append(IncomeEvent(objectID: nil,
-                                          date: d,
-                                          source: inc.source ?? "",
-                                          amount: inc.amount,
-                                          isPlanned: inc.isPlanned,
-                                          isProjected: true))
-            }
-        }
-        
-        // Sort by date ASC for stable rendering
-        events.sort { $0.date < $1.date }
-        return events
+        return events.sorted { $0.date < $1.date }
     }
     
     // MARK: eventsByDay(in:)
