@@ -115,11 +115,11 @@ struct IncomeView: View {
         let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: 12) {
-//                Button("<<") { goToPreviousMonth() }
-//                Button("<") { goToPreviousDay() }
-//                Button("Today") { goToToday() }
-//                Button(">") { goToNextDay() }
-//                Button(">>") { goToNextMonth() }
+                Button("<<") { goToPreviousMonth() }
+                Button("<") { goToPreviousDay() }
+                Button("Today") { goToToday() }
+                Button(">") { goToNextDay() }
+                Button(">>") { goToNextMonth() }
             }
 #if os(macOS)
             .buttonStyle(.borderedProminent)
@@ -151,6 +151,10 @@ struct IncomeView: View {
                     .endMonth(end)
                     .scrollTo(date: calendarScrollDate)
             }
+            .transaction { t in
+                t.animation = nil
+                t.disablesAnimations = true
+            }
             .accessibilityIdentifier("IncomeCalendar")
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
@@ -178,6 +182,10 @@ struct IncomeView: View {
                     .startMonth(start)
                     .endMonth(end)
                     .scrollTo(date: calendarScrollDate)
+            }
+            .transaction { t in
+                t.animation = nil
+                t.disablesAnimations = true
             }
             .accessibilityIdentifier("IncomeCalendar")
             #endif
@@ -292,8 +300,10 @@ struct IncomeView: View {
     private func navigate(to date: Date) {
         let day = Calendar.current.startOfDay(for: date)
         // Update the selected date immediately so the calendar highlights the correct day
-        viewModel.selectedDate = day
-        calendarScrollDate = day
+        withAnimation(.none) {
+            viewModel.selectedDate = day
+            calendarScrollDate = day
+        }
         // Reset the scroll target on the next run loop cycle to avoid repeated jumps
         DispatchQueue.main.async {
             calendarScrollDate = nil
