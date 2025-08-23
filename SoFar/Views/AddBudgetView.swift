@@ -37,7 +37,6 @@ struct AddBudgetView: View {
     // MARK: Local UI State
     /// Populated if saving fails; presented in a SwiftUI alert.
     @State private var saveErrorMessage: String?
-    @State private var isPresentingCustomRecurrenceEditor: Bool = false
 
     // MARK: Init (ADD)
     /// Use this initializer when **adding** a budget.
@@ -125,13 +124,6 @@ struct AddBudgetView: View {
                         .labelsHidden()
                         .ub_compactDatePickerStyle()
                 }
-            }
-
-            UBFormSection("Recurrence (Optional)", isUppercased: true) {
-                RecurrencePickerView(
-                    rule: $vm.recurrenceRule,
-                    isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
-                )
             }
 
             // ---- Cards to Track
