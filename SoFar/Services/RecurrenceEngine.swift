@@ -1,4 +1,5 @@
 import Foundation
+import CoreData
 
 /// Centralized recurrence expansion used by Income, UnplannedExpense and Budget services.
 /// Handles both legacy keyword strings ("weekly", "monthly", etc.) and
@@ -208,6 +209,49 @@ struct RecurrenceEngine {
         var comps = calendar.dateComponents([.year, .month], from: monthAnchor)
         comps.day = clamped
         return calendar.date(from: comps)
+    }
+
+    // MARK: - Persistence Helpers (Income)
+    /// Regenerates persisted income instances for the recurrence defined on `income`.
+    /// Existing child instances (where `parentID == income.id`) are removed before regeneration.
+    /// - Parameters:
+    ///   - income: The base income that defines the recurrence pattern.
+    ///   - context: Managed object context used for fetch/create/delete.
+    ///   - calendar: Calendar to use for date calculations.
+    static func regenerateIncomeRecurrences(base income: Income,
+                                            in context: NSManagedObjectContext,
+                                            calendar: Calendar = .current) throws {
+        guard let baseID = income.id else { return }
+
+        // Remove existing children for this series
+        let request: NSFetchRequest<Income> = Income.fetchRequest()
+        request.predicate = NSPredicate(format: "parentID == %@", baseID as CVarArg)
+        let existingChildren = try context.fetch(request)
+        existingChildren.forEach { context.delete($0) }
+
+        // Only proceed if a recurrence rule exists
+        guard let recurrence = income.recurrence, !recurrence.isEmpty,
+              let startDate = income.date else { return }
+
+        // Determine expansion window
+        let end = income.recurrenceEndDate ?? calendar.date(byAdding: .year, value: 1, to: startDate) ?? startDate
+        let interval = DateInterval(start: startDate, end: end)
+
+        let dates = projectedDates(recurrence: recurrence,
+                                   baseDate: startDate,
+                                   in: interval,
+                                   calendar: calendar)
+
+        for d in dates {
+            if calendar.isDate(d, inSameDayAs: startDate) { continue }
+            let copy = Income(context: context)
+            copy.id = UUID()
+            copy.source = income.source
+            copy.amount = income.amount
+            copy.isPlanned = income.isPlanned
+            copy.date = d
+            copy.parentID = baseID
+        }
     }
 }
 

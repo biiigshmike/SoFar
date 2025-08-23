@@ -29,6 +29,9 @@ final class CoreDataRepository<Entity: NSManagedObject> {
     
     /// Convenience accessor for the main context (UI / main thread).
     private var viewContext: NSManagedObjectContext { stack.container.viewContext }
+
+    /// Exposes the underlying view context for advanced operations.
+    var context: NSManagedObjectContext { viewContext }
     
     // MARK: Init
     /// Initialize with a custom stack (useful for tests), defaults to CoreDataService.shared.
