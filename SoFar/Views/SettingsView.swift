@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: AppHintManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -53,6 +54,16 @@ struct SettingsView: View {
                                 }
                             }
                             .labelsHidden()
+                        }
+                        SettingsRow(title: "Show App Hints") {
+                            Toggle("", isOn: $viewModel.showHints)
+                                .labelsHidden()
+                        }
+                        SettingsRow(title: "Restart App Tour") {
+                            Button("Start") {
+                                hintManager.reset()
+                                hintManager.show(.welcome)
+                            }
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
