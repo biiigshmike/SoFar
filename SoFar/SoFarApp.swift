@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct SoFarApp: App {
     @StateObject private var themeManager = ThemeManager()
+    @StateObject private var guidanceManager = GuidanceManager()
 
     init() {
         CoreDataService.shared.ensureLoaded()
@@ -20,6 +21,7 @@ struct SoFarApp: App {
             RootTabView()
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                 .environmentObject(themeManager)
+                .environmentObject(guidanceManager)
                 // Apply the selected theme's accent color to all controls.
                 // `tint` covers most modern SwiftUI controls, while `accentColor`
                 // is still required for some AppKit-backed macOS components
@@ -27,6 +29,16 @@ struct SoFarApp: App {
                 .accentColor(themeManager.selectedTheme.accent)
                 .tint(themeManager.selectedTheme.accent)
                 .preferredColorScheme(themeManager.selectedTheme.colorScheme)
+                .fullScreenCover(
+                    isPresented: Binding(
+                        get: { !guidanceManager.hasSeenTour },
+                        set: { guidanceManager.hasSeenTour = !$0 }
+                    )
+                ) {
+                    OnboardingView()
+                        .environmentObject(guidanceManager)
+                        .environmentObject(themeManager)
+                }
         }
     }
 }

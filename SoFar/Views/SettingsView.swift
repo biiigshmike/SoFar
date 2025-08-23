@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var guidance: GuidanceManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -159,6 +160,33 @@ struct SettingsView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                // MARK: Guidance Card
+                SettingsCard(
+                    iconSystemName: "questionmark.circle",
+                    title: "App Guidance",
+                    subtitle: "Replay the tour or control contextual hints.",
+                ) {
+                    VStack(spacing: 0) {
+                        SettingsRow(title: "Enable Hints") {
+                            Toggle("", isOn: Binding(
+                                get: { guidance.hintsEnabled },
+                                set: { guidance.hintsEnabled = $0 }
+                            ))
+                            .labelsHidden()
+                        }
+                        .appHint(id: "settings.hintsToggle", text: "Turn off if you prefer no tips.")
+
+                        SettingsRow(title: "Restart App Tour") {
+                            Button("Start") { guidance.restartTour() }
+                        }
+
+                        SettingsRow(title: "Reset Hints") {
+                            Button("Reset") { guidance.resetHints() }
+                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
