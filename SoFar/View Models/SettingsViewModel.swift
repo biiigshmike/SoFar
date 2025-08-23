@@ -47,14 +47,6 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue)
     var syncBudgetPeriod: Bool = true { willSet { objectWillChange.send() } }
 
-    /// Display contextual hints throughout the app.
-    @AppStorage(AppSettingsKeys.showHints.rawValue)
-    var showHints: Bool = true { willSet { objectWillChange.send() } }
-
-    /// Track whether the onboarding tour has been completed.
-    @AppStorage(AppSettingsKeys.completedAppTour.rawValue)
-    var completedAppTour: Bool = false { willSet { objectWillChange.send() } }
-
     /// Enable iCloud/CloudKit synchronization for Core Data.
     /// When turned off, dependent sync options are also disabled.
     @AppStorage(AppSettingsKeys.enableCloudSync.rawValue)
@@ -79,16 +71,8 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.syncCardThemes.rawValue: true,
             AppSettingsKeys.syncAppTheme.rawValue: true,
             AppSettingsKeys.syncBudgetPeriod.rawValue: true,
-            AppSettingsKeys.enableCloudSync.rawValue: true,
-            AppSettingsKeys.showHints.rawValue: true,
-            AppSettingsKeys.completedAppTour.rawValue: false
+            AppSettingsKeys.enableCloudSync.rawValue: true
         ])
-    }
-
-    // MARK: - Onboarding
-    /// Reset the onboarding tour so it appears again on next launch.
-    func resetOnboarding() {
-        completedAppTour = false
     }
 }
 
