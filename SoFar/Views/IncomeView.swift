@@ -103,7 +103,6 @@ struct IncomeView: View {
             viewModel.load(day: initial)
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .appHint(.income, message: "Tap + to add income.")
     }
 
     // MARK: - Calendar Section

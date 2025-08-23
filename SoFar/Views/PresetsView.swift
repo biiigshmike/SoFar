@@ -125,7 +125,6 @@ struct PresetsView: View {
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .appHint(.presets, message: "Reuse expenses across budgets.")
         .alert(item: $templateToDelete) { template in
             Alert(
                 title: Text("Delete \(template.descriptionText ?? "Preset")?"),
