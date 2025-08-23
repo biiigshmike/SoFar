@@ -33,6 +33,7 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     @Published var descriptionText: String = ""
     @Published var amountString: String = ""
     @Published var transactionDate: Date = Date()
+    @Published var recurrenceRule: RecurrenceRule = .none
 
     // MARK: Init
     init(unplannedExpenseID: NSManagedObjectID? = nil,
@@ -59,6 +60,21 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             descriptionText = existing.descriptionText ?? ""
             amountString = formatAmount(existing.amount)
             transactionDate = existing.transactionDate ?? Date()
+
+            if let r = existing.recurrence, !r.isEmpty {
+                var secondDay: Int16 = 0
+                let keys = existing.entity.attributesByName.keys
+                for k in ["secondBiMonthlyDay", "secondPayDay", "secondBiMonthlyDate"] where keys.contains(k) {
+                    if let v = existing.value(forKey: k) as? Int16 { secondDay = v; break }
+                }
+                if let parsed = RecurrenceRule.parse(from: r,
+                                                     endDate: existing.recurrenceEndDate,
+                                                     secondBiMonthlyPayDay: Int(secondDay)) {
+                    recurrenceRule = parsed
+                } else {
+                    recurrenceRule = .custom(r, endDate: existing.recurrenceEndDate)
+                }
+            }
         } else {
             // Default selections
             if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
@@ -121,10 +137,28 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
         item.card = card
         item.expenseCategory = category
 
-        // Optional: support a boolean "isRecurring" if it exists in your model
-        if let hasRecurring = item.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {
-            // default false unless UI added later
-            item.setValue(item.value(forKey: hasRecurring.name) ?? false, forKey: hasRecurring.name)
+        if let built = recurrenceRule.toRRule(starting: transactionDate) {
+            item.recurrence = built.string
+            item.recurrenceEndDate = built.until
+            if built.secondBiMonthlyPayDay > 0 {
+                let keys = item.entity.attributesByName.keys
+                if keys.contains("secondBiMonthlyDate") {
+                    item.setValue(Int16(built.secondBiMonthlyPayDay), forKey: "secondBiMonthlyDate")
+                } else if keys.contains("secondBiMonthlyDay") {
+                    item.setValue(Int16(built.secondBiMonthlyPayDay), forKey: "secondBiMonthlyDay")
+                } else if keys.contains("secondPayDay") {
+                    item.setValue(Int16(built.secondBiMonthlyPayDay), forKey: "secondPayDay")
+                }
+            }
+            if let hasRecurring = item.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {
+                item.setValue(true, forKey: hasRecurring.name)
+            }
+        } else {
+            item.recurrence = nil
+            item.recurrenceEndDate = nil
+            if let hasRecurring = item.entity.propertiesByName["isRecurring"] as? NSAttributeDescription {
+                item.setValue(false, forKey: hasRecurring.name)
+            }
         }
 
         try context.save()
