@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: HintManager
 
     var body: some View {
         TabView {
@@ -29,8 +30,14 @@ struct RootTabView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .overlay(alignment: .bottom) {
+            if let hint = hintManager.activeHint {
+                HintBubble(hint: hint) { hintManager.dismiss() }
+                    .padding(.bottom, 8)
+            }
+        }
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { 
+        .onChange(of: themeManager.selectedTheme) {
             updateTabBarAppearance()
         }
     }

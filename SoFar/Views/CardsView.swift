@@ -27,6 +27,7 @@ struct CardsView: View {
     // MARK: State & Dependencies
     @StateObject private var viewModel = CardsViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: HintManager
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
 
@@ -50,7 +51,10 @@ struct CardsView: View {
             // Let SwiftUI handle transitions between loading/empty/loaded states.
             .animation(.default, value: viewModel.state)
             // MARK: Start observing when view appears
-            .onAppear { viewModel.startIfNeeded() }
+            .onAppear {
+                viewModel.startIfNeeded()
+                hintManager.present(.cards)
+            }
             // Pull to refresh to manually reload cards
             .refreshable { await viewModel.refresh() }
             // MARK: App Toolbar
