@@ -230,14 +230,14 @@ struct IncomeView: View {
     private var selectedDaySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
-            let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
+            let events: [IncomeService.IncomeEvent] = viewModel.eventsForDay   // Explicit type trims solver work
 
             // MARK: Section Title — Selected Day
             Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
                 .font(.headline)
                 .padding(.bottom, DS.Spacing.xs)
 
-            if entries.isEmpty {
+            if events.isEmpty {
                 // MARK: Empty State
                 Text("No income for \(formattedDate(date)).")
                     .foregroundStyle(.secondary)
@@ -246,25 +246,18 @@ struct IncomeView: View {
             } else {
                 // MARK: Scrollable List with Unified Swipe Actions
                 List {
-                    ForEach(entries, id: \.objectID) { income in
-                        IncomeRow(
-                            income: income,
-                            onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    incomeToDelete = income
-                                    showDeleteAlert = true
-                                } else {
-                                    viewModel.delete(income: income)
-                                }
-                            }
+                    ForEach(events, id: \.self) { event in
+                        IncomeEventRow(
+                            event: event,
+                            onEdit: event.objectID == nil ? nil : { beginEditingEvent(event) },
+                            onDelete: event.objectID == nil ? nil : { deleteEvent(event) }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     }
                     .onDelete { indexSet in
-                        handleDelete(indexSet, in: entries)
+                        handleDelete(indexSet, in: events)
                     }
                 }
                 .listStyle(.plain)
@@ -347,9 +340,11 @@ struct IncomeView: View {
     }
 
     // MARK: - Edit Flow Helpers
-    /// Begins editing for a given income; sets state used by the edit sheet.
-    /// - Parameter income: The Core Data `Income` instance to edit; its `objectID` is passed to the form.
-    private func beginEditingIncome(_ income: Income) {
+    /// Begins editing for a given income event if it is backed by Core Data.
+    /// - Parameter event: The income event whose underlying object should be edited.
+    private func beginEditingEvent(_ event: IncomeService.IncomeEvent) {
+        guard let id = event.objectID,
+              let income = try? viewContext.existingObject(with: id) as? Income else { return }
         editingIncome = income
     }
 
@@ -388,47 +383,60 @@ struct IncomeView: View {
     /// - Parameters:
     ///   - indexSet: The set of indices from the `List` to delete.
     ///   - entries: A snapshot array used by the current `ForEach`.
-    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
+    private func handleDelete(_ indexSet: IndexSet, in entries: [IncomeService.IncomeEvent]) {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
-        if confirmBeforeDelete, let first = targets.first {
-            incomeToDelete = first
+        for event in targets {
+            deleteEvent(event)
+        }
+    }
+
+    /// Deletes an income event if it corresponds to a persisted object.
+    private func deleteEvent(_ event: IncomeService.IncomeEvent) {
+        guard let id = event.objectID,
+              let income = try? viewContext.existingObject(with: id) as? Income else { return }
+        if confirmBeforeDelete {
+            incomeToDelete = income
             showDeleteAlert = true
         } else {
-            targets.forEach { viewModel.delete(income: $0) }
+            viewModel.delete(income: income)
         }
     }
 }
 
-// MARK: - IncomeRow
-/// A compact row showing source and amount; applies the unified swipe actions.
-private struct IncomeRow: View {
+// MARK: - IncomeEventRow
+/// A compact row showing source and amount; applies swipe actions only when the event is persisted.
+private struct IncomeEventRow: View {
 
     // MARK: Properties
-    let income: Income
-    let onEdit: () -> Void
-    let onDelete: () -> Void
+    let event: IncomeService.IncomeEvent
+    let onEdit: (() -> Void)?
+    let onDelete: (() -> Void)?
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Body
     var body: some View {
-        HStack(alignment: .top) {
+        let content = HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(income.source ?? "—")
+                Text(event.source)
                     .font(.headline)
-                Text(currencyString(for: income.amount))
+                Text(currencyString(for: event.amount))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
         }
         .padding(.vertical, 6)
-        // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
-        .unifiedSwipeActions(
-            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
-                               allowsFullSwipeToDelete: false),
-            onEdit: onEdit,
-            onDelete: onDelete
-        )
+
+        if let onDelete {
+            content.unifiedSwipeActions(
+                UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                                   allowsFullSwipeToDelete: false),
+                onEdit: onEdit,
+                onDelete: onDelete
+            )
+        } else {
+            content
+        }
     }
 
     // MARK: Helpers
