@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var tourManager: AppTourManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -53,6 +54,17 @@ struct SettingsView: View {
                                 }
                             }
                             .labelsHidden()
+                        }
+                        SettingsRow(title: "Enable App Hints") {
+                            Toggle("", isOn: $viewModel.showAppHints)
+                                .labelsHidden()
+                        }
+                        SettingsRow(title: "Replay App Tour") {
+                            Button("Start") {
+                                viewModel.resetAppTour()
+                                tourManager.reset()
+                                tourManager.startMainTour()
+                            }
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -169,6 +181,7 @@ struct SettingsView: View {
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)
         }
+        .appHint("settings", manager: tourManager, message: "Customize SoFar from here.")
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.accent)
