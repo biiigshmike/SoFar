@@ -61,10 +61,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    /// Show onboarding hints across the app.
-    @AppStorage(AppSettingsKeys.showHints.rawValue)
-    var showHints: Bool = true { willSet { objectWillChange.send() } }
-
     // MARK: - Init
     init() {
         UserDefaults.standard.register(defaults: [
@@ -75,8 +71,7 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.syncCardThemes.rawValue: true,
             AppSettingsKeys.syncAppTheme.rawValue: true,
             AppSettingsKeys.syncBudgetPeriod.rawValue: true,
-            AppSettingsKeys.enableCloudSync.rawValue: true,
-            AppSettingsKeys.showHints.rawValue: true
+            AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }
 }
