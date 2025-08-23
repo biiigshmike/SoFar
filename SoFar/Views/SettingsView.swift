@@ -18,7 +18,6 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @EnvironmentObject private var hintManager: HintManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -142,27 +141,6 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
-                // MARK: Hints Card
-                SettingsCard(
-                    iconSystemName: "lightbulb",
-                    title: "Hints",
-                    subtitle: "Show or reset helpful tips.",
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Enable Hints") {
-                            Toggle("", isOn: $viewModel.enableHints)
-                                .labelsHidden()
-                        }
-                        SettingsRow(title: "Reset All Hints") {
-                            Button("Reset") { hintManager.reset() }
-                                .buttonStyle(.borderless)
-                        }
-                        .disabled(!viewModel.enableHints)
-                        .opacity(viewModel.enableHints ? 1 : 0.5)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
                 // MARK: Expenses Card (with sub-page)
                 SettingsCard(
                     iconSystemName: "tag",
@@ -195,7 +173,6 @@ struct SettingsView: View {
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
-        .onAppear { hintManager.present(.settings) }
         .navigationTitle("Settings")
     }
 
