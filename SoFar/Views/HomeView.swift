@@ -25,6 +25,7 @@ struct HomeView: View {
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: HintManager
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
 
@@ -49,6 +50,7 @@ struct HomeView: View {
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Home")
+        .onAppear { hintManager.present(.home) }
         .toolbar {
             // Budget period picker varies by platform because
             // `.navigationBarLeading` is unavailable on macOS.

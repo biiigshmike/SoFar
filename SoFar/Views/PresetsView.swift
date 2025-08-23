@@ -16,6 +16,7 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: HintManager
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -89,7 +90,10 @@ struct PresetsView: View {
                 }
             }
             // MARK: Data lifecycle
-            .onAppear { viewModel.loadTemplates(using: viewContext) }
+            .onAppear {
+                viewModel.loadTemplates(using: viewContext)
+                hintManager.present(.presets)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange)) { _ in
                 viewModel.loadTemplates(using: viewContext)
             }

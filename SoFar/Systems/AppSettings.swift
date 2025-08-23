@@ -12,4 +12,5 @@ enum AppSettingsKeys: String {
     case syncAppTheme
     case syncBudgetPeriod
     case enableCloudSync
+    case enableHints
 }
