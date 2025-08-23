@@ -74,6 +74,17 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }
+
+    // MARK: Reset
+    func resetAllData() {
+        do {
+            try CoreDataService.shared.resetStores()
+        } catch {
+            #if DEBUG
+            print("Reset error:", error)
+            #endif
+        }
+    }
 }
 
 // MARK: - Cross-Platform Colors
