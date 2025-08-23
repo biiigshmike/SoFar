@@ -40,7 +40,7 @@ struct IncomeView: View {
     @StateObject var viewModel = IncomeScreenViewModel()
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue) private var calendarHorizontal: Bool = true
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
-    @State private var incomeToDelete: Income? = nil
+    @State private var incomeToDelete: IncomeService.IncomeEvent? = nil
     @State private var showDeleteAlert: Bool = false
 
     // MARK: Body
@@ -230,7 +230,7 @@ struct IncomeView: View {
     private var selectedDaySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
-            let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
+            let entries: [IncomeService.IncomeEvent] = viewModel.incomesForDay   // Explicit type trims solver work
 
             // MARK: Section Title — Selected Day
             Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
@@ -246,18 +246,18 @@ struct IncomeView: View {
             } else {
                 // MARK: Scrollable List with Unified Swipe Actions
                 List {
-                    ForEach(entries, id: \.objectID) { income in
+                    ForEach(entries, id: \.self) { event in
                         IncomeRow(
-                            income: income,
-                            onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: {
+                            event: event,
+                            onEdit: event.objectID.map { id in { beginEditingIncome(id) } },
+                            onDelete: event.objectID.map { _ in {
                                 if confirmBeforeDelete {
-                                    incomeToDelete = income
+                                    incomeToDelete = event
                                     showDeleteAlert = true
                                 } else {
-                                    viewModel.delete(income: income)
+                                    viewModel.delete(event: event)
                                 }
-                            }
+                            } }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
@@ -282,9 +282,9 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
-        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
+        .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { event in
             Button("Delete", role: .destructive) {
-                viewModel.delete(income: income)
+                viewModel.delete(event: event)
                 incomeToDelete = nil
             }
             Button("Cancel", role: .cancel) {
@@ -349,8 +349,10 @@ struct IncomeView: View {
     // MARK: - Edit Flow Helpers
     /// Begins editing for a given income; sets state used by the edit sheet.
     /// - Parameter income: The Core Data `Income` instance to edit; its `objectID` is passed to the form.
-    private func beginEditingIncome(_ income: Income) {
-        editingIncome = income
+    private func beginEditingIncome(_ objectID: NSManagedObjectID) {
+        if let income = try? viewContext.existingObject(with: objectID) as? Income {
+            editingIncome = income
+        }
     }
 
     // MARK: - Formatting Helpers
@@ -388,13 +390,14 @@ struct IncomeView: View {
     /// - Parameters:
     ///   - indexSet: The set of indices from the `List` to delete.
     ///   - entries: A snapshot array used by the current `ForEach`.
-    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
+    private func handleDelete(_ indexSet: IndexSet, in entries: [IncomeService.IncomeEvent]) {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
-        if confirmBeforeDelete, let first = targets.first {
+        let deletable = targets.filter { $0.objectID != nil }
+        if confirmBeforeDelete, let first = deletable.first {
             incomeToDelete = first
             showDeleteAlert = true
         } else {
-            targets.forEach { viewModel.delete(income: $0) }
+            deletable.forEach { viewModel.delete(event: $0) }
         }
     }
 }
@@ -404,31 +407,35 @@ struct IncomeView: View {
 private struct IncomeRow: View {
 
     // MARK: Properties
-    let income: Income
-    let onEdit: () -> Void
-    let onDelete: () -> Void
+    let event: IncomeService.IncomeEvent
+    let onEdit: (() -> Void)?
+    let onDelete: (() -> Void)?
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Body
     var body: some View {
-        HStack(alignment: .top) {
+        let row = HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(income.source ?? "—")
+                Text(event.source)
                     .font(.headline)
-                Text(currencyString(for: income.amount))
+                Text(currencyString(for: event.amount))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
         }
         .padding(.vertical, 6)
-        // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
-        .unifiedSwipeActions(
-            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
-                               allowsFullSwipeToDelete: false),
-            onEdit: onEdit,
-            onDelete: onDelete
-        )
+
+        if let onDelete {
+            row.unifiedSwipeActions(
+                UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
+                                   allowsFullSwipeToDelete: false),
+                onEdit: onEdit,
+                onDelete: onDelete
+            )
+        } else {
+            row
+        }
     }
 
     // MARK: Helpers
