@@ -35,14 +35,6 @@ final class SettingsViewModel: ObservableObject {
         set { budgetPeriodRawValue = newValue.rawValue }
     }
 
-    /// Master toggle for whether contextual hints should display.
-    @AppStorage(AppSettingsKeys.showAppHints.rawValue)
-    var showAppHints: Bool = true { willSet { objectWillChange.send() } }
-
-    /// Has the user completed the main onboarding tour?
-    @AppStorage(AppSettingsKeys.hasCompletedAppTour.rawValue)
-    var hasCompletedAppTour: Bool = false { willSet { objectWillChange.send() } }
-
     /// Sync per-card themes across devices using iCloud.
     @AppStorage(AppSettingsKeys.syncCardThemes.rawValue)
     var syncCardThemes: Bool = true { willSet { objectWillChange.send() } }
@@ -69,12 +61,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    // MARK: resetAppTour()
-    /// Reset the onboarding tour progress so it can be replayed.
-    func resetAppTour() {
-        hasCompletedAppTour = false
-    }
-
     // MARK: - Init
     init() {
         UserDefaults.standard.register(defaults: [
@@ -85,9 +71,7 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.syncCardThemes.rawValue: true,
             AppSettingsKeys.syncAppTheme.rawValue: true,
             AppSettingsKeys.syncBudgetPeriod.rawValue: true,
-            AppSettingsKeys.enableCloudSync.rawValue: true,
-            AppSettingsKeys.hasCompletedAppTour.rawValue: false,
-            AppSettingsKeys.showAppHints.rawValue: true
+            AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }
 }
