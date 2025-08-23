@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var hintManager: AppHintManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
@@ -53,6 +54,15 @@ struct SettingsView: View {
                                 }
                             }
                             .labelsHidden()
+                        }
+                        SettingsRow(title: "Show Hints") {
+                            Toggle("", isOn: $viewModel.showHints)
+                                .labelsHidden()
+                        }
+                        SettingsRow(title: "Reset App Hints") {
+                            Button("Reset") { hintManager.resetAll() }
+                                .foregroundStyle(themeManager.selectedTheme.accent)
+                                .buttonStyle(.plain)
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -174,6 +184,7 @@ struct SettingsView: View {
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
         .navigationTitle("Settings")
+        .appHint(.settings, message: "Customize SoFar here.")
     }
 
     // MARK: - Helpers

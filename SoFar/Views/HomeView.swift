@@ -149,6 +149,7 @@ struct HomeView: View {
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .appHint(.home, message: "Tap + to create a budget.")
     }
 
     // MARK: Content Container
