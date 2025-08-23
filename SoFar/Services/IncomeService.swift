@@ -177,11 +177,11 @@ final class IncomeService {
             let expansionWindow = DateInterval(start: interval.start, end: min(interval.end, lastDate))
             let secondDay = Self.optionalInt16IfAttributeExists(on: inc, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"])
             
-            let projectedDates = expandRecurrence(recurrence,
-                                                  baseDate: startDate,
-                                                  in: expansionWindow,
-                                                  calendar: calendar,
-                                                  secondBiMonthlyDay: secondDay)
+            let projectedDates = RecurrenceEngine.projectedDates(recurrence: recurrence,
+                                                                 baseDate: startDate,
+                                                                 in: expansionWindow,
+                                                                 calendar: calendar,
+                                                                 secondBiMonthlyDay: secondDay)
             for d in projectedDates {
                 // Skip the base persisted date to avoid duplicates.
                 if calendar.isDate(d, inSameDayAs: startDate) { continue }
@@ -234,32 +234,7 @@ final class IncomeService {
     }
     
     // MARK: - Private: Recurrence & Date Utilities
-    
-    // MARK: expandRecurrence(_:baseDate:in:calendar:secondBiMonthlyDay:)
-    /// Expand a simple recurrence into concrete dates within the given interval.
-    private func expandRecurrence(_ recurrence: String,
-                                  baseDate: Date,
-                                  in interval: DateInterval,
-                                  calendar: Calendar,
-                                  secondBiMonthlyDay: Int16?) -> [Date] {
-        let lower = recurrence.lowercased()
-        switch lower {
-        case "weekly":
-            return strideDates(start: baseDate, stepDays: 7, within: interval, calendar: calendar)
-        case "biweekly":
-            return strideDates(start: baseDate, stepDays: 14, within: interval, calendar: calendar)
-        case "monthly":
-            return strideMonthly(start: baseDate, within: interval, calendar: calendar)
-        case "semimonthly":
-            return strideSemiMonthly(start: baseDate,
-                                     within: interval,
-                                     calendar: calendar,
-                                     secondDay: secondBiMonthlyDay)
-        default:
-            return []
-        }
-    }
-    
+
     // MARK: effectiveRecurrenceEndDate(for:fallback:)
     /// Choose the earlier of (income.recurrenceEndDate or fallback).
     private func effectiveRecurrenceEndDate(for income: Income, fallback: Date) -> Date {
@@ -274,97 +249,6 @@ final class IncomeService {
         let comps = DateComponents(month: 1, second: -1)
         let end = calendar.date(byAdding: comps, to: start) ?? date
         return DateInterval(start: start, end: end)
-    }
-    
-    // MARK: strideDates(start:stepDays:within:calendar:)
-    private func strideDates(start: Date, stepDays: Int, within interval: DateInterval, calendar: Calendar) -> [Date] {
-        var dates: [Date] = []
-        // Ensure the first stepping point is not before interval.start
-        var current = start
-        if current < interval.start {
-            // Align forward to the first occurrence >= interval.start
-            let deltaDays = calendar.dateComponents([.day], from: start, to: interval.start).day ?? 0
-            let steps = (deltaDays + stepDays - 1) / stepDays // ceil division
-            current = calendar.date(byAdding: .day, value: steps * stepDays, to: start) ?? interval.start
-        }
-        while current <= interval.end {
-            dates.append(current)
-            guard let next = calendar.date(byAdding: .day, value: stepDays, to: current) else { break }
-            current = next
-        }
-        return dates
-    }
-    
-    // MARK: strideMonthly(start:within:calendar:)
-    private func strideMonthly(start: Date, within interval: DateInterval, calendar: Calendar) -> [Date] {
-        var dates: [Date] = []
-        var current = alignedToInterval(start: start, unit: .month, within: interval, calendar: calendar)
-        while current <= interval.end {
-            dates.append(current)
-            guard let next = calendar.date(byAdding: .month, value: 1, to: current) else { break }
-            current = next
-        }
-        return dates
-    }
-    
-    // MARK: strideSemiMonthly(start:within:calendar:secondDay:)
-    /// Generate two dates per month: the day-of-month from `start` and the `secondDay` if provided.
-    /// If `secondDay` is nil, falls back to 1st and 15th-like behavior inferred from `start`'s day.
-    private func strideSemiMonthly(start: Date,
-                                   within interval: DateInterval,
-                                   calendar: Calendar,
-                                   secondDay: Int16?) -> [Date] {
-        var results: [Date] = []
-        let baseDay = calendar.component(.day, from: start)
-        let second = Int(secondDay ?? Int16(max(1, min(28, baseDay <= 15 ? 30 : 15))))
-        
-        // Start at the first month where either occurrence falls within the interval.
-        var monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: max(start, interval.start))) ?? calendar.startOfDay(for: start)
-        
-        while monthStart <= interval.end {
-            // First occurrence: the base day (clamped to month length)
-            if let d1 = clampedDayInMonth(baseDay, near: monthStart, calendar: calendar),
-               interval.contains(d1), d1 >= start {
-                results.append(d1)
-            }
-            // Second occurrence: specified second day (clamped)
-            if let d2 = clampedDayInMonth(second, near: monthStart, calendar: calendar),
-               interval.contains(d2), d2 >= start {
-                results.append(d2)
-            }
-            guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) else { break }
-            monthStart = nextMonth
-        }
-        return results.sorted()
-    }
-    
-    // MARK: alignedToInterval(start:unit:within:calendar:)
-    private func alignedToInterval(start: Date,
-                                   unit: Calendar.Component,
-                                   within interval: DateInterval,
-                                   calendar: Calendar) -> Date {
-        // Advance forward in `unit` steps until we are within the interval.
-        var current = start
-        while current < interval.start {
-            guard let next = calendar.date(byAdding: unit, value: 1, to: current) else { break }
-            current = next
-        }
-        return current
-    }
-    
-    // MARK: clampedDayInMonth(_:near:calendar:)
-    private func clampedDayInMonth(_ day: Int, near monthAnchor: Date, calendar: Calendar) -> Date? {
-        // Use half-open range (Range<Int>) to match Calendar.range(...) signature.
-        // Fallback to 1..<29 instead of 1...28 to avoid ClosedRange/Range mismatch.
-        let range = calendar.range(of: .day, in: .month, for: monthAnchor) ?? (1..<29)
-        // Since Range upperBound is exclusive, last valid day is (upperBound - 1).
-        let lastValid = max(range.lowerBound, range.upperBound - 1)
-        let clamped = max(range.lowerBound, min(day, lastValid))
-        
-        var comps = calendar.dateComponents([.year, .month], from: monthAnchor)
-        comps.day = clamped
-        // Keep the time of day as 00:00 for clean calendar grouping
-        return calendar.date(from: comps)
     }
     
     // MARK: - Safe KVC helpers for schema drift
