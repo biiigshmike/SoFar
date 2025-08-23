@@ -11,7 +11,6 @@ import CoreData
 struct AddIncomeFormView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) var viewContext   // internal so lifecycle extension can access
-    @Environment(\.dismiss) private var dismiss
 
     // MARK: Inputs
     /// If non-nil, loads and edits an existing Income object.
@@ -26,7 +25,6 @@ struct AddIncomeFormView: View {
     /// Must be internal so the lifecycle extension in a separate file can call into it.
     @StateObject var viewModel: AddIncomeFormViewModel = AddIncomeFormViewModel(incomeObjectID: nil, budgetObjectID: nil)
     @State private var error: SaveError?
-    @State private var showScopeDialog: Bool = false
 
     // MARK: Recurrence UI State (for Custom Editor sheet trigger)
     /// Controls presentation when the RecurrencePickerView asks the host to show a custom editor.
@@ -64,18 +62,6 @@ struct AddIncomeFormView: View {
                 firstDateSection
                 recurrenceSection
             }
-        }
-        .confirmationDialog("Apply changes to", isPresented: $showScopeDialog, titleVisibility: .visible) {
-            Button("Only This Income") {
-                if performSave(scope: .instance) { dismiss() }
-            }
-            Button("This and Future Incomes") {
-                if performSave(scope: .future) { dismiss() }
-            }
-            Button("All Incomes in Series") {
-                if performSave(scope: .all) { dismiss() }
-            }
-            Button("Cancel", role: .cancel) { }
         }
         .alert(item: $error) { err in
             Alert(
@@ -192,17 +178,9 @@ struct AddIncomeFormView: View {
     // MARK: Save
     /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
-        if viewModel.isEditing && viewModel.isPartOfSeries {
-            showScopeDialog = true
-            return false
-        } else {
-            return performSave(scope: .all)
-        }
-    }
-
-    private func performSave(scope: AddIncomeFormViewModel.EditScope) -> Bool {
         do {
-            try viewModel.save(in: viewContext, scope: scope)
+            try viewModel.save(in: viewContext) // NOTE: `in:` matches the VM’s signature
+            // Resign keyboard on iOS/iPadOS for a polished dismissal.
             ub_dismissKeyboard()
             return true
         } catch let err as SaveError {

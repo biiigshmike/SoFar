@@ -20,7 +20,6 @@ struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
-    @State private var showResetConfirm: Bool = false
 
     // MARK: Layout Constants
     private var maxReadableWidth: CGFloat {
@@ -51,11 +50,13 @@ struct SettingsView: View {
                             Picker("", selection: $viewModel.budgetPeriod) {
                                 ForEach(BudgetPeriod.selectableCases) { period in
                                     Text(period.displayName).tag(period)
+                                }
                             }
                             .labelsHidden()
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
 
                 // MARK: Appearance Card
                 SettingsCard(
@@ -160,24 +161,6 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                }
-                // MARK: Reset Card
-                SettingsCard(
-                    iconSystemName: "trash",
-                    title: "Reset",
-                    subtitle: "Clear all data from the app.",
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Erase All Data") {
-                            Button("Reset", role: .destructive) {
-                                showResetConfirm = true
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
                 }
 
             }
@@ -190,12 +173,6 @@ struct SettingsView: View {
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
-        .confirmationDialog("Delete all data?", isPresented: $showResetConfirm, titleVisibility: .visible) {
-            Button("Delete All Data", role: .destructive) {
-                viewModel.resetAllData()
-            }
-            Button("Cancel", role: .cancel) { }
-        }
         .navigationTitle("Settings")
     }
 

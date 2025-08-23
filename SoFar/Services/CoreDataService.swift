@@ -143,21 +143,6 @@ final class CoreDataService: ObservableObject {
         }
     }
 
-    // MARK: Data Reset
-    /// Removes all objects from every entity in the persistent store.
-    /// Useful for full application resets in testing or Settings.
-    func wipeAllData() throws {
-        let coordinator = container.persistentStoreCoordinator
-        let model = container.managedObjectModel
-        for entity in model.entities {
-            guard let name = entity.name else { continue }
-            let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
-            let request = NSBatchDeleteRequest(fetchRequest: fetch)
-            try coordinator.execute(request, with: viewContext)
-        }
-        try viewContext.save()
-    }
-
     // MARK: Await Stores Loaded (Tiny helper)
     /// Suspends until `storesLoaded` is true (or a short timeout elapses).
     /// Use this before first fetches that must succeed immediately after launch.
