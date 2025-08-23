@@ -11,6 +11,17 @@
 import Foundation
 import CoreData
 
+// MARK: - RecurrenceScope
+/// Defines how edits or deletions should propagate through a recurring series.
+public enum RecurrenceScope {
+    /// Affect only the selected instance.
+    case instance
+    /// Affect the selected instance and all future occurrences.
+    case future
+    /// Affect all occurrences in the series.
+    case all
+}
+
 // MARK: - IncomeService
 final class IncomeService {
     
@@ -112,9 +123,10 @@ final class IncomeService {
         return income
     }
     
-    // MARK: updateIncome(_:...)
-    /// Update fields of an income. Pass only what you want to change.
+    // MARK: updateIncome(_:scope:...)
+    /// Update fields of an income with optional scope for recurring series.
     func updateIncome(_ income: Income,
+                      scope: RecurrenceScope = .all,
                       source: String? = nil,
                       amount: Double? = nil,
                       date: Date? = nil,
@@ -122,6 +134,68 @@ final class IncomeService {
                       recurrence: String? = nil,
                       recurrenceEndDate: Date?? = nil,
                       secondBiMonthlyDay: Int16?? = nil) throws {
+        switch scope {
+        case .instance:
+            if income.parentID != nil { income.parentID = nil }
+            applyUpdates(to: income,
+                         source: source,
+                         amount: amount,
+                         date: date,
+                         isPlanned: isPlanned,
+                         recurrence: recurrence,
+                         recurrenceEndDate: recurrenceEndDate,
+                         secondBiMonthlyDay: secondBiMonthlyDay)
+            try repo.saveIfNeeded()
+        case .future:
+            let currentDate = date ?? income.date
+            if let parentID = income.parentID, let currentDate {
+                let pred = NSPredicate(format: "parentID == %@ AND date > %@", parentID as CVarArg, currentDate as CVarArg)
+                let siblings = try repo.fetchAll(predicate: pred)
+                for s in siblings { repo.delete(s) }
+                if let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+                    parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
+                }
+                income.parentID = nil
+            }
+            applyUpdates(to: income,
+                         source: source,
+                         amount: amount,
+                         date: date,
+                         isPlanned: isPlanned,
+                         recurrence: recurrence,
+                         recurrenceEndDate: recurrenceEndDate,
+                         secondBiMonthlyDay: secondBiMonthlyDay)
+            try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
+            try repo.saveIfNeeded()
+        case .all:
+            let target: Income
+            if let parentID = income.parentID,
+               let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+                target = parent
+            } else {
+                target = income
+            }
+            applyUpdates(to: target,
+                         source: source,
+                         amount: amount,
+                         date: date,
+                         isPlanned: isPlanned,
+                         recurrence: recurrence,
+                         recurrenceEndDate: recurrenceEndDate,
+                         secondBiMonthlyDay: secondBiMonthlyDay)
+            try RecurrenceEngine.regenerateIncomeRecurrences(base: target, in: repo.context)
+            try repo.saveIfNeeded()
+        }
+    }
+
+    private func applyUpdates(to income: Income,
+                              source: String?,
+                              amount: Double?,
+                              date: Date?,
+                              isPlanned: Bool?,
+                              recurrence: String?,
+                              recurrenceEndDate: Date??,
+                              secondBiMonthlyDay: Int16??) {
         if let source { income.source = source }
         if let amount { income.amount = amount }
         if let date { income.date = date }
@@ -133,20 +207,48 @@ final class IncomeService {
                                                    keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"],
                                                    value: secondBiMonthlyDay)
         }
-        try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
-        try repo.saveIfNeeded()
     }
-    
-    // MARK: deleteIncome(_:)
-    /// Delete an income record.
-    func deleteIncome(_ income: Income) throws {
-        if income.parentID == nil, let id = income.id {
-            let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
-            let children = try repo.fetchAll(predicate: predicate)
-            for child in children { repo.delete(child) }
+
+    // MARK: deleteIncome(_:scope:)
+    /// Delete an income record with optional scope for recurring series.
+    func deleteIncome(_ income: Income, scope: RecurrenceScope = .all) throws {
+        switch scope {
+        case .instance:
+            if income.parentID != nil {
+                repo.delete(income)
+                try repo.saveIfNeeded()
+            } else {
+                try deleteIncome(income, scope: .all)
+            }
+        case .future:
+            if let parentID = income.parentID, let currentDate = income.date {
+                let predicate = NSPredicate(format: "parentID == %@ AND date >= %@", parentID as CVarArg, currentDate as CVarArg)
+                let targets = try repo.fetchAll(predicate: predicate)
+                for t in targets { repo.delete(t) }
+                if let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+                    parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
+                }
+                try repo.saveIfNeeded()
+            } else {
+                try deleteIncome(income, scope: .all)
+            }
+        case .all:
+            if income.parentID == nil, let id = income.id {
+                let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
+                let children = try repo.fetchAll(predicate: predicate)
+                for child in children { repo.delete(child) }
+                repo.delete(income)
+            } else if let parentID = income.parentID,
+                      let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+                let predicate = NSPredicate(format: "parentID == %@", parentID as CVarArg)
+                let children = try repo.fetchAll(predicate: predicate)
+                for child in children { repo.delete(child) }
+                repo.delete(parent)
+            } else {
+                repo.delete(income)
+            }
+            try repo.saveIfNeeded()
         }
-        repo.delete(income)
-        try repo.saveIfNeeded()
     }
     
     // MARK: deleteAllIncomes()

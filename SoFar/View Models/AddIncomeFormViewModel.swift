@@ -23,6 +23,9 @@ final class AddIncomeFormViewModel: ObservableObject {
     let incomeObjectID: NSManagedObjectID?
     let budgetObjectID: NSManagedObjectID?
 
+    /// Retains the original income when editing so we can inspect recurrence metadata.
+    private var originalIncome: Income?
+
     // MARK: Editing State
     @Published var isEditing: Bool = false
 
@@ -37,6 +40,12 @@ final class AddIncomeFormViewModel: ObservableObject {
     @Published var recurrenceRule: RecurrenceRule = .none
     /// Exposes a simple seed model for CustomRecurrenceEditor
     var customRuleSeed: CustomRecurrence = CustomRecurrence()
+
+    /// Returns true if the income being edited is part of a recurring series.
+    var isPartOfSeries: Bool {
+        guard let inc = originalIncome else { return false }
+        return inc.parentID != nil || !(inc.recurrence ?? "").isEmpty
+    }
 
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
@@ -62,6 +71,8 @@ final class AddIncomeFormViewModel: ObservableObject {
     func loadIfNeeded(from context: NSManagedObjectContext) throws {
         guard isEditing, let objectID = incomeObjectID else { return }
         guard let income = try context.existingObject(with: objectID) as? Income else { return }
+
+        self.originalIncome = income
 
         self.isPlanned = income.isPlanned
         self.source = income.source ?? ""
@@ -91,7 +102,7 @@ final class AddIncomeFormViewModel: ObservableObject {
     /// Creates or updates an `Income` managed object using current state.
     /// - Parameter context: Core Data context to use.
     /// - Throws: Any Core Data error during save (with detailed, user-friendly message).
-    func save(in context: NSManagedObjectContext) throws {
+    func save(in context: NSManagedObjectContext, scope: RecurrenceScope = .all) throws {
         // Ensure edit state loaded if needed
         try loadIfNeeded(from: context)
 
@@ -99,42 +110,31 @@ final class AddIncomeFormViewModel: ObservableObject {
             throw ValidationError.invalidAmount
         }
 
-        // Always save on the context's queue so we don't trip concurrency protections.
-        var thrown: Error?
-        context.performAndWait {
-            do {
-                let income: Income
-                if let objectID = incomeObjectID,
-                   let existing = try? context.existingObject(with: objectID) as? Income {
-                    income = existing
-                } else {
-                    income = Income(context: context)
-                    income.id = UUID()
-                }
+        let service = IncomeService()
+        let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rrule = recurrenceRule.toRRule(starting: firstDate)
+        let recurrenceString = rrule?.string
+        let recurrenceEnd = rrule?.until
 
-                // Core fields
-                income.isPlanned = isPlanned
-                income.source = source.trimmingCharacters(in: .whitespacesAndNewlines)
-                income.amount = amount
-                income.date = firstDate
-
-                // Recurrence → Core Data storage
-                let rrule = recurrenceRule.toRRule(starting: firstDate)
-                income.recurrence = rrule?.string ?? ""
-                income.recurrenceEndDate = rrule?.until
-
-                // Regenerate persisted recurrence children
-                try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: context)
-
-                // Attempt save
-                try context.save()
-            } catch let nsError as NSError {
-                thrown = SaveError.coreData(nsError).asPublicError()
-            } catch {
-                thrown = error
-            }
+        if isEditing, let income = originalIncome {
+            try service.updateIncome(income,
+                                    scope: scope,
+                                    source: trimmedSource,
+                                    amount: amount,
+                                    date: firstDate,
+                                    isPlanned: isPlanned,
+                                    recurrence: recurrenceString,
+                                    recurrenceEndDate: recurrenceEnd,
+                                    secondBiMonthlyDay: nil)
+        } else {
+            _ = try service.createIncome(source: trimmedSource,
+                                         amount: amount,
+                                         date: firstDate,
+                                         isPlanned: isPlanned,
+                                         recurrence: recurrenceString,
+                                         recurrenceEndDate: recurrenceEnd,
+                                         secondBiMonthlyDay: nil)
         }
-        if let thrown { throw thrown }
     }
 
     // MARK: Parsing & Formatting

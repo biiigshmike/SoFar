@@ -11,6 +11,7 @@ import CoreData
 struct AddIncomeFormView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) var viewContext   // internal so lifecycle extension can access
+    @Environment(\.dismiss) private var dismiss
 
     // MARK: Inputs
     /// If non-nil, loads and edits an existing Income object.
@@ -29,6 +30,7 @@ struct AddIncomeFormView: View {
     // MARK: Recurrence UI State (for Custom Editor sheet trigger)
     /// Controls presentation when the RecurrencePickerView asks the host to show a custom editor.
     @State private var isPresentingCustomRecurrenceEditor: Bool = false
+    @State private var showScopeDialog: Bool = false
 
     // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
@@ -72,6 +74,12 @@ struct AddIncomeFormView: View {
         }
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
+        .confirmationDialog("Apply Changes To", isPresented: $showScopeDialog) {
+            Button("This Instance Only") { _ = performSave(scope: .instance) }
+            Button("This and Future Instances") { _ = performSave(scope: .future) }
+            Button("All Instances") { _ = performSave(scope: .all) }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     // MARK: Sections
@@ -178,10 +186,18 @@ struct AddIncomeFormView: View {
     // MARK: Save
     /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
+        if viewModel.isEditing && viewModel.isPartOfSeries {
+            showScopeDialog = true
+            return false
+        }
+        return performSave(scope: .all)
+    }
+
+    private func performSave(scope: RecurrenceScope) -> Bool {
         do {
-            try viewModel.save(in: viewContext) // NOTE: `in:` matches the VM’s signature
-            // Resign keyboard on iOS/iPadOS for a polished dismissal.
+            try viewModel.save(in: viewContext, scope: scope)
             ub_dismissKeyboard()
+            dismiss()
             return true
         } catch let err as SaveError {
             self.error = err

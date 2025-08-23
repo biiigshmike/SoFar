@@ -42,6 +42,7 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
     @State private var showDeleteAlert: Bool = false
+    @State private var showDeleteOptions: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -250,14 +251,7 @@ struct IncomeView: View {
                         IncomeRow(
                             income: income,
                             onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    incomeToDelete = income
-                                    showDeleteAlert = true
-                                } else {
-                                    viewModel.delete(income: income)
-                                }
-                            }
+                            onDelete: { handleDeleteRequest(income) }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                         .listRowSeparator(.hidden)
@@ -284,7 +278,7 @@ struct IncomeView: View {
         )
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
-                viewModel.delete(income: income)
+                viewModel.delete(income: income, scope: .all)
                 incomeToDelete = nil
             }
             Button("Cancel", role: .cancel) {
@@ -292,6 +286,18 @@ struct IncomeView: View {
             }
         } message: { _ in
             Text("This will remove the income entry.")
+        }
+        .confirmationDialog("Delete Recurring Income", isPresented: $showDeleteOptions, presenting: incomeToDelete) { income in
+            Button("This Instance Only", role: .destructive) {
+                viewModel.delete(income: income, scope: .instance)
+            }
+            Button("This and Future Instances", role: .destructive) {
+                viewModel.delete(income: income, scope: .future)
+            }
+            Button("All Instances", role: .destructive) {
+                viewModel.delete(income: income, scope: .all)
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 
@@ -388,14 +394,20 @@ struct IncomeView: View {
     /// - Parameters:
     ///   - indexSet: The set of indices from the `List` to delete.
     ///   - entries: A snapshot array used by the current `ForEach`.
-    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
-        let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
-        if confirmBeforeDelete, let first = targets.first {
-            incomeToDelete = first
+    private func handleDeleteRequest(_ income: Income) {
+        incomeToDelete = income
+        if income.parentID != nil || !(income.recurrence ?? "").isEmpty {
+            showDeleteOptions = true
+        } else if confirmBeforeDelete {
             showDeleteAlert = true
         } else {
-            targets.forEach { viewModel.delete(income: $0) }
+            viewModel.delete(income: income, scope: .all)
         }
+    }
+
+    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
+        let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
+        targets.forEach { handleDeleteRequest($0) }
     }
 }
 
