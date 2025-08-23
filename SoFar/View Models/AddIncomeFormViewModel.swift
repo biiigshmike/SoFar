@@ -38,6 +38,21 @@ final class AddIncomeFormViewModel: ObservableObject {
     /// Exposes a simple seed model for CustomRecurrenceEditor
     var customRuleSeed: CustomRecurrence = CustomRecurrence()
 
+    // MARK: Loaded Series Metadata
+    private var loadedParentID: UUID?
+    private var loadedRecurrence: String = ""
+
+    var isPartOfSeries: Bool {
+        loadedParentID != nil || !loadedRecurrence.isEmpty
+    }
+
+    // MARK: Save Scope
+    enum EditScope {
+        case instance
+        case future
+        case all
+    }
+
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
     var currencyCode: String {
@@ -85,13 +100,17 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         // Seed the custom editor roughly from existing rule (best-effort)
         self.customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
+
+        // Retain series metadata for later scope decisions
+        self.loadedParentID = income.parentID
+        self.loadedRecurrence = income.recurrence ?? ""
     }
 
     // MARK: Save
     /// Creates or updates an `Income` managed object using current state.
     /// - Parameter context: Core Data context to use.
     /// - Throws: Any Core Data error during save (with detailed, user-friendly message).
-    func save(in context: NSManagedObjectContext) throws {
+    func save(in context: NSManagedObjectContext, scope: EditScope = .all) throws {
         // Ensure edit state loaded if needed
         try loadIfNeeded(from: context)
 
@@ -99,34 +118,80 @@ final class AddIncomeFormViewModel: ObservableObject {
             throw ValidationError.invalidAmount
         }
 
-        // Always save on the context's queue so we don't trip concurrency protections.
         var thrown: Error?
         context.performAndWait {
             do {
-                let income: Income
-                if let objectID = incomeObjectID,
+                let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if isEditing, let objectID = incomeObjectID,
                    let existing = try? context.existingObject(with: objectID) as? Income {
-                    income = existing
+                    switch scope {
+                    case .instance:
+                        existing.isPlanned = isPlanned
+                        existing.source = trimmed
+                        existing.amount = amount
+                        existing.date = firstDate
+                        existing.recurrence = ""
+                        existing.recurrenceEndDate = nil
+                        existing.parentID = nil
+                    case .all:
+                        let base: Income
+                        if let pid = existing.parentID {
+                            let req: NSFetchRequest<Income> = Income.fetchRequest()
+                            req.predicate = NSPredicate(format: "id == %@", pid as CVarArg)
+                            req.fetchLimit = 1
+                            base = (try? context.fetch(req).first) ?? existing
+                        } else {
+                            base = existing
+                        }
+                        base.isPlanned = isPlanned
+                        base.source = trimmed
+                        base.amount = amount
+                        base.date = firstDate
+                        let rrule = recurrenceRule.toRRule(starting: firstDate)
+                        base.recurrence = rrule?.string ?? ""
+                        base.recurrenceEndDate = rrule?.until
+                        try RecurrenceEngine.regenerateIncomeRecurrences(base: base, in: context)
+                        if existing != base { context.delete(existing) }
+                    case .future:
+                        let seriesID = existing.parentID ?? existing.id ?? UUID()
+                        let request: NSFetchRequest<Income> = Income.fetchRequest()
+                        request.predicate = NSPredicate(format: "(id == %@ OR parentID == %@) AND date >= %@", seriesID as CVarArg, seriesID as CVarArg, firstDate as CVarArg)
+                        let targets = try context.fetch(request)
+                        for t in targets { context.delete(t) }
+
+                        if let d = existing.date, d < firstDate {
+                            existing.recurrence = ""
+                            existing.recurrenceEndDate = nil
+                            existing.parentID = nil
+                        } else {
+                            context.delete(existing)
+                        }
+
+                        let newBase = Income(context: context)
+                        newBase.id = UUID()
+                        newBase.isPlanned = isPlanned
+                        newBase.source = trimmed
+                        newBase.amount = amount
+                        newBase.date = firstDate
+                        let rrule = recurrenceRule.toRRule(starting: firstDate)
+                        newBase.recurrence = rrule?.string ?? ""
+                        newBase.recurrenceEndDate = rrule?.until
+                        try RecurrenceEngine.regenerateIncomeRecurrences(base: newBase, in: context)
+                    }
                 } else {
-                    income = Income(context: context)
+                    let income = Income(context: context)
                     income.id = UUID()
+                    income.isPlanned = isPlanned
+                    income.source = trimmed
+                    income.amount = amount
+                    income.date = firstDate
+                    let rrule = recurrenceRule.toRRule(starting: firstDate)
+                    income.recurrence = rrule?.string ?? ""
+                    income.recurrenceEndDate = rrule?.until
+                    try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: context)
                 }
 
-                // Core fields
-                income.isPlanned = isPlanned
-                income.source = source.trimmingCharacters(in: .whitespacesAndNewlines)
-                income.amount = amount
-                income.date = firstDate
-
-                // Recurrence → Core Data storage
-                let rrule = recurrenceRule.toRRule(starting: firstDate)
-                income.recurrence = rrule?.string ?? ""
-                income.recurrenceEndDate = rrule?.until
-
-                // Regenerate persisted recurrence children
-                try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: context)
-
-                // Attempt save
                 try context.save()
             } catch let nsError as NSError {
                 thrown = SaveError.coreData(nsError).asPublicError()
