@@ -149,7 +149,6 @@ struct HomeView: View {
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .appHint(.homeAddBudget)
     }
 
     // MARK: Content Container

@@ -17,10 +17,6 @@ final class SettingsViewModel: ObservableObject {
     /// When true, show a confirmation dialog before deleting items.
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue)
     var confirmBeforeDelete: Bool = true { willSet { objectWillChange.send() } }
-    /// Enable contextual app hints and the first-time tour.
-    @AppStorage(AppSettingsKeys.showHints.rawValue)
-    var showHints: Bool = true { willSet { objectWillChange.send() } }
-
 
     /// Controls whether the income calendar presents horizontally.
     @AppStorage(AppSettingsKeys.calendarHorizontal.rawValue)
@@ -75,8 +71,7 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.syncCardThemes.rawValue: true,
             AppSettingsKeys.syncAppTheme.rawValue: true,
             AppSettingsKeys.syncBudgetPeriod.rawValue: true,
-            AppSettingsKeys.enableCloudSync.rawValue: true,
-            AppSettingsKeys.showHints.rawValue: true
+            AppSettingsKeys.enableCloudSync.rawValue: true
         ])
     }
 }
