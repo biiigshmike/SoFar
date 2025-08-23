@@ -13,7 +13,7 @@ import CoreData
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
     @Published var selectedDate: Date? = Date()
-    @Published private(set) var incomesForDay: [Income] = []
+    @Published private(set) var incomesForDay: [IncomeService.IncomeEvent] = []
     @Published private(set) var totalForSelectedDate: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
@@ -44,7 +44,14 @@ final class IncomeScreenViewModel: ObservableObject {
     
     func load(day: Date) {
         do {
-            incomesForDay = try incomeService.fetchIncomes(on: day)
+            let dayStart = calendar.startOfDay(for: day)
+            guard let dayEnd = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: dayStart) else {
+                incomesForDay = []
+                totalForSelectedDate = 0
+                return
+            }
+            let intervalForDay = DateInterval(start: dayStart, end: dayEnd)
+            incomesForDay = try incomeService.events(in: intervalForDay)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
             // Preload events for the full calendar range so each month displays
             // income summaries without requiring an explicit selection.
@@ -62,12 +69,15 @@ final class IncomeScreenViewModel: ObservableObject {
             eventsByDay = [:]
         }
     }
-    
+
     // MARK: CRUD
-    func delete(income: Income) {
+    func delete(event: IncomeService.IncomeEvent) {
+        guard let objectID = event.objectID else { return }
         do {
-            try incomeService.deleteIncome(income)
-            let day = selectedDate ?? income.date ?? Date()
+            if let income = try CoreDataService.shared.viewContext.existingObject(with: objectID) as? Income {
+                try incomeService.deleteIncome(income)
+            }
+            let day = selectedDate ?? event.date
             load(day: day)
         } catch {
             #if DEBUG
