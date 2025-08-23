@@ -2,7 +2,8 @@
 //  IncomeScreenViewModel.swift
 //  SoFar
 //
-//  Holds selected date, fetches incomes for the date, and performs CRUD via IncomeService.
+//  Holds selected date, fetches events (including projected recurrences)
+//  for that day, and performs CRUD via IncomeService.
 //
 
 import Foundation
@@ -13,7 +14,7 @@ import CoreData
 final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
     @Published var selectedDate: Date? = Date()
-    @Published private(set) var incomesForDay: [Income] = []
+    @Published private(set) var eventsForDay: [IncomeService.IncomeEvent] = []
     @Published private(set) var totalForSelectedDate: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
@@ -44,8 +45,6 @@ final class IncomeScreenViewModel: ObservableObject {
     
     func load(day: Date) {
         do {
-            incomesForDay = try incomeService.fetchIncomes(on: day)
-            totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
             // Preload events for the full calendar range so each month displays
             // income summaries without requiring an explicit selection.
             let today = Date()
@@ -53,11 +52,16 @@ final class IncomeScreenViewModel: ObservableObject {
             let end = calendar.date(byAdding: .year, value: 5, to: today) ?? today
             let interval = DateInterval(start: start, end: end)
             eventsByDay = (try? incomeService.eventsByDay(in: interval)) ?? [:]
+
+            // Events for the specific day, including projected recurrences
+            let dayStart = calendar.startOfDay(for: day)
+            eventsForDay = eventsByDay[dayStart] ?? []
+            totalForSelectedDate = eventsForDay.reduce(0) { $0 + $1.amount }
         } catch {
             #if DEBUG
             print("Income fetch error:", error)
             #endif
-            incomesForDay = []
+            eventsForDay = []
             totalForSelectedDate = 0
             eventsByDay = [:]
         }
