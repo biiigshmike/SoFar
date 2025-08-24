@@ -10,8 +10,7 @@ import CoreData
 /// - `isPlanned`: planned vs actual
 /// - `source`: text field
 /// - `amountInput`: raw user input string for the amount (so we can show a prompt and left-align)
-/// - `firstDate`: posting date for the first occurrence
-/// - `recurrenceRule`: selected recurrence (to RRULE string + optional end date)
+/// - `firstDate`: posting date
 /// - `budgetObjectID`: retained for API compatibility (unused by current model)
 ///
 /// Methods:
@@ -23,7 +22,7 @@ final class AddIncomeFormViewModel: ObservableObject {
     let incomeObjectID: NSManagedObjectID?
     let budgetObjectID: NSManagedObjectID?
 
-    /// Retains the original income when editing so we can inspect recurrence metadata.
+    /// Retains the original income when editing.
     private var originalIncome: Income?
 
     // MARK: Editing State
@@ -36,16 +35,7 @@ final class AddIncomeFormViewModel: ObservableObject {
     @Published var amountInput: String = ""
     @Published var firstDate: Date = Date()
 
-    // MARK: Recurrence
-    @Published var recurrenceRule: RecurrenceRule = .none
-    /// Exposes a simple seed model for CustomRecurrenceEditor
-    var customRuleSeed: CustomRecurrence = CustomRecurrence()
-
-    /// Returns true if the income being edited is part of a recurring series.
-    var isPartOfSeries: Bool {
-        guard let inc = originalIncome else { return false }
-        return inc.parentID != nil || !(inc.recurrence ?? "").isEmpty
-    }
+    // MARK: Recurrence (removed)
 
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
@@ -80,29 +70,13 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         // Amount → present as a plain localized decimal string (not currency) for easier typing
         self.amountInput = formatAmountForEditing(income.amount)
-
-        // Map recurrence string → RecurrenceRule (best-effort)
-        let rruleString = income.recurrence ?? ""
-        let endDate = income.recurrenceEndDate
-
-        if rruleString.isEmpty {
-            self.recurrenceRule = .none
-        } else if let parsed = RecurrenceRule.parse(from: rruleString, endDate: endDate, secondBiMonthlyPayDay: 0) {
-            self.recurrenceRule = parsed
-        } else {
-            // Fallback to custom if unrecognized
-            self.recurrenceRule = .custom(rruleString, endDate: endDate)
-        }
-
-        // Seed the custom editor roughly from existing rule (best-effort)
-        self.customRuleSeed = CustomRecurrence.roughParse(rruleString: rruleString)
     }
 
     // MARK: Save
     /// Creates or updates an `Income` managed object using current state.
     /// - Parameter context: Core Data context to use.
     /// - Throws: Any Core Data error during save (with detailed, user-friendly message).
-    func save(in context: NSManagedObjectContext, scope: RecurrenceScope = .all) throws {
+    func save(in context: NSManagedObjectContext) throws {
         // Ensure edit state loaded if needed
         try loadIfNeeded(from: context)
 
@@ -112,33 +86,18 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         let service = IncomeService()
         let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
-        let rrule = recurrenceRule.toRRule(starting: firstDate)
-        let recurrenceString = rrule?.string
-        let recurrenceEnd = rrule?.until
-        let secondDayValue = rrule?.secondBiMonthlyPayDay ?? 0
-        let secondPay: Int16? = secondDayValue > 0 ? Int16(secondDayValue) : nil
 
         if isEditing, let income = originalIncome {
-            let recurString = (scope == .instance) ? nil : recurrenceString
-            let recurEnd: Date?? = (scope == .instance) ? nil : recurrenceEnd
-            let secondDay: Int16?? = (scope == .instance) ? nil : secondPay
             try service.updateIncome(income,
-                                    scope: scope,
                                     source: trimmedSource,
                                     amount: amount,
                                     date: firstDate,
-                                    isPlanned: isPlanned,
-                                    recurrence: recurString,
-                                    recurrenceEndDate: recurEnd,
-                                    secondBiMonthlyDay: secondDay)
+                                    isPlanned: isPlanned)
         } else {
             _ = try service.createIncome(source: trimmedSource,
                                          amount: amount,
                                          date: firstDate,
-                                         isPlanned: isPlanned,
-                                         recurrence: recurrenceString,
-                                         recurrenceEndDate: recurrenceEnd,
-                                         secondBiMonthlyDay: secondPay)
+                                         isPlanned: isPlanned)
         }
     }
 
