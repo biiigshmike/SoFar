@@ -29,6 +29,7 @@ struct CardsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
+    @State private var isPresentingAddExpense = false
 
     // MARK: Selection State
     /// Stable selection keyed to CardItem.id (works for objectID-backed and preview items).
@@ -58,9 +59,13 @@ struct CardsView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        isPresentingAddCard = true
+                        if selectedCardStableID == nil {
+                            isPresentingAddCard = true
+                        } else {
+                            isPresentingAddExpense = true
+                        }
                     } label: {
-                        Label("Add Card", systemImage: "plus")
+                        Label(selectedCardStableID == nil ? "Add Card" : "Add Expense", systemImage: "plus")
                     }
                 }
             }
@@ -111,6 +116,8 @@ struct CardsView: View {
                 )
             }
             .background(themeManager.selectedTheme.background.ignoresSafeArea())
+            .accentColor(themeManager.selectedTheme.accent)
+            .tint(themeManager.selectedTheme.accent)
     }
 
     // MARK: - Content View (Type-Safe)
@@ -206,9 +213,13 @@ struct CardsView: View {
                 CardDetailView(
                     card: selected,
                     namespace: cardTransitionNS,
-                    onDone: { withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
-                        selectedCardStableID = nil
-                    }},
+                    isPresentingAddExpense: $isPresentingAddExpense,
+                    onDone: {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+                            selectedCardStableID = nil
+                            isPresentingAddExpense = false
+                        }
+                    },
                     onEdit: { editingCard = selected }
                 )
                 .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -223,6 +234,7 @@ struct CardsView: View {
             }
         }
     }
+
 }
 
 // MARK: - Tiny shimmer for placeholder
