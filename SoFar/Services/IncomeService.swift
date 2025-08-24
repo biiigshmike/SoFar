@@ -194,6 +194,27 @@ final class IncomeService {
             }
             income.recurrence = nil
             income.recurrenceEndDate = nil
+        } else if let parentID = income.parentID, let currentDate = income.date {
+            // Editing a single occurrence in the middle of a series.
+            // Detach it from its parent and split the series so changes
+            // do not get overwritten if the parent is later modified.
+            let parentPredicate = NSPredicate(format: "id == %@", parentID as CVarArg)
+            if let parent = try repo.fetchFirst(predicate: parentPredicate) {
+                let originalEnd = parent.recurrenceEndDate
+                parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
+
+                let sort = NSSortDescriptor(key: #keyPath(Income.date), ascending: true)
+                let futurePredicate = NSPredicate(format: "parentID == %@ AND date > %@", parentID as CVarArg, currentDate as CVarArg)
+                let future = try repo.fetchAll(predicate: futurePredicate, sortDescriptors: [sort])
+                if let newBase = future.first {
+                    for f in future.dropFirst() { repo.delete(f) }
+                    newBase.parentID = nil
+                    newBase.recurrence = parent.recurrence
+                    newBase.recurrenceEndDate = originalEnd
+                    try RecurrenceEngine.regenerateIncomeRecurrences(base: newBase, in: repo.context)
+                }
+            }
+            income.parentID = nil
         }
 
         applyUpdates(to: income,
@@ -295,7 +316,25 @@ final class IncomeService {
     func deleteIncome(_ income: Income, scope: RecurrenceScope = .all) throws {
         switch scope {
         case .instance:
-            if let parentID = income.parentID {
+            if let parentID = income.parentID, let currentDate = income.date {
+                // Removing a single occurrence from a series. Split the series so
+                // the deleted date does not reappear if the parent is modified later.
+                let parentPredicate = NSPredicate(format: "id == %@", parentID as CVarArg)
+                if let parent = try repo.fetchFirst(predicate: parentPredicate) {
+                    let originalEnd = parent.recurrenceEndDate
+                    parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
+
+                    let sort = NSSortDescriptor(key: #keyPath(Income.date), ascending: true)
+                    let futurePredicate = NSPredicate(format: "parentID == %@ AND date > %@", parentID as CVarArg, currentDate as CVarArg)
+                    let future = try repo.fetchAll(predicate: futurePredicate, sortDescriptors: [sort])
+                    if let newBase = future.first {
+                        for f in future.dropFirst() { repo.delete(f) }
+                        newBase.parentID = nil
+                        newBase.recurrence = parent.recurrence
+                        newBase.recurrenceEndDate = originalEnd
+                        try RecurrenceEngine.regenerateIncomeRecurrences(base: newBase, in: repo.context)
+                    }
+                }
                 repo.delete(income)
                 try repo.saveIfNeeded()
             } else if let id = income.id {
