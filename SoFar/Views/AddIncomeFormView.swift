@@ -27,10 +27,7 @@ struct AddIncomeFormView: View {
     @StateObject var viewModel: AddIncomeFormViewModel = AddIncomeFormViewModel(incomeObjectID: nil, budgetObjectID: nil)
     @State private var error: SaveError?
 
-    // MARK: Recurrence UI State (for Custom Editor sheet trigger)
-    /// Controls presentation when the RecurrencePickerView asks the host to show a custom editor.
-    @State private var isPresentingCustomRecurrenceEditor: Bool = false
-    @State private var showScopeDialog: Bool = false
+    // Recurrence UI removed
 
     // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
@@ -62,7 +59,6 @@ struct AddIncomeFormView: View {
                 sourceSection
                 amountSection
                 firstDateSection
-                recurrenceSection
             }
         }
         .alert(item: $error) { err in
@@ -74,12 +70,6 @@ struct AddIncomeFormView: View {
         }
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
-        .confirmationDialog("Apply Changes To", isPresented: $showScopeDialog) {
-            Button("This Instance Only") { _ = performSave(scope: .instance) }
-            Button("This and Future Instances") { _ = performSave(scope: .future) }
-            Button("All Instances") { _ = performSave(scope: .all) }
-            Button("Cancel", role: .cancel) {}
-        }
     }
 
     // MARK: Sections
@@ -168,34 +158,15 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Recurrence
-    /// Recurrence presets + options, including "forever" and end date.
-    /// NOTE: `RecurrencePickerView` signature expects:
-    ///   - rule: Binding<RecurrenceRule>
-    ///   - isPresentingCustomEditor: Binding<Bool>
-    @ViewBuilder
-    private var recurrenceSection: some View {
-        UBFormSection("Recurrence (Optional)", isUppercased: true) {
-            RecurrencePickerView(
-                rule: $viewModel.recurrenceRule,
-                isPresentingCustomEditor: $isPresentingCustomRecurrenceEditor
-            )
-        }
-    }
-
     // MARK: Save
     /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
-        if viewModel.isEditing && viewModel.isPartOfSeries {
-            showScopeDialog = true
-            return false
-        }
-        return performSave(scope: .all)
+        return performSave()
     }
 
-    private func performSave(scope: RecurrenceScope) -> Bool {
+    private func performSave() -> Bool {
         do {
-            try viewModel.save(in: viewContext, scope: scope)
+            try viewModel.save(in: viewContext)
             ub_dismissKeyboard()
             dismiss()
             return true

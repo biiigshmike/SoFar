@@ -64,9 +64,9 @@ final class IncomeScreenViewModel: ObservableObject {
     }
     
     // MARK: CRUD
-    func delete(income: Income, scope: RecurrenceScope = .all) {
+    func delete(income: Income) {
         do {
-            try incomeService.deleteIncome(income, scope: scope)
+            try incomeService.deleteIncome(income)
             let day = selectedDate ?? income.date ?? Date()
             load(day: day)
         } catch {
