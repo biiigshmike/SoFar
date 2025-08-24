@@ -136,55 +136,137 @@ final class IncomeService {
                       secondBiMonthlyDay: Int16?? = nil) throws {
         switch scope {
         case .instance:
-            applyUpdates(to: income,
-                         source: source,
-                         amount: amount,
-                         date: date,
-                         isPlanned: isPlanned,
-                         recurrence: recurrence,
-                         recurrenceEndDate: recurrenceEndDate,
-                         secondBiMonthlyDay: secondBiMonthlyDay)
-            try repo.saveIfNeeded()
+            try updateInstance(income,
+                               source: source,
+                               amount: amount,
+                               date: date,
+                               isPlanned: isPlanned,
+                               recurrence: recurrence,
+                               recurrenceEndDate: recurrenceEndDate,
+                               secondBiMonthlyDay: secondBiMonthlyDay)
         case .future:
-            let currentDate = date ?? income.date
-            if let parentID = income.parentID, let currentDate {
-                let pred = NSPredicate(format: "parentID == %@ AND date > %@", parentID as CVarArg, currentDate as CVarArg)
-                let siblings = try repo.fetchAll(predicate: pred)
-                for s in siblings { repo.delete(s) }
-                if let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
-                    parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
-                }
-                income.parentID = nil
-            }
-            applyUpdates(to: income,
-                         source: source,
-                         amount: amount,
-                         date: date,
-                         isPlanned: isPlanned,
-                         recurrence: recurrence,
-                         recurrenceEndDate: recurrenceEndDate,
-                         secondBiMonthlyDay: secondBiMonthlyDay)
-            try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
-            try repo.saveIfNeeded()
+            try updateFuture(income,
+                             source: source,
+                             amount: amount,
+                             date: date,
+                             isPlanned: isPlanned,
+                             recurrence: recurrence,
+                             recurrenceEndDate: recurrenceEndDate,
+                             secondBiMonthlyDay: secondBiMonthlyDay)
         case .all:
-            let target: Income
-            if let parentID = income.parentID,
-               let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
-                target = parent
-            } else {
-                target = income
-            }
-            applyUpdates(to: target,
-                         source: source,
-                         amount: amount,
-                         date: date,
-                         isPlanned: isPlanned,
-                         recurrence: recurrence,
-                         recurrenceEndDate: recurrenceEndDate,
-                         secondBiMonthlyDay: secondBiMonthlyDay)
-            try RecurrenceEngine.regenerateIncomeRecurrences(base: target, in: repo.context)
-            try repo.saveIfNeeded()
+            try updateEntireSeries(income,
+                                   source: source,
+                                   amount: amount,
+                                   date: date,
+                                   isPlanned: isPlanned,
+                                   recurrence: recurrence,
+                                   recurrenceEndDate: recurrenceEndDate,
+                                   secondBiMonthlyDay: secondBiMonthlyDay)
         }
+    }
+
+    // MARK: - Scoped Update Helpers
+    /// Update only the provided income record. If it is the base of a series,
+    /// the series is re-rooted to the next occurrence so edits do not cascade.
+    private func updateInstance(_ income: Income,
+                                source: String?,
+                                amount: Double?,
+                                date: Date?,
+                                isPlanned: Bool?,
+                                recurrence: String?,
+                                recurrenceEndDate: Date??,
+                                secondBiMonthlyDay: Int16??) throws {
+        // If this income is the parent of a series, promote the next child
+        // to become the new parent so the edited instance stands alone.
+        if income.parentID == nil,
+           let id = income.id,
+           let recur = income.recurrence,
+           !recur.isEmpty {
+            let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
+            let sort = NSSortDescriptor(key: #keyPath(Income.date), ascending: true)
+            let children = try repo.fetchAll(predicate: predicate, sortDescriptors: [sort])
+            if let newBase = children.first {
+                for c in children.dropFirst() { repo.delete(c) }
+                newBase.parentID = nil
+                newBase.recurrence = recur
+                newBase.recurrenceEndDate = income.recurrenceEndDate
+                try RecurrenceEngine.regenerateIncomeRecurrences(base: newBase, in: repo.context)
+            }
+            income.recurrence = nil
+            income.recurrenceEndDate = nil
+        }
+
+        applyUpdates(to: income,
+                     source: source,
+                     amount: amount,
+                     date: date,
+                     isPlanned: isPlanned,
+                     recurrence: recurrence,
+                     recurrenceEndDate: recurrenceEndDate,
+                     secondBiMonthlyDay: secondBiMonthlyDay)
+        try repo.saveIfNeeded()
+    }
+
+    /// Update the selected income and all future occurrences in its series.
+    private func updateFuture(_ income: Income,
+                              source: String?,
+                              amount: Double?,
+                              date: Date?,
+                              isPlanned: Bool?,
+                              recurrence: String?,
+                              recurrenceEndDate: Date??,
+                              secondBiMonthlyDay: Int16??) throws {
+        let currentDate = date ?? income.date
+        if let parentID = income.parentID, let currentDate {
+            // Remove future siblings and shorten the parent’s recurrence window.
+            let pred = NSPredicate(format: "parentID == %@ AND date > %@", parentID as CVarArg, currentDate as CVarArg)
+            let siblings = try repo.fetchAll(predicate: pred)
+            for s in siblings { repo.delete(s) }
+            if let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+                parent.recurrenceEndDate = calendar.date(byAdding: .day, value: -1, to: currentDate)
+            }
+            income.parentID = nil
+        }
+
+        applyUpdates(to: income,
+                     source: source,
+                     amount: amount,
+                     date: date,
+                     isPlanned: isPlanned,
+                     recurrence: recurrence,
+                     recurrenceEndDate: recurrenceEndDate,
+                     secondBiMonthlyDay: secondBiMonthlyDay)
+        try RecurrenceEngine.regenerateIncomeRecurrences(base: income, in: repo.context)
+        try repo.saveIfNeeded()
+    }
+
+    /// Update the base income for the entire recurring series.
+    private func updateEntireSeries(_ income: Income,
+                                    source: String?,
+                                    amount: Double?,
+                                    date: Date?,
+                                    isPlanned: Bool?,
+                                    recurrence: String?,
+                                    recurrenceEndDate: Date??,
+                                    secondBiMonthlyDay: Int16??) throws {
+        let target: Income
+        if let parentID = income.parentID,
+           let parent = try repo.fetchFirst(predicate: NSPredicate(format: "id == %@", parentID as CVarArg)) {
+            target = parent
+        } else {
+            target = income
+        }
+
+        applyUpdates(to: target,
+                     source: source,
+                     amount: amount,
+                     date: date,
+                     isPlanned: isPlanned,
+                     recurrence: recurrence,
+                     recurrenceEndDate: recurrenceEndDate,
+                     secondBiMonthlyDay: secondBiMonthlyDay)
+        try RecurrenceEngine.regenerateIncomeRecurrences(base: target, in: repo.context)
+        try repo.saveIfNeeded()
     }
 
     private func applyUpdates(to income: Income,
