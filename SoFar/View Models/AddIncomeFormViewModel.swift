@@ -117,14 +117,16 @@ final class AddIncomeFormViewModel: ObservableObject {
         let recurrenceEnd = rrule?.until
 
         if isEditing, let income = originalIncome {
+            let recurString = (scope == .instance) ? nil : recurrenceString
+            let recurEnd: Date?? = (scope == .instance) ? nil : recurrenceEnd
             try service.updateIncome(income,
                                     scope: scope,
                                     source: trimmedSource,
                                     amount: amount,
                                     date: firstDate,
                                     isPlanned: isPlanned,
-                                    recurrence: recurrenceString,
-                                    recurrenceEndDate: recurrenceEnd,
+                                    recurrence: recurString,
+                                    recurrenceEndDate: recurEnd,
                                     secondBiMonthlyDay: nil)
         } else {
             _ = try service.createIncome(source: trimmedSource,
