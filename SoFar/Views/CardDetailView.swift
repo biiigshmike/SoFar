@@ -17,12 +17,10 @@ struct CardDetailView: View {
     let namespace: Namespace.ID
     var onDone: () -> Void
     var onEdit: () -> Void
-    @Binding var addExpenseRequest: Bool
-
+    
     // MARK: State
     @StateObject private var viewModel: CardDetailViewModel
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false   // iOS 17+/macOS 14+
     @State private var isPresentingAddExpense: Bool = false
     
@@ -30,13 +28,11 @@ struct CardDetailView: View {
     init(card: CardItem,
          namespace: Namespace.ID,
          onDone: @escaping () -> Void,
-         onEdit: @escaping () -> Void,
-         addExpenseRequest: Binding<Bool>) {
+         onEdit: @escaping () -> Void) {
         self.card = card
         self.namespace = namespace
         self.onDone = onDone
         self.onEdit = onEdit
-        self._addExpenseRequest = addExpenseRequest
         _viewModel = StateObject(wrappedValue: CardDetailViewModel(card: card))
     }
     
@@ -61,6 +57,9 @@ struct CardDetailView: View {
                                 withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
                             }
                         }
+                        IconOnlyButton(systemName: "plus") {
+                            isPresentingAddExpense = true
+                        }
                         IconOnlyButton(systemName: "pencil") {
                             onEdit()
                         }
@@ -77,19 +76,15 @@ struct CardDetailView: View {
                                 withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
                             }
                         }
+                        IconOnlyButton(systemName: "plus") {
+                            isPresentingAddExpense = true
+                        }
                         IconOnlyButton(systemName: "pencil") {
                             onEdit()
                         }
                     }
                 #endif
                 }
-        }
-        .tint(themeManager.selectedTheme.accent)
-        .onChange(of: addExpenseRequest) { _, newValue in
-            if newValue {
-                isPresentingAddExpense = true
-                addExpenseRequest = false
-            }
         }
         // Search field wiring per-platform
         #if os(iOS)
@@ -184,7 +179,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(themeManager.selectedTheme.secondaryBackground)
+        .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
@@ -210,7 +205,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(themeManager.selectedTheme.secondaryBackground)
+        .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
@@ -233,7 +228,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(themeManager.selectedTheme.secondaryBackground)
+        .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
@@ -268,13 +263,11 @@ private struct ExpenseRow: View {
 private struct IconOnlyButton: View {
     let systemName: String
     var action: () -> Void
-    @EnvironmentObject private var themeManager: ThemeManager
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 18, weight: .semibold))
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(themeManager.selectedTheme.accent)
                 .imageScale(.medium)
                 .padding(.horizontal, 2)
                 .contentShape(Rectangle())

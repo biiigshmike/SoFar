@@ -29,7 +29,6 @@ struct CardsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
-    @State private var addExpenseRequest = false
 
     // MARK: Selection State
     /// Stable selection keyed to CardItem.id (works for objectID-backed and preview items).
@@ -59,17 +58,12 @@ struct CardsView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        if selectedCardStableID == nil {
-                            isPresentingAddCard = true
-                        } else {
-                            addExpenseRequest = true
-                        }
+                        isPresentingAddCard = true
                     } label: {
-                        Label(selectedCardStableID == nil ? "Add Card" : "Add Expense", systemImage: "plus")
+                        Label("Add Card", systemImage: "plus")
                     }
                 }
             }
-            .tint(themeManager.selectedTheme.accent)
             // MARK: Add Sheet
             .sheet(isPresented: $isPresentingAddCard) {
                 AddCardFormView { newName, selectedTheme in
@@ -215,8 +209,7 @@ struct CardsView: View {
                     onDone: { withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
                         selectedCardStableID = nil
                     }},
-                    onEdit: { editingCard = selected },
-                    addExpenseRequest: $addExpenseRequest
+                    onEdit: { editingCard = selected }
                 )
                 .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
                                          removal: .opacity))
