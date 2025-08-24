@@ -17,7 +17,7 @@ private struct AddIncomeSheetDate: Identifiable {
 }
 
 // MARK: - IncomeView
-/// Shows a calendar (MijickCalendarView). Tap a date to add income (Planned/Actual).
+/// Shows a calendar (MijickCalendarView). Tap a date to add income (Planned/Actual; optional recurrence).
 /// Below the calendar, displays incomes for the selected day with edit/delete.
 /// A weekly summary bar shows total income for the current week.
 struct IncomeView: View {
@@ -42,6 +42,7 @@ struct IncomeView: View {
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
     @State private var incomeToDelete: Income? = nil
     @State private var showDeleteAlert: Bool = false
+    @State private var showDeleteOptions: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -277,7 +278,7 @@ struct IncomeView: View {
         )
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
-                viewModel.delete(income: income)
+                viewModel.delete(income: income, scope: .all)
                 incomeToDelete = nil
             }
             Button("Cancel", role: .cancel) {
@@ -285,6 +286,18 @@ struct IncomeView: View {
             }
         } message: { _ in
             Text("This will remove the income entry.")
+        }
+        .confirmationDialog("Delete Recurring Income", isPresented: $showDeleteOptions, presenting: incomeToDelete) { income in
+            Button("This Instance Only", role: .destructive) {
+                viewModel.delete(income: income, scope: .instance)
+            }
+            Button("This and Future Instances", role: .destructive) {
+                viewModel.delete(income: income, scope: .future)
+            }
+            Button("All Instances", role: .destructive) {
+                viewModel.delete(income: income, scope: .all)
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 
@@ -383,10 +396,12 @@ struct IncomeView: View {
     ///   - entries: A snapshot array used by the current `ForEach`.
     private func handleDeleteRequest(_ income: Income) {
         incomeToDelete = income
-        if confirmBeforeDelete {
+        if income.parentID != nil || !(income.recurrence ?? "").isEmpty {
+            showDeleteOptions = true
+        } else if confirmBeforeDelete {
             showDeleteAlert = true
         } else {
-            viewModel.delete(income: income)
+            viewModel.delete(income: income, scope: .all)
         }
     }
 
