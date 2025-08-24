@@ -9,6 +9,7 @@
 
 import SwiftUI
 import CoreData
+import Combine
 
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
@@ -138,6 +139,9 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
+        .onReceive(NotificationCenter.default.publisher(for: .dataStoreDidChange)) { _ in
+            Task { await vm.load() }
+        }
         //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
         // MARK: Add Sheets
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
