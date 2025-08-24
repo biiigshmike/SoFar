@@ -3,7 +3,7 @@
 //  SoFar
 //
 //  Wallet-style detail for a selected Card.
-//  - Top bar: Done + Search, Add, Edit
+//  - Top bar: Done + Search, Edit
 //  - iOS/macOS safe toolbar & searchable usage
 //
 
@@ -15,22 +15,25 @@ struct CardDetailView: View {
     // MARK: Inputs
     let card: CardItem
     let namespace: Namespace.ID
+    @Binding var isPresentingAddExpense: Bool
     var onDone: () -> Void
     var onEdit: () -> Void
-    
+
     // MARK: State
     @StateObject private var viewModel: CardDetailViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false   // iOS 17+/macOS 14+
-    @State private var isPresentingAddExpense: Bool = false
     
     // MARK: Init
     init(card: CardItem,
          namespace: Namespace.ID,
+         isPresentingAddExpense: Binding<Bool>,
          onDone: @escaping () -> Void,
          onEdit: @escaping () -> Void) {
         self.card = card
         self.namespace = namespace
+        self._isPresentingAddExpense = isPresentingAddExpense
         self.onDone = onDone
         self.onEdit = onEdit
         _viewModel = StateObject(wrappedValue: CardDetailViewModel(card: card))
@@ -57,9 +60,6 @@ struct CardDetailView: View {
                                 withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
                             }
                         }
-                        IconOnlyButton(systemName: "plus") {
-                            isPresentingAddExpense = true
-                        }
                         IconOnlyButton(systemName: "pencil") {
                             onEdit()
                         }
@@ -76,9 +76,6 @@ struct CardDetailView: View {
                                 withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
                             }
                         }
-                        IconOnlyButton(systemName: "plus") {
-                            isPresentingAddExpense = true
-                        }
                         IconOnlyButton(systemName: "pencil") {
                             onEdit()
                         }
@@ -93,6 +90,8 @@ struct CardDetailView: View {
         .modifier(SearchableModifier_mac(text: $viewModel.searchText, isActive: $isSearchActive))
         #endif
         .task { await viewModel.load() }
+        .accentColor(themeManager.selectedTheme.accent)
+        .tint(themeManager.selectedTheme.accent)
         // Add Unplanned Expense sheet for this card
         .sheet(isPresented: $isPresentingAddExpense) {
             let allowedIDs: Set<NSManagedObjectID>? = {
@@ -111,7 +110,7 @@ struct CardDetailView: View {
             .presentationSizing(.fitted)   // <- ensures the sheet respects the view’s ideal size
             #endif
         }
-
+        .background(themeManager.selectedTheme.background.ignoresSafeArea())
     }
     
     // MARK: content
@@ -179,7 +178,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.thinMaterial)
+        .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
@@ -205,7 +204,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.thinMaterial)
+        .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
@@ -228,7 +227,7 @@ struct CardDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.thinMaterial)
+        .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
@@ -263,11 +262,13 @@ private struct ExpenseRow: View {
 private struct IconOnlyButton: View {
     let systemName: String
     var action: () -> Void
+    @EnvironmentObject private var themeManager: ThemeManager
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 18, weight: .semibold))
                 .symbolRenderingMode(.monochrome)
+                .foregroundStyle(themeManager.selectedTheme.accent)
                 .imageScale(.medium)
                 .padding(.horizontal, 2)
                 .contentShape(Rectangle())
@@ -279,7 +280,6 @@ private struct IconOnlyButton: View {
         switch systemName {
         case "magnifyingglass": return "Search"
         case "pencil": return "Edit"
-        case "plus": return "Add Expense"
         default: return "Action"
         }
     }
