@@ -60,6 +60,8 @@ final class AddIncomeFormViewModel: ObservableObject {
     /// Loads existing `Income` into state if editing. Safe no-op if object cannot be fetched.
     func loadIfNeeded(from context: NSManagedObjectContext) throws {
         guard isEditing, let objectID = incomeObjectID else { return }
+        // If we've already loaded the original income, avoid overwriting user edits
+        guard originalIncome == nil else { return }
         guard let income = try context.existingObject(with: objectID) as? Income else { return }
 
         self.originalIncome = income
