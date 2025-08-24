@@ -10,6 +10,9 @@
 import SwiftUI
 import CoreData
 import Combine
+#if os(iOS)
+import UIKit
+#endif
 
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
@@ -119,20 +122,46 @@ struct BudgetDetailsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+#if os(iOS)
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    Button {
+                        isShowingAddMenu = true
+                    } label: {
+                        Label("Add Expense", systemImage: "plus")
+                    }
+                    .popover(isPresented: $isShowingAddMenu,
+                             attachmentAnchor: .rect(.bounds),
+                             arrowEdge: .top) {
+                        addMenuPopover
+                    }
+                } else {
+                    Button {
+                        isShowingAddMenu = true
+                    } label: {
+                        Label("Add Expense", systemImage: "plus")
+                    }
+                    .confirmationDialog("Add",
+                                        isPresented: $isShowingAddMenu,
+                                        titleVisibility: .visible) {
+                        Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
+                        Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
+                    }
+                }
+#else
                 Button {
                     isShowingAddMenu = true
                 } label: {
                     Label("Add Expense", systemImage: "plus")
                 }
+                .popover(isPresented: $isShowingAddMenu,
+                         attachmentAnchor: .rect(.bounds),
+                         arrowEdge: .top) {
+                    addMenuPopover
+                }
+#endif
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .confirmationDialog("Add",
-                            isPresented: $isShowingAddMenu,
-                            titleVisibility: .visible) {
-            Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
-            Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
-        }
         .onAppear {
             CoreDataService.shared.ensureLoaded()
             Task { await vm.load() }
@@ -160,6 +189,22 @@ struct BudgetDetailsView: View {
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
+    }
+
+    @ViewBuilder
+    private var addMenuPopover: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            Button("Add Planned Expense") {
+                isShowingAddMenu = false
+                isPresentingAddPlannedSheet = true
+            }
+            Button("Add Variable Expense") {
+                isShowingAddMenu = false
+                isPresentingAddUnplannedSheet = true
+            }
+        }
+        .padding(DS.Spacing.m)
+        .frame(minWidth: 200, alignment: .leading)
     }
 
     // MARK: Helpers
