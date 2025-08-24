@@ -18,6 +18,7 @@
 import SwiftUI
 import CoreData
 import Foundation
+import Combine
 
 // MARK: - HomeView
 struct HomeView: View {
@@ -104,6 +105,9 @@ struct HomeView: View {
         .task {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dataStoreDidChange)) { _ in
+            Task { await vm.refresh() }
         }
         .onChange(of: budgetPeriodRawValue) { _, newValue in
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly

@@ -11,6 +11,15 @@ import Foundation
 /// Centralized notification names to avoid stringly-typed mistakes.
 /// Add new custom Notification.Name constants here as your app grows.
 extension Notification.Name {
+
+    // MARK: - dataStoreDidChange
+    /// Posted by the app whenever Core Data changes are persisted. Views or
+    /// view models can observe this to trigger refreshes.
+    ///
+    /// Usage:
+    /// NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
+    /// NotificationCenter.default.addObserver(forName: .dataStoreDidChange, object: nil, queue: .main) { _ in ... }
+    static let dataStoreDidChange = Notification.Name("dataStoreDidChange")
     
     // MARK: - dataStoreDidChangeRemotely
     /// Posted by the app when Core Data’s persistent store reports a remote change

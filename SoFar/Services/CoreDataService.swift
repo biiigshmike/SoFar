@@ -32,6 +32,11 @@ final class CoreDataService: ObservableObject {
     // MARK: Load State
     /// Tracks whether persistent stores have been loaded at least once.
     private(set) var storesLoaded: Bool = false
+
+    // MARK: Change Observers
+    /// Observers for Core Data saves and remote changes that trigger view updates.
+    private var didSaveObserver: NSObjectProtocol?
+    private var remoteChangeObserver: NSObjectProtocol?
     
     // MARK: Persistent Container
     /// Expose the container as NSPersistentContainer to satisfy CoreDataStackProviding.
@@ -108,6 +113,33 @@ final class CoreDataService: ObservableObject {
         viewContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
         // Optional: performance niceties
         viewContext.undoManager = nil
+
+        // Begin monitoring Core Data saves and remote changes.
+        startObservingChanges()
+    }
+
+    // MARK: Change Observation
+    /// Listens for context saves and remote store changes and posts a unified
+    /// `.dataStoreDidChange` notification so views can react centrally.
+    private func startObservingChanges() {
+        // Avoid duplicate observers if called more than once.
+        if didSaveObserver != nil || remoteChangeObserver != nil { return }
+
+        didSaveObserver = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextDidSave,
+            object: nil,
+            queue: .main
+        ) { _ in
+            NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
+        }
+
+        remoteChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSPersistentStoreRemoteChangeNotification,
+            object: container.persistentStoreCoordinator,
+            queue: .main
+        ) { _ in
+            NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
+        }
     }
     
     // MARK: Save
