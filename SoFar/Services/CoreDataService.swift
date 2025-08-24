@@ -134,7 +134,7 @@ final class CoreDataService: ObservableObject {
         }
 
         remoteChangeObserver = NotificationCenter.default.addObserver(
-            forName: NSPersistentStoreRemoteChangeNotification,
+            forName: NSNotification.Name.NSPersistentStoreRemoteChange,
             object: container.persistentStoreCoordinator,
             queue: .main
         ) { _ in
