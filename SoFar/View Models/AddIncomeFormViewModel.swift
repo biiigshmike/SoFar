@@ -115,10 +115,13 @@ final class AddIncomeFormViewModel: ObservableObject {
         let rrule = recurrenceRule.toRRule(starting: firstDate)
         let recurrenceString = rrule?.string
         let recurrenceEnd = rrule?.until
+        let secondDayValue = rrule?.secondBiMonthlyPayDay ?? 0
+        let secondPay: Int16? = secondDayValue > 0 ? Int16(secondDayValue) : nil
 
         if isEditing, let income = originalIncome {
             let recurString = (scope == .instance) ? nil : recurrenceString
             let recurEnd: Date?? = (scope == .instance) ? nil : recurrenceEnd
+            let secondDay: Int16?? = (scope == .instance) ? nil : secondPay
             try service.updateIncome(income,
                                     scope: scope,
                                     source: trimmedSource,
@@ -127,7 +130,7 @@ final class AddIncomeFormViewModel: ObservableObject {
                                     isPlanned: isPlanned,
                                     recurrence: recurString,
                                     recurrenceEndDate: recurEnd,
-                                    secondBiMonthlyDay: nil)
+                                    secondBiMonthlyDay: secondDay)
         } else {
             _ = try service.createIncome(source: trimmedSource,
                                          amount: amount,
@@ -135,7 +138,7 @@ final class AddIncomeFormViewModel: ObservableObject {
                                          isPlanned: isPlanned,
                                          recurrence: recurrenceString,
                                          recurrenceEndDate: recurrenceEnd,
-                                         secondBiMonthlyDay: nil)
+                                         secondBiMonthlyDay: secondPay)
         }
     }
 
