@@ -136,7 +136,6 @@ final class IncomeService {
                       secondBiMonthlyDay: Int16?? = nil) throws {
         switch scope {
         case .instance:
-            if income.parentID != nil { income.parentID = nil }
             applyUpdates(to: income,
                          source: source,
                          amount: amount,
@@ -214,11 +213,28 @@ final class IncomeService {
     func deleteIncome(_ income: Income, scope: RecurrenceScope = .all) throws {
         switch scope {
         case .instance:
-            if income.parentID != nil {
+            if let parentID = income.parentID {
                 repo.delete(income)
                 try repo.saveIfNeeded()
+            } else if let id = income.id {
+                let predicate = NSPredicate(format: "parentID == %@", id as CVarArg)
+                let sort = NSSortDescriptor(key: #keyPath(Income.date), ascending: true)
+                let children = try repo.fetchAll(predicate: predicate, sortDescriptors: [sort])
+                if let newBase = children.first {
+                    for child in children.dropFirst() { repo.delete(child) }
+                    repo.delete(income)
+                    newBase.parentID = nil
+                    newBase.recurrence = income.recurrence
+                    newBase.recurrenceEndDate = income.recurrenceEndDate
+                    try RecurrenceEngine.regenerateIncomeRecurrences(base: newBase, in: repo.context)
+                    try repo.saveIfNeeded()
+                } else {
+                    repo.delete(income)
+                    try repo.saveIfNeeded()
+                }
             } else {
-                try deleteIncome(income, scope: .all)
+                repo.delete(income)
+                try repo.saveIfNeeded()
             }
         case .future:
             if let parentID = income.parentID, let currentDate = income.date {
