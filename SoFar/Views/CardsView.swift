@@ -229,6 +229,12 @@ struct CardsView: View {
         } // ZStack
         // MARK: Keep selection valid when dataset changes (delete/rename)
         .onChange(of: cards.map(\.id)) { _, ids in
+            // When a card is updated (e.g. first expense added) the observer can
+            // momentarily send an empty snapshot before reloading.  Avoid
+            // clearing the selection in that transient empty state so the
+            // detail view stays open for the currently selected card.
+            if ids.isEmpty { return }
+
             if let sel = selectedCardStableID, !ids.contains(sel) {
                 selectedCardStableID = nil
             }
