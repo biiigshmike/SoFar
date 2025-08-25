@@ -22,7 +22,7 @@
         <attribute name="color" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
-        <relationship name="plannedExpense" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PlannedExpense" inverseName="expenseCategory" inverseEntity="PlannedExpense"/>
+        <relationship name="plannedExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PlannedExpense" inverseName="expenseCategory" inverseEntity="PlannedExpense"/>
         <relationship name="unplannedExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="expenseCategory" inverseEntity="UnplannedExpense"/>
     </entity>
     <entity name="Income" representedClassName="Income" syncable="YES" codeGenerationType="class">

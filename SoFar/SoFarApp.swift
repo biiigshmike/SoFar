@@ -27,6 +27,8 @@ struct SoFarApp: App {
                 .accentColor(themeManager.selectedTheme.accent)
                 .tint(themeManager.selectedTheme.accent)
                 .preferredColorScheme(themeManager.selectedTheme.colorScheme)
+                .frame(minWidth: 800, minHeight: 800)
         }
+        .defaultSize(width: 1000, height: 1000)
     }
 }
