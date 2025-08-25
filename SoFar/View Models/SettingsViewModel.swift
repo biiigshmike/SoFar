@@ -135,6 +135,7 @@ struct SettingsCard<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(themeManager.selectedTheme.secondaryBackground)
@@ -181,9 +182,9 @@ struct SettingsRow<Trailing: View>: View {
             }
             trailing
         }
-        .contentShape(Rectangle())
         .padding(.horizontal, 14)
-        .frame(minHeight: 48)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .contentShape(Rectangle())
         .overlay(
             Rectangle()
                 .fill(Color.primary.opacity(0.06))
