@@ -24,6 +24,10 @@ final class AddIncomeFormViewModel: ObservableObject {
 
     /// Retains the original income when editing.
     private var originalIncome: Income?
+    /// Date of the specific occurrence being edited.
+    private var originalOccurrenceDate: Date?
+    /// Start date of the entire series when editing a recurring income.
+    private var originalSeriesStartDate: Date?
 
     // MARK: Editing State
     @Published var isEditing: Bool = false
@@ -83,16 +87,33 @@ final class AddIncomeFormViewModel: ObservableObject {
         self.isPlanned = income.isPlanned
         self.source = income.source ?? ""
         self.firstDate = income.date ?? Date()
+        // Preserve original dates for scope-aware saving.
+        self.originalOccurrenceDate = income.date
+        var parent: Income? = nil
+        if let pid = income.parentID {
+            let req: NSFetchRequest<Income> = Income.fetchRequest()
+            req.predicate = NSPredicate(format: "id == %@", pid as CVarArg)
+            req.fetchLimit = 1
+            parent = try? context.fetch(req).first
+            self.originalSeriesStartDate = parent?.date ?? income.date
+        } else {
+            self.originalSeriesStartDate = income.date
+        }
 
         // Amount → present as a plain localized decimal string (not currency) for easier typing
         self.amountInput = formatAmountForEditing(income.amount)
 
         // Recurrence
-        if let rec = income.recurrence, !rec.isEmpty {
-            let second = Self.optionalInt16IfAttributeExists(on: income, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"]) ?? 0
+        let recurrenceSource: Income? = {
+            if let rec = income.recurrence, !rec.isEmpty { return income }
+            return parent
+        }()
+        if let src = recurrenceSource,
+           let rec = src.recurrence, !rec.isEmpty {
+            let second = Self.optionalInt16IfAttributeExists(on: src, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"]) ?? 0
             self.recurrenceRule = RecurrenceRule.parse(from: rec,
-                                                       endDate: income.recurrenceEndDate,
-                                                       secondBiMonthlyPayDay: Int(second)) ?? .custom(rec, endDate: income.recurrenceEndDate)
+                                                       endDate: src.recurrenceEndDate,
+                                                       secondBiMonthlyPayDay: Int(second)) ?? .custom(rec, endDate: src.recurrenceEndDate)
             if case .custom(let raw, _) = recurrenceRule {
                 self.customRuleSeed = CustomRecurrence.roughParse(rruleString: raw)
             }
@@ -114,7 +135,17 @@ final class AddIncomeFormViewModel: ObservableObject {
         }
         let service = IncomeService()
         let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
-        let built = recurrenceRule.toRRule(starting: firstDate)
+        // Determine the effective series start date based on edit scope.
+        let saveDate: Date = {
+            if isEditing, scope == .all,
+               let seriesStart = originalSeriesStartDate,
+               let occurrence = originalOccurrenceDate,
+               firstDate == occurrence {
+                return seriesStart
+            }
+            return firstDate
+        }()
+        let built = recurrenceRule.toRRule(starting: saveDate)
         let secondDay: Int16? = {
             guard let built = built, built.secondBiMonthlyPayDay > 0 else { return nil }
             return Int16(built.secondBiMonthlyPayDay)
@@ -124,7 +155,7 @@ final class AddIncomeFormViewModel: ObservableObject {
             try service.updateIncome(income,
                                      scope: scope, source: trimmedSource,
                                      amount: amount,
-                                     date: firstDate,
+                                     date: saveDate,
                                      isPlanned: isPlanned,
                                      recurrence: built?.string,
                                      recurrenceEndDate: built?.until,
@@ -132,7 +163,7 @@ final class AddIncomeFormViewModel: ObservableObject {
         } else {
             _ = try service.createIncome(source: trimmedSource,
                                          amount: amount,
-                                         date: firstDate,
+                                         date: saveDate,
                                          isPlanned: isPlanned,
                                          recurrence: built?.string,
                                          recurrenceEndDate: built?.until,
