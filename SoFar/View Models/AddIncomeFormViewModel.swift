@@ -122,14 +122,13 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         if isEditing, let income = originalIncome {
             try service.updateIncome(income,
-                                    source: trimmedSource,
-                                    amount: amount,
-                                    date: firstDate,
-                                    isPlanned: isPlanned,
-                                    recurrence: built?.string,
-                                    recurrenceEndDate: built?.until,
-                                    secondBiMonthlyDay: secondDay,
-                                    scope: scope)
+                                     scope: scope, source: trimmedSource,
+                                     amount: amount,
+                                     date: firstDate,
+                                     isPlanned: isPlanned,
+                                     recurrence: built?.string,
+                                     recurrenceEndDate: built?.until,
+                                     secondBiMonthlyDay: secondDay)
         } else {
             _ = try service.createIncome(source: trimmedSource,
                                          amount: amount,
