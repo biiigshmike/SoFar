@@ -22,15 +22,6 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert: Bool = false
 
-    // MARK: Layout Constants
-    private var maxReadableWidth: CGFloat {
-        #if os(macOS)
-        return 720
-        #else
-        return 680
-        #endif
-    }
-
     var body: some View {
         ScrollView {
 
@@ -182,7 +173,7 @@ struct SettingsView: View {
                 }
 
             }
-            .frame(maxWidth: maxReadableWidth)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)
