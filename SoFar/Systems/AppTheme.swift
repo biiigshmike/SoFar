@@ -12,6 +12,7 @@ import AppKit
 /// complete set of color used across the UI so that switching themes is
 /// consistent everywhere.
 enum AppTheme: String, CaseIterable, Identifiable, Codable {
+    case system
     case classic
     case midnight
     case forest
@@ -28,6 +29,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Human readable name shown in pickers.
     var displayName: String {
         switch self {
+        case .system: return "System"
         case .classic: return "Classic"
         case .midnight: return "Midnight"
         case .forest: return "Forest"
@@ -44,6 +46,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Accent color applied to interactive elements.
     var accent: Color {
         switch self {
+        case .system: return .accentColor
         case .classic: return .blue
         case .midnight: return .purple
         case .forest: return .green
@@ -80,6 +83,18 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Primary background color for views.
     var background: Color {
         switch self {
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor.systemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.windowBackgroundColor)
+            } else {
+                return Color.white
+            }
+            #else
+            return Color.white
+            #endif
         case .classic:
             #if canImport(UIKit)
             // Use the grouped background so form rows stand out against the
@@ -118,6 +133,18 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Secondary background used for card interiors and icons.
     var secondaryBackground: Color {
         switch self {
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor.secondarySystemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.controlBackgroundColor)
+            } else {
+                return Color.gray.opacity(0.1)
+            }
+            #else
+            return Color.gray.opacity(0.1)
+            #endif
         case .classic:
             #if canImport(UIKit)
             // Provide a subtle card color that contrasts with the grouped
@@ -156,6 +183,18 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Tertiary background for card shells.
     var tertiaryBackground: Color {
         switch self {
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor.tertiarySystemBackground)
+            #elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: NSColor.controlBackgroundColor)
+            } else {
+                return Color.gray.opacity(0.15)
+            }
+            #else
+            return Color.gray.opacity(0.15)
+            #endif
         case .classic:
             #if canImport(UIKit)
             return Color(UIColor.tertiarySystemGroupedBackground)
@@ -190,8 +229,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Preferred system color scheme for the theme.
-    var colorScheme: ColorScheme {
+    ///
+    /// Returning `nil` allows the app to follow the user's system setting.
+    var colorScheme: ColorScheme? {
         switch self {
+        case .system:
+            return nil
         case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
             return .light
         case .midnight, .forest, .sunset, .nebula:
