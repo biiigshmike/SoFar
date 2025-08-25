@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "light.png",
+      "filename" : "daytime.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "dark.png",
+      "filename" : "nighttime.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -67,7 +67,7 @@
       "size" : "128x128"
     },
     {
-      "filename" : "light 4.png",
+      "filename" : "256.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
