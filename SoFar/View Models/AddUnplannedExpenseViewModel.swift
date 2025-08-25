@@ -26,6 +26,9 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
 
     // MARK: Allowed filter (e.g., only cards tracked by a given budget)
     private let allowedCardIDs: Set<NSManagedObjectID>?
+    // MARK: Preselection
+    /// Optional card to preselect when creating a new expense.
+    private let initialCardID: NSManagedObjectID?
 
     // MARK: Live Updates
     /// Listens for Core Data changes and reloads cards/categories on demand.
@@ -41,10 +44,12 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     // MARK: Init
     init(unplannedExpenseID: NSManagedObjectID? = nil,
          allowedCardIDs: Set<NSManagedObjectID>? = nil,
+         initialCardID: NSManagedObjectID? = nil,
          initialDate: Date? = nil,
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.unplannedExpenseID = unplannedExpenseID
         self.allowedCardIDs = allowedCardIDs
+        self.initialCardID = initialCardID
         self.context = context
         self.isEditing = unplannedExpenseID != nil
         if let d = initialDate { self.transactionDate = d }
@@ -64,7 +69,13 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             transactionDate = existing.transactionDate ?? Date()
         } else {
             // Default selections
-            if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
+            if selectedCardID == nil {
+                if let initial = initialCardID, allCards.contains(where: { $0.objectID == initial }) {
+                    selectedCardID = initial
+                } else {
+                    selectedCardID = allCards.first?.objectID
+                }
+            }
             if selectedCategoryID == nil { selectedCategoryID = allCategories.first?.objectID }
         }
 

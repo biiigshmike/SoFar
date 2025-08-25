@@ -115,12 +115,8 @@ struct CardDetailView: View {
         .tint(themeManager.selectedTheme.accent)
         // Add Unplanned Expense sheet for this card
         .sheet(isPresented: $isPresentingAddExpense) {
-            let allowedIDs: Set<NSManagedObjectID>? = {
-                if let oid = card.objectID { return [oid] }
-                return nil
-            }()
             AddUnplannedExpenseView(
-                allowedCardIDs: allowedIDs,
+                initialCardID: card.objectID,
                 initialDate: Date(),
                 onSaved: {
                     isPresentingAddExpense = false

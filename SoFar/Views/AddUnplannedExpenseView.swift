@@ -19,6 +19,7 @@ struct AddUnplannedExpenseView: View {
     // MARK: Inputs
     let unplannedExpenseID: NSManagedObjectID?
     let allowedCardIDs: Set<NSManagedObjectID>?
+    let initialCardID: NSManagedObjectID?
     let initialDate: Date?
     let onSaved: () -> Void
 
@@ -40,16 +41,19 @@ struct AddUnplannedExpenseView: View {
     // MARK: Init
     init(unplannedExpenseID: NSManagedObjectID? = nil,
          allowedCardIDs: Set<NSManagedObjectID>? = nil,
+         initialCardID: NSManagedObjectID? = nil,
          initialDate: Date? = nil,
          onSaved: @escaping () -> Void) {
         self.unplannedExpenseID = unplannedExpenseID
         self.allowedCardIDs = allowedCardIDs
+        self.initialCardID = initialCardID
         self.initialDate = initialDate
         self.onSaved = onSaved
 
         let model = AddUnplannedExpenseViewModel(
             unplannedExpenseID: unplannedExpenseID,
             allowedCardIDs: allowedCardIDs,
+            initialCardID: initialCardID,
             initialDate: initialDate
         )
         _vm = StateObject<AddUnplannedExpenseViewModel>(wrappedValue: model)
