@@ -55,7 +55,7 @@ struct AddIncomeFormView: View {
             // Wrap in Group to help the scaffold infer its generic Content on macOS
             Group {
                 if viewModel.isEditing && viewModel.isPartOfSeries {
-                    Text("Editing a recurring income. Choose how changes apply when saving.")
+                    Text("Editing a recurring income. Choosing \"Edit this and all future instances\" will create a new series. Changes from this point forward will be treated as a new series.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 4)
@@ -93,10 +93,12 @@ struct AddIncomeFormView: View {
                 viewModel.isPresentingCustomRecurrenceEditor = false
             }
         }
-        .confirmationDialog("Update Recurring Income", isPresented: $showEditScopeOptions) {
-            Button("This Instance Only") { _ = performSave(scope: .instance) }
-            Button("This and Future Instances") { _ = performSave(scope: .future) }
-            Button("All Instances") { _ = performSave(scope: .all) }
+        .confirmationDialog("Update Recurring Income", isPresented: $showEditScopeOptions, message: {
+            Text("Selecting \"Edit this and all future instances\" creates a new series. Changes from this point forward will be treated as a new series.")
+        }) {
+            Button("Edit only this instance") { _ = performSave(scope: .instance) }
+            Button("Edit this and all future instances (creates a new series)") { _ = performSave(scope: .future) }
+            Button("Edit all instances (past and future)") { _ = performSave(scope: .all) }
             Button("Cancel", role: .cancel) {}
         }
     }

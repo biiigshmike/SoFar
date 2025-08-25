@@ -431,8 +431,20 @@ private struct IncomeRow: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(income.source ?? "—")
-                    .font(.headline)
+                HStack {
+                    Text(income.source ?? "—")
+                        .font(.headline)
+                    if let rec = income.recurrence, !rec.isEmpty, income.parentID == nil {
+                        Text("Series Start")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule().fill(Color.secondary.opacity(0.1))
+                            )
+                    }
+                }
                 Text(currencyString(for: income.amount))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
