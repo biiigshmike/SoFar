@@ -40,14 +40,14 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "gearshape",
                     title: "General",
-                    subtitle: "Manage behavior, confirmations, and feedback."
+                    subtitle: "Manage default behaviors."
                 ) {
                     VStack(spacing: 0) {
                         SettingsRow(title: "Confirm Before Deleting") {
                             Toggle("", isOn: $viewModel.confirmBeforeDelete)
                                 .labelsHidden()
                         }
-                        SettingsRow(title: "Budget Period") {
+                        SettingsRow(title: "Default Budget Period") {
                             Picker("", selection: $viewModel.budgetPeriod) {
                                 ForEach(BudgetPeriod.selectableCases) { period in
                                     Text(period.displayName).tag(period)
@@ -198,7 +198,7 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will remove all budgets, cards, incomes, and expenses.")
+            Text("This will remove all budgets, cards, incomes, and expenses. This action cannot be undone.")
         }
     }
 
