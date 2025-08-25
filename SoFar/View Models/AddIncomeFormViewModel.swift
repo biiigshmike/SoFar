@@ -35,7 +35,21 @@ final class AddIncomeFormViewModel: ObservableObject {
     @Published var amountInput: String = ""
     @Published var firstDate: Date = Date()
 
-    // MARK: Recurrence (removed)
+    // MARK: Recurrence
+    @Published var recurrenceRule: RecurrenceRule = .none
+    /// Trigger for presenting the custom recurrence editor.
+    @Published var isPresentingCustomRecurrenceEditor: Bool = false
+    /// Seed for the custom recurrence editor.
+    var customRuleSeed: CustomRecurrence = .init()
+
+    /// Flag indicating whether the loaded income belongs to a series.
+    var isPartOfSeries: Bool {
+        if let inc = originalIncome {
+            if inc.parentID != nil { return true }
+            if let r = inc.recurrence, !r.isEmpty { return true }
+        }
+        return false
+    }
 
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
@@ -72,34 +86,58 @@ final class AddIncomeFormViewModel: ObservableObject {
 
         // Amount → present as a plain localized decimal string (not currency) for easier typing
         self.amountInput = formatAmountForEditing(income.amount)
+
+        // Recurrence
+        if let rec = income.recurrence, !rec.isEmpty {
+            let second = Self.optionalInt16IfAttributeExists(on: income, keyCandidates: ["secondPayDay", "secondBiMonthlyPayDay"]) ?? 0
+            self.recurrenceRule = RecurrenceRule.parse(from: rec,
+                                                       endDate: income.recurrenceEndDate,
+                                                       secondBiMonthlyPayDay: Int(second)) ?? .custom(rec, endDate: income.recurrenceEndDate)
+            if case .custom(let raw, _) = recurrenceRule {
+                self.customRuleSeed = CustomRecurrence.roughParse(rruleString: raw)
+            }
+        }
     }
 
     // MARK: Save
     /// Creates or updates an `Income` managed object using current state.
-    /// - Parameter context: Core Data context to use.
+    /// - Parameters:
+    ///   - context: Core Data context to use.
+    ///   - scope: Recurrence propagation when editing an existing series.
     /// - Throws: Any Core Data error during save (with detailed, user-friendly message).
-    func save(in context: NSManagedObjectContext) throws {
+    func save(in context: NSManagedObjectContext, scope: RecurrenceScope = .all) throws {
         // Ensure edit state loaded if needed
         try loadIfNeeded(from: context)
 
         guard let amount = parsedAmount, amount > 0 else {
             throw ValidationError.invalidAmount
         }
-
         let service = IncomeService()
         let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        let built = recurrenceRule.toRRule(starting: firstDate)
+        let secondDay: Int16? = {
+            guard let built = built, built.secondBiMonthlyPayDay > 0 else { return nil }
+            return Int16(built.secondBiMonthlyPayDay)
+        }()
 
         if isEditing, let income = originalIncome {
             try service.updateIncome(income,
                                     source: trimmedSource,
                                     amount: amount,
                                     date: firstDate,
-                                    isPlanned: isPlanned)
+                                    isPlanned: isPlanned,
+                                    recurrence: built?.string,
+                                    recurrenceEndDate: built?.until,
+                                    secondBiMonthlyDay: secondDay,
+                                    scope: scope)
         } else {
             _ = try service.createIncome(source: trimmedSource,
                                          amount: amount,
                                          date: firstDate,
-                                         isPlanned: isPlanned)
+                                         isPlanned: isPlanned,
+                                         recurrence: built?.string,
+                                         recurrenceEndDate: built?.until,
+                                         secondBiMonthlyDay: secondDay)
         }
     }
 
@@ -158,5 +196,16 @@ final class AddIncomeFormViewModel: ObservableObject {
             case .invalidAmount: return "Please enter a valid amount greater than 0."
             }
         }
+    }
+
+    // MARK: - Safe KVC helpers for schema drift
+    private static func optionalInt16IfAttributeExists(on object: NSManagedObject,
+                                                       keyCandidates: [String]) -> Int16? {
+        for key in keyCandidates {
+            if object.entity.attributesByName.keys.contains(key) {
+                return object.value(forKey: key) as? Int16
+            }
+        }
+        return nil
     }
 }

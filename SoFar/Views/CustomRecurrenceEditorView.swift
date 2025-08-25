@@ -179,10 +179,10 @@ struct CustomRecurrenceEditorView: View {
 // MARK: - AddIncomeFormViewModel (Custom Hook)
 extension AddIncomeFormViewModel {
     /// Applies a custom recurrence selection to the view model.
-//    func applyCustomRecurrence(_ custom: CustomRecurrence) {
-//        self.recurrenceRule = .custom(custom.toRRULE(), endDate: recurrenceEndDate(from: recurrenceRule))
-//        self.customRuleSeed = custom
-//    }
+    func applyCustomRecurrence(_ custom: CustomRecurrence) {
+        self.recurrenceRule = .custom(custom.toRRULE(), endDate: recurrenceEndDate(from: recurrenceRule))
+        self.customRuleSeed = custom
+    }
 
     /// Extracts endDate from a rule.
     private func recurrenceEndDate(from rr: RecurrenceRule) -> Date? {
