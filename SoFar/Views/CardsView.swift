@@ -229,9 +229,19 @@ struct CardsView: View {
         } // ZStack
         // MARK: Keep selection valid when dataset changes (delete/rename)
         .onChange(of: cards.map(\.id)) { _, ids in
-            if let sel = selectedCardStableID, !ids.contains(sel) {
-                selectedCardStableID = nil
+            guard let sel = selectedCardStableID, !ids.contains(sel) else { return }
+
+            // The selected card might still exist if Core Data delivered a
+            // transient update (e.g. after inserting the first expense).
+            // Attempt to resolve the objectID; only clear the selection when
+            // the card truly no longer exists in the store.
+            if let url = URL(string: sel),
+               let oid = CoreDataService.shared.container.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: url),
+               (try? CoreDataService.shared.viewContext.existingObject(with: oid)) is Card {
+                return
             }
+
+            selectedCardStableID = nil
         }
     }
 
