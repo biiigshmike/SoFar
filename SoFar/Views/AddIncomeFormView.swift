@@ -93,7 +93,7 @@ struct AddIncomeFormView: View {
                 viewModel.isPresentingCustomRecurrenceEditor = false
             }
         }
-        .confirmationDialog("Update Recurring Income", isPresented: $showEditScopeOptions, message: {
+        .confirmationDialog("Update Recurring Income", isPresented: $showEditScopeOptions, titleVisibility: {
             Text("Selecting \"Edit this and all future instances\" creates a new series. Changes from this point forward will be treated as a new series.")
         }) {
             Button("Edit only this instance") { _ = performSave(scope: .instance) }
