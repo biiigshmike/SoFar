@@ -229,7 +229,7 @@ struct CardsView: View {
         } // ZStack
         // MARK: Keep selection valid when dataset changes (delete/rename)
         .onChange(of: cards.map(\.id)) { _, ids in
-            if let sel = selectedCardStableID, !ids.contains(sel) {
+            if let sel = selectedCardStableID, !ids.isEmpty, !ids.contains(sel) {
                 selectedCardStableID = nil
             }
         }
