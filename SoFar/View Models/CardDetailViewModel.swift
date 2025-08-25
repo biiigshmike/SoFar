@@ -47,7 +47,7 @@ final class CardDetailViewModel: ObservableObject {
     // MARK: Outputs
     @Published var state: CardDetailLoadState = .initial
     @Published var searchText: String = ""
-    
+
     // Filtered view of expenses
     var filteredExpenses: [UnplannedExpense] {
         guard case .loaded(_, _, let expenses) = state else { return [] }
@@ -74,6 +74,12 @@ final class CardDetailViewModel: ObservableObject {
             }
             return false
         }
+    }
+
+    /// Category totals derived from the currently filtered expenses
+    var filteredCategories: [CardCategoryTotal] {
+        guard case .loaded = state else { return [] }
+        return buildCategories(from: filteredExpenses)
     }
     
     // MARK: Init
@@ -106,26 +112,31 @@ final class CardDetailViewModel: ObservableObject {
             }
             
             // Category totals
-            var buckets: [String: (amount: Double, colorHex: String?)] = [:]
-            for exp in expenses {
-                let amount = expValue(expenses: exp)
-                var name = "Uncategorized"
-                var hex: String? = nil
-                if let cat = exp.value(forKey: "expenseCategory") as? ExpenseCategory {
-                    name = cat.name ?? "Uncategorized"
-                    hex = cat.color
-                }
-                let current = buckets[name] ?? (0, hex)
-                buckets[name] = (current.amount + amount, current.colorHex ?? hex)
-            }
-            let categories = buckets
-                .map { CardCategoryTotal(name: $0.key, amount: $0.value.amount, colorHex: $0.value.colorHex) }
-                .sorted { $0.amount > $1.amount }
-            
+            let categories = buildCategories(from: expenses)
+
             state = .loaded(total: total, categories: categories, expenses: expenses)
         } catch {
             state = .error(error.localizedDescription)
         }
+    }
+
+    /// Builds category totals from a list of expenses
+    private func buildCategories(from expenses: [UnplannedExpense]) -> [CardCategoryTotal] {
+        var buckets: [String: (amount: Double, colorHex: String?)] = [:]
+        for exp in expenses {
+            let amount = expValue(expenses: exp)
+            var name = "Uncategorized"
+            var hex: String? = nil
+            if let cat = exp.value(forKey: "expenseCategory") as? ExpenseCategory {
+                name = cat.name ?? "Uncategorized"
+                hex = cat.color
+            }
+            let current = buckets[name] ?? (0, hex)
+            buckets[name] = (current.amount + amount, current.colorHex ?? hex)
+        }
+        return buckets
+            .map { CardCategoryTotal(name: $0.key, amount: $0.value.amount, colorHex: $0.value.colorHex) }
+            .sorted { $0.amount > $1.amount }
     }
 }
 

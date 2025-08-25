@@ -144,12 +144,12 @@ struct CardDetailView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center) // <- center vertically
             }
             .padding()
-        case .loaded(let total, let categories, _):
+        case .loaded(let total, _, _):
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     headerCard
                     totalsSection(total: total)
-                    categoryBreakdown(categories: categories)
+                    categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
                 .padding(.horizontal)
