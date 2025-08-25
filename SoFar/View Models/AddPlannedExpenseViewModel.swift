@@ -25,9 +25,11 @@ final class AddPlannedExpenseViewModel: ObservableObject {
 
     // MARK: Loaded Data
     @Published private(set) var allBudgets: [Budget] = []
+    @Published private(set) var allCategories: [ExpenseCategory] = []
 
     // MARK: Form State
     @Published var selectedBudgetID: NSManagedObjectID?
+    @Published var selectedCategoryID: NSManagedObjectID?
     @Published var descriptionText: String = ""
     @Published var plannedAmountString: String = ""
     @Published var actualAmountString: String = ""
@@ -55,10 +57,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     func load() async {
         CoreDataService.shared.ensureLoaded()
         allBudgets = fetchBudgets()
+        allCategories = fetchCategories()
 
         if isEditing, let id = plannedExpenseID,
            let existing = try? context.existingObject(with: id) as? PlannedExpense {
             selectedBudgetID = existing.budget?.objectID
+            selectedCategoryID = existing.expenseCategory?.objectID
             descriptionText = existing.descriptionText ?? ""
             plannedAmountString = formatAmount(existing.plannedAmount)
             actualAmountString = formatAmount(existing.actualAmount)
@@ -71,6 +75,9 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             // leave `selectedBudgetID` nil until the user opts to assign one.
             if requiresBudgetSelection && selectedBudgetID == nil {
                 selectedBudgetID = allBudgets.first?.objectID
+            }
+            if selectedCategoryID == nil {
+                selectedCategoryID = allCategories.first?.objectID
             }
         }
     }
@@ -102,6 +109,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             existing.plannedAmount = plannedAmt
             existing.actualAmount = actualAmt
             existing.transactionDate = transactionDate
+            if let catID = selectedCategoryID,
+               let category = try? context.existingObject(with: catID) as? ExpenseCategory {
+                existing.expenseCategory = category
+            } else {
+                existing.expenseCategory = nil
+            }
             if editingOriginalIsGlobal {
                 // Editing a parent template; keep it global and unattached.
                 existing.isGlobal = true
@@ -129,6 +142,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 parent.transactionDate = transactionDate
                 parent.isGlobal = true
                 parent.budget = nil
+                if let catID = selectedCategoryID,
+                   let category = try? context.existingObject(with: catID) as? ExpenseCategory {
+                    parent.expenseCategory = category
+                }
 
                 if let budgetID = selectedBudgetID,
                    let targetBudget = context.object(with: budgetID) as? Budget {
@@ -142,6 +159,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                     child.isGlobal = false
                     child.globalTemplateID = parent.id
                     child.budget = targetBudget
+                    if let catID = selectedCategoryID,
+                       let category = try? context.existingObject(with: catID) as? ExpenseCategory {
+                        child.expenseCategory = category
+                    }
                 }
             } else {
                 guard let budgetID = selectedBudgetID,
@@ -158,6 +179,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 item.transactionDate = transactionDate
                 item.isGlobal = false
                 item.budget = targetBudget
+                if let catID = selectedCategoryID,
+                   let category = try? context.existingObject(with: catID) as? ExpenseCategory {
+                    item.expenseCategory = category
+                }
             }
         }
 
@@ -169,6 +194,14 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
         req.sortDescriptors = [
             NSSortDescriptor(key: "startDate", ascending: false),
+            NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
+        ]
+        return (try? context.fetch(req)) ?? []
+    }
+
+    private func fetchCategories() -> [ExpenseCategory] {
+        let req = NSFetchRequest<ExpenseCategory>(entityName: "ExpenseCategory")
+        req.sortDescriptors = [
             NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []
