@@ -156,6 +156,8 @@ struct IncomeView: View {
                 t.animation = nil
                 t.disablesAnimations = true
             }
+            .animation(nil, value: viewModel.selectedDate)
+            .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
@@ -188,6 +190,8 @@ struct IncomeView: View {
                 t.animation = nil
                 t.disablesAnimations = true
             }
+            .animation(nil, value: viewModel.selectedDate)
+            .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
             #endif
         }
@@ -305,14 +309,16 @@ struct IncomeView: View {
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
         let day = Calendar.current.startOfDay(for: date)
-        // Update the selected date immediately so the calendar highlights the correct day
-        withAnimation(.none) {
+        // Update without animation to prevent visible jumps
+        withTransaction(Transaction(animation: nil)) {
             viewModel.selectedDate = day
             calendarScrollDate = day
         }
-        // Reset the scroll target on the next run loop cycle to avoid repeated jumps
+        // Reset the scroll target on the next run loop cycle without animation
         DispatchQueue.main.async {
-            calendarScrollDate = nil
+            withTransaction(Transaction(animation: nil)) {
+                calendarScrollDate = nil
+            }
         }
     }
     /// Scrolls to the first day of the previous month.
