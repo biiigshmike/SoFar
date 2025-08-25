@@ -414,6 +414,7 @@ private struct PlannedListFR: View {
                     primaryButtonTitle: "Add Planned Expense",
                     onPrimaryTap: onAddTapped
                 )
+                .padding(.horizontal, DS.Spacing.l)
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -464,6 +465,7 @@ private struct PlannedListFR: View {
                     }
                 }
                 .styledList()
+                .padding(.horizontal, DS.Spacing.l)
             }
         }
         .sheet(item: $editingItem) { expense in
@@ -596,6 +598,7 @@ private struct VariableListFR: View {
                     primaryButtonTitle: "Add Variable Expense",
                     onPrimaryTap: onAddTapped
                 )
+                .padding(.horizontal, DS.Spacing.l)
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -653,6 +656,7 @@ private struct VariableListFR: View {
                     }
                 }
                 .styledList()
+                .padding(.horizontal, DS.Spacing.l)
             }
         }
         .sheet(item: $editingItem) { expense in
