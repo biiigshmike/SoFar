@@ -49,6 +49,7 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     // MARK: load()
     func load() async {
         CoreDataService.shared.ensureLoaded()
+        await CoreDataService.shared.waitUntilStoresLoaded()
         allCards = fetchCards()
         allCategories = fetchCategories()
 
