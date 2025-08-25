@@ -23,7 +23,8 @@ struct CardDetailView: View {
     @StateObject private var viewModel: CardDetailViewModel
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var isSearchActive: Bool = false   // iOS 17+/macOS 14+
+    @State private var isSearchActive: Bool = false
+    @FocusState private var isSearchFieldFocused: Bool
     
     // MARK: Init
     init(card: CardItem,
@@ -55,13 +56,26 @@ struct CardDetailView: View {
                             .keyboardShortcut(.escape, modifiers: [])
                     }
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        IconOnlyButton(systemName: "magnifyingglass") {
-                            if #available(iOS 17.0, *) {
-                                withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
+                        if isSearchActive {
+                            TextField("Search expenses", text: $viewModel.searchText)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 200)
+                                .focused($isSearchFieldFocused)
+                            Button("Cancel") {
+                                withAnimation {
+                                    isSearchActive = false
+                                    viewModel.searchText = ""
+                                    isSearchFieldFocused = false
+                                }
                             }
-                        }
-                        IconOnlyButton(systemName: "pencil") {
-                            onEdit()
+                        } else {
+                            IconOnlyButton(systemName: "magnifyingglass") {
+                                withAnimation { isSearchActive = true }
+                                isSearchFieldFocused = true
+                            }
+                            IconOnlyButton(systemName: "pencil") {
+                                onEdit()
+                            }
                         }
                     }
                 #else
@@ -71,24 +85,31 @@ struct CardDetailView: View {
                             .keyboardShortcut(.escape, modifiers: [])
                     }
                     ToolbarItemGroup(placement: .automatic) {
-                        IconOnlyButton(systemName: "magnifyingglass") {
-                            if #available(macOS 14.0, *) {
-                                withAnimation(.smooth(duration: 0.2)) { isSearchActive = true }
+                        if isSearchActive {
+                            TextField("Search expenses", text: $viewModel.searchText)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 200)
+                                .focused($isSearchFieldFocused)
+                            Button("Cancel") {
+                                withAnimation {
+                                    isSearchActive = false
+                                    viewModel.searchText = ""
+                                    isSearchFieldFocused = false
+                                }
                             }
-                        }
-                        IconOnlyButton(systemName: "pencil") {
-                            onEdit()
+                        } else {
+                            IconOnlyButton(systemName: "magnifyingglass") {
+                                withAnimation { isSearchActive = true }
+                                isSearchFieldFocused = true
+                            }
+                            IconOnlyButton(systemName: "pencil") {
+                                onEdit()
+                            }
                         }
                     }
                 #endif
                 }
         }
-        // Search field wiring per-platform
-        #if os(iOS)
-        .modifier(SearchableModifier_iOS(text: $viewModel.searchText, isActive: $isSearchActive))
-        #else
-        .modifier(SearchableModifier_mac(text: $viewModel.searchText, isActive: $isSearchActive))
-        #endif
         .task { await viewModel.load() }
         .accentColor(themeManager.selectedTheme.accent)
         .tint(themeManager.selectedTheme.accent)
@@ -285,37 +306,3 @@ private struct IconOnlyButton: View {
     }
 }
 
-#if os(iOS)
-// MARK: - Searchable (iOS)
-private struct SearchableModifier_iOS: ViewModifier {
-    @Binding var text: String
-    @Binding var isActive: Bool
-    func body(content: Content) -> some View {
-        if #available(iOS 17.0, *) {
-            content.searchable(text: $text,
-                               isPresented: $isActive,
-                               placement: .navigationBarDrawer(displayMode: .always),
-                               prompt: Text("Search expenses"))
-        } else {
-            content.searchable(text: $text,
-                               placement: .navigationBarDrawer(displayMode: .always),
-                               prompt: Text("Search expenses"))
-        }
-    }
-}
-#else
-// MARK: - Searchable (macOS)
-private struct SearchableModifier_mac: ViewModifier {
-    @Binding var text: String
-    @Binding var isActive: Bool
-    func body(content: Content) -> some View {
-        if #available(macOS 14.0, *) {
-            content.searchable(text: $text,
-                               isPresented: $isActive,
-                               prompt: Text("Search expenses"))
-        } else {
-            content.searchable(text: $text, prompt: Text("Search expenses"))
-        }
-    }
-}
-#endif
