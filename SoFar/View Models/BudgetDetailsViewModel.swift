@@ -57,6 +57,15 @@ final class BudgetDetailsViewModel: ObservableObject {
 
         var categoryMap: [String: (hex: String?, total: Double)] = [:]
         var variableTotal: Double = 0
+
+        for e in plannedExpenses {
+            let amt = e.plannedAmount
+            let name = e.expenseCategory?.name ?? "Uncategorized"
+            let hex = e.expenseCategory?.color
+            let existing = categoryMap[name] ?? (hex: hex, total: 0)
+            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+        }
+
         for e in unplannedExpenses {
             let amt = e.amount
             variableTotal += amt

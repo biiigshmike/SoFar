@@ -108,6 +108,12 @@ struct AddPlannedExpenseView: View {
                 }
             }
 
+            // MARK: Category Selection
+            UBFormSection("Category", isUppercased: true) {
+                CategoryChipsRow(selectedCategoryID: $vm.selectedCategoryID)
+            }
+            .accessibilityElement(children: .contain)
+
             // MARK: Individual Fields
             // Instead of grouping all fields into a single section, mirror the
             // Add Card form by giving each input its own section with a
@@ -204,6 +210,7 @@ struct AddPlannedExpenseView: View {
                 vm.selectedBudgetID = nil
             }
         }
+        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
     }
 
     // MARK: Actions
@@ -234,5 +241,123 @@ struct AddPlannedExpenseView: View {
             #endif
             return false
         }
+    }
+}
+
+// MARK: - CategoryChipsRow
+/// Reusable horizontally scrolling row of category chips with an Add button.
+private struct CategoryChipsRow: View {
+
+    @Binding var selectedCategoryID: NSManagedObjectID?
+    @Environment(\.managedObjectContext) private var viewContext
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(key: "name", ascending: true,
+                                           selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))]
+    )
+    private var categories: FetchedResults<ExpenseCategory>
+
+    @State private var isPresentingNewCategory = false
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.m) {
+            AddCategoryPill { isPresentingNewCategory = true }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: DS.Spacing.s) {
+                    if categories.isEmpty {
+                        Text("No categories yet")
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 10)
+                    } else {
+                        ForEach(categories, id: \.objectID) { cat in
+                            CategoryChip(
+                                name: cat.name ?? "Untitled",
+                                colorHex: cat.color ?? "#999999",
+                                isSelected: selectedCategoryID == cat.objectID
+                            )
+                            .onTapGesture { selectedCategoryID = cat.objectID }
+                        }
+                    }
+                }
+                .padding(.trailing, DS.Spacing.s)
+            }
+            .ub_hideScrollIndicators()
+        }
+        .sheet(isPresented: $isPresentingNewCategory) {
+            ExpenseCategoryEditorSheet(
+                initialName: "",
+                initialHex: "#4E9CFF"
+            ) { name, hex in
+                let category = ExpenseCategory(context: viewContext)
+                category.id = UUID()
+                category.name = name
+                category.color = hex
+                do {
+                    try viewContext.obtainPermanentIDs(for: [category])
+                    try viewContext.save()
+                    selectedCategoryID = category.objectID
+                } catch {
+                    #if DEBUG
+                    print("Failed to create category:", error.localizedDescription)
+                    #endif
+                }
+            }
+            .presentationDetents([.medium])
+            .environment(\.managedObjectContext, viewContext)
+        }
+        .onChange(of: categories.count) { _, _ in
+            if selectedCategoryID == nil, let first = categories.first {
+                selectedCategoryID = first.objectID
+            }
+        }
+    }
+}
+
+// MARK: - AddCategoryPill
+private struct AddCategoryPill: View {
+    var onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Label("Add", systemImage: "plus")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, DS.Spacing.m)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule().fill(DS.Colors.chipFill)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add Category")
+    }
+}
+
+// MARK: - CategoryChip
+private struct CategoryChip: View {
+    let name: String
+    let colorHex: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.s) {
+            Circle()
+                .fill(Color(hex: colorHex) ?? .secondary)
+                .frame(width: 10, height: 10)
+            Text(name)
+                .font(.subheadline.weight(.semibold))
+        }
+        .padding(.horizontal, DS.Spacing.m)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill)
+        )
+        .overlay(
+            Capsule()
+                .stroke(isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill, lineWidth: isSelected ? 1.5 : 1)
+        )
+        .animation(.easeOut(duration: 0.15), value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

@@ -60,6 +60,9 @@ struct BudgetDetailsView: View {
 
                 if let summary = vm.summary {
                     SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
+                    if !summary.categoryBreakdown.isEmpty {
+                        CategoryTotalsRow(categories: summary.categoryBreakdown)
+                    }
                 }
 
                 // MARK: Segment Picker
@@ -280,6 +283,39 @@ private struct SummarySection: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - CategoryTotalsRow
+/// Horizontally scrolling pills showing spend per category.
+private struct CategoryTotalsRow: View {
+    let categories: [BudgetSummary.CategorySpending]
+
+    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: DS.Spacing.s) {
+                ForEach(categories) { cat in
+                    HStack(spacing: DS.Spacing.s) {
+                        Circle()
+                            .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
+                            .frame(width: 10, height: 10)
+                        Text(cat.categoryName)
+                            .font(.subheadline.weight(.semibold))
+                        Text(cat.amount, format: .currency(code: currencyCode))
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .padding(.horizontal, DS.Spacing.m)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule().fill(DS.Colors.chipFill)
+                    )
+                }
+            }
+            .padding(.horizontal, DS.Spacing.l)
+        }
+        .ub_hideScrollIndicators()
     }
 }
 

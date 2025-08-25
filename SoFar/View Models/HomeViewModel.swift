@@ -281,11 +281,19 @@ final class HomeViewModel: ObservableObject {
         let potentialIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
         let actualIncomeTotal    = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
 
-        // MARK: Variable (Unplanned) Expenses (from tracked cards, within window)
-        let cards = (budget.cards as? Set<Card>) ?? []
+        // MARK: Expense Categories (Planned + Variable)
         var categoryMap: [String: (hex: String?, total: Double)] = [:]
-        var variableTotal: Double = 0
 
+        for e in plannedExpenses {
+            let amt = e.plannedAmount
+            let name = e.expenseCategory?.name ?? "Uncategorized"
+            let hex = e.expenseCategory?.color
+            let existing = categoryMap[name] ?? (hex: hex, total: 0)
+            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+        }
+
+        let cards = (budget.cards as? Set<Card>) ?? []
+        var variableTotal: Double = 0
         if !cards.isEmpty {
             let unplannedReq = NSFetchRequest<UnplannedExpense>(entityName: "UnplannedExpense")
             unplannedReq.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
@@ -298,7 +306,6 @@ final class HomeViewModel: ObservableObject {
                 variableTotal += amt
 
                 let catName = e.expenseCategory?.name ?? "Uncategorized"
-                // Your model uses `ExpenseCategory.color` (hex string).
                 let hex = e.expenseCategory?.color
                 let existing = categoryMap[catName] ?? (hex: hex, total: 0)
                 categoryMap[catName] = (hex: hex ?? existing.hex, total: existing.total + amt)
