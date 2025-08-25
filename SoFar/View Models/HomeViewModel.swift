@@ -213,7 +213,9 @@ final class HomeViewModel: ObservableObject {
     // MARK: Deletion
     /// Requests deletion for the provided budget object ID, honoring the user's confirm setting.
     func requestDelete(budgetID: NSManagedObjectID) {
-        let confirm = UserDefaults.standard.bool(forKey: AppSettingsKeys.confirmBeforeDelete.rawValue)
+        let confirm = UserDefaults.standard.object(
+            forKey: AppSettingsKeys.confirmBeforeDelete.rawValue
+        ) as? Bool ?? true
         if confirm {
             alert = HomeViewAlert(kind: .confirmDelete(budgetID: budgetID))
         } else {
