@@ -27,6 +27,10 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
     // MARK: Allowed filter (e.g., only cards tracked by a given budget)
     private let allowedCardIDs: Set<NSManagedObjectID>?
 
+    // MARK: Live Updates
+    /// Listens for Core Data changes and reloads cards/categories on demand.
+    private var changeMonitor: CoreDataEntityChangeMonitor?
+
     // MARK: Form State
     @Published var selectedCardID: NSManagedObjectID?
     @Published var selectedCategoryID: NSManagedObjectID?
@@ -48,9 +52,8 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
 
     // MARK: load()
     func load() async {
-        CoreDataService.shared.ensureLoaded()
-        allCards = fetchCards()
-        allCategories = fetchCategories()
+        await CoreDataService.shared.waitUntilStoresLoaded()
+        reloadLists()
 
         if isEditing, let id = unplannedExpenseID,
            let existing = try? context.existingObject(with: id) as? UnplannedExpense {
@@ -63,6 +66,16 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             // Default selections
             if selectedCardID == nil { selectedCardID = allCards.first?.objectID }
             if selectedCategoryID == nil { selectedCategoryID = allCategories.first?.objectID }
+        }
+
+        // Monitor for external inserts/updates/deletes of cards or categories.
+        changeMonitor = CoreDataEntityChangeMonitor(
+            entityNames: ["Card", "ExpenseCategory"]
+        ) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                self.reloadLists(preserveSelection: true)
+            }
         }
     }
 
@@ -130,8 +143,7 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
         try context.save()
 
         // Refresh in-memory caches so the form’s labels reflect saved data on return
-        allCategories = fetchCategories()
-        allCards = fetchCards()
+        reloadLists(preserveSelection: true)
     }
 
     // MARK: Private fetch
@@ -151,6 +163,25 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []
+    }
+
+    /// Reload cards and categories, optionally preserving current selections if still valid.
+    private func reloadLists(preserveSelection: Bool = false) {
+        let previousCard = selectedCardID
+        let previousCategory = selectedCategoryID
+
+        allCards = fetchCards()
+        allCategories = fetchCategories()
+
+        guard preserveSelection else { return }
+
+        if let prev = previousCard, !allCards.contains(where: { $0.objectID == prev }) {
+            selectedCardID = allCards.first?.objectID
+        }
+
+        if let prev = previousCategory, !allCategories.contains(where: { $0.objectID == prev }) {
+            selectedCategoryID = allCategories.first?.objectID
+        }
     }
 
     private func formatAmount(_ value: Double) -> String {
