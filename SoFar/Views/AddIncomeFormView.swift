@@ -26,8 +26,7 @@ struct AddIncomeFormView: View {
     /// Must be internal so the lifecycle extension in a separate file can call into it.
     @StateObject var viewModel: AddIncomeFormViewModel = AddIncomeFormViewModel(incomeObjectID: nil, budgetObjectID: nil)
     @State private var error: SaveError?
-
-    // Recurrence UI removed
+    @State private var showEditScopeOptions: Bool = false
 
     // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
@@ -55,10 +54,17 @@ struct AddIncomeFormView: View {
             // MARK: Form Content
             // Wrap in Group to help the scaffold infer its generic Content on macOS
             Group {
+                if viewModel.isEditing && viewModel.isPartOfSeries {
+                    Text("Editing a recurring income. Choose how changes apply when saving.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 4)
+                }
                 typeSection
                 sourceSection
                 amountSection
                 firstDateSection
+                recurrenceSection
             }
         }
         .alert(item: $error) { err in
@@ -70,6 +76,29 @@ struct AddIncomeFormView: View {
         }
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
+        .onChange(of: viewModel.isPresentingCustomRecurrenceEditor) { old, newValue in
+            if newValue {
+                if case .custom(let raw, _) = viewModel.recurrenceRule {
+                    viewModel.customRuleSeed = CustomRecurrence.roughParse(rruleString: raw)
+                } else {
+                    viewModel.customRuleSeed = CustomRecurrence()
+                }
+            }
+        }
+        .sheet(isPresented: $viewModel.isPresentingCustomRecurrenceEditor) {
+            CustomRecurrenceEditorView(initial: viewModel.customRuleSeed) {
+                viewModel.isPresentingCustomRecurrenceEditor = false
+            } onSave: { custom in
+                viewModel.applyCustomRecurrence(custom)
+                viewModel.isPresentingCustomRecurrenceEditor = false
+            }
+        }
+        .confirmationDialog("Update Recurring Income", isPresented: $showEditScopeOptions) {
+            Button("This Instance Only") { _ = performSave(scope: .instance) }
+            Button("This and Future Instances") { _ = performSave(scope: .future) }
+            Button("All Instances") { _ = performSave(scope: .all) }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     // MARK: Sections
@@ -158,15 +187,28 @@ struct AddIncomeFormView: View {
         }
     }
 
+    // MARK: Recurrence
+    @ViewBuilder
+    private var recurrenceSection: some View {
+        UBFormSection("Recurrence", isUppercased: true) {
+            RecurrencePickerView(rule: $viewModel.recurrenceRule,
+                                 isPresentingCustomEditor: $viewModel.isPresentingCustomRecurrenceEditor)
+        }
+    }
+
     // MARK: Save
     /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
-        return performSave()
+        if viewModel.isEditing && viewModel.isPartOfSeries {
+            showEditScopeOptions = true
+            return false
+        }
+        return performSave(scope: .all)
     }
 
-    private func performSave() -> Bool {
+    private func performSave(scope: RecurrenceScope) -> Bool {
         do {
-            try viewModel.save(in: viewContext)
+            try viewModel.save(in: viewContext, scope: scope)
             ub_dismissKeyboard()
             dismiss()
             return true
