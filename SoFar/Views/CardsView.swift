@@ -237,7 +237,7 @@ struct CardsView: View {
             // view remains on screen.
             if let url = URL(string: sel),
                let oid = CoreDataService.shared.container
-                    .persistentStoreCoordinator?
+                .persistentStoreCoordinator
                     .managedObjectID(forURIRepresentation: url),
                (try? CoreDataService.shared.viewContext
                     .existingObject(with: oid)) is Card {
