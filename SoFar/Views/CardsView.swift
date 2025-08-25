@@ -92,8 +92,8 @@ struct CardsView: View {
                     )
                 case .confirmDelete(let card):
                     return Alert(
-                        title: Text("Delete “\(card.name)” ?"),
-                        message: Text("This removes the card from SoFar. Related expenses are not deleted unless your schema cascades."),
+                        title: Text("Delete “\(card.name)”?"),
+                        message: Text("THis will delete the card and all of its expenses."),
                         primaryButton: .destructive(Text("Delete"), action: {
                             Task { await viewModel.confirmDelete(card: card) }
                         }),
