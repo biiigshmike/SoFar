@@ -149,12 +149,12 @@ struct AddIncomeFormView: View {
     /// `.ub_compactDatePickerStyle()` for a consistent cross‑platform look.
     @ViewBuilder
     private var firstDateSection: some View {
-        UBFormSection("First Date", isUppercased: true) {
+        UBFormSection("Entry Date", isUppercased: true) {
             DatePicker("", selection: $viewModel.firstDate, displayedComponents: [.date])
                 .labelsHidden()
                 .ub_compactDatePickerStyle()
                 .accessibilityIdentifier("incomeFirstDatePicker")
-                .accessibilityLabel("First Date")
+                .accessibilityLabel("Entry Date")
         }
     }
 
