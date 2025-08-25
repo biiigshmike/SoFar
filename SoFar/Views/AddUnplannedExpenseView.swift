@@ -133,6 +133,9 @@ struct AddUnplannedExpenseView: View {
         }
         .onAppear { CoreDataService.shared.ensureLoaded() }
         .task { await vm.load() }
+        .onReceive(NotificationCenter.default.publisher(for: .dataStoreDidChange)) { _ in
+            Task { await vm.load() }
+        }
         // Make sure our chips & sheet share the same context.
         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
     }
