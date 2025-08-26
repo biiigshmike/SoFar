@@ -27,7 +27,7 @@ import SwiftUI
 struct HolographicMetallicText: View {
     // MARK: Inputs
     let text: String
-    var titleFont: Font = .system(size: 28, weight: .semibold, design: .rounded)
+    var titleFont: Font = Font.system(.title, design: .rounded).weight(.semibold)
     var shimmerResponsiveness: Double = 1.5
     var maxMetallicOpacity: Double = 0.6
     var maxShineOpacity: Double = 0.7
@@ -35,6 +35,7 @@ struct HolographicMetallicText: View {
     // MARK: Motion
     /// Use the shared MotionMonitor on the main actor (no default arg needed).
     @ObservedObject private var motion: MotionMonitor = MotionMonitor.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: Body
     var body: some View {
@@ -56,7 +57,7 @@ struct HolographicMetallicText: View {
                     .fill(UBDecor.metallicSilverLinear(angle: metallicAngle))
                     .mask(titleView)
                     .opacity(metallicOpacity)
-                    .animation(.easeOut(duration: 0.15), value: metallicOpacity),
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: metallicOpacity),
                 alignment: .center
             )
             // Moving shine overlay
@@ -65,7 +66,7 @@ struct HolographicMetallicText: View {
                     .fill(UBDecor.metallicShine(angle: shineAngle, intensity: shineIntensity))
                     .mask(titleView)
                     .opacity(shineOpacity)
-                    .animation(.easeOut(duration: 0.10), value: shineOpacity),
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: shineOpacity),
                 alignment: .center
             )
     }
@@ -76,13 +77,15 @@ private extension HolographicMetallicText {
 
     /// Magnitude of motion used to drive opacities/intensity.
     var motionMagnitude: Double {
-        sqrt(motion.roll * motion.roll + motion.pitch * motion.pitch)
+        guard !reduceMotion else { return 0 }
+        return sqrt(motion.roll * motion.roll + motion.pitch * motion.pitch)
     }
 
     // MARK: Metallic Overlay Opacity
     /// A gentle opacity for the broad metallic sweep; scales with motion.
     var metallicOpacity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
+        guard !reduceMotion else { return 0 }
         let scaled = min(maxMetallicOpacity, max(0.0, motionMagnitude * shimmerResponsiveness))
         return scaled
         #else
@@ -94,6 +97,7 @@ private extension HolographicMetallicText {
     /// Opacity for the narrower moving shine band; also motion-driven.
     var shineOpacity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
+        guard !reduceMotion else { return 0 }
         let scaled = min(maxShineOpacity, max(0.0, motionMagnitude * (shimmerResponsiveness + 0.5)))
         return scaled
         #else
@@ -105,6 +109,7 @@ private extension HolographicMetallicText {
     /// Shine intensity adjusts the sharpness/brightness of the center band.
     var shineIntensity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
+        guard !reduceMotion else { return 0 }
         return min(1.0, max(0.0, motionMagnitude * (shimmerResponsiveness + 0.3)))
         #else
         return 0
@@ -115,6 +120,7 @@ private extension HolographicMetallicText {
     /// Follows device tilt (roll/pitch). +90° so the sweep is perpendicular to tilt.
     var metallicAngle: Angle {
         #if os(iOS) || targetEnvironment(macCatalyst)
+        guard !reduceMotion else { return .degrees(0) }
         let angleDeg = atan2(motion.pitch, motion.roll) * 180.0 / .pi + 90.0
         return .degrees(angleDeg)
         #else
@@ -126,6 +132,7 @@ private extension HolographicMetallicText {
     /// Slightly offset from the metallic angle for a richer specular feel.
     var shineAngle: Angle {
         #if os(iOS) || targetEnvironment(macCatalyst)
+        guard !reduceMotion else { return .degrees(0) }
         let angleDeg = atan2(motion.pitch, motion.roll) * 180.0 / .pi + 60.0
         return .degrees(angleDeg)
         #else
