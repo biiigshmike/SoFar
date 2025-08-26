@@ -47,7 +47,7 @@ struct CardTileView: View {
                 // MARK: Title (Metallic shimmer stays)
                 HolographicMetallicText(
                     text: card.name,
-                    titleFont: .system(size: 28, weight: .semibold, design: .rounded),
+                    titleFont: Font.system(.title, design: .rounded).weight(.semibold),
                     shimmerResponsiveness: 1.5,
                     maxMetallicOpacity: 0.6,
                     maxShineOpacity: 0.7
@@ -66,6 +66,8 @@ struct CardTileView: View {
         .buttonStyle(.plain) // avoid system blue highlight
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(card.name)\(isSelected ? ", selected" : "")"))
+        .accessibilityHint(Text("Tap to select card"))
+        .accessibilityIdentifier("card_tile_\(card.id)")
     }
 }
 
@@ -115,7 +117,7 @@ private extension CardTileView {
     /// Subtle inner edge to sharpen the card silhouette.
     var thinEdgeOverlay: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+            .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
             .allowsHitTesting(false)
     }
 }
