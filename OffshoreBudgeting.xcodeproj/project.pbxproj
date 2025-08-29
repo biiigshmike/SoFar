@@ -28,28 +28,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* SoFar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SoFar.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CF220452E4A33BC00AD5F29 /* SoFarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SoFarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CF2204F2E4A33BC00AD5F29 /* SoFarUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SoFarUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffshoreBudgeting.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4C66A7752E53C0DE004F3F6F /* Exceptions for "SoFar" folder in "SoFar" target */ = {
+		4C66A7752E53C0DE004F3F6F /* Exceptions for "OffshoreBudgeting" folder in "OffshoreBudgeting" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 4CF220362E4A33BA00AD5F29 /* SoFar */;
+			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4CF220392E4A33BA00AD5F29 /* SoFar */ = {
+		4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4C66A7752E53C0DE004F3F6F /* Exceptions for "SoFar" folder in "SoFar" target */,
+				4C66A7752E53C0DE004F3F6F /* Exceptions for "OffshoreBudgeting" folder in "OffshoreBudgeting" target */,
 			);
-			path = SoFar;
+			path = OffshoreBudgeting;
 			sourceTree = "<group>";
 		};
 		4CF220482E4A33BC00AD5F29 /* SoFarTests */ = {
@@ -93,7 +93,7 @@
 		4CF2202E2E4A33B900AD5F29 = {
 			isa = PBXGroup;
 			children = (
-				4CF220392E4A33BA00AD5F29 /* SoFar */,
+				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
 				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
 				4CF220382E4A33BA00AD5F29 /* Products */,
@@ -103,9 +103,9 @@
 		4CF220382E4A33BA00AD5F29 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF220372E4A33BA00AD5F29 /* SoFar.app */,
-				4CF220452E4A33BC00AD5F29 /* SoFarTests.xctest */,
-				4CF2204F2E4A33BC00AD5F29 /* SoFarUITests.xctest */,
+				4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */,
+				4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */,
+				4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -113,9 +113,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4CF220362E4A33BA00AD5F29 /* SoFar */ = {
+		4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFar" */;
+			buildConfigurationList = 4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgeting" */;
 			buildPhases = (
 				4CF220332E4A33BA00AD5F29 /* Sources */,
 				4CF220342E4A33BA00AD5F29 /* Frameworks */,
@@ -126,19 +126,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4CF220392E4A33BA00AD5F29 /* SoFar */,
+				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 			);
-			name = SoFar;
+			name = OffshoreBudgeting;
 			packageProductDependencies = (
 				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
 			productName = SoFar;
-			productReference = 4CF220372E4A33BA00AD5F29 /* SoFar.app */;
+			productReference = 4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4CF220442E4A33BC00AD5F29 /* SoFarTests */ = {
+		4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFarTests" */;
+			buildConfigurationList = 4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingTests" */;
 			buildPhases = (
 				4CF220412E4A33BC00AD5F29 /* Sources */,
 				4CF220422E4A33BC00AD5F29 /* Frameworks */,
@@ -152,16 +152,16 @@
 			fileSystemSynchronizedGroups = (
 				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
 			);
-			name = SoFarTests;
+			name = OffshoreBudgetingTests;
 			packageProductDependencies = (
 			);
 			productName = SoFarTests;
-			productReference = 4CF220452E4A33BC00AD5F29 /* SoFarTests.xctest */;
+			productReference = 4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		4CF2204E2E4A33BC00AD5F29 /* SoFarUITests */ = {
+		4CF2204E2E4A33BC00AD5F29 /* OffshoreBudgetingUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFarUITests" */;
+			buildConfigurationList = 4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingUITests" */;
 			buildPhases = (
 				4CF2204B2E4A33BC00AD5F29 /* Sources */,
 				4CF2204C2E4A33BC00AD5F29 /* Frameworks */,
@@ -175,11 +175,11 @@
 			fileSystemSynchronizedGroups = (
 				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
 			);
-			name = SoFarUITests;
+			name = OffshoreBudgetingUITests;
 			packageProductDependencies = (
 			);
 			productName = SoFarUITests;
-			productReference = 4CF2204F2E4A33BC00AD5F29 /* SoFarUITests.xctest */;
+			productReference = 4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -205,7 +205,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4CF220322E4A33B900AD5F29 /* Build configuration list for PBXProject "SoFar" */;
+			buildConfigurationList = 4CF220322E4A33B900AD5F29 /* Build configuration list for PBXProject "OffshoreBudgeting" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -222,9 +222,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4CF220362E4A33BA00AD5F29 /* SoFar */,
-				4CF220442E4A33BC00AD5F29 /* SoFarTests */,
-				4CF2204E2E4A33BC00AD5F29 /* SoFarUITests */,
+				4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */,
+				4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
+				4CF2204E2E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -280,12 +280,12 @@
 /* Begin PBXTargetDependency section */
 		4CF220472E4A33BC00AD5F29 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CF220362E4A33BA00AD5F29 /* SoFar */;
+			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
 			targetProxy = 4CF220462E4A33BC00AD5F29 /* PBXContainerItemProxy */;
 		};
 		4CF220512E4A33BC00AD5F29 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CF220362E4A33BA00AD5F29 /* SoFar */;
+			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
 			targetProxy = 4CF220502E4A33BC00AD5F29 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -421,7 +421,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SoFar/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "So Far";
+				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -439,7 +439,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.SoFar;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -466,7 +466,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SoFar/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "So Far";
+				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -484,7 +484,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.SoFar;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -515,7 +515,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SoFar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SoFar";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -538,7 +538,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SoFar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SoFar";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -590,7 +590,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4CF220322E4A33B900AD5F29 /* Build configuration list for PBXProject "SoFar" */ = {
+		4CF220322E4A33B900AD5F29 /* Build configuration list for PBXProject "OffshoreBudgeting" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF220572E4A33BC00AD5F29 /* Debug */,
@@ -599,7 +599,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFar" */ = {
+		4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgeting" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF2205A2E4A33BC00AD5F29 /* Debug */,
@@ -608,7 +608,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFarTests" */ = {
+		4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF2205D2E4A33BC00AD5F29 /* Debug */,
@@ -617,7 +617,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "SoFarUITests" */ = {
+		4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF220602E4A33BC00AD5F29 /* Debug */,
