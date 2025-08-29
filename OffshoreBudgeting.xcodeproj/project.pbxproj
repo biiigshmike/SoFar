@@ -28,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffshoreBudgeting.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Offshore Budgeting.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -103,7 +103,7 @@
 		4CF220382E4A33BA00AD5F29 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */,
+				4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */,
 				4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */,
 				4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */,
 			);
@@ -133,7 +133,7 @@
 				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
 			productName = SoFar;
-			productReference = 4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */;
+			productReference = 4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
@@ -413,14 +413,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = SoFar/SoFar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = OffshoreBudgeting/OffshoreBudgeting.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = T6DP3686XU;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SoFar/Info.plist;
+				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -440,7 +440,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Offshore Budgeting";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -458,14 +458,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = SoFar/SoFar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = OffshoreBudgeting/OffshoreBudgeting.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = T6DP3686XU;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SoFar/Info.plist;
+				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -485,7 +485,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Offshore Budgeting";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
