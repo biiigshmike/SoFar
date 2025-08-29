@@ -22,7 +22,7 @@ final class CoreDataService: ObservableObject {
     // MARK: Configuration
     /// Name of the .xcdatamodeld file (without extension).
     /// IMPORTANT: Ensure your model is named "SoFarModel.xcdatamodeld".
-    private let modelName = "SoFarModel"
+    private let modelName = "OffshoreBudgetingModel"
     
     /// Determines whether CloudKit-backed sync is enabled via user settings.
     private var enableCloudKitSync: Bool {
