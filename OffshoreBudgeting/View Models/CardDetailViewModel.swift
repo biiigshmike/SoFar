@@ -24,11 +24,29 @@ struct CardCategoryTotal: Identifiable, Hashable {
     }
 }
 
+// MARK: - CardExpense
+/// Unified expense model for card details, combining planned and unplanned expenses.
+struct CardExpense: Identifiable, Hashable {
+    let objectID: NSManagedObjectID?
+    let uuid: UUID?
+    let description: String
+    let amount: Double
+    let date: Date?
+    let category: ExpenseCategory?
+    let isPlanned: Bool
+
+    var id: String {
+        if let oid = objectID { return oid.uriRepresentation().absoluteString }
+        if let uuid { return "uuid:\(uuid.uuidString)" }
+        return "temp:\(description)\(date?.timeIntervalSince1970 ?? 0)"
+    }
+}
+
 // MARK: - CardDetailLoadState
 enum CardDetailLoadState: Equatable {
     case initial
     case loading
-    case loaded(total: Double, categories: [CardCategoryTotal], expenses: [UnplannedExpense])
+    case loaded(total: Double, categories: [CardCategoryTotal], expenses: [CardExpense])
     case empty
     case error(String)
 }
@@ -42,36 +60,26 @@ final class CardDetailViewModel: ObservableObject {
     let allowedInterval: DateInterval?   // nil = all time
     
     // MARK: Services
-    private let expenseService = UnplannedExpenseService()
+    private let unplannedService = UnplannedExpenseService()
+    private let plannedService = PlannedExpenseService()
     
     // MARK: Outputs
     @Published var state: CardDetailLoadState = .initial
     @Published var searchText: String = ""
 
     // Filtered view of expenses
-    var filteredExpenses: [UnplannedExpense] {
+    var filteredExpenses: [CardExpense] {
         guard case .loaded(_, _, let expenses) = state else { return [] }
         guard !searchText.isEmpty else { return expenses }
-        
+
         let q = searchText.lowercased()
         let df = DateFormatter()
         df.dateStyle = .medium
-        
+
         return expenses.filter { exp in
-            // Title/description: prefer descriptionText, fallback to legacy "title"
-            let title = (exp.value(forKey: "descriptionText") as? String)
-                ?? (exp.value(forKey: "title") as? String)
-                ?? ""
-            if title.lowercased().contains(q) { return true }
-            
-            if let date = exp.value(forKey: "transactionDate") as? Date,
-               df.string(from: date).lowercased().contains(q) {
-                return true
-            }
-            if let cat = exp.value(forKey: "expenseCategory") as? ExpenseCategory,
-               let name = cat.name?.lowercased(), name.contains(q) {
-                return true
-            }
+            if exp.description.lowercased().contains(q) { return true }
+            if let date = exp.date, df.string(from: date).lowercased().contains(q) { return true }
+            if let name = exp.category?.name?.lowercased(), name.contains(q) { return true }
             return false
         }
     }
@@ -96,41 +104,69 @@ final class CardDetailViewModel: ObservableObject {
         }
         state = .loading
         do {
-            // Expenses
-            let expenses = try expenseService.fetchForCard(uuid, in: allowedInterval, sortedByDateAscending: false)
-            if expenses.isEmpty {
+            let unplanned = try unplannedService.fetchForCard(uuid, in: allowedInterval, sortedByDateAscending: false)
+            let planned: [PlannedExpense]
+            if let interval = allowedInterval {
+                planned = try plannedService.fetchForCard(uuid, in: interval, sortedByDateAscending: false)
+            } else {
+                planned = try plannedService.fetchForCard(uuid, sortedByDateAscending: false)
+            }
+
+            let mappedUnplanned: [CardExpense] = unplanned.map { exp in
+                let desc = (exp.value(forKey: "descriptionText") as? String)
+                    ?? (exp.value(forKey: "title") as? String) ?? ""
+                let uuid = exp.value(forKey: "id") as? UUID
+                let cat = exp.value(forKey: "expenseCategory") as? ExpenseCategory
+                return CardExpense(objectID: exp.objectID,
+                                   uuid: uuid,
+                                   description: desc,
+                                   amount: exp.value(forKey: "amount") as? Double ?? 0,
+                                   date: exp.value(forKey: "transactionDate") as? Date,
+                                   category: cat,
+                                   isPlanned: false)
+            }
+
+            let mappedPlanned: [CardExpense] = planned.map { exp in
+                let desc = (exp.value(forKey: "descriptionText") as? String)
+                    ?? (exp.value(forKey: "title") as? String) ?? ""
+                let uuid = exp.value(forKey: "id") as? UUID
+                let cat = exp.expenseCategory
+                let amount = exp.actualAmount != 0 ? exp.actualAmount : exp.plannedAmount
+                return CardExpense(objectID: exp.objectID,
+                                   uuid: uuid,
+                                   description: desc,
+                                   amount: amount,
+                                   date: exp.transactionDate,
+                                   category: cat,
+                                   isPlanned: true)
+            }
+
+            let combined = (mappedUnplanned + mappedPlanned).sorted { (a, b) in
+                let ad = a.date ?? .distantPast
+                let bd = b.date ?? .distantPast
+                return ad > bd
+            }
+
+            if combined.isEmpty {
                 state = .empty
                 return
             }
-            
-            // Total
-            let total: Double
-            if let window = allowedInterval {
-                total = try expenseService.totalForCard(uuid, in: window)
-            } else {
-                total = expenses.reduce(0) { $0 + (expValue(expenses: $1)) }
-            }
-            
-            // Category totals
-            let categories = buildCategories(from: expenses)
 
-            state = .loaded(total: total, categories: categories, expenses: expenses)
+            let total = combined.reduce(0) { $0 + $1.amount }
+            let categories = buildCategories(from: combined)
+            state = .loaded(total: total, categories: categories, expenses: combined)
         } catch {
             state = .error(error.localizedDescription)
         }
     }
 
     /// Builds category totals from a list of expenses
-    private func buildCategories(from expenses: [UnplannedExpense]) -> [CardCategoryTotal] {
+    private func buildCategories(from expenses: [CardExpense]) -> [CardCategoryTotal] {
         var buckets: [String: (amount: Double, colorHex: String?)] = [:]
         for exp in expenses {
-            let amount = expValue(expenses: exp)
-            var name = "Uncategorized"
-            var hex: String? = nil
-            if let cat = exp.value(forKey: "expenseCategory") as? ExpenseCategory {
-                name = cat.name ?? "Uncategorized"
-                hex = cat.color
-            }
+            let amount = exp.amount
+            let name = exp.category?.name ?? "Uncategorized"
+            let hex = exp.category?.color
             let current = buckets[name] ?? (0, hex)
             buckets[name] = (current.amount + amount, current.colorHex ?? hex)
         }
@@ -138,8 +174,4 @@ final class CardDetailViewModel: ObservableObject {
             .map { CardCategoryTotal(name: $0.key, amount: $0.value.amount, colorHex: $0.value.colorHex) }
             .sorted { $0.amount > $1.amount }
     }
-}
-
-private func expValue(expenses exp: UnplannedExpense) -> Double {
-    exp.value(forKey: "amount") as? Double ?? 0
 }

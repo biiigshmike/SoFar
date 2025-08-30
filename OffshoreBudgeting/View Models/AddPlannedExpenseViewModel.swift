@@ -26,10 +26,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     // MARK: Loaded Data
     @Published private(set) var allBudgets: [Budget] = []
     @Published private(set) var allCategories: [ExpenseCategory] = []
+    @Published private(set) var allCards: [Card] = []
 
     // MARK: Form State
     @Published var selectedBudgetID: NSManagedObjectID?
     @Published var selectedCategoryID: NSManagedObjectID?
+    @Published var selectedCardID: NSManagedObjectID?
     @Published var descriptionText: String = ""
     @Published var plannedAmountString: String = ""
     @Published var actualAmountString: String = ""
@@ -58,11 +60,13 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         CoreDataService.shared.ensureLoaded()
         allBudgets = fetchBudgets()
         allCategories = fetchCategories()
+        allCards = fetchCards()
 
         if isEditing, let id = plannedExpenseID,
            let existing = try? context.existingObject(with: id) as? PlannedExpense {
             selectedBudgetID = existing.budget?.objectID
             selectedCategoryID = existing.expenseCategory?.objectID
+            selectedCardID = existing.card?.objectID
             descriptionText = existing.descriptionText ?? ""
             plannedAmountString = formatAmount(existing.plannedAmount)
             actualAmountString = formatAmount(existing.actualAmount)
@@ -79,6 +83,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             if selectedCategoryID == nil {
                 selectedCategoryID = allCategories.first?.objectID
             }
+            // Leave `selectedCardID` nil by default so the form can choose "No Card".
         }
     }
 
@@ -115,6 +120,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             } else {
                 existing.expenseCategory = nil
             }
+            if let cardID = selectedCardID,
+               let card = try? context.existingObject(with: cardID) as? Card {
+                existing.card = card
+            } else {
+                existing.card = nil
+            }
             if editingOriginalIsGlobal {
                 // Editing a parent template; keep it global and unattached.
                 existing.isGlobal = true
@@ -146,6 +157,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                    let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                     parent.expenseCategory = category
                 }
+                if let cardID = selectedCardID,
+                   let card = try? context.existingObject(with: cardID) as? Card {
+                    parent.card = card
+                }
 
                 if let budgetID = selectedBudgetID,
                    let targetBudget = context.object(with: budgetID) as? Budget {
@@ -162,6 +177,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                     if let catID = selectedCategoryID,
                        let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                         child.expenseCategory = category
+                    }
+                    if let cardID = selectedCardID,
+                       let card = try? context.existingObject(with: cardID) as? Card {
+                        child.card = card
                     }
                 }
             } else {
@@ -183,6 +202,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                    let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                     item.expenseCategory = category
                 }
+                if let cardID = selectedCardID,
+                   let card = try? context.existingObject(with: cardID) as? Card {
+                    item.card = card
+                }
             }
         }
 
@@ -194,6 +217,14 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
         req.sortDescriptors = [
             NSSortDescriptor(key: "startDate", ascending: false),
+            NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
+        ]
+        return (try? context.fetch(req)) ?? []
+    }
+
+    private func fetchCards() -> [Card] {
+        let req = NSFetchRequest<Card>(entityName: "Card")
+        req.sortDescriptors = [
             NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []

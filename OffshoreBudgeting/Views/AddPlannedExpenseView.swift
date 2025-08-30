@@ -40,8 +40,10 @@ struct AddPlannedExpenseView: View {
     /// for larger touch targets.
     #if os(macOS)
     private let budgetPickerHeight: CGFloat = 100
+    private let cardRowHeight: CGFloat = 150
     #else
     private let budgetPickerHeight: CGFloat = 110
+    private let cardRowHeight: CGFloat = 160
     #endif
 
     // MARK: Init
@@ -106,6 +108,18 @@ struct AddPlannedExpenseView: View {
                         .ub_hideScrollIndicators()
                     }
                 }
+            }
+
+            // MARK: Card Selection
+            UBFormSection("Card", isUppercased: true) {
+                CardPickerRow(
+                    allCards: vm.allCards,
+                    selectedCardID: $vm.selectedCardID,
+                    includeNoneTile: true
+                )
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: cardRowHeight)
+                .ub_hideScrollIndicators()
             }
 
             // MARK: Category Selection

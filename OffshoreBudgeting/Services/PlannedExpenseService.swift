@@ -102,6 +102,34 @@ final class PlannedExpenseService {
         let sort = NSSortDescriptor(key: "transactionDate", ascending: sortedByDateAscending)
         return try expenseRepo.fetchAll(predicate: predicate, sortDescriptors: [sort])
     }
+
+    // MARK: fetchForCard(_:sortedByDateAscending:)
+    /// Fetch planned expenses for a given card (all dates).
+    /// - Parameters:
+    ///   - cardID: Card UUID.
+    ///   - sortedByDateAscending: Sort ascending (default true).
+    /// - Returns: Array of PlannedExpense linked to that card.
+    func fetchForCard(_ cardID: UUID,
+                      sortedByDateAscending: Bool = true) throws -> [PlannedExpense] {
+        let predicate = NSPredicate(format: "card.id == %@", cardID as CVarArg)
+        let sort = NSSortDescriptor(key: "transactionDate", ascending: sortedByDateAscending)
+        return try expenseRepo.fetchAll(predicate: predicate, sortDescriptors: [sort])
+    }
+
+    // MARK: fetchForCard(_:in:sortedByDateAscending:)
+    /// Fetch planned expenses for a card constrained to a date interval (inclusive).
+    /// - Parameters:
+    ///   - cardID: Card UUID.
+    ///   - interval: Date interval filter (inclusive).
+    ///   - sortedByDateAscending: Sort ascending (default true).
+    func fetchForCard(_ cardID: UUID,
+                      in interval: DateInterval,
+                      sortedByDateAscending: Bool = true) throws -> [PlannedExpense] {
+        let predicate = NSPredicate(format: "card.id == %@ AND transactionDate >= %@ AND transactionDate <= %@",
+                                    cardID as CVarArg, interval.start as CVarArg, interval.end as CVarArg)
+        let sort = NSSortDescriptor(key: "transactionDate", ascending: sortedByDateAscending)
+        return try expenseRepo.fetchAll(predicate: predicate, sortDescriptors: [sort])
+    }
     
     // MARK: - CREATE
     
