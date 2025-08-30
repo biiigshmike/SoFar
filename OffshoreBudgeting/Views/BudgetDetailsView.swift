@@ -233,7 +233,7 @@ private struct SummarySection: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                Text(selectedSegment == .planned ? summary.plannedExpensesPlannedTotal : summary.variableExpensesTotal, format: .currency(code: currencyCode))
+                Text(selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal, format: .currency(code: currencyCode))
                     .font(.title3.weight(.semibold))
             }
 
