@@ -106,7 +106,11 @@ struct HomeView: View {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .dataStoreDidChange)) { _ in
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .dataStoreDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
             Task { await vm.refresh() }
         }
         .onChange(of: budgetPeriodRawValue) { _, newValue in

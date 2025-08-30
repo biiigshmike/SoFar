@@ -171,7 +171,11 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
-        .onReceive(NotificationCenter.default.publisher(for: .dataStoreDidChange)) { _ in
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .dataStoreDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
             Task { await vm.load() }
         }
         //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
