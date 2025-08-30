@@ -50,18 +50,20 @@ final class MotionMonitor: ObservableObject {
     /// Begins motion updates and applies low-pass filtering to `display*`.
     func start() {
         provider.start { [weak self] r, p, y in
-            guard let self else { return }
-            self.roll = r
-            self.pitch = p
-            self.yaw = y
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.roll = r
+                self.pitch = p
+                self.yaw = y
 
-            // Scale amplitude down first (gentler background).
-            let targetR = r * self.amplitudeScale
-            let targetP = p * self.amplitudeScale
+                // Scale amplitude down first (gentler background).
+                let targetR = r * self.amplitudeScale
+                let targetP = p * self.amplitudeScale
 
-            // Exponential smoothing: new = old + α * (target - old)
-            self.displayRoll  = self.displayRoll  + self.smoothingAlpha * (targetR - self.displayRoll)
-            self.displayPitch = self.displayPitch + self.smoothingAlpha * (targetP - self.displayPitch)
+                // Exponential smoothing: new = old + α * (target - old)
+                self.displayRoll  = self.displayRoll  + self.smoothingAlpha * (targetR - self.displayRoll)
+                self.displayPitch = self.displayPitch + self.smoothingAlpha * (targetP - self.displayPitch)
+            }
         }
     }
 
