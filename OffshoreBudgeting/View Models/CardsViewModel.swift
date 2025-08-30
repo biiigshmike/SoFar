@@ -92,7 +92,7 @@ final class CardsViewModel: ObservableObject {
 
         // After a 200ms delay, if we are still in the `initial` state,
         // we transition to the `loading` state to show the shimmer UI.
-        Task { @MainActor in
+        Task {
             try? await Task.sleep(nanoseconds: 200_000_000)
             if self.state == .initial {
                 self.state = .loading
@@ -100,7 +100,7 @@ final class CardsViewModel: ObservableObject {
         }
 
         // Immediately start the actual data fetch.
-        Task { [weak self] @MainActor in
+        Task { [weak self] in
             guard let self else { return }
             await CoreDataService.shared.waitUntilStoresLoaded(timeout: 3.0, pollInterval: 0.05)
             self.configureAndStartObserver()
