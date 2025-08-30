@@ -165,6 +165,7 @@ final class AddBudgetViewModel: ObservableObject {
             cloned.isGlobal = false
             cloned.globalTemplateID = template.id
             cloned.budget = newBudget
+            cloned.card = template.card
         }
 
         try context.save()
@@ -206,6 +207,7 @@ final class AddBudgetViewModel: ObservableObject {
                 cloned.isGlobal = false
                 cloned.globalTemplateID = tid
                 cloned.budget = budget
+                cloned.card = template.card
             }
         }
 

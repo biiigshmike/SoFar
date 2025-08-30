@@ -31,6 +31,10 @@ struct CardPickerRow: View {
     /// Selected Core Data objectID; keeps selection stable even through renames.
     @Binding var selectedCardID: NSManagedObjectID?
 
+    /// When true, show a "No Card" option and do **not** auto-select the first card.
+    /// Useful for forms where assigning a card is optional (e.g., planned expenses).
+    var includeNoneTile: Bool = false
+
     // MARK: Layout
     // Card tile height.  We make the row slightly shorter on macOS to prevent the
     // picker from dominating the sheet.  If you need further tuning, adjust
@@ -45,6 +49,10 @@ struct CardPickerRow: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: DS.Spacing.l) {
+                if includeNoneTile {
+                    SelectCard(title: "No Card", isSelected: selectedCardID == nil)
+                        .onTapGesture { selectedCardID = nil }
+                }
                 ForEach(allCards, id: \.objectID) { managedCard in
                     // MARK: Bridge Core Data → UI model
                     // Uses your existing CoreDataBridge to pull name/theme.
@@ -66,9 +74,10 @@ struct CardPickerRow: View {
         // Apply unified background and hide indicators across platforms
         .ub_pickerBackground()
         .ub_hideScrollIndicators()
-        // Default to the first available card if none selected yet.
+        // Default to the first available card if none selected yet and no "None" option.
         .onAppear {
-            if selectedCardID == nil,
+            if !includeNoneTile,
+               selectedCardID == nil,
                let firstID = allCards.first?.objectID {
                 selectedCardID = firstID
             }

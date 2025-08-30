@@ -236,7 +236,7 @@ struct CardDetailView: View {
                     .font(.callout).foregroundStyle(.secondary)
                     .padding(.vertical, 8)
             } else {
-                ForEach(viewModel.filteredExpenses, id: \.objectID) { expense in
+                ForEach(viewModel.filteredExpenses) { expense in
                     ExpenseRow(expense: expense)
                     Divider().opacity(0.15)
                 }
@@ -251,7 +251,7 @@ struct CardDetailView: View {
 
 // MARK: - ExpenseRow
 private struct ExpenseRow: View {
-    let expense: UnplannedExpense
+    let expense: CardExpense
     private let df: DateFormatter = {
         let d = DateFormatter()
         d.dateStyle = .medium
@@ -260,14 +260,14 @@ private struct ExpenseRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(expense.value(forKey: "descriptionText") as? String ?? "Untitled")
+                Text(expense.description)
                     .font(.body.weight(.medium))
-                if let date = expense.value(forKey: "transactionDate") as? Date {
+                if let date = expense.date {
                     Text(df.string(from: date)).font(.caption).foregroundStyle(.secondary)
                 }
             }
             Spacer()
-            Text((expense.value(forKey: "amount") as? Double) ?? 0, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                 .font(.body.weight(.semibold)).monospacedDigit()
         }
         .contentShape(Rectangle())

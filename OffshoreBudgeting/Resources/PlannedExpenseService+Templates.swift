@@ -80,6 +80,7 @@ extension PlannedExpenseService {
         child.isGlobal = false
         child.globalTemplateID = template.id
         child.budget = budget
+        child.card = template.card
 
         return child
     }
