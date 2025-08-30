@@ -178,7 +178,7 @@ struct CardDetailView: View {
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
         CardTileView(card: card, isSelected: true) {}
-            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace)
+            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
                     .frame(height: 170)
                     .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
                     .padding(.top)
