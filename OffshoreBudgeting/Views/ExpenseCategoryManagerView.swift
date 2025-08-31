@@ -50,38 +50,39 @@ struct ExpenseCategoryManagerView: View {
 
     // MARK: - Body
     var body: some View {
-        List {
-            Section {
-                if categories.isEmpty {
-                    emptyState
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                } else {
-                    ForEach(categories, id: \.objectID) { category in
-                        categoryRow(for: category)
-                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                    }
-                    .onDelete { offsets in
-                        let targets = offsets.map { categories[$0] }
-                        if confirmBeforeDelete, let first = targets.first {
-                            categoryToDelete = first
-                        } else {
-                            targets.forEach(deleteCategory(_:))
+        Group {
+            if categories.isEmpty {
+                emptyState
+            } else {
+                List {
+                    Section {
+                        ForEach(categories, id: \.objectID) { category in
+                            categoryRow(for: category)
+                                .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         }
+                        .onDelete { offsets in
+                            let targets = offsets.map { categories[$0] }
+                            if confirmBeforeDelete, let first = targets.first {
+                                categoryToDelete = first
+                            } else {
+                                targets.forEach(deleteCategory(_:))
+                            }
+                        }
+                    } header: {
+                        Text("Categories")
+                    } footer: {
+                        Text("These categories appear when adding unplanned expenses. Colors help visually group spending.")
                     }
+                    .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                 }
-            } header: {
-                Text("Categories")
-            } footer: {
-                Text("These categories appear when adding unplanned expenses. Colors help visually group spending.")
+                #if os(macOS)
+                .listStyle(.inset)
+                #else
+                .listStyle(.insetGrouped)
+                #endif
+                .applyIfAvailableScrollContentBackgroundHidden()
             }
-            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
-        #if os(macOS)
-        .listStyle(.inset)
-        #else
-        .listStyle(.insetGrouped)
-        #endif
-        .applyIfAvailableScrollContentBackgroundHidden()
         .navigationTitle("Manage Categories")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -163,22 +164,14 @@ struct ExpenseCategoryManagerView: View {
 
     // MARK: - Empty State
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tag")
-                .font(.system(size: 44, weight: .semibold))
-                .foregroundStyle(.orange)
-
-            Text("No Categories Yet")
-                .font(.headline)
-
-            Text("Tap Add to create your first category. You can customize its color and name at any time.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        UBEmptyState(
+            iconSystemName: "tag",
+            title: "Categories",
+            message: "Create a category to track unplanned expenses.",
+            primaryButtonTitle: "Add Category",
+            onPrimaryTap: { isPresentingAddSheet = true }
+        )
+        .padding(.horizontal, DS.Spacing.l)
     }
 
     // MARK: - CRUD
