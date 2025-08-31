@@ -15,7 +15,7 @@ struct OnboardingView: View {
 
     // MARK: Step
     /// Enumeration of onboarding steps.
-    enum Step: Int { case welcome, cards, presets, categories, loading }
+    enum Step: Int { case welcome, categories, cards, presets, loading }
     /// Current step in the flow.
     @State private var step: Step = .welcome
 
@@ -24,13 +24,13 @@ struct OnboardingView: View {
         ZStack {
             switch step {
             case .welcome:
-                WelcomeStep { step = .cards }
-            case .cards:
-                CardsStep { step = .categories }
+                WelcomeStep { step = .categories }
             case .categories:
-                PresetsStep { step = .presets }
+                CategoriesStep { step = .cards }
+            case .cards:
+                CardsStep{ step = .presets }
             case .presets:
-                CategoriesStep { step = .loading }
+                PresetsStep { step = .loading }
             case .loading:
                 LoadingStep {
                     didCompleteOnboarding = true
@@ -58,7 +58,8 @@ private struct WelcomeStep: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Button("Get Started") { onNext() }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
+//                .buttonBorderShape(.roundedRectangle)
         }
         .padding(DS.Spacing.l)
     }
@@ -89,7 +90,7 @@ private struct CardsStep: View {
             Text("Add the cards you use for spending. We'll use them in budgets later.")
                 .multilineTextAlignment(.center)
             Button("Next") { withAnimation { showIntro = false } }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
         }
         .padding()
         .cornerRadius(16)
@@ -102,7 +103,7 @@ private struct CardsStep: View {
         VStack {
             Spacer()
             Button("Done") { onNext() }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
                 .padding()
         }
     }
@@ -132,7 +133,7 @@ private struct PresetsStep: View {
             Text("Presets are recurring expenses you have every month. Add them here so budgets are faster to create.")
                 .multilineTextAlignment(.center)
             Button("Next") { withAnimation { showIntro = false } }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
         }
         .padding()
         .cornerRadius(16)
@@ -144,7 +145,7 @@ private struct PresetsStep: View {
         VStack {
             Spacer()
             Button("Done") { onNext() }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
                 .padding()
         }
     }
@@ -174,7 +175,7 @@ private struct CategoriesStep: View {
             Text("Create categories to track your spending. You can always edit them later.")
                 .multilineTextAlignment(.center)
             Button("Next") { withAnimation { showIntro = false } }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
         }
         .padding()
         .cornerRadius(16)
@@ -186,7 +187,7 @@ private struct CategoriesStep: View {
         VStack {
             Spacer()
             Button("Done") { onNext() }
-                .buttonStyle(.borderedProminent)
+//                .buttonStyle(.borderedProminent)
                 .padding()
         }
     }
