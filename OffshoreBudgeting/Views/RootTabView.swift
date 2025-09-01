@@ -45,7 +45,7 @@ struct RootTabView: View {
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
-            UITabBar.appearance().tintColor = UIColor(themeManager.selectedTheme.accent)
+            UITabBar.appearance().tintColor = themeManager.selectedTheme.tint.map { UIColor($0) }
         }
         #endif
     }
