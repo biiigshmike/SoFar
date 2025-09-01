@@ -127,7 +127,7 @@ struct IncomeView: View {
 #else
             .buttonStyle(.bordered)
 #endif
-            .accentColor(themeManager.selectedTheme.tint)
+            //.accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
             .font(.subheadline)
             #if os(macOS)

@@ -116,7 +116,7 @@ struct CardsView: View {
                 )
             }
             .background(themeManager.selectedTheme.background.ignoresSafeArea())
-            .accentColor(themeManager.selectedTheme.tint)
+            //.accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
     }
 
