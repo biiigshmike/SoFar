@@ -163,10 +163,11 @@ struct CardDetailView: View {
             }
             .padding()
         case .loaded(let total, _, _):
+            let scale = headerScale
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Color.clear
-                        .frame(height: 170)
+                        .frame(height: 170 * scale)
                         .padding(.top)
                         .background(
                             GeometryReader { geo in
@@ -195,7 +196,7 @@ struct CardDetailView: View {
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
         let yOffset = headerOffset
-        let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
+        let scale = headerScale
 
         return CardTileView(card: card, isSelected: true) {}
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
@@ -206,6 +207,10 @@ struct CardDetailView: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
             .padding(.top)
+    }
+
+    private var headerScale: CGFloat {
+        max(0.7, min(1.0, 1 + (headerOffset / 300)))
     }
     
     // MARK: totalsSection
