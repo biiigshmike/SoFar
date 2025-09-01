@@ -25,11 +25,11 @@ struct SoFarApp: App {
         WindowGroup {
             Group {
                 if didCompleteOnboarding {
-                    //RootTabView()
-                    OnboardingView()
-                } else {
-                    //OnboardingView()
                     RootTabView()
+                    //OnboardingView()
+                } else {
+                    OnboardingView()
+                    //RootTabView()
                 }
             }
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)

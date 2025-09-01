@@ -271,7 +271,7 @@ private struct SummarySection: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
-                    Text("SAVINGS... SO FAR")
+                    Text("ACTUAL SAVINGS")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
