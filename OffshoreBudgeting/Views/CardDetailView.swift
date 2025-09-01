@@ -166,8 +166,7 @@ struct CardDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Color.clear
-                        .frame(height: 170)
-                        .padding(.top)
+                        .frame(height: 0)
                         .background(
                             GeometryReader { geo in
                                 Color.clear
@@ -186,7 +185,7 @@ struct CardDetailView: View {
             }
             .coordinateSpace(name: "detailScroll")
             .onPreferenceChange(HeaderOffsetPreferenceKey.self) { headerOffset = $0 }
-            .overlay(alignment: .top) {
+            .safeAreaInset(edge: .top) {
                 headerCard
             }
         }
@@ -194,15 +193,16 @@ struct CardDetailView: View {
 
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
-        let yOffset = headerOffset
-        let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
+        let baseHeight: CGFloat = 170
+        let scale = max(0.7, min(1.0, 1 + (headerOffset / 300)))
+        let height = baseHeight * scale
 
         return CardTileView(card: card, isSelected: true) {}
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+            .frame(height: baseHeight)
             .scaleEffect(scale, anchor: .top)
-            .offset(y: yOffset < 0 ? -yOffset : 0)
+            .frame(height: height)
             .zIndex(1)
-            .frame(height: 170)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
             .padding(.top)
