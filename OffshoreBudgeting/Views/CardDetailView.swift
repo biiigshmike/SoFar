@@ -28,6 +28,7 @@ struct CardDetailView: View {
 
     private let cardHeight: CGFloat = 170
     @State private var headerOffset: CGFloat = 0
+    @State private var headerHeight: CGFloat = 170
     
     // MARK: Init
     init(card: CardItem,
@@ -180,13 +181,15 @@ struct CardDetailView: View {
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
-                .padding(.top, cardHeight + 16)
+                .padding(.top, headerHeight + 16)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "detailScroll")
             .onPreferenceChange(HeaderOffsetPreferenceKey.self) { value in
                 headerOffset = value
+                let scale = headerScale(for: value)
+                headerHeight = cardHeight * scale
             }
             .overlay(alignment: .top) {
                 headerCard
@@ -197,18 +200,15 @@ struct CardDetailView: View {
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
         let scale = headerScale(for: headerOffset)
-        let scaledHeight = cardHeight * scale
-        // Move the card upward until it reaches the top, then keep it pinned
-        let y = max(0, 16 + headerOffset)
 
         return CardTileView(card: card, isSelected: true) {}
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
             .frame(height: cardHeight)
             .scaleEffect(scale, anchor: .top)
-            .frame(height: scaledHeight, alignment: .top)
+            .frame(height: headerHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
-            .offset(y: y)
+            .padding(.top)
             .zIndex(1)
     }
 
