@@ -194,10 +194,9 @@ struct CardDetailView: View {
                             // scrolling upward. When pulling down (minY > 0), we
                             // do not offset so the header moves with the scroll.
                             .offset(y: positiveOffset)
+                            .zIndex(1)
                     }
                     .frame(height: cardHeight + initialHeaderTopPadding)
-                    // Ensure the header card stays above the scrolling content.
-                    .zIndex(1)
                     // Actual content below the header. These sections will scroll
                     // under the header because of the translation applied above.
                     totalsSection(total: total)
