@@ -25,6 +25,7 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+    @State private var headerYOffset: CGFloat = 0
     
     // MARK: Init
     init(card: CardItem,
@@ -148,7 +149,7 @@ struct CardDetailView: View {
             .padding()
         case .empty:
             VStack(spacing: 16) {
-                headerCard
+                headerCard(offset: 0)
                 VStack(spacing: 12) {
                     Image(systemName: "creditcard")
                         .font(.system(size: 44, weight: .regular))
@@ -164,7 +165,18 @@ struct CardDetailView: View {
         case .loaded(let total, _, _):
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    headerCard
+                    Color.clear
+                        .frame(height: 170)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top)
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: HeaderOffsetPreferenceKey.self,
+                                    value: geo.frame(in: .named("detailScroll")).minY
+                                )
+                            }
+                        )
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
@@ -172,27 +184,26 @@ struct CardDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
+            .overlay(alignment: .top) { headerCard(offset: headerYOffset) }
+            .onPreferenceChange(HeaderOffsetPreferenceKey.self) { headerYOffset = $0 }
             .coordinateSpace(name: "detailScroll")
         }
     }
 
     // MARK: Header Card (matched geometry)
-    private var headerCard: some View {
-        GeometryReader { geo in
-            let yOffset = geo.frame(in: .named("detailScroll")).minY
-            // Clamp the scale between 0.7 and 1.0 so the card only shrinks
-            // as the user scrolls, instead of expanding to fill the screen.
-            let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
+    private func headerCard(offset: CGFloat) -> some View {
+        // Clamp the scale between 0.7 and 1.0 so the card only shrinks
+        // as the user scrolls, instead of expanding to fill the screen.
+        let scale = max(0.7, min(1.0, 1 + (offset / 300)))
 
-            CardTileView(card: card, isSelected: true) {}
-                .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
-                .scaleEffect(scale, anchor: .top)
-                .offset(y: yOffset < 0 ? -yOffset : 0)
-                .zIndex(1)
-        }
-        .frame(height: 170)
-        .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
-        .padding(.top)
+        return CardTileView(card: card, isSelected: true) {}
+            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+            .scaleEffect(scale, anchor: .top)
+            .offset(y: offset < 0 ? -offset : 0)
+            .zIndex(1)
+            .frame(height: 170)
+            .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
+            .padding(.top)
     }
     
     // MARK: totalsSection
@@ -257,6 +268,13 @@ struct CardDetailView: View {
         .padding()
         .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct HeaderOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
