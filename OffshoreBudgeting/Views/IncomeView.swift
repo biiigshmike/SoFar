@@ -30,8 +30,6 @@ struct IncomeView: View {
     /// Controls which date the calendar should scroll to when navigation buttons are used.
     /// A `nil` value means no programmatic scroll is requested.
     @State private var calendarScrollDate: Date? = nil
-    /// Mirrors the calendar's selected date so programmatic navigation updates the highlighted day.
-    @State private var calendarSelectedDate: Date? = Date()
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -135,13 +133,7 @@ struct IncomeView: View {
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call
             MCalendarView(
-                selectedDate: Binding(
-                    get: { calendarSelectedDate },
-                    set: { newValue in
-                        calendarSelectedDate = newValue
-                        viewModel.selectedDate = newValue
-                    }
-                ),
+                selectedDate: $viewModel.selectedDate,
                 selectedRange: .constant(nil)
             ) { config in
                 config
@@ -164,7 +156,7 @@ struct IncomeView: View {
                 t.animation = nil
                 t.disablesAnimations = true
             }
-            .animation(nil, value: calendarSelectedDate)
+            .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
             // MARK: Double-click calendar to add income (macOS)
@@ -176,13 +168,7 @@ struct IncomeView: View {
             #else
             // iOS
             MCalendarView(
-                selectedDate: Binding(
-                    get: { calendarSelectedDate },
-                    set: { newValue in
-                        calendarSelectedDate = newValue
-                        viewModel.selectedDate = newValue
-                    }
-                ),
+                selectedDate: $viewModel.selectedDate,
                 selectedRange: .constant(nil)
             ) { config in
                 config
@@ -204,7 +190,7 @@ struct IncomeView: View {
                 t.animation = nil
                 t.disablesAnimations = true
             }
-            .animation(nil, value: calendarSelectedDate)
+            .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
             #endif
@@ -326,7 +312,6 @@ struct IncomeView: View {
         // Update without animation to prevent visible jumps
         withTransaction(Transaction(animation: nil)) {
             viewModel.selectedDate = day
-            calendarSelectedDate = day
             calendarScrollDate = day
         }
         // Reset the scroll target on the next run loop cycle without animation
