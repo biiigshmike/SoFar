@@ -181,7 +181,7 @@ struct CardDetailView: View {
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
-                .padding(.top, headerHeight + 16)
+                .padding(.top, max(0, headerHeight + 16 - headerOffset))
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
