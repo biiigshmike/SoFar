@@ -79,7 +79,7 @@ struct UBDayView: DayView {
     func createDayLabel() -> AnyView {
         let base = scheme == .dark ? Color.white : Color.black
         let selected = scheme == .dark ? Color.black : Color.white
-        let color = isSelected() ? selected : base
+        let color = isSelectedDay() ? selected : base
         return AnyView(
             Text(getStringFromDay(format: "d"))
                 .font(.system(size: 16, weight: .semibold))
@@ -95,12 +95,17 @@ struct UBDayView: DayView {
             Circle()
                 .fill(fill)
                 .frame(width: 32, height: 32)
-                .opacity(isSelected() ? 1 : 0)
+                .opacity(isSelectedDay() ? 1 : 0)
         )
     }
 
     // We do not use range selection; return empty.
     func createRangeSelectionView() -> AnyView { AnyView(EmptyView()) }
+
+    private func isSelectedDay() -> Bool {
+        guard let selected = selectedDate?.wrappedValue else { return false }
+        return Calendar.current.isDate(selected, inSameDayAs: date)
+    }
 
     private func currencyString(_ amount: Double) -> String {
         let nf = NumberFormatter()
