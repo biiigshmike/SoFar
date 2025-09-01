@@ -182,7 +182,6 @@ struct CardDetailView: View {
                     .frame(height: 170)
                     .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
                     .padding(.top)
-                    .zIndex(1) // ensure the card stays above subsequent sections
     }
     
     // MARK: totalsSection
