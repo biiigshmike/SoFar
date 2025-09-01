@@ -178,13 +178,10 @@ struct CardDetailView: View {
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
         CardTileView(card: card, isSelected: true) {}
-            .frame(height: 170)
-            .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
-            .padding(.top)
-            // Apply matched geometry **after** layout so the card's frame
-            // participates in the VStack's spacing. Otherwise the card's
-            // height collapses and subsequent sections overlap it.
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+                    .frame(height: 170)
+                    .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
+                    .padding(.top)
     }
     
     // MARK: totalsSection
