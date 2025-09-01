@@ -165,6 +165,11 @@ struct CardDetailView: View {
         case .loaded(let total, _, _):
             ScrollView {
                 VStack(spacing: 20) {
+#if os(macOS)
+                    Text(card.name)
+                        .font(.title2.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+#endif
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
