@@ -26,6 +26,11 @@ struct CardDetailView: View {
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
 
+    // No longer tracking header offset via state; the header is rendered
+    // outside of the scroll view and does not need to drive layout of the
+    // underlying content.
+    // @State private var headerOffset: CGFloat = 0
+
     private let cardHeight: CGFloat = 170
     private let initialHeaderTopPadding: CGFloat = 16
     
@@ -166,20 +171,34 @@ struct CardDetailView: View {
             }
             .padding()
         case .loaded(let total, _, _):
+            // A scroll view with a collapsing header pinned to the top. The header
+            // is part of the scrollable content. We measure its position in
+            // the scroll view coordinate space to adjust its scale and offset
+            // so that it remains pinned beneath the navigation bar while the
+            // underlying content scrolls underneath.
             ScrollView {
-                LazyVStack(spacing: 20) {
-                    GeometryReader { proxy in
-                        let minY = proxy.frame(in: .named("detailScroll")).minY
-                        let offset = -min(0, minY)
-                        let scale = max(0.7, 1 - (offset / 300))
+                VStack(spacing: 20) {
+                    GeometryReader { geo in
+                        // Measure the header's vertical position relative to the
+                        // named scroll coordinate space. When the user scrolls
+                        // upward, minY becomes negative. We flip it to a positive
+                        // offset for translation and scaling.
+                        let minY = geo.frame(in: .named("detailScroll")).minY
+                        let positiveOffset = -min(0, minY)
+                        // Scale the card down from full size to 70% across 300 points.
+                        let scale = max(0.7, 1 - (positiveOffset / 300))
                         headerCard
                             .scaleEffect(scale, anchor: .top)
-                            .offset(y: offset)
+                            .frame(height: cardHeight)
+                            // Keep the card pinned by translating it downward when
+                            // scrolling upward. When pulling down (minY > 0), we
+                            // do not offset so the header moves with the scroll.
+                            .offset(y: positiveOffset)
+                            .zIndex(1)
                     }
-                    .frame(height: cardHeight)
-                    .padding(.top, initialHeaderTopPadding)
-                    .zIndex(1)
-
+                    .frame(height: cardHeight + initialHeaderTopPadding)
+                    // Actual content below the header. These sections will scroll
+                    // under the header because of the translation applied above.
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
@@ -187,6 +206,7 @@ struct CardDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
+            // Define a named coordinate space for measuring the header's position.
             .coordinateSpace(name: "detailScroll")
     }
     }
@@ -263,6 +283,11 @@ struct CardDetailView: View {
         .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
+
+    // The sectionOffset helper and associated preference key were removed
+    // because the card is now rendered outside of the scroll view via an
+    // overlay, eliminating the need to adjust the content based on a stored
+    // scroll offset.
 }
 
 // MARK: - ExpenseRow
