@@ -25,7 +25,6 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
-    @State private var scrollOffset: CGFloat = 0
     
     // MARK: Init
     init(card: CardItem,
@@ -164,45 +163,36 @@ struct CardDetailView: View {
             .padding()
         case .loaded(let total, _, _):
             ScrollView {
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(key: ScrollOffsetPreferenceKey.self,
-                                    value: geo.frame(in: .named("detailScroll")).minY)
-                }
-                .frame(height: 0)
-
                 VStack(alignment: .leading, spacing: 20) {
+                    headerCard
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
                 .padding(.horizontal)
-                .padding(.top, 170 + 16)
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "detailScroll")
-            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                scrollOffset = value
-            }
-            .overlay(alignment: .top) {
-                headerCard
-            }
         }
     }
 
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
-        let yOffset = scrollOffset
-        let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
+        GeometryReader { geo in
+            let yOffset = geo.frame(in: .named("detailScroll")).minY
+            // Clamp the scale between 0.7 and 1.0 so the card only shrinks
+            // as the user scrolls, instead of expanding to fill the screen.
+            let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
 
-        return CardTileView(card: card, isSelected: true) {}
-            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
-            .scaleEffect(scale, anchor: .top)
-            .offset(y: yOffset > 0 ? yOffset : 0)
-            .zIndex(1)
-            .frame(height: 170)
-            .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
-            .padding(.top)
+            CardTileView(card: card, isSelected: true) {}
+                .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+                .scaleEffect(scale, anchor: .top)
+                .offset(y: yOffset < 0 ? -yOffset : 0)
+                .zIndex(1)
+        }
+        .frame(height: 170)
+        .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
+        .padding(.top)
     }
     
     // MARK: totalsSection
@@ -320,14 +310,6 @@ private struct IconOnlyButton: View {
         case "pencil": return "Edit"
         default: return "Action"
         }
-    }
-}
-
-// MARK: - Scroll Offset Preference Key
-private struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
