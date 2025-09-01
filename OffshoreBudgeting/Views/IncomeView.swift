@@ -158,6 +158,7 @@ struct IncomeView: View {
             }
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
+            .id(viewModel.selectedDate)
             .accessibilityIdentifier("IncomeCalendar")
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
@@ -192,6 +193,7 @@ struct IncomeView: View {
             }
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
+            .id(viewModel.selectedDate)
             .accessibilityIdentifier("IncomeCalendar")
             #endif
         }
