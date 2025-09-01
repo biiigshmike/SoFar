@@ -168,18 +168,19 @@ struct CardDetailView: View {
         case .loaded(let total, _, _):
             ScrollView {
                 LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
+                    // Pinned, shrinking header card
                     Section {
+                    } header: {
                         GeometryReader { proxy in
                             let minY = proxy.frame(in: .named("detailScroll")).minY
-                            let scale = max(0.7, 1 - (minY / 300))
+                            let offset = min(0, minY)
+                            let scale = max(0.7, 1 + offset / 300)
                             headerCard
                                 .padding(.top, initialHeaderTopPadding)
                                 .scaleEffect(scale, anchor: .top)
-                                .offset(y: -minY)
+                                .offset(y: -offset)
                         }
                         .frame(height: cardHeight + initialHeaderTopPadding)
-                    } header: {
-                        Color.clear.frame(height: cardHeight + initialHeaderTopPadding)
                     }
                     .zIndex(1)
 
