@@ -162,15 +162,18 @@ struct CardDetailView: View {
             }
             .padding()
         case .loaded(let total, _, _):
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    headerCard
-                    totalsSection(total: total)
-                    categoryBreakdown(categories: viewModel.filteredCategories)
-                    expensesList
+            VStack(alignment: .leading, spacing: 20) {
+                headerCard
+                    .padding(.horizontal)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        totalsSection(total: total)
+                        categoryBreakdown(categories: viewModel.filteredCategories)
+                        expensesList
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 24)
             }
         }
     }
