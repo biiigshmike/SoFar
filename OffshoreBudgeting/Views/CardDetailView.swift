@@ -14,7 +14,6 @@ import CoreData
 struct CardDetailView: View {
     // MARK: Inputs
     let card: CardItem
-    let namespace: Namespace.ID
     @Binding var isPresentingAddExpense: Bool
     var onDone: () -> Void
     var onEdit: () -> Void
@@ -31,17 +30,14 @@ struct CardDetailView: View {
     // underlying content.
     // @State private var headerOffset: CGFloat = 0
 
-    private let cardHeight: CGFloat = 170
     private let initialHeaderTopPadding: CGFloat = 16
     
     // MARK: Init
     init(card: CardItem,
-         namespace: Namespace.ID,
          isPresentingAddExpense: Binding<Bool>,
          onDone: @escaping () -> Void,
          onEdit: @escaping () -> Void) {
         self.card = card
-        self.namespace = namespace
         self._isPresentingAddExpense = isPresentingAddExpense
         self.onDone = onDone
         self.onEdit = onEdit
@@ -155,25 +151,18 @@ struct CardDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
         case .empty:
-            VStack(spacing: 16) {
-                headerCard
-                    .padding(.top, initialHeaderTopPadding)
-                VStack(spacing: 12) {
-                    Image(systemName: "creditcard")
-                        .font(.system(size: 44, weight: .regular))
-                        .foregroundStyle(.secondary)
-                    Text("No expenses yet")
-                        .font(.title3.weight(.semibold))
-                    Text("Add an expense to see totals and categories here.")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center) // <- center vertically
+            VStack(spacing: 12) {
+                Image(systemName: "creditcard")
+                    .font(.system(size: 44, weight: .regular))
+                    .foregroundStyle(.secondary)
+                Text("No expenses yet")
+                    .font(.title3.weight(.semibold))
+                Text("Add an expense to see totals and categories here.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding()
         case .loaded(let total, _, _):
-            // A scroll view with the header rendered as an overlay so that it
-            // always appears above the underlying content. The scroll view's
-            // content is padded at the top to account for the card's height.
             ScrollView {
                 VStack(spacing: 20) {
                     totalsSection(total: total)
@@ -181,40 +170,12 @@ struct CardDetailView: View {
                     expensesList
                 }
                 .padding(.horizontal)
-                .padding(.top, cardHeight + initialHeaderTopPadding)
+                .padding(.top, initialHeaderTopPadding)
                 .padding(.bottom, 24)
-            }
-            // Define a named coordinate space for measuring the header's position.
-            .coordinateSpace(name: "detailScroll")
-            // Overlay the header card so it's drawn on top of the scrolling
-            // content. This avoids the card being obscured by the list sections
-            // on initial load.
-            .overlay(alignment: .top) {
-                GeometryReader { geo in
-                    let minY = geo.frame(in: .named("detailScroll")).minY
-                    let positiveOffset = -min(0, minY)
-                    let scale = max(0.7, 1 - (positiveOffset / 300))
-                    headerCard
-                        .scaleEffect(scale, anchor: .top)
-                        .frame(height: cardHeight)
-                        // Keep the card pinned by translating it downward when
-                        // scrolling upward. When pulling down (minY > 0), we
-                        // do not offset so the header moves with the scroll.
-                        .offset(y: positiveOffset)
-                }
-                .frame(height: cardHeight + initialHeaderTopPadding)
             }
     }
     }
 
-    // MARK: Header Card (matched geometry)
-    private var headerCard: some View {
-        CardTileView(card: card, isSelected: true) {}
-            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
-            .frame(height: cardHeight)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.horizontal)
-    }
     
     // MARK: totalsSection
     private func totalsSection(total: Double) -> some View {
@@ -281,9 +242,8 @@ struct CardDetailView: View {
     }
 
     // The sectionOffset helper and associated preference key were removed
-    // because the card is now rendered outside of the scroll view via an
-    // overlay, eliminating the need to adjust the content based on a stored
-    // scroll offset.
+    // because the card header is no longer rendered in this view, eliminating
+    // the need to adjust the content based on a stored scroll offset.
 }
 
 // MARK: - ExpenseRow
