@@ -169,20 +169,23 @@ struct CardDetailView: View {
             ScrollView {
                 LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
                     Section {
-                        totalsSection(total: total)
-                        categoryBreakdown(categories: viewModel.filteredCategories)
-                        expensesList
-                    } header: {
                         GeometryReader { proxy in
-                            let offset = min(0, proxy.frame(in: .named("detailScroll")).minY)
-                            let scale = max(0.7, 1 + (offset / 300))
+                            let minY = proxy.frame(in: .named("detailScroll")).minY
+                            let scale = max(0.7, 1 - (minY / 300))
                             headerCard
                                 .padding(.top, initialHeaderTopPadding)
                                 .scaleEffect(scale, anchor: .top)
-                                .offset(y: -offset)
+                                .offset(y: -minY)
                         }
                         .frame(height: cardHeight + initialHeaderTopPadding)
+                    } header: {
+                        Color.clear.frame(height: cardHeight + initialHeaderTopPadding)
                     }
+                    .zIndex(1)
+
+                    totalsSection(total: total)
+                    categoryBreakdown(categories: viewModel.filteredCategories)
+                    expensesList
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
