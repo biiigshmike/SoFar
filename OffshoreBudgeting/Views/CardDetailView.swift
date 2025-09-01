@@ -29,7 +29,6 @@ struct CardDetailView: View {
     private let cardHeight: CGFloat = 170
     @State private var headerOffset: CGFloat = 0
     @State private var headerHeight: CGFloat = 170
-    @State private var initialHeaderOffset: CGFloat?
     
     // MARK: Init
     init(card: CardItem,
@@ -172,7 +171,7 @@ struct CardDetailView: View {
                     Color.clear
                         .preference(
                             key: HeaderOffsetPreferenceKey.self,
-                            value: geo.frame(in: .global).minY
+                            value: geo.frame(in: .named("detailScroll")).minY
                         )
                 }
                 .frame(height: 0)
@@ -186,13 +185,10 @@ struct CardDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
+            .coordinateSpace(name: "detailScroll")
             .onPreferenceChange(HeaderOffsetPreferenceKey.self) { value in
-                if initialHeaderOffset == nil {
-                    initialHeaderOffset = value
-                }
-                let offset = value - (initialHeaderOffset ?? 0)
-                headerOffset = offset
-                let scale = headerScale(for: offset)
+                headerOffset = value
+                let scale = headerScale(for: value)
                 headerHeight = cardHeight * scale
             }
             .overlay(alignment: .top) {
