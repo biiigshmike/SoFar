@@ -178,11 +178,10 @@ struct CardDetailView: View {
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
         CardTileView(card: card, isSelected: true) {}
-            .frame(height: 170)
-            .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
-            .padding(.top)
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
-            .zIndex(1) // ensure the card stays above subsequent sections
+                    .frame(height: 170)
+                    .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
+                    .padding(.top)
     }
     
     // MARK: totalsSection
