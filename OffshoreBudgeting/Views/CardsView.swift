@@ -34,7 +34,6 @@ struct CardsView: View {
     // MARK: Selection State
     /// Stable selection keyed to CardItem.id (works for objectID-backed and preview items).
     @State private var selectedCardStableID: String? = nil
-    @Namespace private var cardTransitionNS
 
     // MARK: Grid Layout
     private let gridColumns: [GridItem] = [
@@ -187,8 +186,7 @@ struct CardsView: View {
                         // e.g., vm.showExpenses(for: card) or set a sidebar selection.
                     }
                     .frame(height: fixedCardHeight)
-                    .matchedGeometryEffect(id: "card-\(card.id)", in: cardTransitionNS)
-                    .opacity(selectedCardStableID != nil && selectedCardStableID != card.id ? 0 : 1)
+                    .opacity(selectedCardStableID == nil ? 1 : 0)
                     .animation(.smooth(duration: 0.25), value: selectedCardStableID)
                     .contextMenu {
                         Button("Edit", systemImage: "pencil") {
@@ -212,7 +210,6 @@ struct CardsView: View {
                let selected = cards.first(where: { $0.id == selID }) {
                 CardDetailView(
                     card: selected,
-                    namespace: cardTransitionNS,
                     isPresentingAddExpense: $isPresentingAddExpense,
                     onDone: {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
