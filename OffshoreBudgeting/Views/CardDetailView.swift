@@ -29,6 +29,10 @@ struct CardDetailView: View {
     private let cardHeight: CGFloat = 170
     @State private var headerOffset: CGFloat = 0
     @State private var headerHeight: CGFloat = 170
+    private let initialHeaderTopPadding: CGFloat = 16
+    private var currentHeaderTopPadding: CGFloat {
+        max(initialHeaderTopPadding + headerOffset, 0)
+    }
     
     // MARK: Init
     init(card: CardItem,
@@ -153,6 +157,7 @@ struct CardDetailView: View {
         case .empty:
             VStack(spacing: 16) {
                 headerCard
+                    .padding(.top, initialHeaderTopPadding)
                 VStack(spacing: 12) {
                     Image(systemName: "creditcard")
                         .font(.system(size: 44, weight: .regular))
@@ -181,7 +186,7 @@ struct CardDetailView: View {
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
-                .padding(.top, headerHeight + 16)
+                .padding(.top, headerHeight + currentHeaderTopPadding + 16)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
@@ -193,6 +198,7 @@ struct CardDetailView: View {
             }
             .overlay(alignment: .top) {
                 headerCard
+                    .padding(.top, currentHeaderTopPadding)
             }
     }
     }
@@ -208,7 +214,6 @@ struct CardDetailView: View {
             .frame(height: headerHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
-            .padding(.top)
             .zIndex(1)
     }
 
