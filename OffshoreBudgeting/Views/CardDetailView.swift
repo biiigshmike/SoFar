@@ -171,15 +171,34 @@ struct CardDetailView: View {
             }
             .padding()
         case .loaded(let total, _, _):
-            // The main content scrolls independently while the card is rendered
-            // as an overlay pinned to the top. As the user scrolls, we scale and
-            // translate the card using the scroll offset measured in a named
-            // coordinate space.
+            // A scroll view with a collapsing header pinned to the top. The header
+            // is part of the scrollable content. We measure its position in
+            // the scroll view coordinate space to adjust its scale and offset
+            // so that it remains pinned beneath the navigation bar while the
+            // underlying content scrolls underneath.
             ScrollView {
                 VStack(spacing: 20) {
-                    // Spacer to reserve vertical space for the overlaid card.
-                    Color.clear
-                        .frame(height: cardHeight + initialHeaderTopPadding)
+                    GeometryReader { geo in
+                        // Measure the header's vertical position relative to the
+                        // named scroll coordinate space. When the user scrolls
+                        // upward, minY becomes negative. We flip it to a positive
+                        // offset for translation and scaling.
+                        let minY = geo.frame(in: .named("detailScroll")).minY
+                        let positiveOffset = -min(0, minY)
+                        // Scale the card down from full size to 70% across 300 points.
+                        let scale = max(0.7, 1 - (positiveOffset / 300))
+                        headerCard
+                            .scaleEffect(scale, anchor: .top)
+                            .frame(height: cardHeight)
+                            // Keep the card pinned by translating it downward when
+                            // scrolling upward. When pulling down (minY > 0), we
+                            // do not offset so the header moves with the scroll.
+                            .offset(y: positiveOffset)
+                            .zIndex(1)
+                    }
+                    .frame(height: cardHeight + initialHeaderTopPadding)
+                    // Actual content below the header. These sections will scroll
+                    // under the header because of the translation applied above.
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
@@ -187,25 +206,8 @@ struct CardDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
-            // Define a named coordinate space for measuring scroll offset.
+            // Define a named coordinate space for measuring the header's position.
             .coordinateSpace(name: "detailScroll")
-            // Overlay the header card, scaling and offsetting based on the
-            // scroll position so it stays pinned beneath the navigation bar.
-            .overlay(alignment: .top) {
-                GeometryReader { geo in
-                    let minY = geo.frame(in: .named("detailScroll")).minY
-                    let positiveOffset = -min(0, minY)
-                    let scale = max(0.7, 1 - (positiveOffset / 300))
-                    headerCard
-                        .scaleEffect(scale, anchor: .top)
-                        .frame(height: cardHeight)
-                        .offset(y: positiveOffset)
-                        .padding(.top, initialHeaderTopPadding)
-                        .zIndex(1)
-                }
-                .frame(height: cardHeight + initialHeaderTopPadding)
-                .allowsHitTesting(false)
-            }
     }
     }
 
