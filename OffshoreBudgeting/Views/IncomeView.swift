@@ -127,8 +127,8 @@ struct IncomeView: View {
 #else
             .buttonStyle(.bordered)
 #endif
-            .accentColor(themeManager.selectedTheme.accent)
-            .tint(themeManager.selectedTheme.accent)
+            .accentColor(themeManager.selectedTheme.tint)
+            .tint(themeManager.selectedTheme.tint)
             .font(.subheadline)
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call

@@ -60,6 +60,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Optional tint color used for SwiftUI's `.tint` and `.accentColor` modifiers.
+    ///
+    /// Returning `nil` for the `system` case allows controls like `Toggle` to
+    /// keep their platform-default styling (e.g., green on iOS) instead of being
+    /// forced to the app's accent color.
+    var tint: Color? {
+        self == .system ? nil : accent
+    }
+
     /// Secondary accent color derived from the primary accent. Used for
     /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
     /// remaining harmonious with the selected theme.

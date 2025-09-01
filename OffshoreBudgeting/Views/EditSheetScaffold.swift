@@ -109,14 +109,14 @@ struct EditSheetScaffold<Content: View>: View {
                                 onCancel?()
                                 dismiss()
                             }
-                            .tint(themeManager.selectedTheme.accent)
+                            .tint(themeManager.selectedTheme.tint)
                         }
                         // MARK: Save
                         ToolbarItem(placement: .confirmationAction) {
                             Button(saveButtonTitle) {
                                 if onSave() { dismiss() }
                             }
-                            .tint(themeManager.selectedTheme.accent)
+                            .tint(themeManager.selectedTheme.tint)
                             .disabled(!isSaveEnabled)
                         }
                     }
@@ -134,22 +134,22 @@ struct EditSheetScaffold<Content: View>: View {
                                 onCancel?()
                                 dismiss()
                             }
-                            .tint(themeManager.selectedTheme.accent)
+                            .tint(themeManager.selectedTheme.tint)
                         }
                         // MARK: Save
                         ToolbarItem(placement: .confirmationAction) {
                             Button(saveButtonTitle) {
                                 if onSave() { dismiss() }
                             }
-                            .tint(themeManager.selectedTheme.accent)
+                            .tint(themeManager.selectedTheme.tint)
                             .disabled(!isSaveEnabled)
                         }
                     }
             }
         }
         // Ensure embedded forms respect the selected theme on all platforms.
-        .accentColor(themeManager.selectedTheme.accent)
-        .tint(themeManager.selectedTheme.accent)
+        .accentColor(themeManager.selectedTheme.tint)
+        .tint(themeManager.selectedTheme.tint)
         .background(themeManager.selectedTheme.background)
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)

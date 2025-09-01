@@ -180,8 +180,8 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
-        .accentColor(themeManager.selectedTheme.accent)
-        .tint(themeManager.selectedTheme.accent)
+        .accentColor(themeManager.selectedTheme.tint)
+        .tint(themeManager.selectedTheme.tint)
         .navigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
             Button("Erase", role: .destructive) {

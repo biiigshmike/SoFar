@@ -111,8 +111,8 @@ struct CardDetailView: View {
                 }
         }
         .task { await viewModel.load() }
-        .accentColor(themeManager.selectedTheme.accent)
-        .tint(themeManager.selectedTheme.accent)
+        .accentColor(themeManager.selectedTheme.tint)
+        .tint(themeManager.selectedTheme.tint)
         // Add Unplanned Expense sheet for this card
         .sheet(isPresented: $isPresentingAddExpense) {
             AddUnplannedExpenseView(

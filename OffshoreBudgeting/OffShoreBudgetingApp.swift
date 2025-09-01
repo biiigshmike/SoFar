@@ -38,8 +38,8 @@ struct SoFarApp: App {
             // `tint` covers most modern SwiftUI controls, while `accentColor`
             // is still required for some AppKit-backed macOS components
             // (e.g., checkboxes, date pickers) to respect the theme.
-            .accentColor(themeManager.selectedTheme.accent)
-            .tint(themeManager.selectedTheme.accent)
+            .accentColor(themeManager.selectedTheme.tint)
+            .tint(themeManager.selectedTheme.tint)
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
             .frame(minWidth: 800, minHeight: 600)
