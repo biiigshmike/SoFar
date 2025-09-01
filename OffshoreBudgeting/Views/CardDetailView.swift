@@ -172,16 +172,25 @@ struct CardDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
+            .coordinateSpace(name: "detailScroll")
         }
     }
-    
+
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
-        CardTileView(card: card, isSelected: true) {}
-            .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
-                    .frame(height: 170)
-                    .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
-                    .padding(.top)
+        GeometryReader { geo in
+            let yOffset = geo.frame(in: .named("detailScroll")).minY
+            let scale = max(0.7, 1 - (yOffset / 300))
+
+            CardTileView(card: card, isSelected: true) {}
+                .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+                .scaleEffect(scale, anchor: .top)
+                .offset(y: yOffset < 0 ? -yOffset : 0)
+                .zIndex(1)
+        }
+        .frame(height: 170)
+        .frame(maxWidth: .infinity, alignment: .center)   // <- center horizontally
+        .padding(.top)
     }
     
     // MARK: totalsSection
