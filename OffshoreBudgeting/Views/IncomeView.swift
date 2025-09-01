@@ -308,11 +308,11 @@ struct IncomeView: View {
     // MARK: - Calendar Navigation Helpers
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
-        let day = Calendar.current.startOfDay(for: date)
-        // Update without animation to prevent visible jumps
+        let target = normalize(date)
+        // Update without animation to prevent visible jumps.
         withTransaction(Transaction(animation: nil)) {
-            viewModel.selectedDate = day
-            calendarScrollDate = day
+            viewModel.selectedDate = target
+            calendarScrollDate = target
         }
         // Reset the scroll target on the next run loop cycle without animation
         DispatchQueue.main.async {
@@ -320,6 +320,17 @@ struct IncomeView: View {
                 calendarScrollDate = nil
             }
         }
+    }
+
+    /// Normalizes any `Date` to noon. The calendar view stores selection dates
+    /// with a time component (noon), so using noon ensures the selection circle
+    /// updates correctly when navigating programmatically.
+    private func normalize(_ date: Date) -> Date {
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        comps.hour = 12
+        comps.minute = 0
+        comps.second = 0
+        return Calendar.current.date(from: comps) ?? date
     }
     /// Scrolls to the first day of the previous month.
     private func goToPreviousMonth() {
