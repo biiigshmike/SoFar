@@ -180,7 +180,9 @@ struct CardDetailView: View {
     private var headerCard: some View {
         GeometryReader { geo in
             let yOffset = geo.frame(in: .named("detailScroll")).minY
-            let scale = max(0.7, 1 - (yOffset / 300))
+            // Clamp the scale between 0.7 and 1.0 so the card only shrinks
+            // as the user scrolls, instead of expanding to fill the screen.
+            let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
 
             CardTileView(card: card, isSelected: true) {}
                 .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
