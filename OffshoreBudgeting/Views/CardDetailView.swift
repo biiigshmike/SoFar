@@ -27,12 +27,7 @@ struct CardDetailView: View {
     @FocusState private var isSearchFieldFocused: Bool
 
     private let cardHeight: CGFloat = 170
-    @State private var headerOffset: CGFloat = 0
-    @State private var headerHeight: CGFloat = 170
     private let initialHeaderTopPadding: CGFloat = 16
-    private var currentHeaderTopPadding: CGFloat {
-        max(initialHeaderTopPadding + headerOffset, 0)
-    }
     
     // MARK: Init
     init(card: CardItem,
@@ -172,53 +167,40 @@ struct CardDetailView: View {
             .padding()
         case .loaded(let total, _, _):
             ScrollView {
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(
-                            key: HeaderOffsetPreferenceKey.self,
-                            value: geo.frame(in: .named("detailScroll")).minY
-                        )
-                }
-                .frame(height: 0)
+                LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        GeometryReader { proxy in
+                            let minY = proxy.frame(in: .named("detailScroll")).minY
+                            let scale = max(0.7, 1 - (minY / 300))
+                            headerCard
+                                .padding(.top, initialHeaderTopPadding)
+                                .scaleEffect(scale, anchor: .top)
+                                .offset(y: -minY)
+                        }
+                        .frame(height: cardHeight + initialHeaderTopPadding)
+                    } header: {
+                        Color.clear.frame(height: cardHeight + initialHeaderTopPadding)
+                    }
+                    .zIndex(1)
 
-                VStack(alignment: .leading, spacing: 20) {
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
-                .padding(.top, headerHeight + currentHeaderTopPadding + 16)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "detailScroll")
-            .onPreferenceChange(HeaderOffsetPreferenceKey.self) { value in
-                headerOffset = value
-                let scale = headerScale(for: value)
-                headerHeight = cardHeight * scale
-            }
-            .overlay(alignment: .top) {
-                headerCard
-                    .padding(.top, currentHeaderTopPadding)
-            }
     }
     }
 
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
-        let scale = headerScale(for: headerOffset)
-
-        return CardTileView(card: card, isSelected: true) {}
+        CardTileView(card: card, isSelected: true) {}
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
             .frame(height: cardHeight)
-            .scaleEffect(scale, anchor: .top)
-            .frame(height: headerHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
-            .zIndex(1)
-    }
-
-    private func headerScale(for offset: CGFloat) -> CGFloat {
-        max(0.7, min(1.0, 1 + (offset / 300)))
     }
     
     // MARK: totalsSection
@@ -336,14 +318,6 @@ private struct IconOnlyButton: View {
         case "pencil": return "Edit"
         default: return "Action"
         }
-    }
-}
-
-// MARK: - Scroll Offset Preference
-private struct HeaderOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
