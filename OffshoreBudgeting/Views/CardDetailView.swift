@@ -173,26 +173,20 @@ struct CardDetailView: View {
         case .loaded(let total, _, _):
             ScrollView {
                 GeometryReader { geo in
-                    Color.clear.preference(
-                        key: HeaderOffsetPreferenceKey.self,
-                        value: geo.frame(in: .named("detailScroll")).minY
-                    )
+                    Color.clear
+                        .preference(
+                            key: HeaderOffsetPreferenceKey.self,
+                            value: geo.frame(in: .named("detailScroll")).minY
+                        )
                 }
                 .frame(height: 0)
 
-                LazyVStack(pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        VStack(alignment: .leading, spacing: 20) {
-                            totalsSection(total: total)
-                            categoryBreakdown(categories: viewModel.filteredCategories)
-                            expensesList
-                        }
-                        .padding(.top, 16)
-                    } header: {
-                        headerCard
-                            .padding(.top, currentHeaderTopPadding)
-                    }
+                VStack(alignment: .leading, spacing: 20) {
+                    totalsSection(total: total)
+                    categoryBreakdown(categories: viewModel.filteredCategories)
+                    expensesList
                 }
+                .padding(.top, headerHeight + currentHeaderTopPadding + 16)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
@@ -201,6 +195,10 @@ struct CardDetailView: View {
                 headerOffset = value
                 let scale = headerScale(for: value)
                 headerHeight = cardHeight * scale
+            }
+            .overlay(alignment: .top) {
+                headerCard
+                    .padding(.top, currentHeaderTopPadding)
             }
     }
     }
@@ -215,6 +213,7 @@ struct CardDetailView: View {
             .scaleEffect(scale, anchor: .top)
             .frame(height: headerHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal)
             .zIndex(1)
     }
 
