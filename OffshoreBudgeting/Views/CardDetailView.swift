@@ -25,7 +25,10 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+
+    private let cardHeight: CGFloat = 170
     @State private var headerOffset: CGFloat = 0
+    @State private var headerHeight: CGFloat = 170
     
     // MARK: Init
     init(card: CardItem,
@@ -164,48 +167,53 @@ struct CardDetailView: View {
             .padding()
         case .loaded(let total, _, _):
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                GeometryReader { geo in
                     Color.clear
-                        .frame(height: 170)
-                        .padding(.top)
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear
-                                    .preference(
-                                        key: HeaderOffsetPreferenceKey.self,
-                                        value: geo.frame(in: .named("detailScroll")).minY
-                                    )
-                            }
+                        .preference(
+                            key: HeaderOffsetPreferenceKey.self,
+                            value: geo.frame(in: .named("detailScroll")).minY
                         )
+                }
+                .frame(height: 0)
+
+                VStack(alignment: .leading, spacing: 20) {
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
                     expensesList
                 }
+                .padding(.top, headerHeight + 16)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
             }
             .coordinateSpace(name: "detailScroll")
-            .onPreferenceChange(HeaderOffsetPreferenceKey.self) { headerOffset = $0 }
+            .onPreferenceChange(HeaderOffsetPreferenceKey.self) { value in
+                headerOffset = value
+                let scale = headerScale(for: value)
+                headerHeight = cardHeight * scale
+            }
             .overlay(alignment: .top) {
                 headerCard
             }
-        }
+    }
     }
 
     // MARK: Header Card (matched geometry)
     private var headerCard: some View {
-        let yOffset = headerOffset
-        let scale = max(0.7, min(1.0, 1 + (yOffset / 300)))
+        let scale = headerScale(for: headerOffset)
 
         return CardTileView(card: card, isSelected: true) {}
             .matchedGeometryEffect(id: "card-\(card.id)", in: namespace, isSource: false)
+            .frame(height: cardHeight)
             .scaleEffect(scale, anchor: .top)
-            .offset(y: yOffset < 0 ? -yOffset : 0)
-            .zIndex(1)
-            .frame(height: 170)
+            .frame(height: headerHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal)
             .padding(.top)
+            .zIndex(1)
+    }
+
+    private func headerScale(for offset: CGFloat) -> CGFloat {
+        max(0.7, min(1.0, 1 + (offset / 300)))
     }
     
     // MARK: totalsSection
