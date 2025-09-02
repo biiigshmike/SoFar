@@ -1,0 +1,16 @@
+import SwiftUI
+
+/// Ensures form rows render in a single leading-aligned column on macOS.
+/// Wrap any solitary field in `UBFormRow` to avoid the trailing "content" column
+/// that `Form` uses on macOS, which otherwise right-aligns controls.
+struct UBFormRow<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        HStack(alignment: .center) {
+            content
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

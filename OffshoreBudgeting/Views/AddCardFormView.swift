@@ -115,21 +115,23 @@ struct AddCardFormView: View {
                 // MARK: Cross-platform placeholder handling
                 // On macOS inside a Form, TextField("Title", text:) can render as a static label.
                 // Using the `prompt:` initializer ensures true placeholder styling.
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $cardName, prompt: Text("Apple Card"))
-                        .ub_noAutoCapsAndCorrection()
-                        // Align to the leading edge and expand to fill the row
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .submitLabel(.done)
-                        .accessibilityLabel("Card Name")
-                } else {
-                    TextField("]pple Card", text: $cardName)
-                        .ub_noAutoCapsAndCorrection()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .submitLabel(.done)
-                        .accessibilityLabel("Card Name")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $cardName, prompt: Text("Apple Card"))
+                            .ub_noAutoCapsAndCorrection()
+                            // Align to the leading edge and expand to fill the row
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .submitLabel(.done)
+                            .accessibilityLabel("Card Name")
+                    } else {
+                        TextField("]pple Card", text: $cardName)
+                            .ub_noAutoCapsAndCorrection()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .submitLabel(.done)
+                            .accessibilityLabel("Card Name")
+                    }
                 }
             } header: {
                 Text("Name")

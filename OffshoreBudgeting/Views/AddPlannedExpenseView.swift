@@ -138,57 +138,58 @@ struct AddPlannedExpenseView: View {
             // Expense Description
             UBFormSection("Expense Description", isUppercased: true) {
                 // Use an empty label and a prompt for true placeholder styling on modern OSes.
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $vm.descriptionText, prompt: Text("Electric"))
-                        .ub_noAutoCapsAndCorrection()
-                        // Align text to the leading edge and make the field
-                        // expand to fill available row width.  Without this,
-                        // macOS tends to shrink the field and right‑align the
-                        // placeholder.  The frame ensures left alignment on
-                        // all platforms.
-//                        .multilineTextAlignment(.leading)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Expense Description")
-                } else {
-                    TextField("Rent", text: $vm.descriptionText)
-                        .ub_noAutoCapsAndCorrection()
-//                        .multilineTextAlignment(.leading)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Expense Description")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $vm.descriptionText, prompt: Text("Electric"))
+                            .ub_noAutoCapsAndCorrection()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Expense Description")
+                    } else {
+                        TextField("Rent", text: $vm.descriptionText)
+                            .ub_noAutoCapsAndCorrection()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Expense Description")
+                    }
                 }
             }
 
             // Planned Amount
             UBFormSection("Planned Amount", isUppercased: true) {
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Planned Amount")
-                } else {
-                    TextField("2000", text: $vm.plannedAmountString)
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Planned Amount")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Planned Amount")
+                    } else {
+                        TextField("2000", text: $vm.plannedAmountString)
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Planned Amount")
+                    }
                 }
             }
 
             // Actual Amount
             UBFormSection("Actual Amount", isUppercased: true) {
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Actual Amount")
-                } else {
-                    TextField("102.50", text: $vm.actualAmountString)
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Actual Amount")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Actual Amount")
+                    } else {
+                        TextField("102.50", text: $vm.actualAmountString)
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Actual Amount")
+                    }
                 }
             }
 

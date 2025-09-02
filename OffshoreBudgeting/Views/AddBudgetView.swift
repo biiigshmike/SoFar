@@ -103,15 +103,17 @@ struct AddBudgetView: View {
                 // placeholder across platforms.  We expand the field to fill
                 // the row and align text to the leading edge for consistency
                 // with Add Card and the expense forms.
-                TextField(
-                    "",
-                    text: $vm.budgetName,
-                    prompt: Text(vm.defaultBudgetName)
-                )
-                .ub_noAutoCapsAndCorrection()
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityLabel("Budget Name")
+                UBFormRow {
+                    TextField(
+                        "",
+                        text: $vm.budgetName,
+                        prompt: Text(vm.defaultBudgetName)
+                    )
+                    .ub_noAutoCapsAndCorrection()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Budget Name")
+                }
             }
 
             // ---- Dates

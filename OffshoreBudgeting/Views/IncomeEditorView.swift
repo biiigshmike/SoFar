@@ -109,12 +109,15 @@ struct IncomeEditorView: View {
         ) {
             // MARK: Details
             Section {
-                TextField("Paycheck", text: $form.source)
-                    .ub_noAutoCapsAndCorrection()   // cross-platform fix
-                
+                UBFormRow {
+                    TextField("Paycheck", text: $form.source)
+                        .ub_noAutoCapsAndCorrection()   // cross-platform fix
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 amountField
                 DatePicker("Date", selection: $form.date, displayedComponents: .date)
-                
+
                 Picker("Type", selection: $form.isPlanned) {
                     Text("Planned").tag(true)
                     Text("Actual").tag(false)

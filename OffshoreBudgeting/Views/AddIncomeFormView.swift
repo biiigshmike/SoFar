@@ -140,18 +140,20 @@ struct AddIncomeFormView: View {
     @ViewBuilder
     private var sourceSection: some View {
         UBFormSection("Source", isUppercased: true) {
-            if #available(iOS 15.0, macOS 12.0, *) {
-                TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
-                    .ub_noAutoCapsAndCorrection()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("Income Source")
-            } else {
-                TextField("Paycheck", text: $viewModel.source)
-                    .ub_noAutoCapsAndCorrection()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("Income Source")
+            UBFormRow {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
+                        .ub_noAutoCapsAndCorrection()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Income Source")
+                } else {
+                    TextField("Paycheck", text: $viewModel.source)
+                        .ub_noAutoCapsAndCorrection()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Income Source")
+                }
             }
         }
     }
@@ -162,18 +164,20 @@ struct AddIncomeFormView: View {
     @ViewBuilder
     private var amountSection: some View {
         UBFormSection("Amount", isUppercased: true) {
-            if #available(iOS 15.0, macOS 12.0, *) {
-                TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
-                    .ub_decimalKeyboard()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("Income Amount")
-            } else {
-                TextField("1542.75", text: $viewModel.amountInput)
-                    .ub_decimalKeyboard()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("Income Amount")
+            UBFormRow {
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Income Amount")
+                } else {
+                    TextField("1542.75", text: $viewModel.amountInput)
+                        .ub_decimalKeyboard()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Income Amount")
+                }
             }
         }
     }
