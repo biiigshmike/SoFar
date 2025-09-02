@@ -160,6 +160,21 @@ struct EditSheetScaffold<Content: View>: View {
         .frame(minWidth: 680)
         #endif
         .ub_sheetPadding()
+#if os(macOS)
+        // macOS `Form` places text fields in a trailing "value" column which causes
+        // their content to right-align by default.  Force a leading alignment for
+        // the duration of this sheet and restore whatever alignment was previously
+        // configured when the sheet disappears so other views remain unaffected.
+        .onAppear {
+            previousTextFieldAlignment = NSTextField.appearance().alignment
+            NSTextField.appearance().alignment = .left
+        }
+        .onDisappear {
+            if let previousTextFieldAlignment {
+                NSTextField.appearance().alignment = previousTextFieldAlignment
+            }
+        }
+#endif
     }
 
     // MARK: Row Background
