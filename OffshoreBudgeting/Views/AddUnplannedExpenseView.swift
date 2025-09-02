@@ -95,35 +95,39 @@ struct AddUnplannedExpenseView: View {
 
             // Expense Description
             UBFormSection("Expense Description", isUppercased: false) {
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $vm.descriptionText, prompt: Text("Apple Store"))
-                        .ub_noAutoCapsAndCorrection()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Expense Description")
-                } else {
-                    TextField("Apple Store", text: $vm.descriptionText)
-                        .ub_noAutoCapsAndCorrection()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Expense Description")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $vm.descriptionText, prompt: Text("Apple Store"))
+                            .ub_noAutoCapsAndCorrection()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Expense Description")
+                    } else {
+                        TextField("Apple Store", text: $vm.descriptionText)
+                            .ub_noAutoCapsAndCorrection()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Expense Description")
+                    }
                 }
             }
 
             // Amount
             UBFormSection("Amount", isUppercased: false) {
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $vm.amountString, prompt: Text("299.99"))
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Amount")
-                } else {
-                    TextField("299.99", text: $vm.amountString)
-                        .ub_decimalKeyboard()
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityLabel("Amount")
+                UBFormRow {
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        TextField("", text: $vm.amountString, prompt: Text("299.99"))
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Amount")
+                    } else {
+                        TextField("299.99", text: $vm.amountString)
+                            .ub_decimalKeyboard()
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityLabel("Amount")
+                    }
                 }
             }
 

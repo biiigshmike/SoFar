@@ -33,11 +33,14 @@ struct RenameCardSheet: View {
             }
         ) {
             // MARK: Name field
-            TextField(
-                "", text: $name,
-                prompt: Text("Card Name"))
-                .ub_noAutoCapsAndCorrection()
-                .onAppear { name = originalName }
+            UBFormRow {
+                TextField(
+                    "", text: $name,
+                    prompt: Text("Card Name"))
+                    .ub_noAutoCapsAndCorrection()
+                    .onAppear { name = originalName }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
