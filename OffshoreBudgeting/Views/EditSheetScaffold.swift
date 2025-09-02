@@ -167,6 +167,11 @@ struct EditSheetScaffold<Content: View>: View {
         // configured when the sheet disappears so other views remain unaffected.
         .onAppear {
             // Capture the system default alignment so we can restore it later.
+            // Guard against repeated runs: SwiftUI may call `onAppear` multiple
+            // times as the view updates (e.g. while editing text fields).
+            // Re-applying alignment while a field is the first responder causes
+            // it to lose focus on every keystroke.  Only run once per sheet.
+            guard previousTextFieldAlignment == nil else { return }
             previousTextFieldAlignment = NSTextField().alignment
             updateTextFieldAlignment(to: .left)
         }
