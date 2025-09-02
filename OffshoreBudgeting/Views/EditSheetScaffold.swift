@@ -220,11 +220,7 @@ struct EditSheetScaffold<Content: View>: View {
         guard let view = view else { return }
         for subview in view.subviews {
             if let textField = subview as? NSTextField {
-                // Changing alignment on the active field editor causes it to lose focus.
-                // Skip any text field that is currently being edited.
-                if textField.currentEditor() == nil {
-                    textField.alignment = alignment
-                }
+                textField.alignment = alignment
             }
             applyAlignment(in: subview, alignment: alignment)
         }
