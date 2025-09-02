@@ -160,6 +160,20 @@ struct EditSheetScaffold<Content: View>: View {
         .frame(minWidth: 680)
         #endif
         .ub_sheetPadding()
+#if os(macOS)
+        // Force macOS text fields to use leading alignment so they match iOS behavior.
+        // We stash the previous global alignment to restore it when the scaffold disappears
+        // to avoid side effects elsewhere in the app.
+        .onAppear {
+            previousTextFieldAlignment = NSTextField.appearance().alignment
+            NSTextField.appearance().alignment = .left
+        }
+        .onDisappear {
+            if let previous = previousTextFieldAlignment {
+                NSTextField.appearance().alignment = previous
+            }
+        }
+#endif
     }
 
     // MARK: Row Background

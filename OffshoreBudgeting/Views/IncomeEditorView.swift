@@ -112,6 +112,7 @@ struct IncomeEditorView: View {
                 UBFormRow {
                     TextField("Paycheck", text: $form.source)
                         .ub_noAutoCapsAndCorrection()   // cross-platform fix
+                        .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
@@ -177,17 +178,23 @@ struct IncomeEditorView: View {
     }
     
     // MARK: Amount Field
-    /// Right-aligned numeric entry with decimal keyboard on iOS; cross-platform safe.
+    /// Monetary amount entry aligned to the leading edge on all platforms.
+    /// Wrapped in `UBFormRow` to avoid the trailing column that `Form` uses on macOS.
     private var amountField: some View {
-        HStack {
-            Text("Amount")
-            Spacer()
-            TextField("0.00", text: $form.amountString)
-                .multilineTextAlignment(.trailing)
-                .submitLabel(.done)
-            #if os(iOS)
-                .keyboardType(.decimalPad)
-            #endif
+        UBFormRow {
+            if #available(iOS 15.0, macOS 12.0, *) {
+                TextField("", text: $form.amountString, prompt: Text("0.00"))
+                    .multilineTextAlignment(.leading)
+                    .ub_decimalKeyboard()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Amount")
+            } else {
+                TextField("0.00", text: $form.amountString)
+                    .multilineTextAlignment(.leading)
+                    .ub_decimalKeyboard()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Amount")
+            }
         }
     }
     
