@@ -7,14 +7,10 @@ struct UBFormRow<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        #if os(macOS)
         HStack(alignment: .center) {
             content
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        #else
-        content
-        #endif
     }
 }
