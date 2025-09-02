@@ -128,6 +128,7 @@ struct CustomRecurrenceEditorView: View {
                         .textSelection(.enabled)
                 }
             }
+            .ub_textFieldAlignmentLeft()
             .navigationTitle("Custom Recurrence")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

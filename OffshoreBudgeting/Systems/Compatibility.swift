@@ -97,6 +97,18 @@ extension View {
         #endif
     }
 
+    // MARK: ub_textFieldAlignmentLeft()
+    /// Forces text fields to align left on macOS; no-op elsewhere.
+    /// Use on container views like `Form` to prevent trailing-aligned
+    /// `NSTextField` instances in macOS forms.
+    func ub_textFieldAlignmentLeft() -> some View {
+        #if os(macOS)
+        return self.modifier(UBTextFieldAlignmentLeft())
+        #else
+        return self
+        #endif
+    }
+
     // MARK: ub_formStyleGrouped()
     /// Applies a grouped form style on platforms that support it.  On iOS 16+
     /// and macOS 13+, `.formStyle(.grouped)` gives a subtle, neutral
@@ -150,6 +162,26 @@ extension View {
         }
     }
 }
+
+#if os(macOS)
+/// `ViewModifier` that temporarily forces all `NSTextField` instances to use
+/// a left text alignment while the modified view is visible. The previous
+/// alignment is restored on disappear so other views remain unaffected.
+private struct UBTextFieldAlignmentLeft: ViewModifier {
+    @State private var previousAlignment: NSTextAlignment = .left
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                previousAlignment = NSTextField.appearance().alignment
+                NSTextField.appearance().alignment = .left
+            }
+            .onDisappear {
+                NSTextField.appearance().alignment = previousAlignment
+            }
+    }
+}
+#endif
 
 // MARK: - UBColor (Cross-Platform Neutrals)
 
