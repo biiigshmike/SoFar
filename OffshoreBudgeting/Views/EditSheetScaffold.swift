@@ -93,6 +93,7 @@ struct EditSheetScaffold<Content: View>: View {
         NavigationStack {
             if #available(iOS 16.0, macOS 13.0, *) {
                 Form { content }
+                    .ub_textFieldAlignmentLeft()
                     .scrollContentBackground(.hidden)
                     .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
@@ -119,6 +120,7 @@ struct EditSheetScaffold<Content: View>: View {
                     }
             } else {
                 Form { content }
+                    .ub_textFieldAlignmentLeft()
                     .listRowBackground(rowBackground)
                     .background(themeManager.selectedTheme.background)
                     .ub_formStyleGrouped()
