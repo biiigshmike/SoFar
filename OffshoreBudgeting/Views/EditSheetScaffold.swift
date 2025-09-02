@@ -166,16 +166,13 @@ struct EditSheetScaffold<Content: View>: View {
         // the duration of this sheet and restore whatever alignment was previously
         // configured when the sheet disappears so other views remain unaffected.
         .onAppear {
-            // Only override alignment once per sheet presentation.
-            if previousTextFieldAlignment == nil {
-                previousTextFieldAlignment = NSTextField.appearance().alignment
-                NSTextField.appearance().alignment = .left
-            }
+            // Capture the system default alignment so we can restore it later.
+            previousTextFieldAlignment = NSTextField().alignment
+            updateTextFieldAlignment(to: .left)
         }
         .onDisappear {
             if let previousTextFieldAlignment {
-                NSTextField.appearance().alignment = previousTextFieldAlignment
-                self.previousTextFieldAlignment = nil
+                updateTextFieldAlignment(to: previousTextFieldAlignment)
             }
         }
 #endif
@@ -207,6 +204,26 @@ struct EditSheetScaffold<Content: View>: View {
 #endif
     }
 #if os(macOS)
-    // No additional helpers needed when using `NSTextField.appearance()`.
+    /// Walks the view hierarchy for all application windows and updates the
+    /// alignment of each `NSTextField` found.  This allows us to temporarily
+    /// override AppKit's default trailing alignment used inside `Form` value
+    /// columns.
+    private func updateTextFieldAlignment(to alignment: NSTextAlignment) {
+        for window in NSApplication.shared.windows {
+            applyAlignment(in: window.contentView, alignment: alignment)
+        }
+    }
+
+    /// Recursively set the alignment on each text field within the provided
+    /// view hierarchy.
+    private func applyAlignment(in view: NSView?, alignment: NSTextAlignment) {
+        guard let view = view else { return }
+        for subview in view.subviews {
+            if let textField = subview as? NSTextField {
+                textField.alignment = alignment
+            }
+            applyAlignment(in: subview, alignment: alignment)
+        }
+    }
 #endif
 }
