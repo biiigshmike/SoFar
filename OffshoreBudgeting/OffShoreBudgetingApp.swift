@@ -24,9 +24,10 @@ struct SoFarApp: App {
         CoreDataService.shared.ensureLoaded()
 #if os(macOS)
         // Ensure text fields default to leading alignment on macOS forms.
-        // Setting the appearance once at launch avoids focus loss that
-        // occurred when toggling alignment dynamically.
-        NSTextField.appearance().alignment = .left
+        // Using the cell appearance avoids repeatedly toggling alignment,
+        // which previously caused the field to lose focus after each
+        // keystroke. Applying this once at launch keeps typing continuous.
+        NSTextFieldCell.appearance().alignment = .left
 #endif
     }
     
