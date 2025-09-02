@@ -160,6 +160,23 @@ struct EditSheetScaffold<Content: View>: View {
         .frame(minWidth: 680)
         #endif
         .ub_sheetPadding()
+#if os(macOS)
+        // Force all NSTextField instances to use left text alignment while this
+        // scaffold is presented. SwiftUI’s macOS `Form` places single fields in
+        // the trailing column of its underlying grid which causes right-aligned
+        // text fields. By overriding the global appearance when the sheet
+        // appears, and restoring it on disappear, we ensure consistent leading
+        // alignment with iOS.
+        .onAppear {
+            previousTextFieldAlignment = NSTextField.appearance().alignment
+            NSTextField.appearance().alignment = .left
+        }
+        .onDisappear {
+            if let previousTextFieldAlignment {
+                NSTextField.appearance().alignment = previousTextFieldAlignment
+            }
+        }
+#endif
     }
 
     // MARK: Row Background
