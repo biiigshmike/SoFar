@@ -46,7 +46,6 @@ struct EditSheetScaffold<Content: View>: View {
     
 #if os(macOS)
 @State private var previousTextFieldAlignment: NSTextAlignment? = nil
-@State private var hasAdjustedTextFieldAlignment = false
 #endif
 
 
@@ -167,16 +166,13 @@ struct EditSheetScaffold<Content: View>: View {
         // the duration of this sheet and restore whatever alignment was previously
         // configured when the sheet disappears so other views remain unaffected.
         .onAppear {
-            guard !hasAdjustedTextFieldAlignment else { return }
             // Capture the system default alignment so we can restore it later.
             previousTextFieldAlignment = NSTextField().alignment
             updateTextFieldAlignment(to: .left)
-            hasAdjustedTextFieldAlignment = true
         }
         .onDisappear {
-            if hasAdjustedTextFieldAlignment, let previousTextFieldAlignment {
+            if let previousTextFieldAlignment {
                 updateTextFieldAlignment(to: previousTextFieldAlignment)
-                hasAdjustedTextFieldAlignment = false
             }
         }
 #endif
