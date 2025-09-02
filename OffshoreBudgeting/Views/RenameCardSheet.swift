@@ -38,6 +38,7 @@ struct RenameCardSheet: View {
                     "", text: $name,
                     prompt: Text("Card Name"))
                     .ub_noAutoCapsAndCorrection()
+                    .multilineTextAlignment(.leading)
                     .onAppear { name = originalName }
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
