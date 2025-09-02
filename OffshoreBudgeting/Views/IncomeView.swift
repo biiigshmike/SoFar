@@ -123,7 +123,7 @@ struct IncomeView: View {
                 Button(">>") { goToNextMonth() }
             }
 #if os(macOS)
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
 #else
             .buttonStyle(.bordered)
 #endif
