@@ -107,60 +107,28 @@ struct IncomeEditorView: View {
             onCancel: { _ = onCommit(.cancelled) },
             onSave: { handleSave() }
         ) {
-            // MARK: Source
-            UBFormSection("Source", isUppercased: true) {
+            // MARK: Details
+            Section {
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
-                        TextField("", text: $form.source, prompt: Text("Paycheck"))
-                            .ub_noAutoCapsAndCorrection()
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        TextField("Paycheck", text: $form.source)
-                            .ub_noAutoCapsAndCorrection()
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    TextField("Paycheck", text: $form.source)
+                        .ub_noAutoCapsAndCorrection()   // cross-platform fix
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-            }
 
-            // MARK: Amount
-            UBFormSection("Amount", isUppercased: true) {
-                UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
-                        TextField("", text: $form.amountString, prompt: Text("0.00"))
-                            .ub_decimalKeyboard()
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        TextField("0.00", text: $form.amountString)
-                            .ub_decimalKeyboard()
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
+                amountField
+                DatePicker("Date", selection: $form.date, displayedComponents: .date)
 
-            // MARK: Entry Date
-            UBFormSection("Entry Date", isUppercased: true) {
-                DatePicker("", selection: $form.date, displayedComponents: .date)
-                    .labelsHidden()
-                    .ub_compactDatePickerStyle()
-            }
-
-            // MARK: Type
-            UBFormSection("Type", isUppercased: true) {
-                Picker("", selection: $form.isPlanned) {
+                Picker("Type", selection: $form.isPlanned) {
                     Text("Planned").tag(true)
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
+            } header: {
+                Text("Details")
             }
-
+            
             // MARK: Recurrence
-            UBFormSection("Recurrence", isUppercased: true) {
+            Section {
                 Toggle("Recurring?", isOn: $form.isRecurring.animation())
                 if form.isRecurring {
                     Picker("Frequency", selection: $form.frequency) {
@@ -169,16 +137,18 @@ struct IncomeEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
-
+                    
                     if form.frequency != .none {
                         DatePicker("End Date", selection: $form.recurrenceEndDate, displayedComponents: .date)
                     }
-
+                    
                     if form.frequency == .semimonthly {
                         Stepper("Second Payday: \(form.secondBiMonthlyDay)", value: $form.secondBiMonthlyDay, in: 1...28)
                             .help("For twice-monthly schedules, choose the second day of the month.")
                     }
                 }
+            } header: {
+                Text("Recurrence")
             } footer: {
                 if form.isRecurring && form.frequency != .none {
                     Text("Projected occurrences will appear on the calendar within the selected window.")
@@ -204,6 +174,21 @@ struct IncomeEditorView: View {
     // MARK: Validation
     private var canSave: Bool {
         !form.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && form.amountDouble > 0
+    }
+    
+    // MARK: Amount Field
+    /// Right-aligned numeric entry with decimal keyboard on iOS; cross-platform safe.
+    private var amountField: some View {
+        HStack {
+            Text("Amount")
+            Spacer()
+            TextField("0.00", text: $form.amountString)
+                .multilineTextAlignment(.trailing)
+                .submitLabel(.done)
+            #if os(iOS)
+                .keyboardType(.decimalPad)
+            #endif
+        }
     }
     
     // MARK: Save Handler
