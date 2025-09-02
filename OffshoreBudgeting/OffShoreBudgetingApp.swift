@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 @main
 struct SoFarApp: App {
@@ -19,6 +22,12 @@ struct SoFarApp: App {
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
+#if os(macOS)
+        // Ensure text fields default to leading alignment on macOS forms.
+        // Setting the appearance once at launch avoids focus loss that
+        // occurred when toggling alignment dynamically.
+        NSTextField.appearance().alignment = .left
+#endif
     }
     
     var body: some Scene {
