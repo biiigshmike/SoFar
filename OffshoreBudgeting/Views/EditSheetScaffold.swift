@@ -98,6 +98,7 @@ struct EditSheetScaffold<Content: View>: View {
                     .background(themeManager.selectedTheme.background)
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
+                    .multilineTextAlignment(.leading)
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
@@ -123,6 +124,7 @@ struct EditSheetScaffold<Content: View>: View {
                     .background(themeManager.selectedTheme.background)
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
+                    .multilineTextAlignment(.leading)
                     .navigationTitle(title)
                     .toolbar {
                         // MARK: Cancel
