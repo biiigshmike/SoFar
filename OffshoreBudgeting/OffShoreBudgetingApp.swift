@@ -22,12 +22,7 @@ struct SoFarApp: App {
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
-#if os(macOS)
-        // Ensure text fields default to leading alignment on macOS forms.
-        // Setting the appearance once at launch avoids focus loss that
-        // occurred when toggling alignment dynamically.
-        NSTextField.appearance().alignment = .left
-#endif
+        // No macOS-specific setup required at the moment.
     }
     
     var body: some Scene {
@@ -50,6 +45,11 @@ struct SoFarApp: App {
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
+#if os(macOS)
+            // Ensure macOS text fields default to leading alignment without
+            // dynamically toggling it during editing, which can steal focus.
+            .multilineTextAlignment(.leading)
+#endif
 #if os(macOS)
             .frame(minWidth: 800, minHeight: 600)
 #endif
