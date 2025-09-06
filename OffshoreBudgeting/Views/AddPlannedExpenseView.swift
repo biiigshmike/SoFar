@@ -33,16 +33,16 @@ struct AddPlannedExpenseView: View {
     /// Guard to apply `defaultSaveAsGlobalPreset` only once on first load.
     @State private var didApplyDefaultGlobal = false
 
+    @State private var budgetSearchText = ""
+
+    private var filteredBudgets: [Budget] {
+        vm.allBudgets.filter { budgetSearchText.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(budgetSearchText) }
+    }
+
     // MARK: Layout
-    /// Height of the horizontal budget picker row.  We explicitly constrain
-    /// the picker height so it doesn’t expand to fill excessive space on
-    /// macOS sheets.  The height is slightly taller on iOS/iPadOS to account
-    /// for larger touch targets.
     #if os(macOS)
-    private let budgetPickerHeight: CGFloat = 100
     private let cardRowHeight: CGFloat = 150
     #else
-    private let budgetPickerHeight: CGFloat = 110
     private let cardRowHeight: CGFloat = 160
     #endif
 
@@ -84,32 +84,6 @@ struct AddPlannedExpenseView: View {
             isSaveEnabled: vm.canSave,
             onSave: { trySave() }
         ) {
-            // MARK: Budget Assignment
-            if showAssignBudgetToggle {
-                UBFormSection("Add to a budget now?", isUppercased: true) {
-                    Toggle("Select a Budget", isOn: $isAssigningToBudget)
-                }
-                if isAssigningToBudget {
-                    UBFormSection("Choose Budget", isUppercased: true) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: DS.Spacing.m) {
-                                ForEach(vm.allBudgets, id: \.objectID) { budget in
-                                    SelectCard(
-                                        title: budget.name ?? "Untitled",
-                                        isSelected: vm.selectedBudgetID == budget.objectID
-                                    )
-                                    .onTapGesture { vm.selectedBudgetID = budget.objectID }
-                                }
-                            }
-                            .padding(.horizontal, DS.Spacing.l)
-                        }
-                        .frame(height: budgetPickerHeight)
-                        .ub_pickerBackground()
-                        .ub_hideScrollIndicators()
-                    }
-                }
-            }
-
             // MARK: Card Selection
             UBFormSection("Card", isUppercased: true) {
                 CardPickerRow(
@@ -120,6 +94,18 @@ struct AddPlannedExpenseView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: cardRowHeight)
                 .ub_hideScrollIndicators()
+            }
+
+            // MARK: Budget Assignment
+            if showAssignBudgetToggle {
+                UBFormSection("Add to a budget now?", isUppercased: true) {
+                    Toggle("Select a Budget", isOn: $isAssigningToBudget)
+                }
+                if isAssigningToBudget {
+                    budgetPickerSection
+                }
+            } else {
+                budgetPickerSection
             }
 
             // MARK: Category Selection
@@ -255,6 +241,32 @@ struct AddPlannedExpenseView: View {
                 .present(alert, animated: true)
             #endif
             return false
+        }
+    }
+
+    @ViewBuilder
+    private var budgetPickerSection: some View {
+        UBFormSection("Choose Budget", isUppercased: true) {
+            UBFormRow {
+                TextField("Search Budgets", text: $budgetSearchText)
+                    .ub_noAutoCapsAndCorrection()
+            }
+            UBFormRow {
+                Picker(
+                    selection: $vm.selectedBudgetID,
+                    label: HStack {
+                        Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                    }
+                ) {
+                    ForEach(filteredBudgets, id: \.objectID) { budget in
+                        Text(budget.name ?? "Untitled")
+                            .tag(Optional(budget.objectID))
+                    }
+                }
+                .pickerStyle(.menu)
+            }
         }
     }
 }
