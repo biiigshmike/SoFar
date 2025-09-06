@@ -147,7 +147,9 @@ struct BudgetDetailsView: View {
                                         isPresented: $isShowingAddMenu,
                                         titleVisibility: .visible) {
                         Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
+                            .buttonStyle(.plain)
                         Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
+                            .buttonStyle(.plain)
                     }
                 }
 #else
@@ -210,6 +212,7 @@ struct BudgetDetailsView: View {
                 isPresentingAddUnplannedSheet = true
             }
         }
+        .buttonStyle(.plain)
         .padding(DS.Spacing.m)
         .frame(minWidth: 200, alignment: .leading)
     }
