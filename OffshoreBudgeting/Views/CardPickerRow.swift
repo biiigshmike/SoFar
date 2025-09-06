@@ -50,9 +50,10 @@ struct CardPickerRow: View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: DS.Spacing.l) {
                 if includeNoneTile {
-                    NoCardTile(isSelected: selectedCardID == nil)
-                        .frame(height: tileHeight)
-                        .onTapGesture { selectedCardID = nil }
+                    NoCardTile(isSelected: selectedCardID == nil) {
+                        selectedCardID = nil
+                    }
+                    .frame(height: tileHeight)
                 }
                 ForEach(allCards, id: \.objectID) { managedCard in
                     // MARK: Bridge Core Data → UI model
