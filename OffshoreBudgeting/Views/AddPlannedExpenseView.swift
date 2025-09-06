@@ -250,6 +250,8 @@ struct AddPlannedExpenseView: View {
             UBFormRow {
                 TextField("Search Budgets", text: $budgetSearchText)
                     .ub_noAutoCapsAndCorrection()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             UBFormRow {
                 Picker(
@@ -267,6 +269,7 @@ struct AddPlannedExpenseView: View {
                 }
                 .pickerStyle(.menu)
                 .id(budgetSearchText)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .onChange(of: budgetSearchText) {
