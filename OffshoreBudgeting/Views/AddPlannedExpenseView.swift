@@ -253,11 +253,7 @@ struct AddPlannedExpenseView: View {
             }
             UBFormRow {
                 Picker(
-                    selection: $vm.selectedBudgetID,
-                    label: HStack {
-                        Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
-                        Spacer()
-                    }
+                    selection: $vm.selectedBudgetID
                 ) {
                     Text("Select Budget")
                         .tag(NSManagedObjectID?.none)
@@ -265,15 +261,19 @@ struct AddPlannedExpenseView: View {
                         Text(budget.name ?? "Untitled")
                             .tag(Optional(budget.objectID))
                     }
+                } label: {
+                    Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .pickerStyle(.menu)
                 .id(budgetSearchText)
             }
         }
-        .onChange(of: budgetSearchText) { _ in
-            // Auto-select first matching budget when search text changes.
-            if !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
-                vm.selectedBudgetID = filteredBudgets.first?.objectID
+        .onChange(of: budgetSearchText) {
+            // Clear selection when search text changes or no match is found.
+            if budgetSearchText.isEmpty ||
+                !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
+                vm.selectedBudgetID = nil
             }
         }
     }

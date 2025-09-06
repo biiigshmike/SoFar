@@ -19,6 +19,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
 
     // MARK: Identity
     private let plannedExpenseID: NSManagedObjectID?
+    private let preselectedBudgetID: NSManagedObjectID?
     let isEditing: Bool
     /// When false, a budget is optional (used for preset-only creation).
     private let requiresBudgetSelection: Bool
@@ -49,9 +50,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.context = context
         self.plannedExpenseID = plannedExpenseID
+        self.preselectedBudgetID = preselectedBudgetID
         self.isEditing = plannedExpenseID != nil
         self.requiresBudgetSelection = requiresBudgetSelection
-        self.selectedBudgetID = preselectedBudgetID
+        self.selectedBudgetID = nil
         if let d = initialDate { self.transactionDate = d }
     }
 
@@ -77,7 +79,9 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             // If preselected not provided, default to most-recent budget by start date.
             // For preset creation where a budget is optional, we intentionally
             // leave `selectedBudgetID` nil until the user opts to assign one.
-            if requiresBudgetSelection && selectedBudgetID == nil {
+            if let pre = preselectedBudgetID {
+                selectedBudgetID = pre
+            } else if requiresBudgetSelection {
                 selectedBudgetID = allBudgets.first?.objectID
             }
             if selectedCategoryID == nil {
