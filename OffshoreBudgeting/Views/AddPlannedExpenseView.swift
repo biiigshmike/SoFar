@@ -261,9 +261,16 @@ struct AddPlannedExpenseView: View {
                             let matching = vm.allBudgets.filter { budget in
                                 newValue.isEmpty || (budget.name ?? "").localizedCaseInsensitiveContains(newValue)
                             }
-                            if newValue.isEmpty ||
-                                !matching.contains(where: { $0.objectID == vm.selectedBudgetID }) {
+                            if newValue.isEmpty {
                                 vm.selectedBudgetID = nil
+                            } else if let current = vm.selectedBudgetID,
+                                      matching.contains(where: { $0.objectID == current }) {
+                                // Keep existing selection if it still matches
+                            } else {
+                                // Auto-select the first matching budget so the
+                                // menu label updates dynamically without the
+                                // user opening the dropdown.
+                                vm.selectedBudgetID = matching.first?.objectID
                             }
                         }
                     )
@@ -287,6 +294,7 @@ struct AddPlannedExpenseView: View {
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .menuStyle(.borderlessButton)
                 .id(budgetSearchText)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
