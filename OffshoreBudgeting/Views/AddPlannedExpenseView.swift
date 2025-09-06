@@ -36,9 +36,7 @@ struct AddPlannedExpenseView: View {
     @State private var budgetSearchText = ""
 
     private var filteredBudgets: [Budget] {
-        let search = budgetSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !search.isEmpty else { return vm.allBudgets }
-        return vm.allBudgets.filter { ($0.name ?? "").localizedCaseInsensitiveContains(search) }
+        vm.allBudgets.filter { budgetSearchText.isEmpty || ($0.name ?? "").localizedCaseInsensitiveContains(budgetSearchText) }
     }
 
     // MARK: Layout
@@ -254,14 +252,18 @@ struct AddPlannedExpenseView: View {
                     .ub_noAutoCapsAndCorrection()
             }
             UBFormRow {
-                Picker(selection: $vm.selectedBudgetID) {
+                Picker(
+                    selection: $vm.selectedBudgetID,
+                    label: HStack {
+                        Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                    }
+                ) {
                     ForEach(filteredBudgets, id: \.objectID) { budget in
                         Text(budget.name ?? "Untitled")
                             .tag(Optional(budget.objectID))
                     }
-                } label: {
-                    Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .pickerStyle(.menu)
             }
