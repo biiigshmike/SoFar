@@ -83,7 +83,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             if selectedCategoryID == nil {
                 selectedCategoryID = allCategories.first?.objectID
             }
-            // Leave `selectedCardID` nil by default so the form can opt for "No Card".
+            // Leave `selectedCardID` nil by default so the form can choose "No Card".
         }
     }
 
