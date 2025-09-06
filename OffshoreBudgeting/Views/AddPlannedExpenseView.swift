@@ -257,7 +257,6 @@ struct AddPlannedExpenseView: View {
                     label: HStack {
                         Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
                         Spacer()
-                        Image(systemName: "chevron.down")
                     }
                 ) {
                     ForEach(filteredBudgets, id: \.objectID) { budget in
@@ -266,6 +265,7 @@ struct AddPlannedExpenseView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .id(budgetSearchText)
             }
         }
     }
