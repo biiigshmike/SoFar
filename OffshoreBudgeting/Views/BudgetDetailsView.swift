@@ -210,6 +210,7 @@ struct BudgetDetailsView: View {
                 isPresentingAddUnplannedSheet = true
             }
         }
+        .buttonStyle(.plain)
         .padding(DS.Spacing.m)
         .frame(minWidth: 200, alignment: .leading)
     }
