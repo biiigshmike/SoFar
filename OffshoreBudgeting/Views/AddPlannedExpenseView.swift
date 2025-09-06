@@ -248,36 +248,32 @@ struct AddPlannedExpenseView: View {
     private var budgetPickerSection: some View {
         UBFormSection("Choose Budget", isUppercased: true) {
             UBFormRow {
-                Menu {
-                    TextField("Search Budgets", text: $budgetSearchText)
-                        .ub_noAutoCapsAndCorrection()
-                    Divider()
-                    if filteredBudgets.isEmpty {
-                        Text("No Budgets")
-                    } else {
-                        ForEach(filteredBudgets, id: \.objectID) { budget in
-                            Button(budget.name ?? "Untitled") {
-                                vm.selectedBudgetID = budget.objectID
-                                budgetSearchText = ""
-                            }
-                        }
-                    }
-                } label: {
-                    HStack {
+                TextField("Search Budgets", text: $budgetSearchText)
+                    .ub_noAutoCapsAndCorrection()
+            }
+            UBFormRow {
+                Picker(
+                    selection: $vm.selectedBudgetID,
+                    label: HStack {
                         Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
                         Spacer()
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
+                    }
+                ) {
+                    Text("Select Budget")
+                        .tag(NSManagedObjectID?.none)
+                    ForEach(filteredBudgets, id: \.objectID) { budget in
+                        Text(budget.name ?? "Untitled")
+                            .tag(Optional(budget.objectID))
                     }
                 }
+                .pickerStyle(.menu)
                 .id(budgetSearchText)
             }
         }
-        .onChange(of: budgetSearchText) { _, _ in
-            // Reset selection when the search no longer matches the current budget.
-            if budgetSearchText.isEmpty || !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
-                vm.selectedBudgetID = nil
+        .onChange(of: budgetSearchText) { _ in
+            // Auto-select first matching budget when search text changes.
+            if !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
+                vm.selectedBudgetID = filteredBudgets.first?.objectID
             }
         }
     }
