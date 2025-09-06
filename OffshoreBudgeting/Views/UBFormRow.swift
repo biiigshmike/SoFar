@@ -12,11 +12,5 @@ struct UBFormRow<Content: View>: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-#if os(macOS)
-        // On macOS, the default form row style can right-align controls.
-        // Applying a plain text field style forces leading alignment and
-        // removes the extra trailing "value" column behavior.
-        .textFieldStyle(.plain)
-#endif
     }
 }
