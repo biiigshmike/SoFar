@@ -153,15 +153,11 @@ struct BudgetDetailsView: View {
                     }
                 }
 #else
-                Button {
-                    isShowingAddMenu = true
+                Menu {
+                    Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
+                    Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
                 } label: {
                     Label("Add Expense", systemImage: "plus")
-                }
-                .popover(isPresented: $isShowingAddMenu,
-                         attachmentAnchor: .rect(.bounds),
-                         arrowEdge: .top) {
-                    addMenuPopover
                 }
 #endif
             }
