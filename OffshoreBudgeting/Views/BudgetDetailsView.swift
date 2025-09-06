@@ -30,8 +30,7 @@ struct BudgetDetailsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: UI State
-    /// Controls the presentation of the “Add…” menu + sheets.
-    @State private var isShowingAddMenu = false
+    /// Controls the presentation of add-expense sheets.
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
 
@@ -125,43 +124,12 @@ struct BudgetDetailsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-#if os(iOS)
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    Button {
-                        isShowingAddMenu = true
-                    } label: {
-                        Label("Add Expense", systemImage: "plus")
-                    }
-                    .popover(isPresented: $isShowingAddMenu,
-                             attachmentAnchor: .rect(.bounds),
-                             arrowEdge: .top) {
-                        addMenuPopover
-                    }
-                } else {
-                    Button {
-                        isShowingAddMenu = true
-                    } label: {
-                        Label("Add Expense", systemImage: "plus")
-                    }
-                    .confirmationDialog("Add",
-                                        isPresented: $isShowingAddMenu,
-                                        titleVisibility: .visible) {
-                        Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
-                        Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
-                    }
-                }
-#else
-                Button {
-                    isShowingAddMenu = true
+                Menu {
+                    Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
+                    Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
                 } label: {
                     Label("Add Expense", systemImage: "plus")
                 }
-                .popover(isPresented: $isShowingAddMenu,
-                         attachmentAnchor: .rect(.bounds),
-                         arrowEdge: .top) {
-                    addMenuPopover
-                }
-#endif
             }
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
@@ -196,25 +164,6 @@ struct BudgetDetailsView: View {
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
-    }
-
-    @ViewBuilder
-    private var addMenuPopover: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            Button("Add Planned Expense") {
-                isShowingAddMenu = false
-                isPresentingAddPlannedSheet = true
-            }
-            .buttonStyle(.plain)
-
-            Button("Add Variable Expense") {
-                isShowingAddMenu = false
-                isPresentingAddUnplannedSheet = true
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(DS.Spacing.m)
-        .frame(minWidth: 200, alignment: .leading)
     }
 
     // MARK: Helpers
