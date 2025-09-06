@@ -248,35 +248,47 @@ struct AddPlannedExpenseView: View {
     private var budgetPickerSection: some View {
         UBFormSection("Choose Budget", isUppercased: true) {
             UBFormRow {
-                TextField("Search Budgets", text: $budgetSearchText)
-                    .ub_noAutoCapsAndCorrection()
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            UBFormRow {
-                Picker(
-                    selection: $vm.selectedBudgetID
-                ) {
-                    Text("Select Budget")
-                        .tag(NSManagedObjectID?.none)
-                    ForEach(filteredBudgets, id: \.objectID) { budget in
-                        Text(budget.name ?? "Untitled")
-                            .tag(Optional(budget.objectID))
-                    }
-                } label: {
-                    Text(vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .pickerStyle(.menu)
-                .id(budgetSearchText)
+                // Use a custom binding so the selection is cleared immediately
+                // when the search text changes to a string that doesn't include
+                // the currently selected budget.  This avoids transient invalid
+                // picker selections that trigger console warnings.
+                TextField(
+                    "Search Budgets",
+                    text: Binding(
+                        get: { budgetSearchText },
+                        set: { newValue in
+                            budgetSearchText = newValue
+                            let matching = vm.allBudgets.filter { budget in
+                                newValue.isEmpty || (budget.name ?? "").localizedCaseInsensitiveContains(newValue)
+                            }
+                            if newValue.isEmpty ||
+                                !matching.contains(where: { $0.objectID == vm.selectedBudgetID }) {
+                                vm.selectedBudgetID = nil
+                            }
+                        }
+                    )
+                )
+                .ub_noAutoCapsAndCorrection()
+                .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }
-        .onChange(of: budgetSearchText) {
-            // Clear selection when search text changes or no match is found.
-            if budgetSearchText.isEmpty ||
-                !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
-                vm.selectedBudgetID = nil
+            UBFormRow {
+                // Use a Menu instead of a Picker to prevent warnings about
+                // invalid selections when the available budgets change.
+                Menu {
+                    ForEach(filteredBudgets, id: \.objectID) { budget in
+                        Button(budget.name ?? "Untitled") {
+                            vm.selectedBudgetID = budget.objectID
+                        }
+                    }
+                } label: {
+                    Text(
+                        vm.allBudgets.first(where: { $0.objectID == vm.selectedBudgetID })?.name ?? "Select Budget"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .id(budgetSearchText)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
