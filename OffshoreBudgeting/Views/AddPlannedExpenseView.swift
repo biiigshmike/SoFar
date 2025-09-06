@@ -248,15 +248,8 @@ struct AddPlannedExpenseView: View {
     private var budgetPickerSection: some View {
         UBFormSection("Choose Budget", isUppercased: true) {
             UBFormRow {
-                if #available(iOS 15.0, macOS 12.0, *) {
-                    TextField("", text: $budgetSearchText, prompt: Text("Search Budgets"))
-                        .ub_noAutoCapsAndCorrection()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    TextField("Search Budgets", text: $budgetSearchText)
-                        .ub_noAutoCapsAndCorrection()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                TextField("Search Budgets", text: $budgetSearchText)
+                    .ub_noAutoCapsAndCorrection()
             }
             UBFormRow {
                 Picker(
