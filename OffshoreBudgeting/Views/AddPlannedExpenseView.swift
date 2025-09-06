@@ -259,6 +259,8 @@ struct AddPlannedExpenseView: View {
                         Spacer()
                     }
                 ) {
+                    Text("Select Budget")
+                        .tag(NSManagedObjectID?.none)
                     ForEach(filteredBudgets, id: \.objectID) { budget in
                         Text(budget.name ?? "Untitled")
                             .tag(Optional(budget.objectID))
@@ -266,6 +268,12 @@ struct AddPlannedExpenseView: View {
                 }
                 .pickerStyle(.menu)
                 .id(budgetSearchText)
+            }
+        }
+        .onChange(of: budgetSearchText) { _ in
+            // Auto-select first matching budget when search text changes.
+            if !filteredBudgets.contains(where: { $0.objectID == vm.selectedBudgetID }) {
+                vm.selectedBudgetID = filteredBudgets.first?.objectID
             }
         }
     }
