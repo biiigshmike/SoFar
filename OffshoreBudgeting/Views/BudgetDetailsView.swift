@@ -205,13 +205,10 @@ struct BudgetDetailsView: View {
                 isShowingAddMenu = false
                 isPresentingAddPlannedSheet = true
             }
-            .buttonStyle(.plain)
-
             Button("Add Variable Expense") {
                 isShowingAddMenu = false
                 isPresentingAddUnplannedSheet = true
             }
-            .buttonStyle(.plain)
         }
         .padding(DS.Spacing.m)
         .frame(minWidth: 200, alignment: .leading)

@@ -90,6 +90,10 @@ struct UBEmptyState: View {
             if let primaryButtonTitle, let onPrimaryTap {
                 Button(action: onPrimaryTap) {
                     Label(primaryButtonTitle, systemImage: "plus")
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.vertical, DS.Spacing.m)
+                        .background(Color.primary.opacity(0.08))
+                        .clipShape(Capsule())
                 }
                 .buttonStyle(.plain) // keep it neutral (no blue)
             }
