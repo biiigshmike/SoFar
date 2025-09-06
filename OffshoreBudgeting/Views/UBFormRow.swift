@@ -7,9 +7,10 @@ struct UBFormRow<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        // Place the content in a stretching container so controls fill
-        // the available width and stay pinned to the leading edge on macOS.
-        content
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .center) {
+            content
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
