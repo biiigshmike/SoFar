@@ -152,7 +152,8 @@ struct IncomeView: View {
                             isCurrentMonth: isCurrentMonth,
                             selectedDate: selectedDate,
                             selectedRange: selectedRange,
-                            summary: viewModel.summary(for: date)
+                            summary: viewModel.summary(for: date),
+                            selectedOverride: viewModel.selectedDate
                         )
                     }
                     .firstWeekday(.sunday)
@@ -188,7 +189,8 @@ struct IncomeView: View {
                             isCurrentMonth: isCurrentMonth,
                             selectedDate: selectedDate,
                             selectedRange: selectedRange,
-                            summary: viewModel.summary(for: date)
+                            summary: viewModel.summary(for: date),
+                            selectedOverride: viewModel.selectedDate
                         )
                     }
                     .firstWeekday(.sunday)
@@ -325,6 +327,8 @@ struct IncomeView: View {
             viewModel.selectedDate = target
             calendarScrollDate = target
         }
+        // Load incomes for the newly selected day
+        viewModel.load(day: target)
         // Reset the scroll target on the next run loop cycle without animation
         DispatchQueue.main.async {
             withTransaction(Transaction(animation: nil)) {
