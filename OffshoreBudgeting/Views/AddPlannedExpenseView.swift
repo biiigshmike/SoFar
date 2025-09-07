@@ -97,14 +97,14 @@ struct AddPlannedExpenseView: View {
             }
 
             // MARK: Budget Assignment
-            if showAssignBudgetToggle {
+            if showAssignBudgetToggle && !vm.allBudgets.isEmpty {
                 UBFormSection("Add to a budget now?", isUppercased: true) {
                     Toggle("Select a Budget", isOn: $isAssigningToBudget)
                 }
                 if isAssigningToBudget {
                     budgetPickerSection
                 }
-            } else {
+            } else if !showAssignBudgetToggle {
                 budgetPickerSection
             }
 
