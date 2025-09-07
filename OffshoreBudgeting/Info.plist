@@ -6,7 +6,7 @@
          CFBundleDisplayName is what users see. We'll set the full name here for macOS.
          iOS will override via its own InfoPlist.strings. -->
     <key>CFBundleDisplayName</key>
-    <string>Offshore Budgeting</string>
+    <string>Offshore</string>
 
     <!-- MARK: Internal bundle name
          Optional, internal/short name (not shown under the iOS icon). -->
