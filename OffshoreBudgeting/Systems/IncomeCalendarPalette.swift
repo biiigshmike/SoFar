@@ -35,6 +35,8 @@ struct UBDayView: DayView {
     var selectedDate: Binding<Date?>?
     var selectedRange: Binding<MDateRange?>?
     let summary: (planned: Double, actual: Double)?
+    /// External date used to force selection updates when navigation buttons are tapped.
+    let selectedOverride: Date?
 
     @Environment(\.colorScheme) private var scheme
 
@@ -103,6 +105,9 @@ struct UBDayView: DayView {
     func createRangeSelectionView() -> AnyView { AnyView(EmptyView()) }
 
     private func isSelectedDay() -> Bool {
+        if let override = selectedOverride {
+            return Calendar.current.isDate(override, inSameDayAs: date)
+        }
         guard let selected = selectedDate?.wrappedValue else { return false }
         return Calendar.current.isDate(selected, inSameDayAs: date)
     }
