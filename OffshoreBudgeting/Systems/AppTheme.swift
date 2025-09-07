@@ -259,6 +259,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme {
         didSet {
+            applyAppearance()
             if !isApplyingRemoteChange { save() }
         }
     }
@@ -306,6 +307,7 @@ final class ThemeManager: ObservableObject {
                 selectedTheme = .classic
             }
         }
+        applyAppearance()
     }
 
     private func save() {
@@ -313,6 +315,41 @@ final class ThemeManager: ObservableObject {
         guard Self.isSyncEnabled else { return }
         ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
         ubiquitousStore.synchronize()
+    }
+
+    /// Applies the appropriate system appearance for the selected theme.
+    ///
+    /// When switching back to `.system` from a custom dark theme we must
+    /// explicitly reset the window style so that the app once again follows
+    /// the device's light/dark setting. Without doing this, UIKit/AppKit can
+    /// retain the previous override, requiring an extra tap to update.
+    private func applyAppearance() {
+        #if canImport(UIKit)
+        let style: UIUserInterfaceStyle
+        switch selectedTheme {
+        case .system:
+            style = .unspecified
+        case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
+            style = .light
+        case .midnight, .forest, .sunset, .nebula:
+            style = .dark
+        }
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .forEach { $0.overrideUserInterfaceStyle = style }
+        #elseif canImport(AppKit)
+        let appearance: NSAppearance?
+        switch selectedTheme {
+        case .system:
+            appearance = nil
+        case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
+            appearance = NSAppearance(named: .aqua)
+        case .midnight, .forest, .sunset, .nebula:
+            appearance = NSAppearance(named: .darkAqua)
+        }
+        NSApp.appearance = appearance
+        #endif
     }
 
     @objc private func storeChanged(_ note: Notification) {
