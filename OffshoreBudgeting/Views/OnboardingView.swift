@@ -73,12 +73,14 @@ private struct CardsStep: View {
     @State private var showIntro: Bool = true
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            CardsView()
-            if showIntro {
-                introOverlay
-            } else {
-                doneButton
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                CardsView()
+                if showIntro {
+                    introOverlay
+                } else {
+                    doneButton
+                }
             }
         }
     }
@@ -159,12 +161,14 @@ private struct CategoriesStep: View {
     @State private var showIntro: Bool = true
 
     var body: some View {
-        ZStack (alignment: .bottom) {
-            ExpenseCategoryManagerView()
-            if showIntro {
-                introOverlay
-            } else {
-                doneButton
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                ExpenseCategoryManagerView()
+                if showIntro {
+                    introOverlay
+                } else {
+                    doneButton
+                }
             }
         }
     }
