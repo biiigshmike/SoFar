@@ -28,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Offshore Budgeting.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Offshore.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -103,7 +103,7 @@
 		4CF220382E4A33BA00AD5F29 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */,
+				4CF220372E4A33BA00AD5F29 /* Offshore.app */,
 				4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */,
 				4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */,
 			);
@@ -133,7 +133,7 @@
 				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
 			productName = SoFar;
-			productReference = 4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */;
+			productReference = 4CF220372E4A33BA00AD5F29 /* Offshore.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
@@ -422,7 +422,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
+				INFOPLIST_KEY_CFBundleDisplayName = Offshore;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -440,8 +440,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "Offshore Budgeting";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore";
+				PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -469,7 +469,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
+				INFOPLIST_KEY_CFBundleDisplayName = Offshore;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -487,8 +487,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "Offshore Budgeting";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore";
+				PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -519,7 +519,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -542,7 +542,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
