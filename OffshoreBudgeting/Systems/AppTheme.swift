@@ -317,6 +317,18 @@ final class ThemeManager: ObservableObject {
         ubiquitousStore.synchronize()
     }
 
+    /// Forces the app to re-evaluate the current theme.
+    ///
+    /// Useful when the system's appearance changes while the user has
+    /// selected the `.system` theme, ensuring our windows immediately follow
+    /// the new light/dark mode without requiring an extra tap.
+    func refreshSystemAppearance() {
+        applyAppearance()
+        // Trigger another view update so dynamic colors resolve with the
+        // latest system setting.
+        objectWillChange.send()
+    }
+
     /// Applies the appropriate system appearance for the selected theme.
     ///
     /// When switching back to `.system` from a custom dark theme we must
