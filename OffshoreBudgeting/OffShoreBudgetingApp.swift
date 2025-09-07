@@ -44,7 +44,7 @@ struct SoFarApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
-            .applyPreferredColorScheme(themeManager.selectedTheme.colorScheme)
+            .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without
             // dynamically toggling it during editing, which can steal focus.
