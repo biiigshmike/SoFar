@@ -14,6 +14,7 @@ import AppKit
 struct SoFarApp: App {
     // MARK: Dependencies
     @StateObject private var themeManager = ThemeManager()
+    @Environment(\.colorScheme) private var systemColorScheme
     
     // MARK: Onboarding State
     /// Persisted flag indicating whether the intro flow has been completed.
@@ -44,6 +45,13 @@ struct SoFarApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
+            .onChange(of: systemColorScheme) { _ in
+                // When following the system theme, reapply the appearance so
+                // windows immediately reflect the updated light/dark mode.
+                if themeManager.selectedTheme == .system {
+                    themeManager.refreshSystemAppearance()
+                }
+            }
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without
