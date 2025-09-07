@@ -44,7 +44,7 @@ struct SoFarApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
-            .preferredColorScheme(themeManager.selectedTheme.colorScheme)
+            .applyPreferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without
             // dynamically toggling it during editing, which can steal focus.
@@ -57,5 +57,21 @@ struct SoFarApp: App {
 #if os(macOS)
         .defaultSize(width: 1000, height: 800)
 #endif
+    }
+}
+
+// MARK: - View Extensions
+private extension View {
+    /// Applies `.preferredColorScheme` only when a specific scheme is provided.
+    /// This prevents the app from requiring extra taps when reverting back to
+    /// the system appearance, ensuring the interface immediately reflects the
+    /// device's current light or dark mode.
+    @ViewBuilder
+    func applyPreferredColorScheme(_ scheme: ColorScheme?) -> some View {
+        if let scheme {
+            preferredColorScheme(scheme)
+        } else {
+            self
+        }
     }
 }
