@@ -182,6 +182,7 @@ struct SettingsView: View {
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
+        .toggleStyle(SwitchToggleStyle(tint: themeManager.selectedTheme.tint))
         .navigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
             Button("Erase", role: .destructive) {
