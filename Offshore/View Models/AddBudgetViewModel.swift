@@ -174,7 +174,7 @@ final class AddBudgetViewModel: ObservableObject {
     // MARK: - Private (EDIT)
     private func updateExistingBudget(with objectID: NSManagedObjectID) throws {
         guard let budget = try context.existingObject(with: objectID) as? Budget else {
-            throw NSError(domain: "SoFar.EditBudget", code: 1, userInfo: [NSLocalizedDescriptionKey: "Budget not found."])
+            throw NSError(domain: "Offshore.EditBudget", code: 1, userInfo: [NSLocalizedDescriptionKey: "Budget not found."])
         }
 
         budget.name = budgetName.trimmingCharacters(in: .whitespacesAndNewlines)

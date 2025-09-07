@@ -16,52 +16,52 @@
 			containerPortal = 4CF2202F2E4A33B900AD5F29 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4CF220362E4A33BA00AD5F29;
-			remoteInfo = SoFar;
+                        remoteInfo = Offshore;
 		};
 		4CF220502E4A33BC00AD5F29 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4CF2202F2E4A33B900AD5F29 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4CF220362E4A33BA00AD5F29;
-			remoteInfo = SoFar;
+                        remoteInfo = Offshore;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Offshore Budgeting.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+                4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Offshore.app; sourceTree = BUILT_PRODUCTS_DIR; };
+                4CF220452E4A33BC00AD5F29 /* OffshoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+                4CF2204F2E4A33BC00AD5F29 /* OffshoreUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4C66A7752E53C0DE004F3F6F /* Exceptions for "OffshoreBudgeting" folder in "OffshoreBudgeting" target */ = {
+                4C66A7752E53C0DE004F3F6F /* Exceptions for "Offshore" folder in "Offshore" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
+                                target = 4CF220362E4A33BA00AD5F29 /* Offshore */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */ = {
+                4CF220392E4A33BA00AD5F29 /* Offshore */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4C66A7752E53C0DE004F3F6F /* Exceptions for "OffshoreBudgeting" folder in "OffshoreBudgeting" target */,
+                                4C66A7752E53C0DE004F3F6F /* Exceptions for "Offshore" folder in "Offshore" target */,
 			);
-			path = OffshoreBudgeting;
+                        path = Offshore;
 			sourceTree = "<group>";
 		};
-		4CF220482E4A33BC00AD5F29 /* SoFarTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SoFarTests;
-			sourceTree = "<group>";
-		};
-		4CF220522E4A33BC00AD5F29 /* SoFarUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SoFarUITests;
-			sourceTree = "<group>";
-		};
+                4CF220482E4A33BC00AD5F29 /* OffshoreTests */ = {
+                        isa = PBXFileSystemSynchronizedRootGroup;
+                        path = OffshoreTests;
+                        sourceTree = "<group>";
+                };
+                4CF220522E4A33BC00AD5F29 /* OffshoreUITests */ = {
+                        isa = PBXFileSystemSynchronizedRootGroup;
+                        path = OffshoreUITests;
+                        sourceTree = "<group>";
+                };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,32 +90,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4CF2202E2E4A33B900AD5F29 = {
-			isa = PBXGroup;
-			children = (
-				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
-				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
-				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
-				4CF220382E4A33BA00AD5F29 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		4CF220382E4A33BA00AD5F29 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */,
-				4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */,
-				4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
+                4CF2202E2E4A33B900AD5F29 = {
+                        isa = PBXGroup;
+                        children = (
+                                4CF220392E4A33BA00AD5F29 /* Offshore */,
+                                4CF220482E4A33BC00AD5F29 /* OffshoreTests */,
+                                4CF220522E4A33BC00AD5F29 /* OffshoreUITests */,
+                                4CF220382E4A33BA00AD5F29 /* Products */,
+                        );
+                        sourceTree = "<group>";
+                };
+                4CF220382E4A33BA00AD5F29 /* Products */ = {
+                        isa = PBXGroup;
+                        children = (
+                                4CF220372E4A33BA00AD5F29 /* Offshore.app */,
+                                4CF220452E4A33BC00AD5F29 /* OffshoreTests.xctest */,
+                                4CF2204F2E4A33BC00AD5F29 /* OffshoreUITests.xctest */,
+                        );
+                        name = Products;
+                        sourceTree = "<group>";
+                };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */ = {
+                4CF220362E4A33BA00AD5F29 /* Offshore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgeting" */;
+                        buildConfigurationList = 4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "Offshore" */;
 			buildPhases = (
 				4CF220332E4A33BA00AD5F29 /* Sources */,
 				4CF220342E4A33BA00AD5F29 /* Frameworks */,
@@ -125,20 +125,20 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
-			);
-			name = OffshoreBudgeting;
+                        fileSystemSynchronizedGroups = (
+                                4CF220392E4A33BA00AD5F29 /* Offshore */,
+                        );
+                        name = Offshore;
 			packageProductDependencies = (
 				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
-			productName = SoFar;
-			productReference = 4CF220372E4A33BA00AD5F29 /* Offshore Budgeting.app */;
+                        productName = Offshore;
+                        productReference = 4CF220372E4A33BA00AD5F29 /* Offshore.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
+                4CF220442E4A33BC00AD5F29 /* OffshoreTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingTests" */;
+                        buildConfigurationList = 4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreTests" */;
 			buildPhases = (
 				4CF220412E4A33BC00AD5F29 /* Sources */,
 				4CF220422E4A33BC00AD5F29 /* Frameworks */,
@@ -149,19 +149,19 @@
 			dependencies = (
 				4CF220472E4A33BC00AD5F29 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
-			);
-			name = OffshoreBudgetingTests;
+                        fileSystemSynchronizedGroups = (
+                                4CF220482E4A33BC00AD5F29 /* OffshoreTests */,
+                        );
+                        name = OffshoreTests;
 			packageProductDependencies = (
 			);
-			productName = SoFarTests;
-			productReference = 4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */;
+                        productName = OffshoreTests;
+                        productReference = 4CF220452E4A33BC00AD5F29 /* OffshoreTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		4CF2204E2E4A33BC00AD5F29 /* OffshoreBudgetingUITests */ = {
+                4CF2204E2E4A33BC00AD5F29 /* OffshoreUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingUITests" */;
+                        buildConfigurationList = 4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreUITests" */;
 			buildPhases = (
 				4CF2204B2E4A33BC00AD5F29 /* Sources */,
 				4CF2204C2E4A33BC00AD5F29 /* Frameworks */,
@@ -172,14 +172,14 @@
 			dependencies = (
 				4CF220512E4A33BC00AD5F29 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
-			);
-			name = OffshoreBudgetingUITests;
+                        fileSystemSynchronizedGroups = (
+                                4CF220522E4A33BC00AD5F29 /* OffshoreUITests */,
+                        );
+                        name = OffshoreUITests;
 			packageProductDependencies = (
 			);
-			productName = SoFarUITests;
-			productReference = 4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */;
+                        productName = OffshoreUITests;
+                        productReference = 4CF2204F2E4A33BC00AD5F29 /* OffshoreUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -221,11 +221,11 @@
 			productRefGroup = 4CF220382E4A33BA00AD5F29 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (
-				4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */,
-				4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
-				4CF2204E2E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
-			);
+                        targets = (
+                                4CF220362E4A33BA00AD5F29 /* Offshore */,
+                                4CF220442E4A33BC00AD5F29 /* OffshoreTests */,
+                                4CF2204E2E4A33BC00AD5F29 /* OffshoreUITests */,
+                        );
 		};
 /* End PBXProject section */
 
@@ -280,12 +280,12 @@
 /* Begin PBXTargetDependency section */
 		4CF220472E4A33BC00AD5F29 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
+                        target = 4CF220362E4A33BA00AD5F29 /* Offshore */;
 			targetProxy = 4CF220462E4A33BC00AD5F29 /* PBXContainerItemProxy */;
 		};
 		4CF220512E4A33BC00AD5F29 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CF220362E4A33BA00AD5F29 /* OffshoreBudgeting */;
+                        target = 4CF220362E4A33BA00AD5F29 /* Offshore */;
 			targetProxy = 4CF220502E4A33BC00AD5F29 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -413,7 +413,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = OffshoreBudgeting/OffshoreBudgeting.entitlements;
+                                CODE_SIGN_ENTITLEMENTS = Offshore/Offshore.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
@@ -421,8 +421,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
+                                INFOPLIST_FILE = Offshore/Info.plist;
+                                INFOPLIST_KEY_CFBundleDisplayName = Offshore;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -440,8 +440,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "Offshore Budgeting";
+                                PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.offshore;
+                                PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -460,7 +460,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = OffshoreBudgeting/OffshoreBudgeting.entitlements;
+                                CODE_SIGN_ENTITLEMENTS = Offshore/Offshore.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
@@ -468,8 +468,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = OffshoreBudgeting/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Offshore Budgeting";
+                                INFOPLIST_FILE = Offshore/Info.plist;
+                                INFOPLIST_KEY_CFBundleDisplayName = Offshore;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -487,8 +487,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore-budgeting";
-				PRODUCT_NAME = "Offshore Budgeting";
+                                PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.offshore;
+                                PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -512,14 +512,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarTests;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+                                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -535,14 +535,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarTests;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+                                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -557,14 +557,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarUITests;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SoFar;
+                                TEST_TARGET_NAME = Offshore;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -579,14 +579,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarUITests;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SoFar;
+                                TEST_TARGET_NAME = Offshore;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -603,7 +603,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgeting" */ = {
+                4CF220592E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "Offshore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF2205A2E4A33BC00AD5F29 /* Debug */,
@@ -612,7 +612,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingTests" */ = {
+                4CF2205C2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF2205D2E4A33BC00AD5F29 /* Debug */,
@@ -621,7 +621,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreBudgetingUITests" */ = {
+                4CF2205F2E4A33BC00AD5F29 /* Build configuration list for PBXNativeTarget "OffshoreUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CF220602E4A33BC00AD5F29 /* Debug */,

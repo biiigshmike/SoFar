@@ -137,7 +137,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             } else {
                 guard let budgetID = selectedBudgetID,
                       let targetBudget = context.object(with: budgetID) as? Budget else {
-                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
+                    throw NSError(domain: "Offshore.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
                 }
                 existing.isGlobal = false
                 existing.budget = targetBudget
@@ -190,7 +190,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             } else {
                 guard let budgetID = selectedBudgetID,
                       let targetBudget = context.object(with: budgetID) as? Budget else {
-                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
+                    throw NSError(domain: "Offshore.AddPlannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a budget."])
                 }
 
                 // Standard single planned expense

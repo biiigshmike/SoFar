@@ -115,7 +115,7 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             let cardID = selectedCardID,
             let card = try context.existingObject(with: cardID) as? Card
         else {
-            throw NSError(domain: "SoFar.AddUnplannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a card."])
+            throw NSError(domain: "Offshore.AddUnplannedExpense", code: 10, userInfo: [NSLocalizedDescriptionKey: "Please select a card."])
         }
 
         // Resolve Category the same way (prevents temp-ID issues).
@@ -123,11 +123,11 @@ final class AddUnplannedExpenseViewModel: ObservableObject {
             let categoryID = selectedCategoryID,
             let category = try context.existingObject(with: categoryID) as? ExpenseCategory
         else {
-            throw NSError(domain: "SoFar.AddUnplannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
+            throw NSError(domain: "Offshore.AddUnplannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
         }
 
         guard let amt = parsedAmount, amt >= 0.01 else {
-            throw NSError(domain: "SoFar.AddUnplannedExpense", code: 12, userInfo: [NSLocalizedDescriptionKey: "Please enter a valid amount."])
+            throw NSError(domain: "Offshore.AddUnplannedExpense", code: 12, userInfo: [NSLocalizedDescriptionKey: "Please enter a valid amount."])
         }
 
         let item: UnplannedExpense
