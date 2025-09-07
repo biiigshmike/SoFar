@@ -44,6 +44,14 @@ struct IncomeView: View {
     @State private var showDeleteAlert: Bool = false
     @State private var showDeleteOptions: Bool = false
 
+    // MARK: Calendar
+    /// Calendar configured to begin weeks on Sunday.
+    private var sundayFirstCalendar: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 1 // 1 = Sunday
+        return calendar
+    }
+
     // MARK: Body
     var body: some View {
         VStack(spacing: 12) {
@@ -112,8 +120,9 @@ struct IncomeView: View {
     @ViewBuilder
     private var calendarSection: some View {
         let today = Date()
-        let start = Calendar.current.date(byAdding: .year, value: -5, to: today)!
-        let end = Calendar.current.date(byAdding: .year, value: 5, to: today)!
+        let cal = sundayFirstCalendar
+        let start = cal.date(byAdding: .year, value: -5, to: today)!
+        let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: 12) {
                 Button("<<") { goToPreviousMonth() }
@@ -146,6 +155,7 @@ struct IncomeView: View {
                             summary: viewModel.summary(for: date)
                         )
                     }
+                    .firstWeekday(.sunday)
                     .weekdaysView(UBWeekdaysView.init)
                     .monthLabel(UBMonthLabel.init)
                     .startMonth(start)
@@ -181,6 +191,7 @@ struct IncomeView: View {
                             summary: viewModel.summary(for: date)
                         )
                     }
+                    .firstWeekday(.sunday)
                     .monthLabel(UBMonthLabel.init)
                     .startMonth(start)
                     .endMonth(end)
@@ -382,16 +393,13 @@ struct IncomeView: View {
         return f.string(from: date)
     }
 
-    /// Computes the start/end of the week containing `date` using the current calendar and locale.
+    /// Computes the start and end of the week containing `date` using a Sunday-based calendar.
     private func weekBounds(for date: Date) -> (start: Date, end: Date) {
-        let cal = Calendar.current
-        if let interval = cal.dateInterval(of: .weekOfYear, for: date) {
-            return (interval.start, interval.end)
+        let cal = sundayFirstCalendar
+        guard let start = cal.dateInterval(of: .weekOfYear, for: date)?.start,
+              let end = cal.date(byAdding: .day, value: 6, to: start) else {
+            return (date, date)
         }
-        let weekday = cal.component(.weekday, from: date)
-        let deltaToStart = (weekday - cal.firstWeekday + 7) % 7
-        let start = cal.date(byAdding: .day, value: -deltaToStart, to: date) ?? date
-        let end = cal.date(byAdding: .day, value: 7 - deltaToStart, to: start) ?? date
         return (start, end)
     }
 
