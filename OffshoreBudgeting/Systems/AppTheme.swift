@@ -260,6 +260,14 @@ final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme {
         didSet {
             applyAppearance()
+            if selectedTheme == .system {
+                // Ensure the UI immediately reflects the system style when
+                // returning from a custom theme. Without sending another
+                // change notification the first tap only clears the override
+                // and a second tap is required to redraw using the current
+                // light/dark mode.
+                objectWillChange.send()
+            }
             if !isApplyingRemoteChange { save() }
         }
     }
