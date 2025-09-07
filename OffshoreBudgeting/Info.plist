@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
         <key>CFBundleDisplayName</key>
-        <string>Offshore Budgeting</string>
+        <string>Offshore</string>
         <key>CFBundleName</key>
-        <string>Offshore Budgeting</string>
+        <string>Offshore</string>
         <key>BGTaskSchedulerPermittedIdentifiers</key>
         <array>
                 <string>com.mbrown.SoFar.refresh</string>
