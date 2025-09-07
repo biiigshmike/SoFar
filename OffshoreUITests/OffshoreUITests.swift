@@ -1,13 +1,13 @@
 //
-//  SoFarUITests.swift
-//  SoFarUITests
+//  OffshoreUITests.swift
+//  OffshoreUITests
 //
 //  Created by Michael Brown on 8/11/25.
 //
 
 import XCTest
 
-final class SoFarUITests: XCTestCase {
+final class OffshoreUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

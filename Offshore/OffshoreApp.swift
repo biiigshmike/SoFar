@@ -1,6 +1,6 @@
 //
-//  SoFarApp.swift
-//  SoFar
+//  OffshoreApp.swift
+//  Offshore
 //
 //  Created by Michael Brown on 8/11/25.
 //
@@ -11,7 +11,7 @@ import AppKit
 #endif
 
 @main
-struct SoFarApp: App {
+struct OffshoreApp: App {
     // MARK: Dependencies
     @StateObject private var themeManager = ThemeManager()
     

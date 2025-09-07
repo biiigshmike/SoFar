@@ -1,6 +1,6 @@
 //
 //  CoreDataService.swift
-//  SoFar
+//  Offshore
 //
 //  Created by Michael Brown on 8/11/25.
 //
@@ -21,8 +21,8 @@ final class CoreDataService: ObservableObject {
     
     // MARK: Configuration
     /// Name of the .xcdatamodeld file (without extension).
-    /// IMPORTANT: Ensure your model is named "SoFarModel.xcdatamodeld".
-    private let modelName = "OffshoreBudgetingModel"
+    /// IMPORTANT: Ensure your model is named "OffshoreModel.xcdatamodeld".
+    private let modelName = "OffshoreModel"
     
     /// Determines whether CloudKit-backed sync is enabled via user settings.
     private var enableCloudKitSync: Bool {
@@ -57,10 +57,10 @@ final class CoreDataService: ObservableObject {
         description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
         
         // CloudKit (deferred). When you’re ready, we’ll set:
-        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar)
+        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.Offshore)
         // and ensure entitlements are set up. For now, leave it nil.
         if enableCloudKitSync {
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar")
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.Offshore")
         }
         
         container.persistentStoreDescriptions = [description]
@@ -149,7 +149,7 @@ final class CoreDataService: ObservableObject {
         // Defensive: make sure at least one store is attached
         let hasStores = !(viewContext.persistentStoreCoordinator?.persistentStores.isEmpty ?? true)
         guard hasStores else {
-            throw NSError(domain: "SoFar.CoreData", code: 1001, userInfo: [
+            throw NSError(domain: "Offshore.CoreData", code: 1001, userInfo: [
                 NSLocalizedDescriptionKey: "Persistent stores are not loaded. Call CoreDataService.shared.ensureLoaded() at app launch."
             ])
         }

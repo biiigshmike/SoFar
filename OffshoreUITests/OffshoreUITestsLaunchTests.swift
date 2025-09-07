@@ -1,13 +1,13 @@
 //
-//  SoFarUITestsLaunchTests.swift
-//  SoFarUITests
+//  OffshoreUITestsLaunchTests.swift
+//  OffshoreUITests
 //
 //  Created by Michael Brown on 8/11/25.
 //
 
 import XCTest
 
-final class SoFarUITestsLaunchTests: XCTestCase {
+final class OffshoreUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
