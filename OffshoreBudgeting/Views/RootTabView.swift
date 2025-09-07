@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct RootTabView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
@@ -30,7 +31,14 @@ struct RootTabView: View {
         }
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { 
+        .onChange(of: themeManager.selectedTheme) { _ in
+            updateTabBarAppearance()
+        }
+        // When following the system appearance, refresh the window style and
+        // tab bar whenever the system toggles between light and dark mode.
+        .onChange(of: colorScheme) { _ in
+            guard themeManager.selectedTheme == .system else { return }
+            themeManager.applyAppearance()
             updateTabBarAppearance()
         }
     }
