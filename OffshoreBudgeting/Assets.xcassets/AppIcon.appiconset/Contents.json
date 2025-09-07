@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "square-day-1.jpg",
+      "filename" : "1024-day.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "square-night-2.jpg",
+      "filename" : "dark-icon3.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "square-tinted-2.jpg",
+      "filename" : "mono-icon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -37,13 +37,13 @@
       "size" : "16x16"
     },
     {
-      "filename" : "32.png",
+      "filename" : "32 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "32 1.png",
+      "filename" : "32.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
@@ -61,7 +61,7 @@
       "size" : "128x128"
     },
     {
-      "filename" : "dock-icon-maybe.png",
+      "filename" : "macosdock-1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
@@ -73,19 +73,19 @@
       "size" : "256x256"
     },
     {
-      "filename" : "512.png",
+      "filename" : "512png 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
-      "filename" : "512 1.png",
+      "filename" : "512png.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
-      "filename" : "Icon-iOS-Default-1024x1024@1x.png",
+      "filename" : "1024-r.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
