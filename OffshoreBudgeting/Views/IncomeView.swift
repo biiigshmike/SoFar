@@ -317,34 +317,18 @@ struct IncomeView: View {
     }
 
     // MARK: - Calendar Navigation Helpers
-    /// Updates the calendar to the given date and keeps the selection & day
-    /// list in sync with navigation button presses.
+    /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
         let target = normalize(date)
-
-        // Scroll the calendar to the target first so the control is aware of
-        // the upcoming selection change. Animations are disabled to avoid
-        // visible jumps when jumping between months.
+        // Update without animation to prevent visible jumps
         withTransaction(Transaction(animation: nil)) {
+            viewModel.selectedDate = target
             calendarScrollDate = target
         }
-
-        // Update the selected date on the next run loop tick. Doing so after
-        // setting the scroll target ensures the calendar view highlights the
-        // new day. Reloading the day's entries keeps the income list in sync
-        // with the newly selected date.
+        // Reset the scroll target on the next run loop cycle without animation
         DispatchQueue.main.async {
             withTransaction(Transaction(animation: nil)) {
-                viewModel.selectedDate = target
-            }
-            viewModel.reloadForSelectedDay()
-
-            // Clear the scroll target once the view has processed it so
-            // subsequent navigations can specify another date.
-            DispatchQueue.main.async {
-                withTransaction(Transaction(animation: nil)) {
-                    calendarScrollDate = nil
-                }
+                calendarScrollDate = nil
             }
         }
     }
