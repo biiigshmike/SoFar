@@ -319,12 +319,11 @@ final class ThemeManager: ObservableObject {
 
     /// Applies the appropriate system appearance for the selected theme.
     ///
-    /// This method is `internal` so views can trigger a refresh when the
-    /// system's color scheme changes while the user has selected the `.system`
-    /// theme. Without re-applying the appearance in that scenario, UIKit can
-    /// retain the prior override and require an extra tap from the user to
-    /// update the interface.
-    func applyAppearance() {
+    /// When switching back to `.system` from a custom dark theme we must
+    /// explicitly reset the window style so that the app once again follows
+    /// the device's light/dark setting. Without doing this, UIKit/AppKit can
+    /// retain the previous override, requiring an extra tap to update.
+    private func applyAppearance() {
         #if canImport(UIKit)
         let style: UIUserInterfaceStyle
         switch selectedTheme {
