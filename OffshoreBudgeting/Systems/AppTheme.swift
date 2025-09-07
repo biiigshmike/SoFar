@@ -260,6 +260,11 @@ final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme {
         didSet {
             applyAppearance()
+            if selectedTheme == .system {
+                DispatchQueue.main.async {
+                    self.refreshSystemAppearance()
+                }
+            }
             if !isApplyingRemoteChange { save() }
         }
     }
