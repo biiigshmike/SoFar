@@ -28,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Offshore.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Offshore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -440,7 +440,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.offshore;
 				PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -487,7 +487,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.mbrown.offshore";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mbrown.offshore;
 				PRODUCT_NAME = Offshore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
