@@ -149,19 +149,6 @@ extension View {
             return self
         }
     }
-
-    // MARK: ub_preferredColorScheme()
-    /// Applies a preferred color scheme only when one is provided. Passing
-    /// `nil` removes any previous override so returning to the `.system`
-    /// theme immediately reflects the device's light or dark appearance
-    /// without requiring an extra tap.
-    func ub_preferredColorScheme(_ scheme: ColorScheme?) -> some View {
-        if let scheme {
-            return self.preferredColorScheme(scheme)
-        } else {
-            return self
-        }
-    }
 }
 
 // MARK: - UBColor (Cross-Platform Neutrals)
