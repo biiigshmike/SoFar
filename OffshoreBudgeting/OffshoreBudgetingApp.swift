@@ -8,8 +8,6 @@
 import SwiftUI
 #if os(macOS)
 import AppKit
-#elseif os(iOS)
-import UIKit
 #endif
 
 @main
@@ -25,12 +23,6 @@ struct OffshoreBudgetingApp: App {
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
-#if os(iOS)
-        // Resize labels so text fits on smaller screens without truncation.
-        let labelAppearance = UILabel.appearance()
-        labelAppearance.adjustsFontSizeToFitWidth = true
-        labelAppearance.minimumScaleFactor = 0.5
-#endif
         // No macOS-specific setup required at the moment.
     }
     
