@@ -53,7 +53,7 @@ struct CardTileView: View {
                     maxShineOpacity: 0.7
                 )
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.5)
                 .padding(.all, DS.Spacing.l)
             }
             .aspectRatio(aspectRatio, contentMode: .fit)

@@ -218,6 +218,8 @@ struct HomeView: View {
 
             Text(title(for: vm.selectedDate))
                 .font(.title2).bold()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
 
             Button { vm.adjustSelectedPeriod(by: +1) } label: {
                 Image(systemName: "chevron.right")

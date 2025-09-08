@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
-#if os(macOS)
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
 import AppKit
 #endif
 
@@ -24,6 +26,14 @@ struct OffshoreBudgetingApp: App {
     init() {
         CoreDataService.shared.ensureLoaded()
         // No macOS-specific setup required at the moment.
+#if os(iOS)
+        // Reduce the chance of text truncation across the app by allowing
+        // UILabel-backed Text views to shrink when space is constrained.
+        let labelAppearance = UILabel.appearance()
+        labelAppearance.adjustsFontSizeToFitWidth = true
+        labelAppearance.minimumScaleFactor = 0.5
+        labelAppearance.lineBreakMode = .byClipping
+#endif
     }
     
     var body: some Scene {
