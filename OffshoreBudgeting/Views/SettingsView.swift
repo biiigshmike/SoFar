@@ -180,9 +180,9 @@ struct SettingsView: View {
         .background(themeManager.selectedTheme.background.ignoresSafeArea())
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
-        // Provide a fallback color when the selected theme does not specify a tint
+        // Only tint toggles when the selected theme provides a custom color.
         .toggleStyle(
-            SwitchToggleStyle(tint: themeManager.selectedTheme.tint ?? .accentColor)
+            themeManager.selectedTheme.tint.map { SwitchToggleStyle(tint: $0) } ?? SwitchToggleStyle()
         )
         .navigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
