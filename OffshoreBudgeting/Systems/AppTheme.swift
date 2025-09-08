@@ -12,7 +12,6 @@ import AppKit
 /// complete set of color used across the UI so that switching themes is
 /// consistent everywhere.
 enum AppTheme: String, CaseIterable, Identifiable, Codable {
-    case system
     case classic
     case midnight
     case forest
@@ -29,7 +28,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Human readable name shown in pickers.
     var displayName: String {
         switch self {
-        case .system: return "System"
         case .classic: return "Classic"
         case .midnight: return "Midnight"
         case .forest: return "Forest"
@@ -46,7 +44,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Accent color applied to interactive elements.
     var accent: Color {
         switch self {
-        case .system: return .accentColor
         case .classic: return .blue
         case .midnight: return .purple
         case .forest: return .green
@@ -62,11 +59,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Optional tint color used for SwiftUI's `.tint` and `.accentColor` modifiers.
     ///
-    /// Returning `nil` for the `system` case allows controls like `Toggle` to
-    /// keep their platform-default styling (e.g., green on iOS) instead of being
-    /// forced to the app's accent color.
+    /// All custom themes specify a tint color.
     var tint: Color? {
-        self == .system ? nil : accent
+        accent
     }
 
     /// Secondary accent color derived from the primary accent. Used for
@@ -92,18 +87,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Primary background color for views.
     var background: Color {
         switch self {
-        case .system:
-            #if canImport(UIKit)
-            return Color(UIColor.systemBackground)
-            #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.windowBackgroundColor)
-            } else {
-                return Color.white
-            }
-            #else
-            return Color.white
-            #endif
         case .classic:
             #if canImport(UIKit)
             // Use the grouped background so form rows stand out against the
@@ -142,18 +125,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Secondary background used for card interiors and icons.
     var secondaryBackground: Color {
         switch self {
-        case .system:
-            #if canImport(UIKit)
-            return Color(UIColor.secondarySystemBackground)
-            #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.gray.opacity(0.1)
-            }
-            #else
-            return Color.gray.opacity(0.1)
-            #endif
         case .classic:
             #if canImport(UIKit)
             // Provide a subtle card color that contrasts with the grouped
@@ -192,18 +163,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Tertiary background for card shells.
     var tertiaryBackground: Color {
         switch self {
-        case .system:
-            #if canImport(UIKit)
-            return Color(UIColor.tertiarySystemBackground)
-            #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.gray.opacity(0.15)
-            }
-            #else
-            return Color.gray.opacity(0.15)
-            #endif
         case .classic:
             #if canImport(UIKit)
             return Color(UIColor.tertiarySystemGroupedBackground)
@@ -238,43 +197,35 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Preferred system color scheme for the theme.
-    ///
-    /// Returning `nil` allows the app to follow the user's system setting.
-    var colorScheme: ColorScheme? {
+    var colorScheme: ColorScheme {
         switch self {
-        case .system:
-            return nil
         case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
             return .light
         case .midnight, .forest, .sunset, .nebula:
             return .dark
         }
     }
+
+    /// Lists of themes grouped by their color scheme.
+    static var lightThemes: [AppTheme] { [.classic, .ocean, .sunrise, .blossom, .lavender, .mint] }
+    static var darkThemes: [AppTheme] { [.midnight, .forest, .sunset, .nebula] }
 }
 
 // MARK: - ThemeManager
 /// Observable theme source of truth. Persists selection via `UserDefaults`
-/// so the chosen theme survives app relaunches.
+/// so the chosen themes survive app relaunches. Users can specify separate
+/// themes for light and dark system appearances.
 @MainActor
 final class ThemeManager: ObservableObject {
-    @Published var selectedTheme: AppTheme {
-        didSet {
-            applyAppearance()
-            if selectedTheme == .system {
-                // Ensure the UI immediately reflects the system style when
-                // returning from a custom theme. Without sending another
-                // change notification the first tap only clears the override
-                // and a second tap is required to redraw using the current
-                // light/dark mode.
-                objectWillChange.send()
-            }
-            if !isApplyingRemoteChange { save() }
-        }
-    }
+    @Published var lightTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
+    @Published var darkTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
+    @Published private(set) var selectedTheme: AppTheme { didSet { applyAppearance() } }
 
-    private let storageKey = "selectedTheme"
+    private let lightStorageKey = "selectedLightTheme"
+    private let darkStorageKey = "selectedDarkTheme"
     private let ubiquitousStore = NSUbiquitousKeyValueStore.default
     private var isApplyingRemoteChange = false
+    private var currentColorScheme: ColorScheme = .light
 
     /// Determines if theme syncing is enabled via Settings and iCloud.
     ///
@@ -289,18 +240,12 @@ final class ThemeManager: ObservableObject {
     }
 
     init() {
+        let lightRaw: String?
+        let darkRaw: String?
         if Self.isSyncEnabled {
             ubiquitousStore.synchronize()
-            if let raw = ubiquitousStore.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
-            } else if let raw = UserDefaults.standard.string(forKey: storageKey),
-                      let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
-            } else {
-                selectedTheme = .classic
-            }
-
+            lightRaw = ubiquitousStore.string(forKey: lightStorageKey) ?? UserDefaults.standard.string(forKey: lightStorageKey)
+            darkRaw = ubiquitousStore.string(forKey: darkStorageKey) ?? UserDefaults.standard.string(forKey: darkStorageKey)
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(storeChanged(_:)),
@@ -308,66 +253,51 @@ final class ThemeManager: ObservableObject {
                 object: ubiquitousStore
             )
         } else {
-            if let raw = UserDefaults.standard.string(forKey: storageKey),
-               let theme = AppTheme(rawValue: raw) {
-                selectedTheme = theme
-            } else {
-                selectedTheme = .classic
-            }
+            lightRaw = UserDefaults.standard.string(forKey: lightStorageKey)
+            darkRaw = UserDefaults.standard.string(forKey: darkStorageKey)
         }
+
+        lightTheme = lightRaw.flatMap { AppTheme(rawValue: $0) } ?? .classic
+        darkTheme = darkRaw.flatMap { AppTheme(rawValue: $0) } ?? .midnight
+        selectedTheme = lightTheme
         applyAppearance()
     }
 
     private func save() {
-        UserDefaults.standard.set(selectedTheme.rawValue, forKey: storageKey)
+        UserDefaults.standard.set(lightTheme.rawValue, forKey: lightStorageKey)
+        UserDefaults.standard.set(darkTheme.rawValue, forKey: darkStorageKey)
         guard Self.isSyncEnabled else { return }
-        ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
+        ubiquitousStore.set(lightTheme.rawValue, forKey: lightStorageKey)
+        ubiquitousStore.set(darkTheme.rawValue, forKey: darkStorageKey)
         ubiquitousStore.synchronize()
     }
 
-    /// Forces the app to re-evaluate the current theme.
-    ///
-    /// Useful when the system's appearance changes while the user has
-    /// selected the `.system` theme, ensuring our windows immediately follow
-    /// the new light/dark mode without requiring an extra tap.
-    func refreshSystemAppearance() {
-        applyAppearance()
-        // Trigger another view update so dynamic colors resolve with the
-        // latest system setting.
+    /// Updates the current theme based on the provided system color scheme.
+    func refreshSystemAppearance(_ colorScheme: ColorScheme) {
+        currentColorScheme = colorScheme
+        updateSelectedTheme()
+        // Ensure dynamic system colors within a theme resolve with the new scheme.
         objectWillChange.send()
     }
 
+    /// Determines which theme should be active and applies it if needed.
+    private func updateSelectedTheme() {
+        let newTheme = currentColorScheme == .dark ? darkTheme : lightTheme
+        if newTheme != selectedTheme {
+            selectedTheme = newTheme
+        }
+    }
+
     /// Applies the appropriate system appearance for the selected theme.
-    ///
-    /// When switching back to `.system` from a custom dark theme we must
-    /// explicitly reset the window style so that the app once again follows
-    /// the device's light/dark setting. Without doing this, UIKit/AppKit can
-    /// retain the previous override, requiring an extra tap to update.
     private func applyAppearance() {
         #if canImport(UIKit)
-        let style: UIUserInterfaceStyle
-        switch selectedTheme {
-        case .system:
-            style = .unspecified
-        case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
-            style = .light
-        case .midnight, .forest, .sunset, .nebula:
-            style = .dark
-        }
+        let style: UIUserInterfaceStyle = selectedTheme.colorScheme == .dark ? .dark : .light
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
             .forEach { $0.overrideUserInterfaceStyle = style }
         #elseif canImport(AppKit)
-        let appearance: NSAppearance?
-        switch selectedTheme {
-        case .system:
-            appearance = nil
-        case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
-            appearance = NSAppearance(named: .aqua)
-        case .midnight, .forest, .sunset, .nebula:
-            appearance = NSAppearance(named: .darkAqua)
-        }
+        let appearance = selectedTheme.colorScheme == .dark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
         NSApp.appearance = appearance
         #endif
     }
@@ -375,15 +305,16 @@ final class ThemeManager: ObservableObject {
     @objc private func storeChanged(_ note: Notification) {
         guard Self.isSyncEnabled else { return }
         ubiquitousStore.synchronize()
-        if let raw = ubiquitousStore.string(forKey: storageKey),
-           let theme = AppTheme(rawValue: raw),
-           theme != selectedTheme {
+        let newLight = ubiquitousStore.string(forKey: lightStorageKey).flatMap { AppTheme(rawValue: $0) } ?? lightTheme
+        let newDark = ubiquitousStore.string(forKey: darkStorageKey).flatMap { AppTheme(rawValue: $0) } ?? darkTheme
+        if newLight != lightTheme || newDark != darkTheme {
             DispatchQueue.main.async {
                 self.isApplyingRemoteChange = true
-                self.selectedTheme = theme
+                self.lightTheme = newLight
+                self.darkTheme = newDark
                 self.isApplyingRemoteChange = false
+                self.updateSelectedTheme()
             }
         }
     }
 }
-
