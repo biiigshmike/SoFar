@@ -52,6 +52,8 @@ struct BudgetDetailsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(vm.budget?.name ?? "Budget")
                         .font(.largeTitle.bold())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                     if let s = vm.budget?.startDate, let e = vm.budget?.endDate {
                         Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
                             .foregroundStyle(.secondary)
