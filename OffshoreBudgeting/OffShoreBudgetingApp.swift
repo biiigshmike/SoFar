@@ -51,6 +51,7 @@ struct SoFarApp: App {
             .onChange(of: systemColorScheme) {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
+            .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without
             // dynamically toggling it during editing, which can steal focus.

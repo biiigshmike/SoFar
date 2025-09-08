@@ -219,7 +219,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 final class ThemeManager: ObservableObject {
     @Published var lightTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
     @Published var darkTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
-    @Published private(set) var selectedTheme: AppTheme
+    @Published private(set) var selectedTheme: AppTheme { didSet { applyAppearance() } }
 
     private let lightStorageKey = "selectedLightTheme"
     private let darkStorageKey = "selectedDarkTheme"
@@ -259,8 +259,7 @@ final class ThemeManager: ObservableObject {
 
         lightTheme = initialLight
         darkTheme = initialDark
-        currentColorScheme = Self.systemColorScheme()
-        selectedTheme = currentColorScheme == .dark ? initialDark : initialLight
+        selectedTheme = initialLight
 
         if Self.isSyncEnabled {
             NotificationCenter.default.addObserver(
@@ -272,6 +271,7 @@ final class ThemeManager: ObservableObject {
         }
 
         updateSelectedTheme()
+        applyAppearance()
     }
 
     private func save() {
@@ -299,14 +299,17 @@ final class ThemeManager: ObservableObject {
         }
     }
 
-    /// Determines the platform's current color scheme without relying on SwiftUI environment values.
-    private static func systemColorScheme() -> ColorScheme {
+    /// Applies the appropriate system appearance for the selected theme.
+    private func applyAppearance() {
         #if canImport(UIKit)
-        return UIScreen.main.traitCollection.userInterfaceStyle == .dark ? .dark : .light
+        let style: UIUserInterfaceStyle = selectedTheme.colorScheme == .dark ? .dark : .light
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .forEach { $0.overrideUserInterfaceStyle = style }
         #elseif canImport(AppKit)
-        return NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
-        #else
-        return .light
+        let appearance = selectedTheme.colorScheme == .dark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
+        NSApp.appearance = appearance
         #endif
     }
 
