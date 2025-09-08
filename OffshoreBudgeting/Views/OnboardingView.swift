@@ -51,7 +51,7 @@ private struct WelcomeStep: View {
     var body: some View {
         VStack(spacing: DS.Spacing.l) {
             Spacer()
-            Text("Welcome to Offshore")
+            Text("Welcome to Offshore Budgeting")
                 .font(.largeTitle.bold())
             Text("Let's set up your budgeting workspace.")
                 .multilineTextAlignment(.center)
