@@ -54,20 +54,12 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "paintpalette",
                     title: "Appearance",
-                    subtitle: "Choose themes for light and dark mode.",
+                    subtitle: "Select a color theme for the app.",
                 ) {
                     VStack(spacing: 0) {
-                        SettingsRow(title: "Light Theme") {
-                            Picker("", selection: $themeManager.lightTheme) {
-                                ForEach(AppTheme.allCases.filter { $0.colorScheme == .light }) { theme in
-                                    Text(theme.displayName).tag(theme)
-                                }
-                            }
-                            .labelsHidden()
-                        }
-                        SettingsRow(title: "Dark Theme") {
-                            Picker("", selection: $themeManager.darkTheme) {
-                                ForEach(AppTheme.allCases.filter { $0.colorScheme == .dark }) { theme in
+                        SettingsRow(title: "Theme") {
+                            Picker("", selection: $themeManager.selectedTheme) {
+                                ForEach(AppTheme.allCases) { theme in
                                     Text(theme.displayName).tag(theme)
                                 }
                             }
