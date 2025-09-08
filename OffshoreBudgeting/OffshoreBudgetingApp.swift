@@ -55,6 +55,10 @@ struct OffshoreBudgetingApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
+            // Toggle switches should mirror iOS defaults on macOS when using
+            // the System theme. Provide an explicit tint so switches remain
+            // green while links adopt the platform accent color.
+            .toggleStyle(SwitchToggleStyle(tint: themeManager.selectedTheme.switchTint))
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }

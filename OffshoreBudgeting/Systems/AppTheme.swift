@@ -71,6 +71,25 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Tint applied specifically to `Toggle` controls. On macOS the System
+    /// theme should mimic iOS by using the platform's default green switch
+    /// tint, while custom themes continue to use their accent color.
+    var switchTint: Color {
+        switch self {
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor.systemGreen)
+            #elseif canImport(AppKit)
+            return Color(nsColor: NSColor.systemGreen)
+            #else
+            return .green
+            #endif
+        default:
+            // `tint` is non-nil for all custom themes
+            return tint ?? .accentColor
+        }
+    }
+
     /// Secondary accent color derived from the primary accent. Used for
     /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
     /// remaining harmonious with the selected theme.
