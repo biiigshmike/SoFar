@@ -219,7 +219,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 final class ThemeManager: ObservableObject {
     @Published var lightTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
     @Published var darkTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() } ; updateSelectedTheme() } }
-    @Published private(set) var selectedTheme: AppTheme { didSet { applyAppearance() } }
+    @Published private(set) var selectedTheme: AppTheme
 
     private let lightStorageKey = "selectedLightTheme"
     private let darkStorageKey = "selectedDarkTheme"
@@ -259,7 +259,8 @@ final class ThemeManager: ObservableObject {
 
         lightTheme = initialLight
         darkTheme = initialDark
-        selectedTheme = initialLight
+        currentColorScheme = Self.systemColorScheme()
+        selectedTheme = currentColorScheme == .dark ? initialDark : initialLight
 
         if Self.isSyncEnabled {
             NotificationCenter.default.addObserver(
@@ -271,7 +272,6 @@ final class ThemeManager: ObservableObject {
         }
 
         updateSelectedTheme()
-        applyAppearance()
     }
 
     private func save() {
@@ -299,17 +299,14 @@ final class ThemeManager: ObservableObject {
         }
     }
 
-    /// Applies the appropriate system appearance for the selected theme.
-    private func applyAppearance() {
+    /// Determines the platform's current color scheme without relying on SwiftUI environment values.
+    private static func systemColorScheme() -> ColorScheme {
         #if canImport(UIKit)
-        let style: UIUserInterfaceStyle = selectedTheme.colorScheme == .dark ? .dark : .light
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .forEach { $0.overrideUserInterfaceStyle = style }
+        return UIScreen.main.traitCollection.userInterfaceStyle == .dark ? .dark : .light
         #elseif canImport(AppKit)
-        let appearance = selectedTheme.colorScheme == .dark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
-        NSApp.appearance = appearance
+        return NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+        #else
+        return .light
         #endif
     }
 
