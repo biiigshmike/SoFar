@@ -45,9 +45,6 @@ struct OffshoreBudgetingApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
-            // Allow text to shrink and wrap as needed across all display sizes
-            .lineLimit(nil)
-            .minimumScaleFactor(0.75)
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
