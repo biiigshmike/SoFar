@@ -299,15 +299,17 @@ final class ThemeManager: ObservableObject {
         }
     }
 
-    /// Removes any forced interface style so the system appearance controls the app.
+    /// Applies the appropriate system appearance for the selected theme.
     private func applyAppearance() {
         #if canImport(UIKit)
+        let style: UIUserInterfaceStyle = selectedTheme.colorScheme == .dark ? .dark : .light
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
-            .forEach { $0.overrideUserInterfaceStyle = .unspecified }
+            .forEach { $0.overrideUserInterfaceStyle = style }
         #elseif canImport(AppKit)
-        NSApp.appearance = nil
+        let appearance = selectedTheme.colorScheme == .dark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
+        NSApp.appearance = appearance
         #endif
     }
 
