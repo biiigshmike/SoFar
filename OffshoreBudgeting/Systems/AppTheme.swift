@@ -63,11 +63,20 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Optional tint color used for SwiftUI's `.tint` and `.accentColor` modifiers.
     ///
-    /// All custom themes specify a tint color.
+    /// All custom themes specify a tint color. The System theme intentionally
+    /// returns platform-appropriate values so controls match native styling.
     var tint: Color? {
         switch self {
-        case .system: return nil
-        default: return accent
+        case .system:
+            #if os(macOS)
+            // Mimic the default iOS link color rather than adopting the user's
+            // chosen macOS accent color to keep cross-platform cohesion.
+            return Color(nsColor: .systemBlue)
+            #else
+            return nil
+            #endif
+        default:
+            return accent
         }
     }
 

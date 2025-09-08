@@ -55,6 +55,15 @@ struct OffshoreBudgetingApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
+#if os(macOS)
+            // On macOS, mimic iOS's green toggle while keeping link tint blue
+            // when using the System theme.
+            .toggleStyle(
+                themeManager.selectedTheme == .system
+                    ? SwitchToggleStyle(tint: Color(nsColor: .systemGreen))
+                    : SwitchToggleStyle()
+            )
+#endif
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
