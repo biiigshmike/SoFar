@@ -48,8 +48,8 @@ struct SoFarApp: App {
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
-            .onChange(of: systemColorScheme) { newScheme in
-                themeManager.refreshSystemAppearance(newScheme)
+            .onChange(of: systemColorScheme) {
+                themeManager.refreshSystemAppearance(systemColorScheme)
             }
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
