@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Lighthouse and Vault by Moonlight.png",
+      "filename" : "dark-2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "mono.png",
+      "filename" : "mono-2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -37,13 +37,13 @@
       "size" : "16x16"
     },
     {
-      "filename" : "32 1.png",
+      "filename" : "32.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "32.png",
+      "filename" : "32 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
@@ -55,37 +55,37 @@
       "size" : "32x32"
     },
     {
-      "filename" : "128v2.png",
+      "filename" : "128-padded.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
-      "filename" : "256v2 1.png",
+      "filename" : "256-padded.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
-      "filename" : "256v2.png",
+      "filename" : "256-padded 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
     },
     {
-      "filename" : "512v2 1.png",
+      "filename" : "512-padded.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
-      "filename" : "512v2.png",
+      "filename" : "512-padded 1.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
-      "filename" : "1024-v2.png",
+      "filename" : "1024-padded.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"

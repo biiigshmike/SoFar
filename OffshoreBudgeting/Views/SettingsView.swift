@@ -164,7 +164,7 @@ struct SettingsView: View {
                         Button {
                             didCompleteOnboarding = false
                         } label: {
-                            SettingsRow(title: "Show Onboarding Again") { EmptyView() }
+                            SettingsRow(title: " Onboarding") { EmptyView() }
                         }
                         .buttonStyle(.plain)
                     }
