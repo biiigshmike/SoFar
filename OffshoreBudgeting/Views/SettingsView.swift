@@ -54,25 +54,15 @@ struct SettingsView: View {
                 SettingsCard(
                     iconSystemName: "paintpalette",
                     title: "Appearance",
-                    subtitle: "Select light and dark themes for the app.",
+                    subtitle: "Select a theme for the app.",
                 ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Light Theme") {
-                            Picker("", selection: $themeManager.lightTheme) {
-                                ForEach(AppTheme.lightThemes) { theme in
-                                    Text(theme.displayName).tag(theme)
-                                }
+                    SettingsRow(title: "Theme") {
+                        Picker("", selection: $themeManager.selectedTheme) {
+                            ForEach(AppTheme.allCases) { theme in
+                                Text(theme.displayName).tag(theme)
                             }
-                            .labelsHidden()
                         }
-                        SettingsRow(title: "Dark Theme") {
-                            Picker("", selection: $themeManager.darkTheme) {
-                                ForEach(AppTheme.darkThemes) { theme in
-                                    Text(theme.displayName).tag(theme)
-                                }
-                            }
-                            .labelsHidden()
-                        }
+                        .labelsHidden()
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
