@@ -45,12 +45,9 @@ struct SoFarApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
-            .onChange(of: systemColorScheme) { _ in
-                // When following the system theme, reapply the appearance so
-                // windows immediately reflect the updated light/dark mode.
-                if themeManager.selectedTheme == .system {
-                    themeManager.refreshSystemAppearance()
-                }
+            .onAppear { themeManager.refreshSystemAppearance(systemColorScheme) }
+            .onChange(of: systemColorScheme) { newScheme in
+                themeManager.refreshSystemAppearance(newScheme)
             }
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
 #if os(macOS)
