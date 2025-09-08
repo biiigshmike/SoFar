@@ -21,6 +21,7 @@ struct SettingsView: View {
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert: Bool = false
+    @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
 
     var body: some View {
         ScrollView {
@@ -147,6 +148,23 @@ struct SettingsView: View {
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                // MARK: Onboarding Card
+                SettingsCard(
+                    iconSystemName: "questionmark.circle",
+                    title: "Onboarding",
+                    subtitle: "Replay the initial setup flow.",
+                ) {
+                    VStack(spacing: 0) {
+                        Button {
+                            didCompleteOnboarding = false
+                        } label: {
+                            SettingsRow(title: "Show Onboarding Again") { EmptyView() }
                         }
                         .buttonStyle(.plain)
                     }
