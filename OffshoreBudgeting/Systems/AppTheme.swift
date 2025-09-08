@@ -242,24 +242,35 @@ final class ThemeManager: ObservableObject {
     init() {
         let lightRaw: String?
         let darkRaw: String?
+
         if Self.isSyncEnabled {
             ubiquitousStore.synchronize()
-            lightRaw = ubiquitousStore.string(forKey: lightStorageKey) ?? UserDefaults.standard.string(forKey: lightStorageKey)
-            darkRaw = ubiquitousStore.string(forKey: darkStorageKey) ?? UserDefaults.standard.string(forKey: darkStorageKey)
+            lightRaw = ubiquitousStore.string(forKey: lightStorageKey) ??
+                UserDefaults.standard.string(forKey: lightStorageKey)
+            darkRaw = ubiquitousStore.string(forKey: darkStorageKey) ??
+                UserDefaults.standard.string(forKey: darkStorageKey)
+        } else {
+            lightRaw = UserDefaults.standard.string(forKey: lightStorageKey)
+            darkRaw = UserDefaults.standard.string(forKey: darkStorageKey)
+        }
+
+        let initialLight = lightRaw.flatMap { AppTheme(rawValue: $0) } ?? .classic
+        let initialDark = darkRaw.flatMap { AppTheme(rawValue: $0) } ?? .midnight
+
+        lightTheme = initialLight
+        darkTheme = initialDark
+        selectedTheme = initialLight
+
+        if Self.isSyncEnabled {
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(storeChanged(_:)),
                 name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                 object: ubiquitousStore
             )
-        } else {
-            lightRaw = UserDefaults.standard.string(forKey: lightStorageKey)
-            darkRaw = UserDefaults.standard.string(forKey: darkStorageKey)
         }
 
-        lightTheme = lightRaw.flatMap { AppTheme(rawValue: $0) } ?? .classic
-        darkTheme = darkRaw.flatMap { AppTheme(rawValue: $0) } ?? .midnight
-        selectedTheme = lightTheme
+        updateSelectedTheme()
         applyAppearance()
     }
 
