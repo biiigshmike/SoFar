@@ -57,7 +57,8 @@ final class CardDetailViewModel: ObservableObject {
     
     // MARK: Inputs
     let card: CardItem
-    let allowedInterval: DateInterval?   // nil = all time
+    /// Optional date range to constrain expenses. `nil` means show all time.
+    var allowedInterval: DateInterval?
     
     // MARK: Services
     private let unplannedService = UnplannedExpenseService()
@@ -94,6 +95,13 @@ final class CardDetailViewModel: ObservableObject {
     init(card: CardItem, allowedInterval: DateInterval? = nil) {
         self.card = card
         self.allowedInterval = allowedInterval
+    }
+
+    /// Updates the allowed date range and reloads expenses.
+    /// - Parameter interval: New interval to display, or `nil` for all time.
+    func updateAllowedInterval(_ interval: DateInterval?) async {
+        allowedInterval = interval
+        await load()
     }
     
     // MARK: load()

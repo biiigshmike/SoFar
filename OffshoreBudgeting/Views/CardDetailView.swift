@@ -24,6 +24,9 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+    @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
+    private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
+    @State private var selectedDate: Date = Date()
 
     // No longer tracking header offset via state; the header is rendered
     // outside of the scroll view and does not need to drive layout of the
@@ -31,6 +34,11 @@ struct CardDetailView: View {
     // @State private var headerOffset: CGFloat = 0
 
     private let initialHeaderTopPadding: CGFloat = 16
+
+    private var currentInterval: DateInterval {
+        let range = budgetPeriod.range(containing: selectedDate)
+        return DateInterval(start: range.start, end: range.end)
+    }
     
     // MARK: Init
     init(card: CardItem,
@@ -114,14 +122,24 @@ struct CardDetailView: View {
                 #endif
                 }
         }
-        .task { await viewModel.load() }
+        .task {
+            selectedDate = budgetPeriod.start(of: Date())
+            await viewModel.updateAllowedInterval(currentInterval)
+        }
+        .onChange(of: selectedDate) { _, _ in
+            Task { await viewModel.updateAllowedInterval(currentInterval) }
+        }
+        .onChange(of: budgetPeriodRawValue) { _, _ in
+            selectedDate = budgetPeriod.start(of: selectedDate)
+            Task { await viewModel.updateAllowedInterval(currentInterval) }
+        }
         //.accentColor(themeManager.selectedTheme.tint)
         //.tint(themeManager.selectedTheme.tint)
         // Add Unplanned Expense sheet for this card
         .sheet(isPresented: $isPresentingAddExpense) {
             AddUnplannedExpenseView(
                 initialCardID: card.objectID,
-                initialDate: Date(),
+                initialDate: selectedDate,
                 onSaved: {
                     isPresentingAddExpense = false
                     Task { await viewModel.load() }
@@ -141,30 +159,47 @@ struct CardDetailView: View {
         case .initial, .loading:
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         case .error(let message):
-            VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 40, weight: .bold))
-                Text("Couldn’t load details")
-                    .font(.headline)
-                Text(message).font(.subheadline).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 20) {
+                    periodHeader
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 40, weight: .bold))
+                        Text("Couldn’t load details")
+                            .font(.headline)
+                        Text(message).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                }
+                .padding(.horizontal)
+                .padding(.top, initialHeaderTopPadding)
+                .padding(.bottom, 24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
         case .empty:
-            VStack(spacing: 12) {
-                Image(systemName: "creditcard")
-                    .font(.system(size: 44, weight: .regular))
-                    .foregroundStyle(.secondary)
-                Text("No expenses yet")
-                    .font(.title3.weight(.semibold))
-                Text("Add an expense to see totals and categories here.")
-                    .font(.subheadline).foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 20) {
+                    periodHeader
+                    VStack(spacing: 12) {
+                        Image(systemName: "creditcard")
+                            .font(.system(size: 44, weight: .regular))
+                            .foregroundStyle(.secondary)
+                        Text("No expenses yet")
+                            .font(.title3.weight(.semibold))
+                        Text("Add an expense to see totals and categories here.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+                }
+                .padding(.horizontal)
+                .padding(.top, initialHeaderTopPadding)
+                .padding(.bottom, 24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding()
         case .loaded(let total, _, _):
             ScrollView {
                 VStack(spacing: 20) {
+                    periodHeader
                     CardTileView(card: card)
                         .frame(maxWidth: 360)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -176,10 +211,30 @@ struct CardDetailView: View {
                 .padding(.top, initialHeaderTopPadding)
                 .padding(.bottom, 24)
             }
-    }
+        }
     }
 
-    
+    // MARK: periodHeader
+    private var periodHeader: some View {
+        HStack(spacing: DS.Spacing.s) {
+            Button { selectedDate = budgetPeriod.advance(selectedDate, by: -1) } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.plain)
+
+            Text(budgetPeriod.title(for: selectedDate))
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            Button { selectedDate = budgetPeriod.advance(selectedDate, by: 1) } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: totalsSection
     private func totalsSection(total: Double) -> some View {
         VStack(alignment: .leading, spacing: 8) {
