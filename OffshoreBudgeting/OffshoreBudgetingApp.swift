@@ -92,6 +92,8 @@ struct OffshoreBudgetingApp: App {
                 .keyboardShortcut("?", modifiers: .command)
             }
         }
+#endif
+#if os(macOS)
         Window("Offshore Budgeting Help", id: "help") {
             HelpView()
         }
