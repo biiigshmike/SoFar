@@ -81,6 +81,7 @@ extension PlannedExpenseService {
         child.globalTemplateID = template.id
         child.budget = budget
         child.card = template.card
+        child.expenseCategory = template.expenseCategory
 
         return child
     }
