@@ -239,13 +239,17 @@ final class PlannedExpenseService {
                    intoBudgetID budgetID: UUID,
                    on date: Date) throws -> PlannedExpense {
         let title = Self.getTitleOrDescription(from: expense) ?? ""
-        return try create(inBudgetID: budgetID,
-                          titleOrDescription: title,
-                          plannedAmount: expense.plannedAmount,
-                          actualAmount: expense.actualAmount,
-                          transactionDate: date,
-                          isGlobal: false,
-                          globalTemplateID: expense.globalTemplateID)
+        let clone = try create(inBudgetID: budgetID,
+                               titleOrDescription: title,
+                               plannedAmount: expense.plannedAmount,
+                               actualAmount: expense.actualAmount,
+                               transactionDate: date,
+                               isGlobal: false,
+                               globalTemplateID: expense.globalTemplateID)
+        clone.card = expense.card
+        clone.expenseCategory = expense.expenseCategory
+        try expenseRepo.saveIfNeeded()
+        return clone
     }
     
     // MARK: - UPDATE
