@@ -30,6 +30,7 @@ struct CardsView: View {
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
     @State private var isPresentingAddExpense = false
+    @State private var searchText: String = ""
 
     // MARK: Selection State
     /// Stable selection keyed to CardItem.id (works for objectID-backed and preview items).
@@ -117,6 +118,7 @@ struct CardsView: View {
             .background(themeManager.selectedTheme.background.ignoresSafeArea())
             //.accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
+            .searchable(text: $searchText)
     }
 
     // MARK: - Content View (Type-Safe)
@@ -170,10 +172,11 @@ struct CardsView: View {
     // MARK: Grid View
     /// - Parameter cards: Data snapshot to render.
     private func gridView(cards: [CardItem]) -> some View {
-        ZStack {
+        let filtered = searchText.isEmpty ? cards : cards.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return ZStack {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: DS.Spacing.l) {
-                ForEach(cards) { card in
+                ForEach(filtered) { card in
                     CardTileView(
                         card: card,
                         isSelected: selectedCardStableID == card.id
