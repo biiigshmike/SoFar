@@ -24,6 +24,20 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+    @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
+    private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
+
+    private enum ExpenseDateFilter: String, CaseIterable, Identifiable {
+        case all, current
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .all: return "All Time"
+            case .current: return "Current Period"
+            }
+        }
+    }
+    @State private var selectedFilter: ExpenseDateFilter = .current
 
     // No longer tracking header offset via state; the header is rendered
     // outside of the scroll view and does not need to drive layout of the
@@ -80,6 +94,17 @@ struct CardDetailView: View {
                             IconOnlyButton(systemName: "pencil") {
                                 onEdit()
                             }
+                            Menu {
+                                Picker("Date Range", selection: $selectedFilter) {
+                                    ForEach(ExpenseDateFilter.allCases) { filter in
+                                        Text(filter.title).tag(filter)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "line.3.horizontal.decrease.circle")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(themeManager.selectedTheme.accent)
+                            }
                         }
                     }
                 #else
@@ -109,12 +134,26 @@ struct CardDetailView: View {
                             IconOnlyButton(systemName: "pencil") {
                                 onEdit()
                             }
+                            Menu {
+                                Picker("Date Range", selection: $selectedFilter) {
+                                    ForEach(ExpenseDateFilter.allCases) { filter in
+                                        Text(filter.title).tag(filter)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "line.3.horizontal.decrease.circle")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(themeManager.selectedTheme.accent)
+                            }
                         }
                     }
                 #endif
                 }
         }
-        .task { await viewModel.load() }
+        .task { await viewModel.applyFilter(intervalForSelectedFilter()) }
+        .onChange(of: selectedFilter) { _, _ in
+            Task { await viewModel.applyFilter(intervalForSelectedFilter()) }
+        }
         //.accentColor(themeManager.selectedTheme.tint)
         //.tint(themeManager.selectedTheme.tint)
         // Add Unplanned Expense sheet for this card
@@ -242,6 +281,17 @@ struct CardDetailView: View {
         .padding()
         .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: Helpers
+    private func intervalForSelectedFilter() -> DateInterval? {
+        switch selectedFilter {
+        case .all:
+            return nil
+        case .current:
+            let (start, end) = budgetPeriod.range(containing: Date())
+            return DateInterval(start: start, end: end)
+        }
     }
 
     // The sectionOffset helper and associated preference key were removed
