@@ -17,6 +17,9 @@ struct OffshoreBudgetingApp: App {
     // MARK: Dependencies
     @StateObject private var themeManager = ThemeManager()
     @Environment(\.colorScheme) private var systemColorScheme
+#if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+#endif
     
     // MARK: Onboarding State
     /// Persisted flag indicating whether the intro flow has been completed.
@@ -81,6 +84,17 @@ struct OffshoreBudgetingApp: App {
         }
 #if os(macOS)
         .defaultSize(width: 1000, height: 800)
+        .commands {
+            CommandGroup(replacing: .help) {
+                Button("Offshore Budgeting Help") {
+                    openWindow(id: "help")
+                }
+                .keyboardShortcut("?", modifiers: .command)
+            }
+        }
+        Window("Offshore Budgeting Help", id: "help") {
+            HelpView()
+        }
 #endif
     }
 }
