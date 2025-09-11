@@ -154,6 +154,27 @@ struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
 
+                // MARK: Help Card
+                SettingsCard(
+                    iconSystemName: "book",
+                    title: "Help",
+                    subtitle: "Open the in-app guide.",
+                ) {
+                    VStack(spacing: 0) {
+                        NavigationLink {
+                            HelpView()
+                        } label: {
+                            SettingsRow(title: "View Help", detail: "Open") {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
                 // MARK: Onboarding Card
                 SettingsCard(
                     iconSystemName: "questionmark.circle",
