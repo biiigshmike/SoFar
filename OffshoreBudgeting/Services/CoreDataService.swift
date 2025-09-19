@@ -179,13 +179,10 @@ final class CoreDataService: ObservableObject {
     }
 
     private func handleCloudKitEvent(_ event: NSPersistentCloudKitContainer.Event) {
-        switch event.type {
-        case .setupDidFail, .accountChange:
-            break
-        default:
-            return
-        }
-
+        // Some SDK versions (older iOS/macOS deployment targets) don't expose the
+        // newer `.setupDidFail`/`.accountChange` cases on `EventType`. Instead of
+        // relying on the case we detect the well-known account change error and
+        // respond to it uniformly.
         guard let error = event.error as NSError? else { return }
         guard error.domain == NSCocoaErrorDomain, error.code == 134405 else { return }
 
