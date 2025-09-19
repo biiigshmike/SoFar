@@ -60,7 +60,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .blossom: return Color(red: 1.0, green: 0.4, blue: 0.7)
         case .lavender: return .purple
         case .mint: return Color(red: 0.0, green: 0.7, blue: 0.5)
-        case .tahoe: return Color(red: 0.20, green: 0.56, blue: 0.98)
+        case .tahoe: return Color(red: 0.35, green: 0.72, blue: 0.98)
         }
     }
 
@@ -139,7 +139,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .mint:
             return Color(red: 0.93, green: 1.0, blue: 0.94)
         case .tahoe:
-            return Color(red: 0.07, green: 0.13, blue: 0.22)
+            return Color(red: 0.05, green: 0.11, blue: 0.20)
         }
     }
 
@@ -179,7 +179,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .mint:
             return Color(red: 0.88, green: 0.98, blue: 0.90)
         case .tahoe:
-            return Color(red: 0.12, green: 0.21, blue: 0.30)
+            return Color(red: 0.08, green: 0.16, blue: 0.26)
         }
     }
 
@@ -217,7 +217,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .mint:
             return Color(red: 0.83, green: 0.95, blue: 0.86)
         case .tahoe:
-            return Color(red: 0.16, green: 0.27, blue: 0.36)
+            return Color(red: 0.12, green: 0.21, blue: 0.32)
         }
     }
 
@@ -342,26 +342,26 @@ extension AppTheme.GlassConfiguration {
 
     static let tahoe = AppTheme.GlassConfiguration(
         liquid: .init(
-            tintOpacity: 0.36,
-            saturation: 1.28,
-            brightness: 0.06,
-            contrast: 1.08,
-            bloom: 0.22
+            tintOpacity: 0.30,
+            saturation: 1.15,
+            brightness: 0.03,
+            contrast: 1.04,
+            bloom: 0.16
         ),
         glass: .init(
-            highlightColor: Color(red: 0.80, green: 0.94, blue: 1.0),
-            highlightOpacity: 0.48,
-            highlightBlur: 32,
-            shadowColor: Color(red: 0.00, green: 0.16, blue: 0.32),
-            shadowOpacity: 0.42,
-            shadowBlur: 36,
-            specularColor: Color(red: 0.66, green: 0.82, blue: 1.0),
-            specularOpacity: 0.58,
-            specularWidth: 0.035,
-            noiseOpacity: 0.12,
-            rimColor: Color(red: 0.54, green: 0.78, blue: 1.0),
-            rimOpacity: 0.28,
-            rimWidth: 2.4,
+            highlightColor: Color(red: 0.82, green: 0.94, blue: 1.0),
+            highlightOpacity: 0.34,
+            highlightBlur: 46,
+            shadowColor: Color(red: 0.03, green: 0.11, blue: 0.24),
+            shadowOpacity: 0.22,
+            shadowBlur: 56,
+            specularColor: Color(red: 0.60, green: 0.82, blue: 1.0),
+            specularOpacity: 0.42,
+            specularWidth: 0.06,
+            noiseOpacity: 0.05,
+            rimColor: Color(red: 0.48, green: 0.78, blue: 1.0),
+            rimOpacity: 0.14,
+            rimWidth: 1.2,
             rimBlur: 18,
             material: .thin
         )
