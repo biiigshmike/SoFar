@@ -31,10 +31,10 @@ struct RootTabView: View {
         }
         .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) {
+        .onChange(of: themeManager.selectedTheme) { _, _ in
             updateTabBarAppearance()
         }
-        .onChange(of: platformCapabilities) { _ in
+        .onChange(of: platformCapabilities) { _, _ in
             updateTabBarAppearance()
         }
     }
