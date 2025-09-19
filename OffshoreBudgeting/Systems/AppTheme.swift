@@ -565,12 +565,15 @@ fileprivate enum AppThemeColorUtilities {
         return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
         #elseif canImport(AppKit)
         let platformColor = NSColor(color)
-        let converted = platformColor.usingColorSpace(.deviceRGB) ?? platformColor
+        let converted = platformColor.usingColorSpace(.deviceRGB)
+            ?? platformColor.usingColorSpace(.genericRGB)
+            ?? platformColor.usingColorSpace(.sRGB)
+        guard let converted = converted else { return nil }
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
-        guard converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
+        converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
         #else
         return nil
@@ -588,12 +591,15 @@ fileprivate enum AppThemeColorUtilities {
         return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
         #elseif canImport(AppKit)
         let platformColor = NSColor(color)
-        let converted = platformColor.usingColorSpace(.deviceRGB) ?? platformColor
+        let converted = platformColor.usingColorSpace(.deviceRGB)
+            ?? platformColor.usingColorSpace(.genericRGB)
+            ?? platformColor.usingColorSpace(.sRGB)
+        guard let converted = converted else { return nil }
         var hue: CGFloat = 0
         var saturation: CGFloat = 0
         var brightness: CGFloat = 0
         var alpha: CGFloat = 0
-        guard converted.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return nil }
+        converted.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
         return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
         #else
         return nil
@@ -651,7 +657,7 @@ fileprivate enum AppThemeColorUtilities {
         components.brightness = (components.brightness * brightnessMultiplier).clamped(to: 0...1)
         if let alpha { components.alpha = alpha.clamped(to: 0...1) }
 
-        return color(from: components)
+        return Self.color(from: components)
     }
 }
 
