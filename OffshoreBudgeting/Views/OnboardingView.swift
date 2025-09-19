@@ -223,6 +223,7 @@ private struct CloudSyncStep: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(DS.Spacing.l)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .cardBackground()
 
                 Button(action: onNext) {
@@ -235,8 +236,9 @@ private struct CloudSyncStep: View {
                 .tint(themeManager.selectedTheme.tint)
             }
             .padding(.vertical, DS.Spacing.xl)
+            .frame(maxWidth: 640, alignment: .leading)
             .padding(.horizontal, DS.Spacing.l)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
