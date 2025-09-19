@@ -189,56 +189,15 @@ private struct CloudSyncStep: View {
     let onNext: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    Text("Sync with iCloud")
-                        .font(.largeTitle.bold())
-                    Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                    Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
-                        .font(.headline)
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                        Toggle("Sync card themes", isOn: $syncCardThemes)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync app appearance", isOn: $syncAppTheme)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync budget period", isOn: $syncBudgetPeriod)
-                            .disabled(!enableCloudSync)
-                    }
-                    .foregroundStyle(enableCloudSync ? .primary : .secondary)
-                    .opacity(enableCloudSync ? 1 : 0.5)
-                    .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
-
-                    Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(DS.Spacing.l)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cardBackground()
-
-                Button(action: onNext) {
-                    Text("Continue")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.m)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(themeManager.selectedTheme.tint)
+        GeometryReader { proxy in
+            ScrollView {
+                layout(for: proxy.size.width)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, DS.Spacing.xxl)
             }
-            .padding(.vertical, DS.Spacing.xl)
-            .frame(maxWidth: 640, alignment: .leading)
-            .padding(.horizontal, DS.Spacing.l)
-            .frame(maxWidth: .infinity, alignment: .center)
         }
         .onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
@@ -246,6 +205,101 @@ private struct CloudSyncStep: View {
             if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
         }
+    }
+
+    // MARK: Layout Builders
+    @ViewBuilder
+    private func layout(for width: CGFloat) -> some View {
+        let columnMinimumWidth: CGFloat = 320
+        let wideSpacing = DS.Spacing.xxl
+        let twoColumnThreshold = (columnMinimumWidth * 2) + (wideSpacing * 3)
+
+        if dynamicTypeSize >= .accessibility3 {
+            stackedLayout()
+        } else if width >= twoColumnThreshold {
+            twoColumnLayout(maxWidth: width,
+                            columnMinimumWidth: columnMinimumWidth,
+                            wideSpacing: wideSpacing)
+        } else {
+            stackedLayout()
+        }
+    }
+
+    private func twoColumnLayout(maxWidth: CGFloat, columnMinimumWidth: CGFloat, wideSpacing: CGFloat) -> some View {
+        let interiorWidth = maxWidth - (wideSpacing * 2)
+        let clampedWidth = min(interiorWidth, 1100)
+
+        return HStack(alignment: .top, spacing: wideSpacing) {
+            overviewSection()
+                .frame(minWidth: columnMinimumWidth, maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                preferenceCard()
+                continueButton()
+            }
+            .frame(minWidth: columnMinimumWidth, maxWidth: 420, alignment: .leading)
+        }
+        .frame(maxWidth: clampedWidth, alignment: .center)
+        .padding(.horizontal, wideSpacing)
+    }
+
+    private func stackedLayout() -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            overviewSection()
+            preferenceCard()
+            continueButton()
+        }
+        .frame(maxWidth: 600, alignment: .leading)
+        .padding(.horizontal, DS.Spacing.l)
+    }
+
+    // MARK: Sections
+    private func overviewSection() -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            Text("Sync with iCloud")
+                .font(.largeTitle.bold())
+            Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func preferenceCard() -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                Toggle("Sync card themes", isOn: $syncCardThemes)
+                    .disabled(!enableCloudSync)
+                Toggle("Sync app appearance", isOn: $syncAppTheme)
+                    .disabled(!enableCloudSync)
+                Toggle("Sync budget period", isOn: $syncBudgetPeriod)
+                    .disabled(!enableCloudSync)
+            }
+            .foregroundStyle(enableCloudSync ? .primary : .secondary)
+            .opacity(enableCloudSync ? 1 : 0.5)
+            .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
+
+            Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardBackground()
+    }
+
+    private func continueButton() -> some View {
+        Button(action: onNext) {
+            Text("Continue")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.m)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(themeManager.selectedTheme.tint)
     }
 }
 
