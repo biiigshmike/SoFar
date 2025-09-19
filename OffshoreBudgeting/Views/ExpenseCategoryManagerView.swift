@@ -26,6 +26,7 @@ struct ExpenseCategoryManagerView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
 
     // MARK: Sorting (extracted to avoid heavy type inference)
     /// Keeping sort descriptors as a static constant helps Swift’s type-checker.
@@ -50,6 +51,53 @@ struct ExpenseCategoryManagerView: View {
 
     // MARK: - Body
     var body: some View {
+        Group {
+            if isOnboardingPresentation {
+                baseView
+            } else {
+                baseView
+                    .ub_glassBackground(
+                        themeManager.selectedTheme.background,
+                        configuration: themeManager.selectedTheme.glassConfiguration,
+                        ignoringSafeArea: .all
+                    )
+            }
+        }
+        .accentColor(themeManager.selectedTheme.tint)
+        .tint(themeManager.selectedTheme.tint)
+        .sheet(isPresented: $isPresentingAddSheet) {
+            ExpenseCategoryEditorSheet(
+                initialName: "",
+                initialHex: "#4E9CFF",
+                onSave: { name, hex in
+                    addCategory(name: name, hex: hex)
+                }
+            )
+        }
+        .sheet(item: $categoryToEdit) { category in
+            ExpenseCategoryEditorSheet(
+                initialName: category.name ?? "",
+                initialHex: category.color ?? "#999999",
+                onSave: { name, hex in
+                    category.name = name
+                    category.color = hex
+                    saveContext()
+                }
+            )
+        }
+        .alert(item: $categoryToDelete) { cat in
+            Alert(
+                title: Text("Delete \(cat.name ?? "Category")?"),
+                message: Text("This will remove the category."),
+                primaryButton: .destructive(Text("Delete")) {
+                    deleteCategory(cat)
+                },
+                secondaryButton: .cancel()
+            )
+        }
+    }
+
+    private var baseView: some View {
         Group {
             if categories.isEmpty {
                 emptyState
@@ -92,43 +140,6 @@ struct ExpenseCategoryManagerView: View {
                     Label("Add Category", systemImage: "plus")
                 }
             }
-        }
-        .ub_glassBackground(
-            themeManager.selectedTheme.background,
-            configuration: themeManager.selectedTheme.glassConfiguration,
-            ignoringSafeArea: .all
-        )
-        .accentColor(themeManager.selectedTheme.tint)
-        .tint(themeManager.selectedTheme.tint)
-        .sheet(isPresented: $isPresentingAddSheet) {
-            ExpenseCategoryEditorSheet(
-                initialName: "",
-                initialHex: "#4E9CFF",
-                onSave: { name, hex in
-                    addCategory(name: name, hex: hex)
-                }
-            )
-        }
-        .sheet(item: $categoryToEdit) { category in
-            ExpenseCategoryEditorSheet(
-                initialName: category.name ?? "",
-                initialHex: category.color ?? "#999999",
-                onSave: { name, hex in
-                    category.name = name
-                    category.color = hex
-                    saveContext()
-                }
-            )
-        }
-        .alert(item: $categoryToDelete) { cat in
-            Alert(
-                title: Text("Delete \(cat.name ?? "Category")?"),
-                message: Text("This will remove the category."),
-                primaryButton: .destructive(Text("Delete")) {
-                    deleteCategory(cat)
-                },
-                secondaryButton: .cancel()
-            )
         }
     }
 
