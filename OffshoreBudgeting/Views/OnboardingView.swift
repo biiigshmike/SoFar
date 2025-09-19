@@ -4,11 +4,12 @@ import SwiftUI
 /// Root container presenting a multi-step onboarding flow.
 /// Steps:
 /// 1. Welcome screen
-/// 2. Category creation
-/// 3. Card creation
-/// 4. Preset creation
-/// 5. iCloud sync configuration
-/// 6. Loading completion screen
+/// 2. Theme selection
+/// 3. Category creation
+/// 4. Card creation
+/// 5. Preset creation
+/// 6. iCloud sync configuration
+/// 7. Loading completion screen
 struct OnboardingView: View {
     // MARK: AppStorage
     /// Persisted flag indicating the user finished onboarding.
@@ -22,7 +23,7 @@ struct OnboardingView: View {
 
     // MARK: Step
     /// Enumeration of onboarding steps.
-    enum Step: Int { case welcome, categories, cards, presets, cloudSync, loading }
+    enum Step: Int { case welcome, theme, categories, cards, presets, cloudSync, loading }
     /// Current step in the flow.
     @State private var step: Step = .welcome
 
@@ -31,7 +32,9 @@ struct OnboardingView: View {
         ZStack {
             switch step {
             case .welcome:
-                WelcomeStep { step = .categories }
+                WelcomeStep { step = .theme }
+            case .theme:
+                ThemeStep { step = .categories }
             case .categories:
                 CategoriesStep { step = .cards }
             case .cards:
@@ -80,6 +83,190 @@ private struct WelcomeStep: View {
             Button("Get Started") { onNext() }
 //                .buttonStyle(.borderedProminent)
 //                .buttonBorderShape(.roundedRectangle)
+        }
+        .padding(DS.Spacing.l)
+    }
+}
+
+// MARK: - ThemeStep
+/// Lets users preview and select their preferred app theme before diving into setup.
+/// - Parameter onNext: Callback fired after the user confirms their choice.
+private struct ThemeStep: View {
+    let onNext: () -> Void
+
+    @EnvironmentObject private var themeManager: ThemeManager
+    @State private var selectedTheme: AppTheme = .system
+
+    var body: some View {
+        ZStack {
+            themeManager.selectedTheme.background
+                .ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                    header
+                    themePicker
+                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                        Text("You can change this anytime from Settings.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        continueButton
+                    }
+                }
+                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.xl)
+                .frame(maxWidth: 560, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .onAppear { selectedTheme = themeManager.selectedTheme }
+        .onChange(of: themeManager.selectedTheme) { newValue in
+            guard newValue != selectedTheme else { return }
+            selectedTheme = newValue
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            Text("Choose Your Theme")
+                .font(.largeTitle.bold())
+            Text("Preview each style instantly to see how cards, backgrounds, and accents adapt.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var themePicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: DS.Spacing.l) {
+                ForEach(AppTheme.allCases) { theme in
+                    ThemePreviewTile(theme: theme, isSelected: theme == selectedTheme)
+                        .onTapGesture { select(theme) }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(theme.displayName))
+                        .accessibilityAddTraits(theme == selectedTheme ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, DS.Spacing.s)
+            .padding(.trailing, DS.Spacing.l)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var continueButton: some View {
+        Button(action: onNext) {
+            Text("Continue")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.m)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(themeManager.selectedTheme.tint)
+        .padding(.top, DS.Spacing.m)
+    }
+
+    private func select(_ theme: AppTheme) {
+        guard theme != selectedTheme else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            selectedTheme = theme
+            themeManager.selectedTheme = theme
+        }
+    }
+}
+
+// MARK: ThemePreviewTile
+private struct ThemePreviewTile: View {
+    let theme: AppTheme
+    let isSelected: Bool
+
+    private var outlineColor: Color { theme.tint ?? theme.accent }
+
+    private var textColor: Color {
+        switch theme.colorScheme {
+        case .some(.dark):
+            return .white
+        case .some(.light):
+            return Color.black.opacity(0.9)
+        case nil:
+            return .primary
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(theme.secondaryBackground)
+                    .overlay(cardDemo)
+                Circle()
+                    .fill(outlineColor.opacity(0.15))
+                    .frame(width: 70, height: 70)
+                    .offset(x: 110, y: -26)
+            }
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(theme.displayName)
+                    .font(.headline)
+                    .foregroundStyle(textColor)
+                Text("Rich gradients, glass, and accents tailored to this palette.")
+                    .font(.footnote)
+                    .foregroundStyle(textColor.opacity(0.7))
+            }
+        }
+        .padding(DS.Spacing.l)
+        .frame(width: 240, height: 300)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(theme.background)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(outlineColor.opacity(isSelected ? 1 : 0.0), lineWidth: isSelected ? 3 : 0)
+        )
+        .shadow(color: .black.opacity(isSelected ? 0.22 : 0.12), radius: isSelected ? 16 : 10, x: 0, y: isSelected ? 10 : 6)
+        .scaleEffect(isSelected ? 1.03 : 1.0)
+        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: isSelected)
+    }
+
+    private var cardDemo: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill((theme.tint ?? theme.accent).opacity(0.85))
+                .frame(height: 40)
+                .overlay(
+                    HStack {
+                        Capsule()
+                            .fill(Color.white.opacity(0.35))
+                            .frame(width: 70, height: 8)
+                        Spacer()
+                        Circle()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 18, height: 18)
+                    }
+                    .padding(.horizontal, DS.Spacing.m)
+                )
+
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                Capsule()
+                    .fill((theme.secondaryAccent).opacity(0.9))
+                    .frame(width: 90, height: 10)
+                Capsule()
+                    .fill((theme.accent).opacity(0.55))
+                    .frame(width: 60, height: 10)
+                Capsule()
+                    .fill((theme.accent).opacity(0.35))
+                    .frame(width: 110, height: 10)
+            }
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.s) {
+                Capsule()
+                    .fill((theme.tint ?? theme.accent).opacity(0.9))
+                    .frame(width: 70, height: 22)
+                Capsule()
+                    .fill(Color.white.opacity(0.18))
+                    .frame(width: 36, height: 22)
+            }
         }
         .padding(DS.Spacing.l)
     }
