@@ -56,7 +56,7 @@ struct OnboardingView: View {
         }
         .animation(.easeInOut, value: step)
         .transition(.opacity)
-        .onChange(of: enableCloudSync) { newValue in
+        .onChange(of: enableCloudSync) { _, newValue in
             guard !newValue else { return }
             syncCardThemes = false
             syncAppTheme = false
@@ -120,7 +120,7 @@ private struct ThemeStep: View {
             }
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
-        .onChange(of: themeManager.selectedTheme) { newValue in
+        .onChange(of: themeManager.selectedTheme) { _, newValue in
             guard newValue != selectedTheme else { return }
             selectedTheme = newValue
         }
@@ -183,10 +183,15 @@ private struct ThemePreviewTile: View {
 
     private var textColor: Color {
         switch theme.colorScheme {
-        case .some(.dark):
-            return .white
-        case .some(.light):
-            return Color.black.opacity(0.9)
+        case .some(let scheme):
+            switch scheme {
+            case .dark:
+                return .white
+            case .light:
+                return Color.black.opacity(0.9)
+            @unknown default:
+                return .primary
+            }
         case nil:
             return .primary
         }
@@ -385,7 +390,7 @@ private struct CloudSyncStep: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: enableCloudSync) { newValue in
+        .onChange(of: enableCloudSync) { _, newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }
