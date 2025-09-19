@@ -191,52 +191,12 @@ private struct CloudSyncStep: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    Text("Sync with iCloud")
-                        .font(.largeTitle.bold())
-                    Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                    Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
-                        .font(.headline)
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                        Toggle("Sync card themes", isOn: $syncCardThemes)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync app appearance", isOn: $syncAppTheme)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync budget period", isOn: $syncBudgetPeriod)
-                            .disabled(!enableCloudSync)
-                    }
-                    .foregroundStyle(enableCloudSync ? .primary : .secondary)
-                    .opacity(enableCloudSync ? 1 : 0.5)
-                    .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
-
-                    Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(DS.Spacing.l)
-                .cardBackground()
-
-                Button(action: onNext) {
-                    Text("Continue")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.m)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(themeManager.selectedTheme.tint)
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .frame(minHeight: proxy.size.height, alignment: .center)
             }
-            .padding(.vertical, DS.Spacing.xl)
-            .padding(.horizontal, DS.Spacing.l)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
@@ -244,6 +204,67 @@ private struct CloudSyncStep: View {
             if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
         }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            header
+            cloudOptionsCard
+            continueButton
+        }
+        .padding(.vertical, DS.Spacing.xxl)
+        .padding(.horizontal, DS.Spacing.xl)
+        .frame(maxWidth: 560, alignment: .leading)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            Text("Sync with iCloud")
+                .font(.largeTitle.bold())
+            Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var cloudOptionsCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                Toggle("Sync card themes", isOn: $syncCardThemes)
+                    .disabled(!enableCloudSync)
+                Toggle("Sync app appearance", isOn: $syncAppTheme)
+                    .disabled(!enableCloudSync)
+                Toggle("Sync budget period", isOn: $syncBudgetPeriod)
+                    .disabled(!enableCloudSync)
+            }
+            .foregroundStyle(enableCloudSync ? .primary : .secondary)
+            .opacity(enableCloudSync ? 1 : 0.5)
+            .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
+
+            Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.xl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardBackground()
+    }
+
+    private var continueButton: some View {
+        Button(action: onNext) {
+            Text("Continue")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.m)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(themeManager.selectedTheme.tint)
     }
 }
 
