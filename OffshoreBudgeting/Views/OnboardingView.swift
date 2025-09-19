@@ -44,20 +44,36 @@ struct OnboardingView: View {
             case .welcome:
                 WelcomeStep { step = .theme }
             case .theme:
-                ThemeStep { step = .categories }
+                ThemeStep(
+                    onNext: { step = .categories },
+                    onBack: { step = .welcome }
+                )
             case .categories:
-                CategoriesStep { step = .cards }
+                CategoriesStep(
+                    onNext: { step = .cards },
+                    onBack: { step = .theme }
+                )
             case .cards:
-                CardsStep{ step = .presets }
+                CardsStep(
+                    onNext: { step = .presets },
+                    onBack: { step = .categories }
+                )
             case .presets:
-                PresetsStep { step = .cloudSync }
+                PresetsStep(
+                    onNext: { step = .cloudSync },
+                    onBack: { step = .cards }
+                )
             case .cloudSync:
                 CloudSyncStep(
                     enableCloudSync: $enableCloudSync,
                     syncCardThemes: $syncCardThemes,
                     syncAppTheme: $syncAppTheme,
                     syncBudgetPeriod: $syncBudgetPeriod
-                ) { step = .loading }
+                ) {
+                    step = .loading
+                } onBack: {
+                    step = .presets
+                }
             case .loading:
                 LoadingStep {
                     didCompleteOnboarding = true
@@ -109,9 +125,12 @@ private struct WelcomeStep: View {
 
 // MARK: - ThemeStep
 /// Lets users preview and select their preferred app theme before diving into setup.
-/// - Parameter onNext: Callback fired after the user confirms their choice.
+/// - Parameters:
+///   - onNext: Callback fired after the user confirms their choice.
+///   - onBack: Callback fired when the user wants to return to the previous step.
 private struct ThemeStep: View {
     let onNext: () -> Void
+    let onBack: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var selectedTheme: AppTheme = .system
@@ -125,7 +144,7 @@ private struct ThemeStep: View {
                     Text("You can change this anytime from Settings.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    continueButton
+                    navigationButtons
                 }
             }
             .padding(.vertical, DS.Spacing.xxl)
@@ -167,9 +186,12 @@ private struct ThemeStep: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var continueButton: some View {
-        OnboardingPrimaryButton(title: "Continue", action: onNext)
-            .padding(.top, DS.Spacing.m)
+    private var navigationButtons: some View {
+        HStack(spacing: DS.Spacing.m) {
+            OnboardingSecondaryButton(title: "Back", action: onBack)
+            OnboardingPrimaryButton(title: "Continue", action: onNext)
+        }
+        .padding(.top, DS.Spacing.m)
     }
 
     private func select(_ theme: AppTheme) {
@@ -286,9 +308,12 @@ private struct ThemePreviewTile: View {
 
 // MARK: - CardsStep
 /// Allows users to add cards before proceeding.
-/// - Parameter onNext: Callback fired after user finishes adding cards.
+/// - Parameters:
+///   - onNext: Callback fired after user finishes adding cards.
+///   - onBack: Callback fired when the user wants to revisit the previous step.
 private struct CardsStep: View {
     let onNext: () -> Void
+    let onBack: () -> Void
     @State private var showIntro: Bool = true
 
     var body: some View {
@@ -324,7 +349,10 @@ private struct CardsStep: View {
             maxWidth: nil,
             contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
         ) {
-            OnboardingPrimaryButton(title: "Done", action: onNext)
+            HStack(spacing: DS.Spacing.m) {
+                OnboardingSecondaryButton(title: "Back", action: onBack)
+                OnboardingPrimaryButton(title: "Done", action: onNext)
+            }
         }
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.xxl)
@@ -333,9 +361,12 @@ private struct CardsStep: View {
 
 // MARK: - PresetsStep
 /// Introduces planned expense presets.
-/// - Parameter onNext: Callback fired after user finishes adding presets.
+/// - Parameters:
+///   - onNext: Callback fired after user finishes adding presets.
+///   - onBack: Callback fired when the user wants to revisit the previous step.
 private struct PresetsStep: View {
     let onNext: () -> Void
+    let onBack: () -> Void
     @State private var showIntro: Bool = true
 
     var body: some View {
@@ -367,7 +398,10 @@ private struct PresetsStep: View {
             maxWidth: nil,
             contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
         ) {
-            OnboardingPrimaryButton(title: "Done", action: onNext)
+            HStack(spacing: DS.Spacing.m) {
+                OnboardingSecondaryButton(title: "Back", action: onBack)
+                OnboardingPrimaryButton(title: "Done", action: onNext)
+            }
         }
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.xxl)
@@ -382,12 +416,14 @@ private struct PresetsStep: View {
 ///   - syncAppTheme: Binding to the app theme sync toggle.
 ///   - syncBudgetPeriod: Binding to the budget period sync toggle.
 ///   - onNext: Callback fired after the user makes a choice.
+///   - onBack: Callback fired when the user wants to revisit the previous step.
 private struct CloudSyncStep: View {
     @Binding var enableCloudSync: Bool
     @Binding var syncCardThemes: Bool
     @Binding var syncAppTheme: Bool
     @Binding var syncBudgetPeriod: Bool
     let onNext: () -> Void
+    let onBack: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -412,7 +448,7 @@ private struct CloudSyncStep: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xl) {
             header
             cloudOptionsCard
-            continueButton
+            navigationButtons
         }
         .padding(.vertical, DS.Spacing.xxl)
         .padding(.horizontal, DS.Spacing.xl)
@@ -484,16 +520,22 @@ private struct CloudSyncStep: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
-    private var continueButton: some View {
-        OnboardingPrimaryButton(title: "Continue", action: onNext)
+    private var navigationButtons: some View {
+        HStack(spacing: DS.Spacing.m) {
+            OnboardingSecondaryButton(title: "Back", action: onBack)
+            OnboardingPrimaryButton(title: "Continue", action: onNext)
+        }
     }
 }
 
 // MARK: - CategoriesStep
 /// Lets users create expense categories.
-/// - Parameter onNext: Callback fired after categories are added.
+/// - Parameters:
+///   - onNext: Callback fired after categories are added.
+///   - onBack: Callback fired when the user wants to revisit the previous step.
 private struct CategoriesStep: View {
     let onNext: () -> Void
+    let onBack: () -> Void
     @State private var showIntro: Bool = true
 
     var body: some View {
@@ -527,7 +569,10 @@ private struct CategoriesStep: View {
             maxWidth: nil,
             contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
         ) {
-            OnboardingPrimaryButton(title: "Done", action: onNext)
+            HStack(spacing: DS.Spacing.m) {
+                OnboardingSecondaryButton(title: "Back", action: onBack)
+                OnboardingPrimaryButton(title: "Done", action: onNext)
+            }
         }
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.xxl)
@@ -569,6 +614,76 @@ private struct OnboardingPrimaryButton: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(LiquidGlassButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+    }
+}
+
+private struct OnboardingSecondaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(
+            OnboardingSecondaryButtonStyle(tint: themeManager.selectedTheme.resolvedTint)
+        )
+    }
+}
+
+private struct OnboardingSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    var tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        let radius: CGFloat = 26
+
+        return configuration.label
+            .font(.headline)
+            .foregroundStyle(tint)
+            .padding(.vertical, DS.Spacing.m)
+            .padding(.horizontal, DS.Spacing.l)
+            .frame(maxWidth: .infinity)
+            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .background(background(isPressed: configuration.isPressed, radius: radius))
+            .overlay(border(radius: radius, isPressed: configuration.isPressed))
+            .overlay(highlight(radius: radius))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+
+    @ViewBuilder
+    private func background(isPressed: Bool, radius: CGFloat) -> some View {
+        if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(tint.opacity(isPressed ? 0.2 : 0.14))
+                .background(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
+                .compositingGroup()
+        } else {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(tint.opacity(isPressed ? 0.18 : 0.12))
+        }
+    }
+
+    private func border(radius: CGFloat, isPressed: Bool) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(tint.opacity(isPressed ? 0.6 : 0.45), lineWidth: 1.5)
+    }
+
+    private func highlight(radius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(
+                Color.white.opacity(capabilities.supportsLiquidGlass ? 0.22 : 0.14),
+                lineWidth: 1
+            )
+            .blendMode(.screen)
     }
 }
 
