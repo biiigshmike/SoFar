@@ -57,13 +57,19 @@ struct SettingsView: View {
                     title: "Appearance",
                     subtitle: "Select a theme for the app.",
                 ) {
-                    SettingsRow(title: "Theme") {
-                        Picker("", selection: $themeManager.selectedTheme) {
-                            ForEach(AppTheme.allCases) { theme in
-                                Text(theme.displayName).tag(theme)
+                    VStack(spacing: 0) {
+                        SettingsRow(title: "Theme") {
+                            Picker("", selection: $themeManager.selectedTheme) {
+                                ForEach(AppTheme.allCases) { theme in
+                                    Text(theme.displayName).tag(theme)
+                                }
                             }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
+
+                        if themeManager.selectedTheme == .liquidGlass {
+                            LiquidGlassCustomizationControls()
+                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
@@ -218,7 +224,7 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_glassBackground(
             themeManager.selectedTheme.background,
-            configuration: themeManager.selectedTheme.glassConfiguration,
+            configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
         .accentColor(themeManager.selectedTheme.tint)
@@ -245,6 +251,55 @@ struct SettingsView: View {
         #endif
     }
 
+}
+
+// MARK: - LiquidGlassCustomizationControls
+private struct LiquidGlassCustomizationControls: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    private var liquidBinding: Binding<Double> {
+        Binding(
+            get: { themeManager.liquidGlassCustomization.liquidAmount },
+            set: { themeManager.updateLiquidGlass(liquidAmount: $0) }
+        )
+    }
+
+    private var glassBinding: Binding<Double> {
+        Binding(
+            get: { themeManager.liquidGlassCustomization.glassDepth },
+            set: { themeManager.updateLiquidGlass(glassDepth: $0) }
+        )
+    }
+
+    private var liquidDisplay: String {
+        themeManager.liquidGlassCustomization.liquidAmount
+            .formatted(.percent.precision(.fractionLength(0)))
+    }
+
+    private var glassDisplay: String {
+        themeManager.liquidGlassCustomization.glassDepth
+            .formatted(.percent.precision(.fractionLength(0)))
+    }
+
+    var body: some View {
+        Group {
+            SettingsRow(title: "Liquid Intensity", detail: liquidDisplay) {
+                Slider(value: liquidBinding, in: 0...1, step: 0.01) {
+                    Text("Liquid Intensity")
+                }
+                .labelsHidden()
+                .frame(minWidth: 160, maxWidth: 220)
+            }
+
+            SettingsRow(title: "Glass Depth", detail: glassDisplay) {
+                Slider(value: glassBinding, in: 0...1, step: 0.01) {
+                    Text("Glass Depth")
+                }
+                .labelsHidden()
+                .frame(minWidth: 160, maxWidth: 220)
+            }
+        }
+    }
 }
 
 // MARK: - Platform-Safe Modifiers

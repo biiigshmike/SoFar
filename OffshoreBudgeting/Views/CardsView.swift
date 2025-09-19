@@ -53,7 +53,7 @@ struct CardsView: View {
                 baseView
                     .ub_glassBackground(
                         themeManager.selectedTheme.background,
-                        configuration: themeManager.selectedTheme.glassConfiguration,
+                        configuration: themeManager.glassConfiguration,
                         ignoringSafeArea: .all
                     )
             }

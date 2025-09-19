@@ -24,7 +24,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     case blossom
     case lavender
     case mint
-    case tahoe
+    case liquidGlass = "tahoe"
 
     var id: String { rawValue }
 
@@ -42,7 +42,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .blossom: return "Blossom"
         case .lavender: return "Lavender"
         case .mint: return "Mint"
-        case .tahoe: return "Tahoe"
+        case .liquidGlass: return "Liquid Glass"
         }
     }
 
@@ -60,7 +60,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .blossom: return Color(red: 1.0, green: 0.4, blue: 0.7)
         case .lavender: return .purple
         case .mint: return Color(red: 0.0, green: 0.7, blue: 0.5)
-        case .tahoe: return Color(red: 0.35, green: 0.72, blue: 0.98)
+        case .liquidGlass: return Color(red: 0.27, green: 0.58, blue: 0.98)
         }
     }
 
@@ -138,8 +138,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.95, green: 0.94, blue: 1.0)
         case .mint:
             return Color(red: 0.93, green: 1.0, blue: 0.94)
-        case .tahoe:
-            return Color(red: 0.05, green: 0.11, blue: 0.20)
+        case .liquidGlass:
+            return Color(red: 0.98, green: 0.99, blue: 1.0)
         }
     }
 
@@ -178,8 +178,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.90, green: 0.88, blue: 0.98)
         case .mint:
             return Color(red: 0.88, green: 0.98, blue: 0.90)
-        case .tahoe:
-            return Color(red: 0.08, green: 0.16, blue: 0.26)
+        case .liquidGlass:
+            return Color(red: 0.94, green: 0.97, blue: 1.0)
         }
     }
 
@@ -216,8 +216,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.85, green: 0.83, blue: 0.95)
         case .mint:
             return Color(red: 0.83, green: 0.95, blue: 0.86)
-        case .tahoe:
-            return Color(red: 0.12, green: 0.21, blue: 0.32)
+        case .liquidGlass:
+            return Color(red: 0.88, green: 0.94, blue: 1.0)
         }
     }
 
@@ -229,17 +229,22 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return nil
         case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
             return .light
-        case .midnight, .forest, .sunset, .nebula, .tahoe:
+        case .midnight, .forest, .sunset, .nebula:
             return .dark
+        case .liquidGlass:
+            return .light
         }
     }
 
     /// Tunable Liquid Glass controls that define how translucent surfaces are
     /// rendered for the theme.
-    var glassConfiguration: GlassConfiguration {
+    var baseGlassConfiguration: GlassConfiguration {
         switch self {
-        case .tahoe:
-            return .tahoe
+        case .liquidGlass:
+            return .liquidGlass(
+                liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
+                glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount
+            )
         default:
             return .standard
         }
@@ -313,6 +318,11 @@ extension AppTheme {
 }
 
 extension AppTheme.GlassConfiguration {
+    enum LiquidGlassDefaults {
+        static let liquidAmount: Double = 0.7
+        static let glassAmount: Double = 0.68
+    }
+
     static let standard = AppTheme.GlassConfiguration(
         liquid: .init(
             tintOpacity: 0.22,
@@ -340,32 +350,76 @@ extension AppTheme.GlassConfiguration {
         )
     )
 
-    static let tahoe = AppTheme.GlassConfiguration(
-        liquid: .init(
-            tintOpacity: 0.30,
-            saturation: 1.15,
-            brightness: 0.03,
-            contrast: 1.04,
-            bloom: 0.16
-        ),
-        glass: .init(
-            highlightColor: Color(red: 0.82, green: 0.94, blue: 1.0),
-            highlightOpacity: 0.34,
-            highlightBlur: 46,
-            shadowColor: Color(red: 0.03, green: 0.11, blue: 0.24),
-            shadowOpacity: 0.22,
-            shadowBlur: 56,
-            specularColor: Color(red: 0.60, green: 0.82, blue: 1.0),
-            specularOpacity: 0.42,
-            specularWidth: 0.06,
-            noiseOpacity: 0.05,
-            rimColor: Color(red: 0.48, green: 0.78, blue: 1.0),
-            rimOpacity: 0.14,
-            rimWidth: 1.2,
-            rimBlur: 18,
-            material: .thin
+    static func liquidGlass(liquidAmount: Double, glassAmount: Double) -> AppTheme.GlassConfiguration {
+        let clampedLiquid = liquidAmount.clamped(to: 0...1)
+        let clampedGlass = glassAmount.clamped(to: 0...1)
+
+        let tintOpacity = Double.lerp(0.12, 0.44, clampedLiquid)
+        let saturation = Double.lerp(1.0, 1.28, clampedLiquid)
+        let brightness = Double.lerp(0.0, 0.05, clampedLiquid)
+        let contrast = Double.lerp(0.98, 1.08, clampedLiquid)
+        let bloom = Double.lerp(0.0, 0.22, clampedLiquid)
+
+        let highlightOpacity = Double.lerp(0.2, 0.44, clampedGlass)
+        let highlightBlur = Double.lerp(22, 60, clampedGlass)
+        let shadowOpacity = Double.lerp(0.08, 0.26, clampedGlass)
+        let shadowBlur = Double.lerp(20, 64, clampedGlass)
+        let specularOpacity = Double.lerp(0.14, 0.46, clampedGlass)
+        let specularWidth = Double.lerp(0.04, 0.12, clampedGlass)
+        let noiseOpacity = Double.lerp(0.02, 0.06, clampedGlass)
+        let rimOpacity = Double.lerp(0.0, 0.16, clampedGlass)
+        let rimWidth = Double.lerp(0.8, 1.4, clampedGlass)
+        let rimBlur = Double.lerp(8, 20, clampedGlass)
+
+        let material: AppTheme.GlassConfiguration.GlassSettings.MaterialStyle
+        switch clampedGlass {
+        case ..<0.33:
+            material = .ultraThin
+        case ..<0.66:
+            material = .thin
+        default:
+            material = .regular
+        }
+
+        return AppTheme.GlassConfiguration(
+            liquid: .init(
+                tintOpacity: tintOpacity,
+                saturation: saturation,
+                brightness: brightness,
+                contrast: contrast,
+                bloom: bloom
+            ),
+            glass: .init(
+                highlightColor: Color.white,
+                highlightOpacity: highlightOpacity,
+                highlightBlur: highlightBlur,
+                shadowColor: Color(red: 0.30, green: 0.49, blue: 0.82),
+                shadowOpacity: shadowOpacity,
+                shadowBlur: shadowBlur,
+                specularColor: Color(red: 0.60, green: 0.82, blue: 1.0),
+                specularOpacity: specularOpacity,
+                specularWidth: specularWidth,
+                noiseOpacity: noiseOpacity,
+                rimColor: Color(red: 0.55, green: 0.78, blue: 1.0),
+                rimOpacity: rimOpacity,
+                rimWidth: rimWidth,
+                rimBlur: rimBlur,
+                material: material
+            )
         )
-    )
+    }
+}
+
+fileprivate extension Double {
+    static func lerp(_ min: Double, _ max: Double, _ amount: Double) -> Double {
+        min + (max - min) * amount
+    }
+
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        if self < range.lowerBound { return range.lowerBound }
+        if self > range.upperBound { return range.upperBound }
+        return self
+    }
 }
 
 // MARK: - ThemeManager
@@ -375,8 +429,10 @@ extension AppTheme.GlassConfiguration {
 @MainActor
 final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() }; applyAppearance() } }
+    @Published var liquidGlassCustomization: LiquidGlassCustomization { didSet { saveLiquidGlassCustomization() } }
 
     private let storageKey = "selectedTheme"
+    private static let liquidGlassStorageKey = "liquidGlassCustomization"
     private let ubiquitousStore = NSUbiquitousKeyValueStore.default
     private var isApplyingRemoteChange = false
 
@@ -393,6 +449,8 @@ final class ThemeManager: ObservableObject {
     }
 
     init() {
+        liquidGlassCustomization = Self.loadLiquidGlassCustomization()
+
         let raw: String?
         if Self.isSyncEnabled {
             ubiquitousStore.synchronize()
@@ -416,11 +474,37 @@ final class ThemeManager: ObservableObject {
         applyAppearance()
     }
 
+    var glassConfiguration: AppTheme.GlassConfiguration {
+        switch selectedTheme {
+        case .liquidGlass:
+            return AppTheme.GlassConfiguration.liquidGlass(
+                liquidAmount: liquidGlassCustomization.liquidAmount,
+                glassAmount: liquidGlassCustomization.glassDepth
+            )
+        default:
+            return selectedTheme.baseGlassConfiguration
+        }
+    }
+
+    func updateLiquidGlass(liquidAmount: Double? = nil, glassDepth: Double? = nil) {
+        let newLiquid = liquidAmount.map { $0.clamped(to: 0...1) } ?? liquidGlassCustomization.liquidAmount
+        let newGlass = glassDepth.map { $0.clamped(to: 0...1) } ?? liquidGlassCustomization.glassDepth
+
+        if newLiquid != liquidGlassCustomization.liquidAmount || newGlass != liquidGlassCustomization.glassDepth {
+            liquidGlassCustomization = LiquidGlassCustomization(liquidAmount: newLiquid, glassDepth: newGlass)
+        }
+    }
+
     private func save() {
         UserDefaults.standard.set(selectedTheme.rawValue, forKey: storageKey)
         guard Self.isSyncEnabled else { return }
         ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
         ubiquitousStore.synchronize()
+    }
+
+    private func saveLiquidGlassCustomization() {
+        guard let data = try? JSONEncoder().encode(liquidGlassCustomization) else { return }
+        UserDefaults.standard.set(data, forKey: Self.liquidGlassStorageKey)
     }
 
     /// Updates the current theme based on the provided system color scheme.
@@ -466,5 +550,31 @@ final class ThemeManager: ObservableObject {
                 self.isApplyingRemoteChange = false
             }
         }
+    }
+}
+
+extension ThemeManager {
+    struct LiquidGlassCustomization: Codable {
+        var liquidAmount: Double
+        var glassDepth: Double
+
+        static let `default` = LiquidGlassCustomization(
+            liquidAmount: AppTheme.GlassConfiguration.LiquidGlassDefaults.liquidAmount,
+            glassDepth: AppTheme.GlassConfiguration.LiquidGlassDefaults.glassAmount
+        )
+    }
+
+    private static func loadLiquidGlassCustomization() -> LiquidGlassCustomization {
+        guard
+            let data = UserDefaults.standard.data(forKey: Self.liquidGlassStorageKey),
+            let customization = try? JSONDecoder().decode(LiquidGlassCustomization.self, from: data)
+        else {
+            return .default
+        }
+
+        return LiquidGlassCustomization(
+            liquidAmount: customization.liquidAmount.clamped(to: 0...1),
+            glassDepth: customization.glassDepth.clamped(to: 0...1)
+        )
     }
 }
