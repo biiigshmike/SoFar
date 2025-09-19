@@ -97,7 +97,7 @@ struct EditSheetScaffold<Content: View>: View {
                     .listRowBackground(rowBackground)
                     .ub_glassBackground(
                         themeManager.selectedTheme.background,
-                        configuration: themeManager.selectedTheme.glassConfiguration
+                        configuration: themeManager.glassConfiguration
                     )
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
@@ -126,7 +126,7 @@ struct EditSheetScaffold<Content: View>: View {
                     .listRowBackground(rowBackground)
                     .ub_glassBackground(
                         themeManager.selectedTheme.background,
-                        configuration: themeManager.selectedTheme.glassConfiguration
+                        configuration: themeManager.glassConfiguration
                     )
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
@@ -157,7 +157,7 @@ struct EditSheetScaffold<Content: View>: View {
         .tint(themeManager.selectedTheme.tint)
         .ub_glassBackground(
             themeManager.selectedTheme.background,
-            configuration: themeManager.selectedTheme.glassConfiguration
+            configuration: themeManager.glassConfiguration
         )
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
