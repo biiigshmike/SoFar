@@ -26,7 +26,7 @@ final class CoreDataService: ObservableObject {
     
     /// Determines whether CloudKit-backed sync is enabled via user settings.
     private var enableCloudKitSync: Bool {
-        UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
     }
     
     // MARK: Load State
@@ -37,6 +37,7 @@ final class CoreDataService: ObservableObject {
     /// Observers for Core Data saves and remote changes that trigger view updates.
     private var didSaveObserver: NSObjectProtocol?
     private var remoteChangeObserver: NSObjectProtocol?
+    private var cloudKitEventObserver: NSObjectProtocol?
     
     // MARK: Persistent Container
     /// Expose the container as NSPersistentContainer to satisfy CoreDataStackProviding.
@@ -116,6 +117,12 @@ final class CoreDataService: ObservableObject {
 
         // Begin monitoring Core Data saves and remote changes.
         startObservingChanges()
+
+        if enableCloudKitSync {
+            startObservingCloudKitEvents()
+        } else {
+            stopObservingCloudKitEvents()
+        }
     }
 
     // MARK: Change Observation
@@ -140,6 +147,59 @@ final class CoreDataService: ObservableObject {
         ) { _ in
             NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
         }
+    }
+
+    // MARK: CloudKit Event Observation
+    /// Watches for CloudKit setup issues so we can disable sync automatically
+    /// instead of logging noisy errors when the user signs out or switches
+    /// iCloud accounts.
+    private func startObservingCloudKitEvents() {
+        guard cloudKitEventObserver == nil else { return }
+
+        cloudKitEventObserver = NotificationCenter.default.addObserver(
+            forName: NSPersistentCloudKitContainer.eventChangedNotification,
+            object: container,
+            queue: .main
+        ) { [weak self] note in
+            guard
+                let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event
+            else {
+                return
+            }
+
+            self?.handleCloudKitEvent(event)
+        }
+    }
+
+    private func stopObservingCloudKitEvents() {
+        if let observer = cloudKitEventObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        cloudKitEventObserver = nil
+    }
+
+    private func handleCloudKitEvent(_ event: NSPersistentCloudKitContainer.Event) {
+        switch event.type {
+        case .setupDidFail, .accountChange:
+            break
+        default:
+            return
+        }
+
+        guard let error = event.error as NSError? else { return }
+        guard error.domain == NSCocoaErrorDomain, error.code == 134405 else { return }
+
+        stopObservingCloudKitEvents()
+
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+
+        #if DEBUG
+        print("⚠️ Cloud sync disabled after detecting an iCloud account change. Error: \(error)")
+        #endif
     }
     
     // MARK: Save
