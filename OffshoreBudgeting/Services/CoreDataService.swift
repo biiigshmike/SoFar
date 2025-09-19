@@ -57,10 +57,10 @@ final class CoreDataService: ObservableObject {
         description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
         
         // CloudKit (deferred). When you’re ready, we’ll set:
-        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar)
+        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.offshore)
         // and ensure entitlements are set up. For now, leave it nil.
         if enableCloudKitSync {
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.SoFar")
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.offshore")
         }
         
         container.persistentStoreDescriptions = [description]
