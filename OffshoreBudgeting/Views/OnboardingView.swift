@@ -4,18 +4,25 @@ import SwiftUI
 /// Root container presenting a multi-step onboarding flow.
 /// Steps:
 /// 1. Welcome screen
-/// 2. Card creation
-/// 3. Preset creation
-/// 4. Expense category creation
-/// 5. Loading completion screen
+/// 2. Category creation
+/// 3. Card creation
+/// 4. Preset creation
+/// 5. iCloud sync configuration
+/// 6. Loading completion screen
 struct OnboardingView: View {
     // MARK: AppStorage
     /// Persisted flag indicating the user finished onboarding.
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
 
+    /// Cloud sync preferences stored globally so onboarding can opt the user in.
+    @AppStorage(AppSettingsKeys.enableCloudSync.rawValue) private var enableCloudSync: Bool = false
+    @AppStorage(AppSettingsKeys.syncCardThemes.rawValue) private var syncCardThemes: Bool = false
+    @AppStorage(AppSettingsKeys.syncAppTheme.rawValue) private var syncAppTheme: Bool = false
+    @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue) private var syncBudgetPeriod: Bool = false
+
     // MARK: Step
     /// Enumeration of onboarding steps.
-    enum Step: Int { case welcome, categories, cards, presets, loading }
+    enum Step: Int { case welcome, categories, cards, presets, cloudSync, loading }
     /// Current step in the flow.
     @State private var step: Step = .welcome
 
@@ -30,7 +37,14 @@ struct OnboardingView: View {
             case .cards:
                 CardsStep{ step = .presets }
             case .presets:
-                PresetsStep { step = .loading }
+                PresetsStep { step = .cloudSync }
+            case .cloudSync:
+                CloudSyncStep(
+                    enableCloudSync: $enableCloudSync,
+                    syncCardThemes: $syncCardThemes,
+                    syncAppTheme: $syncAppTheme,
+                    syncBudgetPeriod: $syncBudgetPeriod
+                ) { step = .loading }
             case .loading:
                 LoadingStep {
                     didCompleteOnboarding = true
@@ -39,6 +53,12 @@ struct OnboardingView: View {
         }
         .animation(.easeInOut, value: step)
         .transition(.opacity)
+        .onChange(of: enableCloudSync) { newValue in
+            guard !newValue else { return }
+            syncCardThemes = false
+            syncAppTheme = false
+            syncBudgetPeriod = false
+        }
     }
 }
 
@@ -149,6 +169,80 @@ private struct PresetsStep: View {
             Button("Done") { onNext() }
 //                .buttonStyle(.borderedProminent)
                 .padding()
+        }
+    }
+}
+
+// MARK: - CloudSyncStep
+/// Gives users the option to enable iCloud syncing during onboarding.
+/// - Parameters:
+///   - enableCloudSync: Binding to the master iCloud sync toggle.
+///   - syncCardThemes: Binding to the card appearance sync toggle.
+///   - syncAppTheme: Binding to the app theme sync toggle.
+///   - syncBudgetPeriod: Binding to the budget period sync toggle.
+///   - onNext: Callback fired after the user makes a choice.
+private struct CloudSyncStep: View {
+    @Binding var enableCloudSync: Bool
+    @Binding var syncCardThemes: Bool
+    @Binding var syncAppTheme: Bool
+    @Binding var syncBudgetPeriod: Bool
+    let onNext: () -> Void
+
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                    Text("Sync with iCloud")
+                        .font(.largeTitle.bold())
+                    Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                    Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
+                        .font(.headline)
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                        Toggle("Sync card themes", isOn: $syncCardThemes)
+                            .disabled(!enableCloudSync)
+                        Toggle("Sync app appearance", isOn: $syncAppTheme)
+                            .disabled(!enableCloudSync)
+                        Toggle("Sync budget period", isOn: $syncBudgetPeriod)
+                            .disabled(!enableCloudSync)
+                    }
+                    .foregroundStyle(enableCloudSync ? .primary : .secondary)
+                    .opacity(enableCloudSync ? 1 : 0.5)
+                    .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
+
+                    Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(DS.Spacing.l)
+                .cardBackground()
+
+                Button(action: onNext) {
+                    Text("Continue")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.m)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(themeManager.selectedTheme.tint)
+            }
+            .padding(.vertical, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.l)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onChange(of: enableCloudSync) { newValue in
+            guard newValue else { return }
+            if !syncCardThemes { syncCardThemes = true }
+            if !syncAppTheme { syncAppTheme = true }
+            if !syncBudgetPeriod { syncBudgetPeriod = true }
         }
     }
 }
