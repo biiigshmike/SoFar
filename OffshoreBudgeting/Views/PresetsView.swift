@@ -16,6 +16,7 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -27,6 +28,31 @@ struct PresetsView: View {
 
     // MARK: Body
     var body: some View {
+        Group {
+            if isOnboardingPresentation {
+                content
+            } else {
+                content
+                    .ub_glassBackground(
+                        themeManager.selectedTheme.background,
+                        configuration: themeManager.selectedTheme.glassConfiguration,
+                        ignoringSafeArea: .all
+                    )
+            }
+        }
+        .alert(item: $templateToDelete) { template in
+            Alert(
+                title: Text("Delete \(template.descriptionText ?? "Preset")?"),
+                message: Text("This will remove the preset and its assignments."),
+                primaryButton: .destructive(Text("Delete")) {
+                    delete(template: template)
+                },
+                secondaryButton: .cancel()
+            )
+        }
+    }
+
+    private var content: some View {
         NavigationStack {
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
@@ -127,21 +153,6 @@ struct PresetsView: View {
                 )
                 .environment(\.managedObjectContext, viewContext)
             }
-        }
-        .ub_glassBackground(
-            themeManager.selectedTheme.background,
-            configuration: themeManager.selectedTheme.glassConfiguration,
-            ignoringSafeArea: .all
-        )
-        .alert(item: $templateToDelete) { template in
-            Alert(
-                title: Text("Delete \(template.descriptionText ?? "Preset")?"),
-                message: Text("This will remove the preset and its assignments."),
-                primaryButton: .destructive(Text("Delete")) {
-                    delete(template: template)
-                },
-                secondaryButton: .cancel()
-            )
         }
     }
 

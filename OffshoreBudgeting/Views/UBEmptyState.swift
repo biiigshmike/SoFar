@@ -22,6 +22,9 @@ import SwiftUI
 /// Standardized empty-state presentation with optional action buttons.
 struct UBEmptyState: View {
 
+    @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
+    @EnvironmentObject private var themeManager: ThemeManager
+
     // MARK: Content
     /// SF Symbol name to display above the title.
     let iconSystemName: String
@@ -88,18 +91,32 @@ struct UBEmptyState: View {
 
             // MARK: Primary CTA (optional)
             if let primaryButtonTitle, let onPrimaryTap {
-                Button(action: onPrimaryTap) {
-                    Label(primaryButtonTitle, systemImage: "plus")
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.vertical, DS.Spacing.m)
-                        .background(Color.primary.opacity(0.08))
-                        .clipShape(Capsule())
+                if isOnboardingPresentation {
+                    Button(action: onPrimaryTap) {
+                        Label(primaryButtonTitle, systemImage: "plus")
+                            .labelStyle(.titleAndIcon)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(tint: onboardingTint))
+                    .frame(maxWidth: 320)
+                } else {
+                    Button(action: onPrimaryTap) {
+                        Label(primaryButtonTitle, systemImage: "plus")
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .padding(.vertical, DS.Spacing.m)
+                            .background(Color.primary.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain) // keep it neutral (no blue)
                 }
-                .buttonStyle(.plain) // keep it neutral (no blue)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.vertical, DS.Spacing.xl)
+    }
+
+    private var onboardingTint: Color {
+        themeManager.selectedTheme.tint ?? themeManager.selectedTheme.accent
     }
 }

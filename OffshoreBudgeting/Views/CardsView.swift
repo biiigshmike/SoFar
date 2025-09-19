@@ -27,6 +27,7 @@ struct CardsView: View {
     // MARK: State & Dependencies
     @StateObject private var viewModel = CardsViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
     @State private var isPresentingAddExpense = false
@@ -45,7 +46,21 @@ struct CardsView: View {
 
     // MARK: Body
     var body: some View {
-        // MARK: Main Content
+        Group {
+            if isOnboardingPresentation {
+                baseView
+            } else {
+                baseView
+                    .ub_glassBackground(
+                        themeManager.selectedTheme.background,
+                        configuration: themeManager.selectedTheme.glassConfiguration,
+                        ignoringSafeArea: .all
+                    )
+            }
+        }
+    }
+
+    private var baseView: some View {
         contentView
             // Let SwiftUI handle transitions between loading/empty/loaded states.
             .animation(.default, value: viewModel.state)
@@ -114,12 +129,6 @@ struct CardsView: View {
                     onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
                 )
             }
-            .ub_glassBackground(
-                themeManager.selectedTheme.background,
-                configuration: themeManager.selectedTheme.glassConfiguration,
-                ignoringSafeArea: .all
-            )
-            //.accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
     }
 

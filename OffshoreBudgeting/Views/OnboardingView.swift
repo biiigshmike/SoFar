@@ -11,6 +11,9 @@ import SwiftUI
 /// 6. iCloud sync configuration
 /// 7. Loading completion screen
 struct OnboardingView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
+
     // MARK: AppStorage
     /// Persisted flag indicating the user finished onboarding.
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
@@ -30,6 +33,13 @@ struct OnboardingView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
+            OnboardingBackgroundSurface(
+                tint: themeManager.selectedTheme.resolvedTint,
+                baseColor: themeManager.selectedTheme.background,
+                capabilities: capabilities
+            )
+            .ignoresSafeArea()
+
             switch step {
             case .welcome:
                 WelcomeStep { step = .theme }
@@ -54,6 +64,7 @@ struct OnboardingView: View {
                 }
             }
         }
+        .onboardingPresentation()
         .animation(.easeInOut, value: step)
         .transition(.opacity)
         .onChange(of: enableCloudSync) { _, newValue in
@@ -93,10 +104,6 @@ private struct WelcomeStep: View {
                 .padding(.bottom, DS.Spacing.xxl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            themeManager.selectedTheme.background
-                .ignoresSafeArea()
-        )
     }
 }
 
@@ -110,26 +117,21 @@ private struct ThemeStep: View {
     @State private var selectedTheme: AppTheme = .system
 
     var body: some View {
-        ZStack {
-            themeManager.selectedTheme.background
-                .ignoresSafeArea()
-
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                    header
-                    themePicker
-                    VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                        Text("You can change this anytime from Settings.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        continueButton
-                    }
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                header
+                themePicker
+                VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                    Text("You can change this anytime from Settings.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    continueButton
                 }
-                .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.xl)
-                .frame(maxWidth: 560, alignment: .leading)
-                .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, DS.Spacing.xxl)
+            .padding(.horizontal, DS.Spacing.xl)
+            .frame(maxWidth: 560, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
         .onChange(of: themeManager.selectedTheme) { _, newValue in
@@ -429,7 +431,16 @@ private struct CloudSyncStep: View {
     }
 
     private var cloudOptionsCard: some View {
-        OnboardingGlassCard(alignment: .leading, maxWidth: 620) {
+        OnboardingGlassCard(
+            alignment: .leading,
+            maxWidth: 620,
+            contentPadding: .init(
+                top: DS.Spacing.xl,
+                leading: DS.Spacing.xl,
+                bottom: DS.Spacing.l,
+                trailing: DS.Spacing.xl
+            )
+        ) {
             CloudOptionToggle(
                 title: "Enable iCloud Sync",
                 subtitle: "Keep budgets, themes, and settings identical everywhere.",
@@ -439,8 +450,9 @@ private struct CloudSyncStep: View {
 
             Divider()
                 .opacity(0.25)
+                .padding(.vertical, DS.Spacing.s)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            VStack(alignment: .leading, spacing: DS.Spacing.m) {
                 CloudOptionToggle(
                     title: "Sync card themes",
                     subtitle: "Mirror your custom card colors across devices.",
@@ -467,6 +479,7 @@ private struct CloudSyncStep: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, DS.Spacing.s)
         }
         .tint(themeManager.selectedTheme.resolvedTint)
     }
@@ -555,68 +568,7 @@ private struct OnboardingPrimaryButton: View {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(OnboardingLiquidButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
-    }
-}
-
-private struct OnboardingLiquidButtonStyle: ButtonStyle {
-    @Environment(\.platformCapabilities) private var capabilities
-
-    var tint: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        let radius: CGFloat = 26
-
-        return configuration.label
-            .font(.headline)
-            .foregroundStyle(Color.white)
-            .padding(.vertical, DS.Spacing.m)
-            .padding(.horizontal, DS.Spacing.l)
-            .frame(maxWidth: .infinity)
-            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .background(background(isPressed: configuration.isPressed, radius: radius))
-            .overlay(highlight(radius: radius))
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
-    }
-
-    @ViewBuilder
-    private func background(isPressed: Bool, radius: CGFloat) -> some View {
-        if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(tint.opacity(isPressed ? 0.32 : 0.4))
-                .background(
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-                .shadow(
-                    color: tint.opacity(isPressed ? 0.26 : 0.38),
-                    radius: isPressed ? 14 : 24,
-                    x: 0,
-                    y: isPressed ? 10 : 16
-                )
-                .compositingGroup()
-        } else {
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            tint.opacity(0.95),
-                            tint.opacity(0.75)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: tint.opacity(0.28), radius: 12, x: 0, y: 8)
-        }
-    }
-
-    @ViewBuilder
-    private func highlight(radius: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(Color.white.opacity(capabilities.supportsLiquidGlass ? 0.28 : 0.18), lineWidth: 1)
-            .blendMode(.screen)
+        .buttonStyle(LiquidGlassButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
     }
 }
 
@@ -710,15 +662,7 @@ private struct CloudOptionToggle: View {
     var isEnabled: Bool
 
     var body: some View {
-        LabeledContent {
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .disabled(!isEnabled)
-#if os(iOS) || os(macOS)
-                .controlSize(.large)
-#endif
-        } label: {
+        HStack(alignment: .center, spacing: DS.Spacing.l) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
@@ -728,9 +672,67 @@ private struct CloudOptionToggle: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            Spacer(minLength: DS.Spacing.m)
+
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .disabled(!isEnabled)
+#if os(iOS) || os(macOS)
+                .controlSize(.large)
+#endif
         }
+        .padding(.vertical, DS.Spacing.s)
         .opacity(isEnabled ? 1 : 0.45)
         .animation(.easeInOut(duration: 0.2), value: isEnabled)
+    }
+}
+
+private struct OnboardingBackgroundSurface: View {
+    let tint: Color
+    let baseColor: Color
+    let capabilities: PlatformCapabilities
+
+    var body: some View {
+        ZStack {
+            baseColor
+
+            if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+                Rectangle()
+                    .fill(tint.opacity(0.08))
+                    .background(.ultraThinMaterial)
+                    .overlay(glowOverlay)
+                    .compositingGroup()
+            } else {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.94),
+                                Color.white.opacity(0.86)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(glowOverlay)
+            }
+        }
+    }
+
+    private var glowOverlay: some View {
+        RadialGradient(
+            gradient: Gradient(colors: [
+                Color.white.opacity(0.35),
+                tint.opacity(0.05),
+                .clear
+            ]),
+            center: .topLeading,
+            startRadius: 40,
+            endRadius: 600
+        )
+        .blendMode(.screen)
     }
 }
 
