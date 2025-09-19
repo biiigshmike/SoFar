@@ -111,7 +111,11 @@ struct IncomeView: View {
             navigate(to: initial)
             viewModel.load(day: initial)
         }
-        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
+        .ub_glassBackground(
+            themeManager.selectedTheme.background,
+            configuration: themeManager.selectedTheme.glassConfiguration,
+            ignoringSafeArea: .all
+        )
     }
 
     // MARK: - Calendar Section

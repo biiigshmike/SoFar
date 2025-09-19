@@ -98,8 +98,18 @@ extension View {
     /// - Parameters:
     ///   - baseColor: The theme/tint-aware fallback color.
     ///   - edges: Optional edges that should extend through the safe area.
-    func ub_glassBackground(_ baseColor: Color, ignoringSafeArea edges: Edge.Set = []) -> some View {
-        modifier(UBGlassBackgroundModifier(baseColor: baseColor, ignoresSafeAreaEdges: edges))
+    func ub_glassBackground(
+        _ baseColor: Color,
+        configuration: AppTheme.GlassConfiguration = .standard,
+        ignoringSafeArea edges: Edge.Set = []
+    ) -> some View {
+        modifier(
+            UBGlassBackgroundModifier(
+                baseColor: baseColor,
+                configuration: configuration,
+                ignoresSafeAreaEdges: edges
+            )
+        )
     }
 
     // MARK: ub_formStyleGrouped()
@@ -185,6 +195,7 @@ private struct UBGlassBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var platformCapabilities
 
     let baseColor: Color
+    let configuration: AppTheme.GlassConfiguration
     let ignoresSafeAreaEdges: Edge.Set
 
     func body(content: Content) -> some View {
@@ -192,6 +203,7 @@ private struct UBGlassBackgroundModifier: ViewModifier {
             UBGlassBackgroundView(
                 capabilities: platformCapabilities,
                 baseColor: baseColor,
+                configuration: configuration,
                 ignoresSafeAreaEdges: ignoresSafeAreaEdges
             )
         )
@@ -201,6 +213,7 @@ private struct UBGlassBackgroundModifier: ViewModifier {
 private struct UBGlassBackgroundView: View {
     let capabilities: PlatformCapabilities
     let baseColor: Color
+    let configuration: AppTheme.GlassConfiguration
     let ignoresSafeAreaEdges: Edge.Set
 
     var body: some View {
@@ -220,15 +233,136 @@ private struct UBGlassBackgroundView: View {
     private var baseLayer: some View {
         if capabilities.supportsLiquidGlass {
             if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                Rectangle()
-                    .fill(baseColor.opacity(0.22))
-                    .background(.ultraThinMaterial)
+                #if os(iOS) || os(tvOS) || os(macOS)
+                decoratedGlass
+                    .background(configuration.glass.material.shapeStyle)
+                #else
+                decoratedGlass
+                #endif
             } else {
-                Rectangle().fill(baseColor)
+                decoratedGlass
             }
         } else {
-            Rectangle().fill(baseColor)
+            decoratedGlass
         }
+    }
+
+    private var decoratedGlass: some View {
+        ZStack {
+            Rectangle()
+                .fill(baseColor.opacity(configuration.liquid.tintOpacity))
+
+            if configuration.liquid.bloom > 0 {
+                bloomOverlay
+            }
+
+            if configuration.glass.shadowOpacity > 0 {
+                shadowOverlay
+            }
+
+            if configuration.glass.highlightOpacity > 0 {
+                highlightOverlay
+            }
+
+            if configuration.glass.specularOpacity > 0 {
+                specularOverlay
+            }
+
+            if configuration.glass.rimOpacity > 0 && configuration.glass.rimWidth > 0 {
+                rimOverlay
+            }
+
+            if configuration.glass.noiseOpacity > 0 {
+                noiseOverlay
+            }
+        }
+        .compositingGroup()
+        .saturation(configuration.liquid.saturation)
+        .brightness(configuration.liquid.brightness)
+        .contrast(configuration.liquid.contrast)
+    }
+
+    private var bloomOverlay: some View {
+        Rectangle()
+            .fill(
+                RadialGradient(
+                    gradient: Gradient(colors: [
+                        Color.white.opacity(configuration.liquid.bloom),
+                        .clear
+                    ]),
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 600
+                )
+            )
+            .blendMode(.screen)
+    }
+
+    private var highlightOverlay: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        configuration.glass.highlightColor.opacity(configuration.glass.highlightOpacity),
+                        .clear
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .blur(radius: configuration.glass.highlightBlur)
+    }
+
+    private var shadowOverlay: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        configuration.glass.shadowColor.opacity(configuration.glass.shadowOpacity)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .blur(radius: configuration.glass.shadowBlur)
+    }
+
+    private var specularOverlay: some View {
+        let clampedWidth = min(max(configuration.glass.specularWidth, 0.001), 0.49)
+        let lower = max(0.0, 0.5 - clampedWidth)
+        let upper = min(1.0, 0.5 + clampedWidth)
+
+        return Rectangle()
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: configuration.glass.specularColor.opacity(0.0), location: 0.0),
+                        .init(color: configuration.glass.specularColor.opacity(configuration.glass.specularOpacity), location: lower),
+                        .init(color: configuration.glass.specularColor.opacity(configuration.glass.specularOpacity), location: upper),
+                        .init(color: configuration.glass.specularColor.opacity(0.0), location: 1.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .blendMode(.screen)
+    }
+
+    private var rimOverlay: some View {
+        Rectangle()
+            .strokeBorder(
+                configuration.glass.rimColor.opacity(configuration.glass.rimOpacity),
+                lineWidth: configuration.glass.rimWidth
+            )
+            .blur(radius: configuration.glass.rimBlur)
+            .blendMode(.screen)
+    }
+
+    private var noiseOverlay: some View {
+        Rectangle()
+            .fill(Color.white.opacity(configuration.glass.noiseOpacity))
+            .blendMode(.softLight)
     }
 }
 

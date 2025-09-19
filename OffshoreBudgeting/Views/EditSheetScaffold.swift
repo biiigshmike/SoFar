@@ -95,7 +95,10 @@ struct EditSheetScaffold<Content: View>: View {
                 Form { content }
                     .scrollContentBackground(.hidden)
                     .listRowBackground(rowBackground)
-                    .ub_glassBackground(themeManager.selectedTheme.background)
+                    .ub_glassBackground(
+                        themeManager.selectedTheme.background,
+                        configuration: themeManager.selectedTheme.glassConfiguration
+                    )
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
                     .multilineTextAlignment(.leading)
@@ -121,7 +124,10 @@ struct EditSheetScaffold<Content: View>: View {
             } else {
                 Form { content }
                     .listRowBackground(rowBackground)
-                    .ub_glassBackground(themeManager.selectedTheme.background)
+                    .ub_glassBackground(
+                        themeManager.selectedTheme.background,
+                        configuration: themeManager.selectedTheme.glassConfiguration
+                    )
                     .ub_formStyleGrouped()
                     .ub_hideScrollIndicators()
                     .multilineTextAlignment(.leading)
@@ -149,7 +155,10 @@ struct EditSheetScaffold<Content: View>: View {
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
-        .ub_glassBackground(themeManager.selectedTheme.background)
+        .ub_glassBackground(
+            themeManager.selectedTheme.background,
+            configuration: themeManager.selectedTheme.glassConfiguration
+        )
         // MARK: Standard sheet behavior (platform-aware)
         #if os(iOS) || targetEnvironment(macCatalyst)
         .presentationDetents(Set(detents), selection: $detentSelection)
