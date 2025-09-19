@@ -315,6 +315,7 @@ private struct CardsStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
     @State private var showIntro: Bool = true
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -327,6 +328,10 @@ private struct CardsStep: View {
                 }
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     // MARK: introOverlay
@@ -537,6 +542,7 @@ private struct CategoriesStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
     @State private var showIntro: Bool = true
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -549,6 +555,10 @@ private struct CategoriesStep: View {
                 }
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     // MARK: introOverlay
@@ -851,6 +861,3 @@ private struct OnboardingBackgroundSurface: View {
     }
 }
 
-private extension AppTheme {
-    var resolvedTint: Color { tint ?? accent }
-}

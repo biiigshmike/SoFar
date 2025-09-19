@@ -83,6 +83,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Guaranteed accent value for glass effects. Falls back to `accent`
+    /// when the theme opts into the system tint on iOS.
+    var resolvedTint: Color { tint ?? accent }
+
     /// Secondary accent color derived from the primary accent. Used for
     /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
     /// remaining harmonious with the selected theme.
@@ -243,11 +247,82 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .liquidGlass:
             return .liquidGlass(
                 liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
-                glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount
+                glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount,
+                palette: glassPalette
             )
         default:
-            return .standard
+            return .liquidGlass(
+                liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
+                glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount,
+                palette: glassPalette
+            )
         }
+    }
+
+    /// Theme-aware base color used when rendering Liquid Glass surfaces. The
+    /// value blends the theme's background with a softened version of the
+    /// accent tint so that every palette gains a hint of the selected hue.
+    var glassBaseColor: Color {
+        #if canImport(UIKit) || canImport(AppKit)
+        let accentWash = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.45,
+            brightnessMultiplier: 1.12,
+            alpha: 1.0
+        )
+
+        let brightness = AppThemeColorUtilities.hsba(from: background)?.brightness ?? 0.65
+        let blendAmount: Double
+        switch brightness {
+        case ..<0.35:
+            blendAmount = 0.58
+        case ..<0.55:
+            blendAmount = 0.42
+        case ..<0.75:
+            blendAmount = 0.32
+        default:
+            blendAmount = 0.24
+        }
+
+        return AppThemeColorUtilities.mix(background, accentWash, amount: blendAmount)
+        #else
+        return background
+        #endif
+    }
+
+    /// Palette describing the vibrant accent colors applied to highlights,
+    /// shadows, and rims when rendering Liquid Glass.
+    var glassPalette: GlassConfiguration.Palette {
+        #if canImport(UIKit) || canImport(AppKit)
+        return GlassConfiguration.Palette(
+            accent: resolvedTint,
+            shadow: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 1.05,
+                brightnessMultiplier: 0.48,
+                alpha: 1.0
+            ),
+            specular: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.62,
+                brightnessMultiplier: 1.32,
+                alpha: 1.0
+            ),
+            rim: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.68,
+                brightnessMultiplier: 1.18,
+                alpha: 1.0
+            )
+        )
+        #else
+        return GlassConfiguration.Palette(
+            accent: resolvedTint,
+            shadow: Color(red: 0.30, green: 0.49, blue: 0.82),
+            specular: Color(red: 0.60, green: 0.82, blue: 1.0),
+            rim: Color(red: 0.55, green: 0.78, blue: 1.0)
+        )
+        #endif
     }
 }
 
@@ -255,6 +330,13 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
 extension AppTheme {
     struct GlassConfiguration {
+        struct Palette {
+            var accent: Color
+            var shadow: Color
+            var specular: Color
+            var rim: Color
+        }
+
         struct LiquidSettings {
             var tintOpacity: Double
             var saturation: Double
@@ -285,6 +367,41 @@ extension AppTheme {
                         return AnyShapeStyle(.thickMaterial)
                     case .ultraThick:
                         return AnyShapeStyle(.ultraThickMaterial)
+                    }
+                }
+                #endif
+
+                #if canImport(UIKit)
+                var uiBlurEffectStyle: UIBlurEffect.Style {
+                    switch self {
+                    case .ultraThin:
+                        return .systemUltraThinMaterial
+                    case .thin:
+                        return .systemThinMaterial
+                    case .regular:
+                        return .systemMaterial
+                    case .thick:
+                        return .systemThickMaterial
+                    case .ultraThick:
+                        return .systemChromeMaterial
+                    }
+                }
+                #endif
+
+                #if canImport(AppKit)
+                @available(macOS 13.0, *)
+                var visualEffectMaterial: NSVisualEffectView.Material {
+                    switch self {
+                    case .ultraThin:
+                        return .headerView
+                    case .thin:
+                        return .titlebar
+                    case .regular:
+                        return .menu
+                    case .thick:
+                        return .windowBackground
+                    case .ultraThick:
+                        return .hudWindow
                     }
                 }
                 #endif
@@ -321,6 +438,12 @@ extension AppTheme.GlassConfiguration {
     enum LiquidGlassDefaults {
         static let liquidAmount: Double = 0.7
         static let glassAmount: Double = 0.68
+        static let palette = AppTheme.GlassConfiguration.Palette(
+            accent: Color(red: 0.27, green: 0.58, blue: 0.98),
+            shadow: Color(red: 0.30, green: 0.49, blue: 0.82),
+            specular: Color(red: 0.60, green: 0.82, blue: 1.0),
+            rim: Color(red: 0.55, green: 0.78, blue: 1.0)
+        )
     }
 
     static let standard = AppTheme.GlassConfiguration(
@@ -350,7 +473,11 @@ extension AppTheme.GlassConfiguration {
         )
     )
 
-    static func liquidGlass(liquidAmount: Double, glassAmount: Double) -> AppTheme.GlassConfiguration {
+    static func liquidGlass(
+        liquidAmount: Double,
+        glassAmount: Double,
+        palette: AppTheme.GlassConfiguration.Palette = LiquidGlassDefaults.palette
+    ) -> AppTheme.GlassConfiguration {
         let clampedLiquid = liquidAmount.clamped(to: 0...1)
         let clampedGlass = glassAmount.clamped(to: 0...1)
 
@@ -393,20 +520,138 @@ extension AppTheme.GlassConfiguration {
                 highlightColor: Color.white,
                 highlightOpacity: highlightOpacity,
                 highlightBlur: highlightBlur,
-                shadowColor: Color(red: 0.30, green: 0.49, blue: 0.82),
+                shadowColor: palette.shadow,
                 shadowOpacity: shadowOpacity,
                 shadowBlur: shadowBlur,
-                specularColor: Color(red: 0.60, green: 0.82, blue: 1.0),
+                specularColor: palette.specular,
                 specularOpacity: specularOpacity,
                 specularWidth: specularWidth,
                 noiseOpacity: noiseOpacity,
-                rimColor: Color(red: 0.55, green: 0.78, blue: 1.0),
+                rimColor: palette.rim,
                 rimOpacity: rimOpacity,
                 rimWidth: rimWidth,
                 rimBlur: rimBlur,
                 material: material
             )
         )
+    }
+}
+
+// MARK: - Color Utilities
+
+fileprivate enum AppThemeColorUtilities {
+    struct RGBA {
+        var red: Double
+        var green: Double
+        var blue: Double
+        var alpha: Double
+    }
+
+    struct HSBA {
+        var hue: Double
+        var saturation: Double
+        var brightness: Double
+        var alpha: Double
+    }
+
+    static func rgba(from color: Color) -> RGBA? {
+        #if canImport(UIKit)
+        let platformColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard platformColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
+        return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
+        #elseif canImport(AppKit)
+        let platformColor = NSColor(color)
+        let converted = platformColor.usingColorSpace(.deviceRGB) ?? platformColor
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
+        return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
+        #else
+        return nil
+        #endif
+    }
+
+    static func hsba(from color: Color) -> HSBA? {
+        #if canImport(UIKit)
+        let platformColor = UIColor(color)
+        var hue: CGFloat = 0
+        var saturation: CGFloat = 0
+        var brightness: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard platformColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return nil }
+        return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
+        #elseif canImport(AppKit)
+        let platformColor = NSColor(color)
+        let converted = platformColor.usingColorSpace(.deviceRGB) ?? platformColor
+        var hue: CGFloat = 0
+        var saturation: CGFloat = 0
+        var brightness: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard converted.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return nil }
+        return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
+        #else
+        return nil
+        #endif
+    }
+
+    static func color(from rgba: RGBA) -> Color {
+        Color(
+            red: rgba.red.clamped(to: 0...1),
+            green: rgba.green.clamped(to: 0...1),
+            blue: rgba.blue.clamped(to: 0...1),
+            opacity: rgba.alpha.clamped(to: 0...1)
+        )
+    }
+
+    static func color(from hsba: HSBA) -> Color {
+        let normalizedHue = ((hsba.hue.truncatingRemainder(dividingBy: 1.0)) + 1.0).truncatingRemainder(dividingBy: 1.0)
+        return Color(
+            hue: normalizedHue,
+            saturation: hsba.saturation.clamped(to: 0...1),
+            brightness: hsba.brightness.clamped(to: 0...1),
+            opacity: hsba.alpha.clamped(to: 0...1)
+        )
+    }
+
+    static func mix(_ lhs: Color, _ rhs: Color, amount: Double) -> Color {
+        let t = amount.clamped(to: 0...1)
+        guard
+            let left = rgba(from: lhs),
+            let right = rgba(from: rhs)
+        else { return lhs }
+
+        let mixed = RGBA(
+            red: left.red + (right.red - left.red) * t,
+            green: left.green + (right.green - left.green) * t,
+            blue: left.blue + (right.blue - left.blue) * t,
+            alpha: left.alpha + (right.alpha - left.alpha) * t
+        )
+
+        return color(from: mixed)
+    }
+
+    static func adjust(
+        _ color: Color,
+        saturationMultiplier: Double,
+        brightnessMultiplier: Double,
+        alpha: Double? = nil
+    ) -> Color {
+        guard var components = hsba(from: color) else {
+            if let alpha { return color.opacity(alpha) }
+            return color
+        }
+
+        components.saturation = (components.saturation * saturationMultiplier).clamped(to: 0...1)
+        components.brightness = (components.brightness * brightnessMultiplier).clamped(to: 0...1)
+        if let alpha { components.alpha = alpha.clamped(to: 0...1) }
+
+        return color(from: components)
     }
 }
 
@@ -475,15 +720,11 @@ final class ThemeManager: ObservableObject {
     }
 
     var glassConfiguration: AppTheme.GlassConfiguration {
-        switch selectedTheme {
-        case .liquidGlass:
-            return AppTheme.GlassConfiguration.liquidGlass(
-                liquidAmount: liquidGlassCustomization.liquidAmount,
-                glassAmount: liquidGlassCustomization.glassDepth
-            )
-        default:
-            return selectedTheme.baseGlassConfiguration
-        }
+        AppTheme.GlassConfiguration.liquidGlass(
+            liquidAmount: liquidGlassCustomization.liquidAmount,
+            glassAmount: liquidGlassCustomization.glassDepth,
+            palette: selectedTheme.glassPalette
+        )
     }
 
     func updateLiquidGlass(liquidAmount: Double? = nil, glassDepth: Double? = nil) {
