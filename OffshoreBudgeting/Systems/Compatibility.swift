@@ -234,22 +234,26 @@ private struct UBNavigationGlassModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        guard capabilities.supportsLiquidGlass else {
-            content
-            return
-        }
-
-        if #available(iOS 16.0, macOS 13.0, *) {
-            content
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarBackground(configuration.glass.material.shapeStyle, for: .navigationBar)
-                .toolbarBackground(gradientStyle, for: .navigationBar)
+        #if os(iOS)
+        if capabilities.supportsLiquidGlass {
+            if #available(iOS 16.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(configuration.glass.material.shapeStyle, for: .navigationBar)
+                    .toolbarBackground(gradientStyle, for: .navigationBar)
+            } else {
+                content
+            }
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    #if os(iOS)
+    @available(iOS 16.0, *)
     private var gradientStyle: AnyShapeStyle {
         let highlight = Color.white.opacity(min(configuration.glass.highlightOpacity * 0.6, 0.28))
         let mid = baseColor.opacity(min(configuration.liquid.tintOpacity + 0.12, 0.92))
@@ -263,6 +267,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
             )
         )
     }
+    #endif
 }
 
 private struct UBGlassBackgroundView: View {
