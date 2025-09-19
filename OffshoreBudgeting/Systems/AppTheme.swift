@@ -24,6 +24,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     case blossom
     case lavender
     case mint
+    case tahoe
 
     var id: String { rawValue }
 
@@ -41,6 +42,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .blossom: return "Blossom"
         case .lavender: return "Lavender"
         case .mint: return "Mint"
+        case .tahoe: return "Tahoe"
         }
     }
 
@@ -58,6 +60,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .blossom: return Color(red: 1.0, green: 0.4, blue: 0.7)
         case .lavender: return .purple
         case .mint: return Color(red: 0.0, green: 0.7, blue: 0.5)
+        case .tahoe: return Color(red: 0.20, green: 0.56, blue: 0.98)
         }
     }
 
@@ -135,6 +138,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.95, green: 0.94, blue: 1.0)
         case .mint:
             return Color(red: 0.93, green: 1.0, blue: 0.94)
+        case .tahoe:
+            return Color(red: 0.07, green: 0.13, blue: 0.22)
         }
     }
 
@@ -173,6 +178,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.90, green: 0.88, blue: 0.98)
         case .mint:
             return Color(red: 0.88, green: 0.98, blue: 0.90)
+        case .tahoe:
+            return Color(red: 0.12, green: 0.21, blue: 0.30)
         }
     }
 
@@ -209,6 +216,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(red: 0.85, green: 0.83, blue: 0.95)
         case .mint:
             return Color(red: 0.83, green: 0.95, blue: 0.86)
+        case .tahoe:
+            return Color(red: 0.16, green: 0.27, blue: 0.36)
         }
     }
 
@@ -220,10 +229,143 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return nil
         case .classic, .ocean, .sunrise, .blossom, .lavender, .mint:
             return .light
-        case .midnight, .forest, .sunset, .nebula:
+        case .midnight, .forest, .sunset, .nebula, .tahoe:
             return .dark
         }
     }
+
+    /// Tunable Liquid Glass controls that define how translucent surfaces are
+    /// rendered for the theme.
+    var glassConfiguration: GlassConfiguration {
+        switch self {
+        case .tahoe:
+            return .tahoe
+        default:
+            return .standard
+        }
+    }
+}
+
+// MARK: - AppTheme.GlassConfiguration
+
+extension AppTheme {
+    struct GlassConfiguration {
+        struct LiquidSettings {
+            var tintOpacity: Double
+            var saturation: Double
+            var brightness: Double
+            var contrast: Double
+            var bloom: Double
+        }
+
+        struct GlassSettings {
+            enum MaterialStyle {
+                case ultraThin
+                case thin
+                case regular
+                case thick
+                case ultraThick
+
+                #if os(iOS) || os(tvOS) || os(macOS)
+                @available(iOS 15.0, macOS 13.0, tvOS 15.0, *)
+                var shapeStyle: AnyShapeStyle {
+                    switch self {
+                    case .ultraThin:
+                        return AnyShapeStyle(.ultraThinMaterial)
+                    case .thin:
+                        return AnyShapeStyle(.thinMaterial)
+                    case .regular:
+                        return AnyShapeStyle(.regularMaterial)
+                    case .thick:
+                        return AnyShapeStyle(.thickMaterial)
+                    case .ultraThick:
+                        return AnyShapeStyle(.ultraThickMaterial)
+                    }
+                }
+                #endif
+            }
+
+            var highlightColor: Color
+            var highlightOpacity: Double
+            var highlightBlur: Double
+
+            var shadowColor: Color
+            var shadowOpacity: Double
+            var shadowBlur: Double
+
+            var specularColor: Color
+            var specularOpacity: Double
+            var specularWidth: Double
+
+            var noiseOpacity: Double
+
+            var rimColor: Color
+            var rimOpacity: Double
+            var rimWidth: Double
+            var rimBlur: Double
+
+            var material: MaterialStyle
+        }
+
+        var liquid: LiquidSettings
+        var glass: GlassSettings
+    }
+}
+
+extension AppTheme.GlassConfiguration {
+    static let standard = AppTheme.GlassConfiguration(
+        liquid: .init(
+            tintOpacity: 0.22,
+            saturation: 1.0,
+            brightness: 0.0,
+            contrast: 1.0,
+            bloom: 0.0
+        ),
+        glass: .init(
+            highlightColor: .white,
+            highlightOpacity: 0.18,
+            highlightBlur: 14,
+            shadowColor: .black,
+            shadowOpacity: 0.12,
+            shadowBlur: 18,
+            specularColor: .white,
+            specularOpacity: 0.10,
+            specularWidth: 0.06,
+            noiseOpacity: 0.035,
+            rimColor: .white,
+            rimOpacity: 0.0,
+            rimWidth: 1.0,
+            rimBlur: 6,
+            material: .ultraThin
+        )
+    )
+
+    static let tahoe = AppTheme.GlassConfiguration(
+        liquid: .init(
+            tintOpacity: 0.36,
+            saturation: 1.28,
+            brightness: 0.06,
+            contrast: 1.08,
+            bloom: 0.22
+        ),
+        glass: .init(
+            highlightColor: Color(red: 0.80, green: 0.94, blue: 1.0),
+            highlightOpacity: 0.48,
+            highlightBlur: 32,
+            shadowColor: Color(red: 0.00, green: 0.16, blue: 0.32),
+            shadowOpacity: 0.42,
+            shadowBlur: 36,
+            specularColor: Color(red: 0.66, green: 0.82, blue: 1.0),
+            specularOpacity: 0.58,
+            specularWidth: 0.035,
+            noiseOpacity: 0.12,
+            rimColor: Color(red: 0.54, green: 0.78, blue: 1.0),
+            rimOpacity: 0.28,
+            rimWidth: 2.4,
+            rimBlur: 18,
+            material: .thin
+        )
+    )
 }
 
 // MARK: - ThemeManager

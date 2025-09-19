@@ -131,7 +131,11 @@ struct CardDetailView: View {
             .presentationSizing(.fitted)   // <- ensures the sheet respects the view’s ideal size
             #endif
         }
-        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
+        .ub_glassBackground(
+            themeManager.selectedTheme.background,
+            configuration: themeManager.selectedTheme.glassConfiguration,
+            ignoringSafeArea: .all
+        )
     }
     
     // MARK: content

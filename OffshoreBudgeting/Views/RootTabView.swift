@@ -29,7 +29,11 @@ struct RootTabView: View {
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
-        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
+        .ub_glassBackground(
+            themeManager.selectedTheme.background,
+            configuration: themeManager.selectedTheme.glassConfiguration,
+            ignoringSafeArea: .all
+        )
         .onAppear(perform: updateTabBarAppearance)
         .onChange(of: themeManager.selectedTheme) { _, _ in
             updateTabBarAppearance()

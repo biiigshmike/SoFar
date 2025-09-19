@@ -216,7 +216,11 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
+        .ub_glassBackground(
+            themeManager.selectedTheme.background,
+            configuration: themeManager.selectedTheme.glassConfiguration,
+            ignoringSafeArea: .all
+        )
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
         .navigationTitle("Settings")
