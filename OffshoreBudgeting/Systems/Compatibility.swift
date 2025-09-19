@@ -212,7 +212,7 @@ private struct UBGlassBackgroundView: View {
         if ignoresSafeAreaEdges.isEmpty {
             baseLayer
         } else {
-            baseLayer.ignoresSafeArea(ignoresSafeAreaEdges)
+            baseLayer.ub_ignoreSafeArea(edges: ignoresSafeAreaEdges)
         }
     }
 
@@ -234,6 +234,21 @@ private struct UBGlassBackgroundView: View {
 
 private extension Edge.Set {
     var isEmpty: Bool { self == [] }
+}
+
+private extension View {
+    @ViewBuilder
+    func ub_ignoreSafeArea(edges: Edge.Set) -> some View {
+        #if os(iOS) || os(tvOS) || os(macOS) || os(watchOS)
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            self.ignoresSafeArea(.container, edges: edges)
+        } else {
+            self.edgesIgnoringSafeArea(edges)
+        }
+        #else
+        self
+        #endif
+    }
 }
 
 // MARK: - UBColor (Cross-Platform Neutrals)
