@@ -90,11 +90,16 @@ extension View {
     // MARK: ub_decimalKeyboard()
     /// Uses the decimal keyboard on iOS; no-op on macOS so the same view compiles for both.
     func ub_decimalKeyboard() -> some View {
-        #if os(iOS)
-        return self.keyboardType(.decimalPad)
-        #else
-        return self
-        #endif
+        modifier(UBDecimalKeyboardModifier())
+    }
+
+    /// Applies the platform-aware Liquid Glass background when supported,
+    /// falling back to the provided base color elsewhere.
+    /// - Parameters:
+    ///   - baseColor: The theme/tint-aware fallback color.
+    ///   - edges: Optional edges that should extend through the safe area.
+    func ub_glassBackground(_ baseColor: Color, ignoringSafeArea edges: Edge.Set = []) -> some View {
+        modifier(UBGlassBackgroundModifier(baseColor: baseColor, ignoresSafeAreaEdges: edges))
     }
 
     // MARK: ub_formStyleGrouped()
@@ -149,6 +154,86 @@ extension View {
             return self
         }
     }
+}
+
+// MARK: - Private Modifiers
+
+private struct UBDecimalKeyboardModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var platformCapabilities
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        if platformCapabilities.supportsAdaptiveKeypad {
+            if #available(iOS 18.0, *) {
+                content
+                    .keyboardType(.decimalPad)
+                    .submitLabel(.done)
+            } else {
+                content.keyboardType(.decimalPad)
+            }
+        } else {
+            content.keyboardType(.decimalPad)
+        }
+        #else
+        content
+        #endif
+    }
+}
+
+private struct UBGlassBackgroundModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var platformCapabilities
+
+    let baseColor: Color
+    let ignoresSafeAreaEdges: Edge.Set
+
+    func body(content: Content) -> some View {
+        content.background(
+            UBGlassBackgroundView(
+                capabilities: platformCapabilities,
+                baseColor: baseColor,
+                ignoresSafeAreaEdges: ignoresSafeAreaEdges
+            )
+        )
+    }
+}
+
+private struct UBGlassBackgroundView: View {
+    let capabilities: PlatformCapabilities
+    let baseColor: Color
+    let ignoresSafeAreaEdges: Edge.Set
+
+    var body: some View {
+        backgroundLayer
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        if ignoresSafeAreaEdges.isEmpty {
+            baseLayer
+        } else {
+            baseLayer.ignoresSafeArea(ignoresSafeAreaEdges)
+        }
+    }
+
+    @ViewBuilder
+    private var baseLayer: some View {
+        if capabilities.supportsLiquidGlass {
+            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+                Rectangle()
+                    .fill(baseColor.opacity(0.22))
+                    .background(.ultraThinMaterial)
+            } else {
+                Rectangle().fill(baseColor)
+            }
+        } else {
+            Rectangle().fill(baseColor)
+        }
+    }
+}
+
+private extension Edge.Set {
+    var isEmpty: Bool { self == [] }
 }
 
 // MARK: - UBColor (Cross-Platform Neutrals)

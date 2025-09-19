@@ -128,7 +128,7 @@ struct PresetsView: View {
                 .environment(\.managedObjectContext, viewContext)
             }
         }
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
         .alert(item: $templateToDelete) { template in
             Alert(
                 title: Text("Delete \(template.descriptionText ?? "Preset")?"),

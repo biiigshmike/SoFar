@@ -93,7 +93,7 @@ struct ExpenseCategoryManagerView: View {
                 }
             }
         }
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
         .sheet(isPresented: $isPresentingAddSheet) {

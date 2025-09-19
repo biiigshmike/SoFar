@@ -111,7 +111,40 @@ typealias DS = DesignSystem
 extension View {
     /// Adds the app’s standard “card” background: subtle fill, rounded corners, and soft shadow.
     func cardBackground() -> some View {
-        self
+        modifier(UBCardContainerModifier())
+    }
+}
+
+// MARK: - Private Modifiers
+
+private struct UBCardContainerModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var platformCapabilities
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if platformCapabilities.supportsLiquidGlass {
+            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+                content
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                            .fill(DS.Colors.cardFill.opacity(0.45))
+                            .background(
+                                .ultraThinMaterial,
+                                in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.04), radius: 18, x: 0, y: 6)
+            } else {
+                legacy(content: content)
+            }
+        } else {
+            legacy(content: content)
+        }
+    }
+
+    @ViewBuilder
+    private func legacy(content: Content) -> some View {
+        content
             .background(DS.Colors.cardFill)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
             .shadow(color: .black.opacity(DS.Shadow.card.opacity),
