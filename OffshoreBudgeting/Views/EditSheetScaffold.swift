@@ -96,7 +96,7 @@ struct EditSheetScaffold<Content: View>: View {
                     .scrollContentBackground(.hidden)
                     .listRowBackground(rowBackground)
                     .ub_glassBackground(
-                        themeManager.selectedTheme.background,
+                        themeManager.selectedTheme.glassBaseColor,
                         configuration: themeManager.glassConfiguration
                     )
                     .ub_formStyleGrouped()
@@ -125,7 +125,7 @@ struct EditSheetScaffold<Content: View>: View {
                 Form { content }
                     .listRowBackground(rowBackground)
                     .ub_glassBackground(
-                        themeManager.selectedTheme.background,
+                        themeManager.selectedTheme.glassBaseColor,
                         configuration: themeManager.glassConfiguration
                     )
                     .ub_formStyleGrouped()
@@ -152,11 +152,15 @@ struct EditSheetScaffold<Content: View>: View {
                     }
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
         // Ensure embedded forms respect the selected theme on all platforms.
         .accentColor(themeManager.selectedTheme.tint)
         .tint(themeManager.selectedTheme.tint)
         .ub_glassBackground(
-            themeManager.selectedTheme.background,
+            themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
         // MARK: Standard sheet behavior (platform-aware)

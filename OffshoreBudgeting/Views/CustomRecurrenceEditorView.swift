@@ -80,6 +80,7 @@ struct CustomRecurrenceEditorView: View {
     // MARK: State
     @State private var draft: CustomRecurrence
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Init
     init(initial: CustomRecurrence,
@@ -145,6 +146,10 @@ struct CustomRecurrenceEditorView: View {
                 }
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     // MARK: Subviews

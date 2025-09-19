@@ -6,6 +6,7 @@ import SwiftUI
 struct HelpView: View {
     /// Selection used for macOS split view navigation
     @State private var selection: HelpPage? = .intro
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
 #if os(macOS)
@@ -40,6 +41,10 @@ struct HelpView: View {
                     .navigationTitle("Help")
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
         .frame(minWidth: 400, minHeight: 500)
 #else
         NavigationStack {
@@ -66,6 +71,10 @@ struct HelpView: View {
             }
             .navigationTitle("Help")
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
         .frame(minWidth: 400, minHeight: 500)
 #endif
     }

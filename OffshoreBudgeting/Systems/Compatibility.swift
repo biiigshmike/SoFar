@@ -112,6 +112,22 @@ extension View {
         )
     }
 
+    /// Applies a translucent navigation bar treatment that mirrors the
+    /// Liquid Glass surface configuration when supported by the platform.
+    /// Uses the provided base color and configuration to build a subtle
+    /// gradient wash that picks up the current theme's accent tint.
+    func ub_navigationGlassBackground(
+        baseColor: Color,
+        configuration: AppTheme.GlassConfiguration
+    ) -> some View {
+        modifier(
+            UBNavigationGlassModifier(
+                baseColor: baseColor,
+                configuration: configuration
+            )
+        )
+    }
+
     // MARK: ub_formStyleGrouped()
     /// Applies a grouped form style on platforms that support it.  On iOS 16+
     /// and macOS 13+, `.formStyle(.grouped)` gives a subtle, neutral
@@ -205,6 +221,45 @@ private struct UBGlassBackgroundModifier: ViewModifier {
                 baseColor: baseColor,
                 configuration: configuration,
                 ignoresSafeAreaEdges: ignoresSafeAreaEdges
+            )
+        )
+    }
+}
+
+private struct UBNavigationGlassModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    let baseColor: Color
+    let configuration: AppTheme.GlassConfiguration
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        guard capabilities.supportsLiquidGlass else {
+            content
+            return
+        }
+
+        if #available(iOS 16.0, macOS 13.0, *) {
+            content
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(configuration.glass.material.shapeStyle, for: .navigationBar)
+                .toolbarBackground(gradientStyle, for: .navigationBar)
+        } else {
+            content
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    private var gradientStyle: AnyShapeStyle {
+        let highlight = Color.white.opacity(min(configuration.glass.highlightOpacity * 0.6, 0.28))
+        let mid = baseColor.opacity(min(configuration.liquid.tintOpacity + 0.12, 0.92))
+        let shadow = configuration.glass.shadowColor.opacity(min(configuration.glass.shadowOpacity * 0.85, 0.6))
+
+        return AnyShapeStyle(
+            LinearGradient(
+                colors: [highlight, mid, shadow],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
         )
     }

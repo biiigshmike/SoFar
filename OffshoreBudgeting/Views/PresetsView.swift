@@ -34,7 +34,7 @@ struct PresetsView: View {
             } else {
                 content
                     .ub_glassBackground(
-                        themeManager.selectedTheme.background,
+                        themeManager.selectedTheme.glassBaseColor,
                         configuration: themeManager.glassConfiguration,
                         ignoringSafeArea: .all
                     )
@@ -154,6 +154,10 @@ struct PresetsView: View {
                 .environment(\.managedObjectContext, viewContext)
             }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     // MARK: - Actions

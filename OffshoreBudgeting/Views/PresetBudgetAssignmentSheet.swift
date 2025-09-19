@@ -17,6 +17,7 @@ struct PresetBudgetAssignmentSheet: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Inputs
     let template: PlannedExpense
@@ -84,6 +85,10 @@ struct PresetBudgetAssignmentSheet: View {
             }
             .onAppear { reload() }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     // MARK: - Load

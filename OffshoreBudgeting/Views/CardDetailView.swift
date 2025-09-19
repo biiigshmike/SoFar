@@ -114,6 +114,10 @@ struct CardDetailView: View {
                 #endif
                 }
         }
+        .ub_navigationGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
         .task { await viewModel.load() }
         //.accentColor(themeManager.selectedTheme.tint)
         //.tint(themeManager.selectedTheme.tint)
@@ -132,7 +136,7 @@ struct CardDetailView: View {
             #endif
         }
         .ub_glassBackground(
-            themeManager.selectedTheme.background,
+            themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
