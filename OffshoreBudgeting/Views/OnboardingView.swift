@@ -71,20 +71,32 @@ struct OnboardingView: View {
 private struct WelcomeStep: View {
     let onNext: () -> Void
 
+    @EnvironmentObject private var themeManager: ThemeManager
+
     var body: some View {
-        VStack(spacing: DS.Spacing.l) {
+        VStack(spacing: DS.Spacing.xl) {
             Spacer()
-            Text("Welcome to Offshore Budgeting")
-                .font(.largeTitle.bold())
-            Text("Let's set up your budgeting workspace.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+
+            VStack(spacing: DS.Spacing.s) {
+                Text("Welcome to Offshore Budgeting")
+                    .font(.largeTitle.bold())
+                Text("Let's set up your budgeting workspace.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: 520)
+
             Spacer()
-            Button("Get Started") { onNext() }
-//                .buttonStyle(.borderedProminent)
-//                .buttonBorderShape(.roundedRectangle)
+
+            OnboardingPrimaryButton(title: "Get Started", action: onNext)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxl)
         }
-        .padding(DS.Spacing.l)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            themeManager.selectedTheme.background
+                .ignoresSafeArea()
+        )
     }
 }
 
@@ -138,7 +150,7 @@ private struct ThemeStep: View {
 
     private var themePicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: DS.Spacing.l) {
+            LazyHStack(spacing: DS.Spacing.xl) {
                 ForEach(AppTheme.allCases) { theme in
                     ThemePreviewTile(theme: theme, isSelected: theme == selectedTheme)
                         .onTapGesture { select(theme) }
@@ -147,22 +159,15 @@ private struct ThemeStep: View {
                         .accessibilityAddTraits(theme == selectedTheme ? .isSelected : [])
                 }
             }
-            .padding(.vertical, DS.Spacing.s)
-            .padding(.trailing, DS.Spacing.l)
+            .padding(.vertical, DS.Spacing.m)
+            .padding(.horizontal, DS.Spacing.s)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var continueButton: some View {
-        Button(action: onNext) {
-            Text("Continue")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.m)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(themeManager.selectedTheme.tint)
-        .padding(.top, DS.Spacing.m)
+        OnboardingPrimaryButton(title: "Continue", action: onNext)
+            .padding(.top, DS.Spacing.m)
     }
 
     private func select(_ theme: AppTheme) {
@@ -218,7 +223,7 @@ private struct ThemePreviewTile: View {
             }
         }
         .padding(DS.Spacing.l)
-        .frame(width: 240, height: 300)
+        .frame(width: 260, height: 320)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(theme.background)
@@ -300,26 +305,27 @@ private struct CardsStep: View {
     // MARK: introOverlay
     /// Instruction overlay with blurred background.
     private var introOverlay: some View {
-        VStack(spacing: DS.Spacing.m) {
+        OnboardingGlassCard(alignment: .center) {
             Text("Add the cards you use for spending. We'll use them in budgets later.")
                 .multilineTextAlignment(.center)
-            Button("Next") { withAnimation { showIntro = false } }
-//                .buttonStyle(.borderedProminent)
+            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
         }
-        .padding()
-        .cornerRadius(16)
-        .padding()
+        .padding(.horizontal, DS.Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton
     /// Bottom aligned button to continue after adding cards.
     private var doneButton: some View {
-        VStack {
-            Spacer()
-            Button("Done") { onNext() }
-//                .buttonStyle(.borderedProminent)
-                .padding()
+        OnboardingGlassCard(
+            alignment: .center,
+            maxWidth: nil,
+            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
+        ) {
+            OnboardingPrimaryButton(title: "Done", action: onNext)
         }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.xxl)
     }
 }
 
@@ -343,25 +349,26 @@ private struct PresetsStep: View {
 
     // MARK: introOverlay
     private var introOverlay: some View {
-        VStack(spacing: DS.Spacing.m) {
+        OnboardingGlassCard(alignment: .center) {
             Text("Presets are recurring expenses you have every month. Add them here so budgets are faster to create.")
                 .multilineTextAlignment(.center)
-            Button("Next") { withAnimation { showIntro = false } }
-//                .buttonStyle(.borderedProminent)
+            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
         }
-        .padding()
-        .cornerRadius(16)
-        .padding()
+        .padding(.horizontal, DS.Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton
     private var doneButton: some View {
-        VStack {
-            Spacer()
-            Button("Done") { onNext() }
-//                .buttonStyle(.borderedProminent)
-                .padding()
+        OnboardingGlassCard(
+            alignment: .center,
+            maxWidth: nil,
+            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
+        ) {
+            OnboardingPrimaryButton(title: "Done", action: onNext)
         }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.xxl)
     }
 }
 
@@ -422,41 +429,50 @@ private struct CloudSyncStep: View {
     }
 
     private var cloudOptionsCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
-                .font(.headline)
+        OnboardingGlassCard(alignment: .leading, maxWidth: 620) {
+            CloudOptionToggle(
+                title: "Enable iCloud Sync",
+                subtitle: "Keep budgets, themes, and settings identical everywhere.",
+                isOn: $enableCloudSync,
+                isEnabled: true
+            )
 
-            VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                Toggle("Sync card themes", isOn: $syncCardThemes)
-                    .disabled(!enableCloudSync)
-                Toggle("Sync app appearance", isOn: $syncAppTheme)
-                    .disabled(!enableCloudSync)
-                Toggle("Sync budget period", isOn: $syncBudgetPeriod)
-                    .disabled(!enableCloudSync)
+            Divider()
+                .opacity(0.25)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                CloudOptionToggle(
+                    title: "Sync card themes",
+                    subtitle: "Mirror your custom card colors across devices.",
+                    isOn: $syncCardThemes,
+                    isEnabled: enableCloudSync
+                )
+
+                CloudOptionToggle(
+                    title: "Sync app appearance",
+                    subtitle: "Use the same theme everywhere automatically.",
+                    isOn: $syncAppTheme,
+                    isEnabled: enableCloudSync
+                )
+
+                CloudOptionToggle(
+                    title: "Sync budget period",
+                    subtitle: "Align the start and end dates of each cycle.",
+                    isOn: $syncBudgetPeriod,
+                    isEnabled: enableCloudSync
+                )
             }
-            .foregroundStyle(enableCloudSync ? .primary : .secondary)
-            .opacity(enableCloudSync ? 1 : 0.5)
-            .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
 
             Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(DS.Spacing.xl)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+        .tint(themeManager.selectedTheme.resolvedTint)
     }
 
     private var continueButton: some View {
-        Button(action: onNext) {
-            Text("Continue")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.m)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(themeManager.selectedTheme.tint)
+        OnboardingPrimaryButton(title: "Continue", action: onNext)
     }
 }
 
@@ -482,25 +498,26 @@ private struct CategoriesStep: View {
 
     // MARK: introOverlay
     private var introOverlay: some View {
-        VStack(spacing: DS.Spacing.m) {
+        OnboardingGlassCard(alignment: .center) {
             Text("Create categories to track your spending. You can always edit them later.")
                 .multilineTextAlignment(.center)
-            Button("Next") { withAnimation { showIntro = false } }
-//                .buttonStyle(.borderedProminent)
+            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
         }
-        .padding()
-        .cornerRadius(16)
-        .padding()
+        .padding(.horizontal, DS.Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton
     private var doneButton: some View {
-        VStack {
-            Spacer()
-            Button("Done") { onNext() }
-//                .buttonStyle(.borderedProminent)
-                .padding()
+        OnboardingGlassCard(
+            alignment: .center,
+            maxWidth: nil,
+            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
+        ) {
+            OnboardingPrimaryButton(title: "Done", action: onNext)
         }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.xxl)
     }
 }
 
@@ -523,4 +540,200 @@ private struct LoadingStep: View {
         }
         .padding()
     }
+}
+
+// MARK: - Shared Components
+
+private struct OnboardingPrimaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(OnboardingLiquidButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+    }
+}
+
+private struct OnboardingLiquidButtonStyle: ButtonStyle {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    var tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        let radius: CGFloat = 26
+
+        return configuration.label
+            .font(.headline)
+            .foregroundStyle(Color.white)
+            .padding(.vertical, DS.Spacing.m)
+            .padding(.horizontal, DS.Spacing.l)
+            .frame(maxWidth: .infinity)
+            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .background(background(isPressed: configuration.isPressed, radius: radius))
+            .overlay(highlight(radius: radius))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+
+    @ViewBuilder
+    private func background(isPressed: Bool, radius: CGFloat) -> some View {
+        if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(tint.opacity(isPressed ? 0.32 : 0.4))
+                .background(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
+                .shadow(
+                    color: tint.opacity(isPressed ? 0.26 : 0.38),
+                    radius: isPressed ? 14 : 24,
+                    x: 0,
+                    y: isPressed ? 10 : 16
+                )
+                .compositingGroup()
+        } else {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            tint.opacity(0.95),
+                            tint.opacity(0.75)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: tint.opacity(0.28), radius: 12, x: 0, y: 8)
+        }
+    }
+
+    @ViewBuilder
+    private func highlight(radius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(Color.white.opacity(capabilities.supportsLiquidGlass ? 0.28 : 0.18), lineWidth: 1)
+            .blendMode(.screen)
+    }
+}
+
+private struct OnboardingGlassCard<Content: View>: View {
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    private let vStackAlignment: HorizontalAlignment
+    private let frameAlignment: Alignment
+    private let maxWidth: CGFloat?
+    private let contentPadding: EdgeInsets
+    private let content: Content
+
+    init(
+        alignment: Alignment = .leading,
+        maxWidth: CGFloat? = 520,
+        contentPadding: EdgeInsets = .init(top: DS.Spacing.xl, leading: DS.Spacing.xl, bottom: DS.Spacing.xl, trailing: DS.Spacing.xl),
+        @ViewBuilder content: () -> Content
+    ) {
+        switch alignment {
+        case .leading, .topLeading, .bottomLeading:
+            self.vStackAlignment = .leading
+            self.frameAlignment = .leading
+        case .trailing, .topTrailing, .bottomTrailing:
+            self.vStackAlignment = .trailing
+            self.frameAlignment = .trailing
+        default:
+            self.vStackAlignment = .center
+            self.frameAlignment = .center
+        }
+
+        self.maxWidth = maxWidth
+        self.contentPadding = contentPadding
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: vStackAlignment, spacing: DS.Spacing.l) {
+            content
+        }
+        .padding(contentPadding)
+        .frame(maxWidth: maxWidth ?? .infinity, alignment: frameAlignment)
+        .background(
+            OnboardingGlassBackground(
+                tint: themeManager.selectedTheme.resolvedTint,
+                capabilities: capabilities,
+                cornerRadius: 32
+            )
+        )
+    }
+}
+
+private struct OnboardingGlassBackground: View {
+    let tint: Color
+    let capabilities: PlatformCapabilities
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        Group {
+            if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(tint.opacity(0.26))
+                    .background(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1.1)
+                            .blendMode(.screen)
+                    )
+                    .shadow(color: tint.opacity(0.24), radius: 30, x: 0, y: 18)
+                    .compositingGroup()
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(tint.opacity(0.14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(tint.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 10)
+            }
+        }
+    }
+}
+
+private struct CloudOptionToggle: View {
+    let title: String
+    let subtitle: String?
+    @Binding var isOn: Bool
+    var isEnabled: Bool
+
+    var body: some View {
+        LabeledContent {
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .disabled(!isEnabled)
+#if os(iOS) || os(macOS)
+                .controlSize(.large)
+#endif
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .opacity(isEnabled ? 1 : 0.45)
+        .animation(.easeInOut(duration: 0.2), value: isEnabled)
+    }
+}
+
+private extension AppTheme {
+    var resolvedTint: Color { tint ?? accent }
 }
