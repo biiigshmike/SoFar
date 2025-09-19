@@ -192,51 +192,55 @@ private struct CloudSyncStep: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    Text("Sync with iCloud")
-                        .font(.largeTitle.bold())
-                    Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                    Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
-                        .font(.headline)
-
+            VStack {
+                VStack(alignment: .leading, spacing: DS.Spacing.l) {
                     VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                        Toggle("Sync card themes", isOn: $syncCardThemes)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync app appearance", isOn: $syncAppTheme)
-                            .disabled(!enableCloudSync)
-                        Toggle("Sync budget period", isOn: $syncBudgetPeriod)
-                            .disabled(!enableCloudSync)
+                        Text("Sync with iCloud")
+                            .font(.largeTitle.bold())
+                        Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .foregroundStyle(enableCloudSync ? .primary : .secondary)
-                    .opacity(enableCloudSync ? 1 : 0.5)
-                    .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
 
-                    Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(DS.Spacing.l)
-                .cardBackground()
+                    VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                        Toggle("Enable iCloud Sync", isOn: $enableCloudSync)
+                            .font(.headline)
 
-                Button(action: onNext) {
-                    Text("Continue")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.m)
+                        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                            Toggle("Sync card themes", isOn: $syncCardThemes)
+                                .disabled(!enableCloudSync)
+                            Toggle("Sync app appearance", isOn: $syncAppTheme)
+                                .disabled(!enableCloudSync)
+                            Toggle("Sync budget period", isOn: $syncBudgetPeriod)
+                                .disabled(!enableCloudSync)
+                        }
+                        .foregroundStyle(enableCloudSync ? .primary : .secondary)
+                        .opacity(enableCloudSync ? 1 : 0.5)
+                        .animation(.easeInOut(duration: 0.2), value: enableCloudSync)
+
+                        Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(DS.Spacing.l)
+                    .frame(maxWidth: .infinity)
+                    .cardBackground()
+
+                    Button(action: onNext) {
+                        Text("Continue")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.m)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(themeManager.selectedTheme.tint)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(themeManager.selectedTheme.tint)
+                .frame(maxWidth: 600, alignment: .leading)
             }
+            .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.xl)
             .padding(.horizontal, DS.Spacing.l)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
