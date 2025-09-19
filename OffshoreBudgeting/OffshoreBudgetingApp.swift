@@ -16,6 +16,7 @@ import AppKit
 struct OffshoreBudgetingApp: App {
     // MARK: Dependencies
     @StateObject private var themeManager = ThemeManager()
+    private let platformCapabilities = PlatformCapabilities.current
     @Environment(\.colorScheme) private var systemColorScheme
 #if os(macOS)
     @Environment(\.openWindow) private var openWindow
@@ -52,6 +53,7 @@ struct OffshoreBudgetingApp: App {
             }
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
             .environmentObject(themeManager)
+            .environment(\.platformCapabilities, platformCapabilities)
             // Apply the selected theme's accent color to all controls.
             // `tint` covers most modern SwiftUI controls, while `accentColor`
             // is still required for some AppKit-backed macOS components

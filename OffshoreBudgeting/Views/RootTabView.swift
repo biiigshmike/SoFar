@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var platformCapabilities
 
     var body: some View {
         TabView {
@@ -28,9 +29,12 @@ struct RootTabView: View {
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { 
+        .onChange(of: themeManager.selectedTheme) {
+            updateTabBarAppearance()
+        }
+        .onChange(of: platformCapabilities) { _ in
             updateTabBarAppearance()
         }
     }
@@ -40,8 +44,14 @@ struct RootTabView: View {
         #if canImport(UIKit)
         DispatchQueue.main.async {
             let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+            if platformCapabilities.supportsLiquidGlass {
+                appearance.configureWithTransparentBackground()
+                appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+                appearance.backgroundColor = UIColor(themeManager.selectedTheme.background).withAlphaComponent(0.35)
+            } else {
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+            }
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance

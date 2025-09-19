@@ -114,7 +114,7 @@ struct CardsView: View {
                     onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
                 )
             }
-            .background(themeManager.selectedTheme.background.ignoresSafeArea())
+            .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
             //.accentColor(themeManager.selectedTheme.tint)
             .tint(themeManager.selectedTheme.tint)
     }

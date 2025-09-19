@@ -156,7 +156,7 @@ struct HomeView: View {
                 )
             }
         }
-        .background(themeManager.selectedTheme.background.ignoresSafeArea())
+        .ub_glassBackground(themeManager.selectedTheme.background, ignoringSafeArea: .all)
     }
 
     // MARK: Content Container
