@@ -245,8 +245,8 @@ final class ThemeManager: ObservableObject {
     /// the class has completed initialization, avoiding "self used before all
     /// stored properties are initialized" errors during `init`.
     private static var isSyncEnabled: Bool {
-        let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? true
-        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? false
+        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
         return themeSync && cloud
     }
 

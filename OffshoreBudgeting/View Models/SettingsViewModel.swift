@@ -37,20 +37,20 @@ final class SettingsViewModel: ObservableObject {
 
     /// Sync per-card themes across devices using iCloud.
     @AppStorage(AppSettingsKeys.syncCardThemes.rawValue)
-    var syncCardThemes: Bool = true { willSet { objectWillChange.send() } }
+    var syncCardThemes: Bool = false { willSet { objectWillChange.send() } }
 
     /// Sync the overall app theme selection via iCloud.
     @AppStorage(AppSettingsKeys.syncAppTheme.rawValue)
-    var syncAppTheme: Bool = true { willSet { objectWillChange.send() } }
+    var syncAppTheme: Bool = false { willSet { objectWillChange.send() } }
 
     /// Sync selected budget period across devices.
     @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue)
-    var syncBudgetPeriod: Bool = true { willSet { objectWillChange.send() } }
+    var syncBudgetPeriod: Bool = false { willSet { objectWillChange.send() } }
 
     /// Enable iCloud/CloudKit synchronization for Core Data.
     /// When turned off, dependent sync options are also disabled.
     @AppStorage(AppSettingsKeys.enableCloudSync.rawValue)
-    var enableCloudSync: Bool = true {
+    var enableCloudSync: Bool = false {
         willSet { objectWillChange.send() }
         didSet {
             if !enableCloudSync {
@@ -68,10 +68,10 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.calendarHorizontal.rawValue: true,
             AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue: true,
             AppSettingsKeys.budgetPeriod.rawValue: BudgetPeriod.monthly.rawValue,
-            AppSettingsKeys.syncCardThemes.rawValue: true,
-            AppSettingsKeys.syncAppTheme.rawValue: true,
-            AppSettingsKeys.syncBudgetPeriod.rawValue: true,
-            AppSettingsKeys.enableCloudSync.rawValue: true
+            AppSettingsKeys.syncCardThemes.rawValue: false,
+            AppSettingsKeys.syncAppTheme.rawValue: false,
+            AppSettingsKeys.syncBudgetPeriod.rawValue: false,
+            AppSettingsKeys.enableCloudSync.rawValue: false
         ])
     }
 }

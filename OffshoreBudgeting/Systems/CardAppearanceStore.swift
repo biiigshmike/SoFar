@@ -24,8 +24,8 @@ final class CardAppearanceStore {
 
     /// Whether cloud syncing is enabled via settings.
     private var isSyncEnabled: Bool {
-        let cardSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? true
-        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? true
+        let cardSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? false
+        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
         return cardSync && cloud
     }
 
