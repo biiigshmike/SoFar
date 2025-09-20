@@ -238,7 +238,7 @@ struct CardsView: View {
             }
         } // ZStack
         // MARK: Keep selection valid when dataset changes (delete/rename)
-        .onChange(of: cards.map(\.id)) { _, ids in
+        .onChange(of: cards.map(\.id)) { ids in
             guard let sel = selectedCardStableID, !ids.contains(sel) else { return }
 
             // Core Data can momentarily emit a data set that omits the

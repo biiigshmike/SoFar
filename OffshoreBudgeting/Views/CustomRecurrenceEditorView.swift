@@ -94,62 +94,97 @@ struct CustomRecurrenceEditorView: View {
 
     // MARK: Body
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Picker("Every", selection: $draft.interval) {
-                        ForEach(1...30, id: \.self) { i in
-                            Text("\(i)").tag(i)
+        Group {
+            if #available(iOS 16.0, *) {
+                NavigationStack {
+                    content
+                        .navigationTitle("Custom Recurrence")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    onCancel()
+                                    dismiss()
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Save") {
+                                    onSave(draft)
+                                    dismiss()
+                                }
+                                .bold()
+                            }
                         }
-                    }
-                    Picker("Unit", selection: $draft.unit) {
-                        ForEach(CustomRecurrence.Unit.allCases) { unit in
-                            Text(unit.rawValue).tag(unit)
+                }
+            } else {
+                NavigationView {
+                    content
+                        .navigationTitle("Custom Recurrence")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    onCancel()
+                                    dismiss()
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Save") {
+                                    onSave(draft)
+                                    dismiss()
+                                }
+                                .fontWeight(.bold)
+                            }
                         }
-                    }
-                } header: {
-                    Text("FREQUENCY")
-                        .font(.footnote).foregroundStyle(.secondary).textCase(.none)
                 }
-
-                if draft.unit == .week {
-                    Section {
-                        WeekdayMultiPicker(selection: $draft.selectedWeekdays)
-                    } header: {
-                        Text("WEEKDAYS")
-                            .font(.footnote).foregroundStyle(.secondary).textCase(.none)
-                    }
-                }
-
-                Section {
-                    Text("Preview")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Text(draft.toRRULE())
-                        .font(.callout).monospaced()
-                        .textSelection(.enabled)
-                }
-            }
-            .navigationTitle("Custom Recurrence")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        onCancel()
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(draft)
-                        dismiss()
-                    }
-                    .bold()
-                }
+                .navigationViewStyle(StackNavigationViewStyle())
             }
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
+    }
+
+    // Extracted content to reuse between NavigationStack and NavigationView
+    private var content: some View {
+        Form {
+            Section {
+                Picker("Every", selection: $draft.interval) {
+                    ForEach(1...30, id: \.self) { i in
+                        Text("\(i)").tag(i)
+                    }
+                }
+                Picker("Unit", selection: $draft.unit) {
+                    ForEach(CustomRecurrence.Unit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                }
+            } header: {
+                Text("FREQUENCY")
+                    .font(.footnote).foregroundStyle(.secondary).textCase(.none)
+            }
+
+            if draft.unit == .week {
+                Section {
+                    WeekdayMultiPicker(selection: $draft.selectedWeekdays)
+                } header: {
+                    Text("WEEKDAYS")
+                        .font(.footnote).foregroundStyle(.secondary).textCase(.none)
+                }
+            }
+
+            Section {
+                Text("Preview")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                if #available(iOS 16.0, *) {
+                    Text(draft.toRRULE())
+                        .font(.callout).monospaced()
+                        .textSelection(.enabled)
+                } else {
+                    Text(draft.toRRULE())
+                        .font(.system(.callout, design: .monospaced))
+                }
+            }
+        }
     }
 
     // MARK: Subviews

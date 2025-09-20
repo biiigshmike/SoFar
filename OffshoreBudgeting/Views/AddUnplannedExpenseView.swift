@@ -226,12 +226,8 @@ private struct CategoryChipsRow: View {
             .ub_hideScrollIndicators()
         }
         .sheet(isPresented: $isPresentingNewCategory) {
-            // Present a unified category editor sheet when adding a new category.  The
-            // sheet uses the same look and feel as the rest of the app via
-            // ExpenseCategoryEditorSheet.  Upon save, it creates a new
-            // ExpenseCategory in the current context and passes it back via
-            // `onCreated`.
-            ExpenseCategoryEditorSheet(
+            // Build as a single expression to avoid opaque 'some View' type mismatches.
+            let base = ExpenseCategoryEditorSheet(
                 initialName: "",
                 initialHex: "#4E9CFF"
             ) { name, hex in
@@ -247,15 +243,21 @@ private struct CategoryChipsRow: View {
                     // Auto-select the newly created category.
                     selectedCategoryID = category.objectID
                 } catch {
-                    // In case of an error, log it for debugging; the sheet will stay open.
                     #if DEBUG
                     print("Failed to create category:", error.localizedDescription)
                     #endif
                 }
             }
-            // Limit the sheet height on iOS/iPadOS to a medium size; macOS uses the default.
-            .presentationDetents([.medium])
             .environment(\.managedObjectContext, viewContext)
+
+            // Apply detents on supported OS versions without changing the opaque type.
+            Group {
+                if #available(iOS 16.0, *) {
+                    base.presentationDetents([.medium])
+                } else {
+                    base
+                }
+            }
         }
         .onChange(of: categories.count) { _ in
             // Auto-pick first category if none selected yet
