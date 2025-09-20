@@ -164,6 +164,8 @@ struct SettingsRow<Trailing: View>: View {
     let title: String
     var detail: String? = nil
     @ViewBuilder var trailing: Trailing
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
 
     init(title: String, detail: String? = nil, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
@@ -175,6 +177,7 @@ struct SettingsRow<Trailing: View>: View {
         HStack {
             Text(title)
                 .font(.body)
+                .foregroundStyle(themeManager.selectedTheme.primaryTextColor(for: colorScheme))
             Spacer()
             if let detail {
                 Text(detail)
