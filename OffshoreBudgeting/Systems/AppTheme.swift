@@ -426,25 +426,25 @@ extension AppTheme {
         var configuration = AppTheme.GlassConfiguration.standard
 
         // Lift the surface: less tinting, neutral response
-        configuration.liquid.tintOpacity = 0.06
-        configuration.liquid.saturation = 0.98
-        configuration.liquid.brightness = 0.01
-        configuration.liquid.contrast = 1.00
-        configuration.liquid.bloom = 0.06
+        configuration.liquid.tintOpacity = 0.045
+        configuration.liquid.saturation = 0.96
+        configuration.liquid.brightness = 0.03
+        configuration.liquid.contrast = 0.99
+        configuration.liquid.bloom = 0.08
 
         let shadowTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.72, alpha: 1.0)
         let specularTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.28, alpha: 1.0)
         let rimTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
 
-        configuration.glass.highlightOpacity = 0.40
-        configuration.glass.highlightBlur = 22
+        configuration.glass.highlightOpacity = 0.46
+        configuration.glass.highlightBlur = 28
         configuration.glass.shadowColor = shadowTone
-        configuration.glass.shadowOpacity = 0.08
-        configuration.glass.shadowBlur = 28
+        configuration.glass.shadowOpacity = 0.05
+        configuration.glass.shadowBlur = 26
         configuration.glass.specularColor = specularTone
-        configuration.glass.specularOpacity = 0.14
+        configuration.glass.specularOpacity = 0.16
         configuration.glass.specularWidth = 0.11
-        configuration.glass.noiseOpacity = 0.012
+        configuration.glass.noiseOpacity = 0.008
         configuration.glass.rimColor = rimTone
         configuration.glass.rimOpacity = 0.03
         configuration.glass.rimWidth = 0.80
@@ -742,16 +742,16 @@ private enum SystemThemeMac {
 
     static func glassBaseColor(background: Color, resolvedTint: Color) -> Color {
         // Brighter base, very small neutral wash
-        let softenedBackground = AppThemeColorUtilities.mix(background, Color.white, amount: 0.22)
+        let softenedBackground = AppThemeColorUtilities.mix(background, Color.white, amount: 0.30)
 
         let accentWash = AppThemeColorUtilities.adjust(
             resolvedTint,
-            saturationMultiplier: 0.04,
-            brightnessMultiplier: 1.04,
+            saturationMultiplier: 0.03,
+            brightnessMultiplier: 1.06,
             alpha: 1.0
         )
 
-        return AppThemeColorUtilities.mix(softenedBackground, accentWash, amount: 0.03)
+        return AppThemeColorUtilities.mix(softenedBackground, accentWash, amount: 0.02)
     }
 
     static func glassPalette(resolvedTint: Color) -> AppTheme.GlassConfiguration.Palette {
