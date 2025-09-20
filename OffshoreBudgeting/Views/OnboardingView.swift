@@ -83,12 +83,12 @@ struct OnboardingView: View {
         .onboardingPresentation()
         .animation(.easeInOut, value: step)
         .transition(.opacity)
-        .onChange(of: enableCloudSync) { newValue in
+        .onChange(of: enableCloudSync, perform: { newValue in
             guard !newValue else { return }
             syncCardThemes = false
             syncAppTheme = false
             syncBudgetPeriod = false
-        }
+        })
     }
 }
 
@@ -153,10 +153,10 @@ private struct ThemeStep: View {
             .frame(maxWidth: .infinity)
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
-        .onChange(of: themeManager.selectedTheme) { newValue in
+        .onChange(of: themeManager.selectedTheme, perform: { newValue in
             guard newValue != selectedTheme else { return }
             selectedTheme = newValue
-        }
+        })
     }
 
     private var header: some View {
@@ -366,14 +366,23 @@ private struct CardsStep: View {
     // MARK: - Navigation container compatibility
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            NavigationStack { content() }
+        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+            navigationStack(content: content)
         } else {
-            NavigationView { content() }
-            #if os(iOS)
-            .navigationViewStyle(.stack)
-            #endif
+            navigationView(content: content)
         }
+    }
+
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, *)
+    private func navigationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationStack { content() }
+    }
+
+    private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationView { content() }
+        #if os(iOS)
+            .navigationViewStyle(.stack)
+        #endif
     }
 }
 
@@ -453,12 +462,12 @@ private struct CloudSyncStep: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: enableCloudSync) { newValue in
+        .onChange(of: enableCloudSync, perform: { newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
-        }
+        })
     }
 
     @ViewBuilder
@@ -604,14 +613,23 @@ private struct CategoriesStep: View {
     // MARK: - Navigation container compatibility
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            NavigationStack { content() }
+        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+            navigationStack(content: content)
         } else {
-            NavigationView { content() }
-            #if os(iOS)
-            .navigationViewStyle(.stack)
-            #endif
+            navigationView(content: content)
         }
+    }
+
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, *)
+    private func navigationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationStack { content() }
+    }
+
+    private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        NavigationView { content() }
+        #if os(iOS)
+            .navigationViewStyle(.stack)
+        #endif
     }
 }
 
