@@ -58,7 +58,12 @@ final class AddIncomeFormViewModel: ObservableObject {
     // MARK: Currency
     /// Resolve from Locale; override if you support per-budget/per-user currency.
     var currencyCode: String {
-        Locale.current.currency?.identifier ?? "USD"
+        if #available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *) {
+            return Locale.current.currency?.identifier ?? "USD"
+        } else {
+            // Fallback for earlier OS versions
+            return Locale.current.currencyCode ?? "USD"
+        }
     }
 
     // MARK: Validation
