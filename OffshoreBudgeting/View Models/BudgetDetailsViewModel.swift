@@ -47,7 +47,7 @@ final class BudgetDetailsViewModel: ObservableObject {
     @Published private(set) var plannedExpenses: [PlannedExpense] = []
     @Published private(set) var unplannedExpenses: [UnplannedExpense] = []
 
-    private struct IncomeTotals: Equatable {
+    struct IncomeTotals: Equatable {
         var planned: Double
         var actual: Double
 
@@ -276,3 +276,4 @@ final class BudgetDetailsViewModel: ObservableObject {
         return lower...upper
     }
 }
+

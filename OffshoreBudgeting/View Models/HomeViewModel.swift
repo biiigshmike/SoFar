@@ -261,7 +261,7 @@ final class HomeViewModel: ObservableObject {
     // MARK: fetchBudgets(overlapping:)
     /// Returns budgets that overlap the given date range.
     /// - Parameter range: The date window to match against budget start/end.
-    private static func fetchBudgets(overlapping range: ClosedRange<Date>, in context: NSManagedObjectContext) -> [Budget] {
+    private nonisolated static func fetchBudgets(overlapping range: ClosedRange<Date>, in context: NSManagedObjectContext) -> [Budget] {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
         let start = range.lowerBound
         let end = range.upperBound
@@ -285,7 +285,7 @@ final class HomeViewModel: ObservableObject {
     ///   - periodStart: Inclusive start date for calculations.
     ///   - periodEnd: Inclusive end date for calculations.
     /// - Returns: A `BudgetSummary` for display.
-    private static func buildSummary(
+    private nonisolated static func buildSummary(
         for budget: Budget,
         periodStart: Date,
         periodEnd: Date,
