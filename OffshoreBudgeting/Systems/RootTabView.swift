@@ -76,7 +76,7 @@ struct RootTabView: View {
         #if canImport(UIKit)
         DispatchQueue.main.async {
             let appearance = UITabBarAppearance()
-            if platformCapabilities.supportsLiquidGlass {
+            if platformCapabilities.supportsOS26Translucency {
                 appearance.configureWithTransparentBackground()
                 let configuration = themeManager.glassConfiguration
                 let blurStyle = configuration.glass.material.uiBlurEffectStyle

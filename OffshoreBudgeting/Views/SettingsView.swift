@@ -67,9 +67,6 @@ struct SettingsView: View {
                             .labelsHidden()
                         }
 
-                        if themeManager.selectedTheme == .liquidGlass {
-                            LiquidGlassCustomizationControls()
-                        }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
@@ -251,55 +248,6 @@ struct SettingsView: View {
         #endif
     }
 
-}
-
-// MARK: - LiquidGlassCustomizationControls
-private struct LiquidGlassCustomizationControls: View {
-    @EnvironmentObject private var themeManager: ThemeManager
-
-    private var liquidBinding: Binding<Double> {
-        Binding(
-            get: { themeManager.liquidGlassCustomization.liquidAmount },
-            set: { themeManager.updateLiquidGlass(liquidAmount: $0) }
-        )
-    }
-
-    private var glassBinding: Binding<Double> {
-        Binding(
-            get: { themeManager.liquidGlassCustomization.glassDepth },
-            set: { themeManager.updateLiquidGlass(glassDepth: $0) }
-        )
-    }
-
-    private var liquidDisplay: String {
-        themeManager.liquidGlassCustomization.liquidAmount
-            .formatted(.percent.precision(.fractionLength(0)))
-    }
-
-    private var glassDisplay: String {
-        themeManager.liquidGlassCustomization.glassDepth
-            .formatted(.percent.precision(.fractionLength(0)))
-    }
-
-    var body: some View {
-        Group {
-            SettingsRow(title: "Liquid Intensity", detail: liquidDisplay) {
-                Slider(value: liquidBinding, in: 0...1, step: 0.01) {
-                    Text("Liquid Intensity")
-                }
-                .labelsHidden()
-                .frame(minWidth: 160, maxWidth: 220)
-            }
-
-            SettingsRow(title: "Glass Depth", detail: glassDisplay) {
-                Slider(value: glassBinding, in: 0...1, step: 0.01) {
-                    Text("Glass Depth")
-                }
-                .labelsHidden()
-                .frame(minWidth: 160, maxWidth: 220)
-            }
-        }
-    }
 }
 
 // MARK: - Platform-Safe Modifiers
