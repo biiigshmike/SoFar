@@ -13,6 +13,7 @@ import UIKit
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var platformCapabilities
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         TabView {
@@ -66,6 +67,9 @@ struct RootTabView: View {
         .onChange(of: themeManager.selectedTheme) { _ in
             updateTabBarAppearance()
         }
+        .onChange(of: colorScheme) { _ in
+            updateTabBarAppearance()
+        }
         .onChange(of: platformCapabilities) { _ in
             updateTabBarAppearance()
         }
@@ -88,6 +92,8 @@ struct RootTabView: View {
         #if canImport(UIKit)
         DispatchQueue.main.async {
             let appearance = UITabBarAppearance()
+            let palette = themeManager.selectedTheme.tabBarPalette
+
             if platformCapabilities.supportsOS26Translucency {
                 appearance.configureWithTransparentBackground()
                 let configuration = themeManager.glassConfiguration
@@ -97,24 +103,19 @@ struct RootTabView: View {
                 let baseColor = themeManager.selectedTheme.glassBaseColor
                 let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
                 appearance.backgroundColor = UIColor(baseColor).withAlphaComponent(opacity)
-
-                let resolvedTint = UIColor(themeManager.selectedTheme.resolvedTint)
-                applyOS26TabItemAppearance(
-                    to: appearance,
-                    tintColor: resolvedTint
-                )
-                UITabBar.appearance().unselectedItemTintColor = resolvedTint.withAlphaComponent(0.72)
             } else {
                 appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
-
-                resetTabItemAppearance(on: appearance)
-                UITabBar.appearance().unselectedItemTintColor = nil
+                appearance.backgroundColor = UIColor(themeManager.selectedTheme.glassBaseColor)
             }
+            applyTabItemAppearance(
+                to: appearance,
+                palette: palette
+            )
+            UITabBar.appearance().unselectedItemTintColor = UIColor(palette.inactive)
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
-            UITabBar.appearance().tintColor = themeManager.selectedTheme.tint.map { UIColor($0) }
+            UITabBar.appearance().tintColor = UIColor(palette.active)
         }
         #endif
     }
@@ -122,66 +123,92 @@ struct RootTabView: View {
 
 #if canImport(UIKit)
 private extension RootTabView {
-    func applyOS26TabItemAppearance(
+    func applyTabItemAppearance(
         to appearance: UITabBarAppearance,
-        tintColor: UIColor
+        palette: AppTheme.TabBarPalette
     ) {
         appearance.stackedLayoutAppearance = makeTabItemAppearance(
             style: .stacked,
-            tintColor: tintColor
+            palette: palette
         )
         appearance.inlineLayoutAppearance = makeTabItemAppearance(
             style: .inline,
-            tintColor: tintColor
+            palette: palette
         )
         appearance.compactInlineLayoutAppearance = makeTabItemAppearance(
             style: .compactInline,
-            tintColor: tintColor
+            palette: palette
         )
-    }
-
-    func resetTabItemAppearance(on appearance: UITabBarAppearance) {
-        appearance.stackedLayoutAppearance = makeDefaultTabItemAppearance(style: .stacked)
-        appearance.inlineLayoutAppearance = makeDefaultTabItemAppearance(style: .inline)
-        appearance.compactInlineLayoutAppearance = makeDefaultTabItemAppearance(style: .compactInline)
     }
 
     func makeTabItemAppearance(
         style: UITabBarItemAppearance.Style,
-        tintColor: UIColor
+        palette: AppTheme.TabBarPalette
     ) -> UITabBarItemAppearance {
         let itemAppearance = UITabBarItemAppearance(style: style)
         itemAppearance.configureWithDefault(for: style)
 
-        configure(state: itemAppearance.normal, tintColor: tintColor, emphasis: 0.72)
-        configure(state: itemAppearance.selected, tintColor: tintColor, emphasis: 1.0)
-        configure(state: itemAppearance.focused, tintColor: tintColor, emphasis: 1.0)
-        configureDisabledState(itemAppearance.disabled, tintColor: tintColor)
+        let activeColor = UIColor(palette.active)
+        let inactiveColor = UIColor(palette.inactive)
+        let disabledColor = UIColor(palette.disabled)
+        let badgeBackground = UIColor(palette.badgeBackground)
+        let badgeForeground = UIColor(palette.badgeForeground)
+
+        configure(
+            state: itemAppearance.normal,
+            iconColor: inactiveColor,
+            titleColor: inactiveColor,
+            badgeBackground: badgeBackground,
+            badgeForeground: badgeForeground
+        )
+        configure(
+            state: itemAppearance.selected,
+            iconColor: activeColor,
+            titleColor: activeColor,
+            badgeBackground: badgeBackground,
+            badgeForeground: badgeForeground
+        )
+        configure(
+            state: itemAppearance.focused,
+            iconColor: activeColor,
+            titleColor: activeColor,
+            badgeBackground: badgeBackground,
+            badgeForeground: badgeForeground
+        )
+        configureDisabledState(
+            itemAppearance.disabled,
+            iconColor: disabledColor,
+            badgeForeground: badgeForeground
+        )
 
         return itemAppearance
     }
 
-    func makeDefaultTabItemAppearance(style: UITabBarItemAppearance.Style) -> UITabBarItemAppearance {
-        let itemAppearance = UITabBarItemAppearance(style: style)
-        itemAppearance.configureWithDefault(for: style)
-        return itemAppearance
+    func configure(
+        state: UITabBarItemStateAppearance,
+        iconColor: UIColor,
+        titleColor: UIColor,
+        badgeBackground: UIColor,
+        badgeForeground: UIColor
+    ) {
+        state.iconColor = iconColor
+        state.titleTextAttributes = [.foregroundColor: titleColor]
+        state.badgeBackgroundColor = badgeBackground
+        state.badgeTextAttributes = [.foregroundColor: badgeForeground]
     }
 
-    func configure(state: UITabBarItemStateAppearance, tintColor: UIColor, emphasis: CGFloat) {
-        let clampedAlpha = max(0.0, min(1.0, emphasis))
-        let alphaColor = tintColor.withAlphaComponent(clampedAlpha)
-        state.iconColor = alphaColor
-        state.titleTextAttributes = [.foregroundColor: alphaColor]
-        state.badgeBackgroundColor = tintColor
-        state.badgeTextAttributes = [.foregroundColor: UIColor.white]
-    }
-
-    func configureDisabledState(_ state: UITabBarItemStateAppearance, tintColor: UIColor) {
-        let disabledAlpha = tintColor.withAlphaComponent(0.32)
-        state.iconColor = disabledAlpha
-        state.titleTextAttributes = [.foregroundColor: disabledAlpha]
-        state.badgeBackgroundColor = disabledAlpha
-        state.badgeTextAttributes = [.foregroundColor: UIColor.white.withAlphaComponent(0.9)]
+    func configureDisabledState(
+        _ state: UITabBarItemStateAppearance,
+        iconColor: UIColor,
+        badgeForeground: UIColor
+    ) {
+        let disabledBadgeBackground = iconColor.withAlphaComponent(0.28)
+        state.iconColor = iconColor
+        state.titleTextAttributes = [.foregroundColor: iconColor]
+        state.badgeBackgroundColor = disabledBadgeBackground
+        state.badgeTextAttributes = [
+            .foregroundColor: badgeForeground.withAlphaComponent(0.75)
+        ]
     }
 }
 #endif

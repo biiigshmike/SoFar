@@ -58,8 +58,8 @@ struct OffshoreBudgetingApp: App {
             // `tint` covers most modern SwiftUI controls, while `accentColor`
             // is still required for some AppKit-backed macOS components
             // (e.g., checkboxes, date pickers) to respect the theme.
-            .accentColor(themeManager.selectedTheme.tint)
-            .tint(themeManager.selectedTheme.tint)
+            .accentColor(themeManager.selectedTheme.resolvedTint)
+            .tint(themeManager.selectedTheme.resolvedTint)
 #if os(macOS)
             // On macOS, mimic iOS's green toggle while keeping link tint blue
             // when using the System theme.
