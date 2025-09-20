@@ -401,6 +401,29 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         )
         #endif
     }
+
+    /// Primary text color used for headers and rows inside grouped settings views.
+    /// - Parameter colorScheme: The current environment color scheme.
+    /// - Returns: A color that keeps "System" aligned with platform defaults while
+    ///   allowing custom themes to continue using `.primary`.
+    func primaryTextColor(for colorScheme: ColorScheme) -> Color {
+        switch self {
+        case .system:
+            #if canImport(UIKit)
+            return Color(UIColor.label)
+            #elseif canImport(AppKit)
+            if #available(macOS 10.15, *) {
+                return Color(nsColor: .labelColor)
+            } else {
+                return colorScheme == .dark ? .white : .black
+            }
+            #else
+            return colorScheme == .dark ? .white : .black
+            #endif
+        default:
+            return .primary
+        }
+    }
 }
 
 #if canImport(UIKit)
