@@ -23,6 +23,7 @@ import SwiftUI
 struct UBEmptyState: View {
 
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
+    @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Content
@@ -91,24 +92,7 @@ struct UBEmptyState: View {
 
             // MARK: Primary CTA (optional)
             if let primaryButtonTitle, let onPrimaryTap {
-                if isOnboardingPresentation {
-                    Button(action: onPrimaryTap) {
-                        Label(primaryButtonTitle, systemImage: "plus")
-                            .labelStyle(.titleAndIcon)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(TranslucentButtonStyle(tint: onboardingTint))
-                    .frame(maxWidth: 320)
-                } else {
-                    Button(action: onPrimaryTap) {
-                        Label(primaryButtonTitle, systemImage: "plus")
-                            .padding(.horizontal, DS.Spacing.xl)
-                            .padding(.vertical, DS.Spacing.m)
-                            .background(Color.primary.opacity(0.08))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain) // keep it neutral (no blue)
-                }
+                primaryButton(title: primaryButtonTitle, action: onPrimaryTap)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -118,5 +102,53 @@ struct UBEmptyState: View {
 
     private var onboardingTint: Color {
         themeManager.selectedTheme.tint ?? themeManager.selectedTheme.accent
+    }
+
+    // MARK: Primary Button Helpers
+    @ViewBuilder
+    private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
+        if isOnboardingPresentation {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(TranslucentButtonStyle(tint: onboardingTint))
+            .frame(maxWidth: 320)
+        } else if capabilities.supportsOS26Translucency {
+            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+                Button(action: action) {
+                    primaryButtonLabel(title: title)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(TranslucentButtonStyle(tint: primaryButtonTint))
+                .frame(maxWidth: 320)
+            } else {
+                legacyPrimaryButton(title: title, action: action)
+            }
+        } else {
+            legacyPrimaryButton(title: title, action: action)
+        }
+    }
+
+    @ViewBuilder
+    private func legacyPrimaryButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            primaryButtonLabel(title: title)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.vertical, DS.Spacing.m)
+                .background(Color.primary.opacity(0.08))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func primaryButtonLabel(title: String) -> some View {
+        Label(title, systemImage: "plus")
+            .labelStyle(.titleAndIcon)
+    }
+
+    private var primaryButtonTint: Color {
+        themeManager.selectedTheme.resolvedTint
     }
 }
