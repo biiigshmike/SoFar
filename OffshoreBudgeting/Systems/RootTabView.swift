@@ -85,9 +85,22 @@ struct RootTabView: View {
                 let baseColor = themeManager.selectedTheme.glassBaseColor
                 let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
                 appearance.backgroundColor = UIColor(baseColor).withAlphaComponent(opacity)
+
+                let resolvedTint = UIColor(themeManager.selectedTheme.resolvedTint)
+                applyOS26TabItemAppearance(
+                    to: appearance,
+                    configuration: configuration,
+                    baseColor: UIColor(baseColor),
+                    blurStyle: blurStyle,
+                    tintColor: resolvedTint
+                )
+                UITabBar.appearance().unselectedItemTintColor = resolvedTint.withAlphaComponent(0.72)
             } else {
                 appearance.configureWithOpaqueBackground()
                 appearance.backgroundColor = UIColor(themeManager.selectedTheme.background)
+
+                resetTabItemAppearance(on: appearance)
+                UITabBar.appearance().unselectedItemTintColor = nil
             }
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
@@ -97,4 +110,98 @@ struct RootTabView: View {
         #endif
     }
 }
+
+#if canImport(UIKit)
+private extension RootTabView {
+    func applyOS26TabItemAppearance(
+        to appearance: UITabBarAppearance,
+        configuration: AppTheme.GlassConfiguration,
+        baseColor: UIColor,
+        blurStyle: UIBlurEffect.Style,
+        tintColor: UIColor
+    ) {
+        appearance.stackedLayoutAppearance = makeTabItemAppearance(
+            style: .stacked,
+            configuration: configuration,
+            baseColor: baseColor,
+            blurStyle: blurStyle,
+            tintColor: tintColor
+        )
+        appearance.inlineLayoutAppearance = makeTabItemAppearance(
+            style: .inline,
+            configuration: configuration,
+            baseColor: baseColor,
+            blurStyle: blurStyle,
+            tintColor: tintColor
+        )
+        appearance.compactInlineLayoutAppearance = makeTabItemAppearance(
+            style: .compactInline,
+            configuration: configuration,
+            baseColor: baseColor,
+            blurStyle: blurStyle,
+            tintColor: tintColor
+        )
+    }
+
+    func resetTabItemAppearance(on appearance: UITabBarAppearance) {
+        appearance.stackedLayoutAppearance = makeDefaultTabItemAppearance(style: .stacked)
+        appearance.inlineLayoutAppearance = makeDefaultTabItemAppearance(style: .inline)
+        appearance.compactInlineLayoutAppearance = makeDefaultTabItemAppearance(style: .compactInline)
+    }
+
+    func makeTabItemAppearance(
+        style: UITabBarItemAppearance.Style,
+        configuration: AppTheme.GlassConfiguration,
+        baseColor: UIColor,
+        blurStyle: UIBlurEffect.Style,
+        tintColor: UIColor
+    ) -> UITabBarItemAppearance {
+        let itemAppearance = UITabBarItemAppearance(style: style)
+        itemAppearance.configureWithDefault(for: style)
+
+        configure(state: itemAppearance.normal, tintColor: tintColor, emphasis: 0.72)
+        configure(state: itemAppearance.selected, tintColor: tintColor, emphasis: 1.0)
+        configure(state: itemAppearance.focused, tintColor: tintColor, emphasis: 1.0)
+        configureDisabledState(itemAppearance.disabled, tintColor: tintColor)
+
+        let selectedAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.16, 0.92))
+        let focusedAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.12, 0.88))
+        let blurEffect = UIBlurEffect(style: blurStyle)
+
+        itemAppearance.normal.backgroundEffect = nil
+        itemAppearance.normal.backgroundColor = .clear
+
+        itemAppearance.selected.backgroundEffect = blurEffect
+        itemAppearance.selected.backgroundColor = baseColor.withAlphaComponent(selectedAlpha)
+
+        itemAppearance.focused.backgroundEffect = blurEffect
+        itemAppearance.focused.backgroundColor = baseColor.withAlphaComponent(focusedAlpha)
+
+        return itemAppearance
+    }
+
+    func makeDefaultTabItemAppearance(style: UITabBarItemAppearance.Style) -> UITabBarItemAppearance {
+        let itemAppearance = UITabBarItemAppearance(style: style)
+        itemAppearance.configureWithDefault(for: style)
+        return itemAppearance
+    }
+
+    func configure(state: UITabBarItemStateAppearance, tintColor: UIColor, emphasis: CGFloat) {
+        let clampedAlpha = max(0.0, min(1.0, emphasis))
+        let alphaColor = tintColor.withAlphaComponent(clampedAlpha)
+        state.iconColor = alphaColor
+        state.titleTextAttributes = [.foregroundColor: alphaColor]
+        state.badgeBackgroundColor = tintColor
+        state.badgeTextAttributes = [.foregroundColor: UIColor.white]
+    }
+
+    func configureDisabledState(_ state: UITabBarItemStateAppearance, tintColor: UIColor) {
+        let disabledAlpha = tintColor.withAlphaComponent(0.32)
+        state.iconColor = disabledAlpha
+        state.titleTextAttributes = [.foregroundColor: disabledAlpha]
+        state.badgeBackgroundColor = disabledAlpha
+        state.badgeTextAttributes = [.foregroundColor: UIColor.white.withAlphaComponent(0.9)]
+    }
+}
+#endif
 
