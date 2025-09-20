@@ -115,7 +115,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(UIColor.systemBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.windowBackgroundColor)
+                let window = Color(nsColor: NSColor.windowBackgroundColor)
+                let lifted = AppThemeColorUtilities.mix(window, .white, amount: 0.28)
+                let accentMist = AppThemeColorUtilities.adjust(
+                    resolvedTint,
+                    saturationMultiplier: 0.22,
+                    brightnessMultiplier: 1.24,
+                    alpha: 1.0
+                )
+                return AppThemeColorUtilities.mix(lifted, accentMist, amount: 0.06)
             } else {
                 return Color.white
             }
@@ -167,7 +175,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(UIColor.secondarySystemBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
+                let control = Color(nsColor: NSColor.controlBackgroundColor)
+                let brightened = AppThemeColorUtilities.mix(control, .white, amount: 0.22)
+                let tintVeil = AppThemeColorUtilities.adjust(
+                    resolvedTint,
+                    saturationMultiplier: 0.28,
+                    brightnessMultiplier: 1.18,
+                    alpha: 1.0
+                )
+                return AppThemeColorUtilities.mix(brightened, tintVeil, amount: 0.1)
             } else {
                 return Color.white.opacity(0.92)
             }
@@ -219,7 +235,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return Color(UIColor.tertiarySystemBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
+                let control = Color(nsColor: NSColor.controlBackgroundColor)
+                let elevated = AppThemeColorUtilities.mix(control, .white, amount: 0.28)
+                let glassGlow = AppThemeColorUtilities.adjust(
+                    resolvedTint,
+                    saturationMultiplier: 0.32,
+                    brightnessMultiplier: 1.22,
+                    alpha: 1.0
+                )
+                return AppThemeColorUtilities.mix(elevated, glassGlow, amount: 0.12)
             } else {
                 return Color.white.opacity(0.88)
             }
@@ -287,6 +311,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 palette: glassPalette
             )
         default:
+            #if os(macOS)
+            if self == .system {
+                return .liquidGlass(
+                    liquidAmount: 0.82,
+                    glassAmount: 0.74,
+                    palette: glassPalette
+                )
+            }
+            #endif
             return .liquidGlass(
                 liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
                 glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount,
@@ -322,6 +355,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
+            #if os(macOS)
+            accentWash = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.38,
+                brightnessMultiplier: 1.26,
+                alpha: 1.0
+            )
+            blendAmount = min(max(blendAmount, 0.28) * 0.68, 0.32)
+            #else
             accentWash = AppThemeColorUtilities.adjust(
                 resolvedTint,
                 saturationMultiplier: 0.25,
@@ -329,6 +371,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 alpha: 1.0
             )
             blendAmount = min(blendAmount * 0.35, 0.18)
+            #endif
         case .liquidGlass:
             accentWash = AppThemeColorUtilities.adjust(
                 resolvedTint,
@@ -358,6 +401,32 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
+            #if os(macOS)
+            accent = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.52,
+                brightnessMultiplier: 1.12,
+                alpha: 1.0
+            )
+            shadow = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.38,
+                brightnessMultiplier: 0.64,
+                alpha: 1.0
+            )
+            specular = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.42,
+                brightnessMultiplier: 1.34,
+                alpha: 1.0
+            )
+            rim = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.44,
+                brightnessMultiplier: 1.24,
+                alpha: 1.0
+            )
+            #else
             accent = AppThemeColorUtilities.adjust(
                 resolvedTint,
                 saturationMultiplier: 0.35,
@@ -382,6 +451,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 brightnessMultiplier: 1.12,
                 alpha: 1.0
             )
+            #endif
         case .liquidGlass:
             accent = AppThemeColorUtilities.adjust(
                 resolvedTint,
@@ -865,7 +935,11 @@ final class ThemeManager: ObservableObject {
     var glassConfiguration: AppTheme.GlassConfiguration {
         switch selectedTheme {
         case .system:
+            #if os(macOS)
+            return selectedTheme.baseGlassConfiguration
+            #else
             return .standard
+            #endif
         default:
             return AppTheme.GlassConfiguration.liquidGlass(
                 liquidAmount: liquidGlassCustomization.liquidAmount,
