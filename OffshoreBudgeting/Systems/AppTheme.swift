@@ -248,6 +248,19 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Neutral foreground color suitable for primary labels within the theme.
+    /// - Parameter colorScheme: The environment's resolved scheme. Used so that the
+    ///   System theme can mirror the platform default of dark text in light mode and
+    ///   light text in dark mode.
+    func primaryTextColor(for colorScheme: ColorScheme) -> Color {
+        switch self {
+        case .system:
+            return colorScheme == .dark ? .white : .black
+        default:
+            return .primary
+        }
+    }
+
     /// Preferred system color scheme for the theme. A value of `nil` means the
     /// theme should follow the system setting.
     var colorScheme: ColorScheme? {
