@@ -12,6 +12,14 @@ import AppKit
 /// complete set of color used across the UI so that switching themes is
 /// consistent everywhere.
 enum AppTheme: String, CaseIterable, Identifiable, Codable {
+    struct TabBarPalette {
+        let active: Color
+        let inactive: Color
+        let disabled: Color
+        let badgeBackground: Color
+        let badgeForeground: Color
+    }
+
     /// Follows the system appearance and accent colors.
     case system
     case classic
@@ -339,6 +347,58 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         return GlassConfiguration.Palette(accent: accent, shadow: shadow, specular: specular, rim: rim)
         #else
         return GlassConfiguration.Palette(accent: resolvedTint, shadow: .gray, specular: .white, rim: .white)
+        #endif
+    }
+
+    /// Color palette used to render tab bar content across platforms.
+    var tabBarPalette: TabBarPalette {
+        #if canImport(UIKit) || canImport(AppKit)
+        let brightness = AppThemeColorUtilities.hsba(from: glassBaseColor)?.brightness
+            ?? AppThemeColorUtilities.hsba(from: background)?.brightness
+            ?? 0.65
+
+        let baseColor: Color
+        let inactiveAlpha: Double
+        let disabledAlpha: Double
+
+        if brightness < 0.45 {
+            baseColor = .white
+            inactiveAlpha = 0.88
+            disabledAlpha = 0.36
+        } else {
+            baseColor = .black
+            inactiveAlpha = 0.78
+            disabledAlpha = 0.30
+        }
+
+        let active = resolvedTint
+        let inactive = baseColor.opacity(inactiveAlpha)
+        let disabled = baseColor.opacity(disabledAlpha)
+
+        let badgeBackground = resolvedTint
+        let badgeBrightness = AppThemeColorUtilities.hsba(from: resolvedTint)?.brightness ?? 0.85
+        let badgeForeground: Color
+        if badgeBrightness < 0.55 {
+            badgeForeground = Color.white.opacity(0.96)
+        } else {
+            badgeForeground = Color.black.opacity(0.88)
+        }
+
+        return TabBarPalette(
+            active: active,
+            inactive: inactive,
+            disabled: disabled,
+            badgeBackground: badgeBackground,
+            badgeForeground: badgeForeground
+        )
+        #else
+        return TabBarPalette(
+            active: resolvedTint,
+            inactive: Color.primary.opacity(0.75),
+            disabled: Color.primary.opacity(0.34),
+            badgeBackground: resolvedTint,
+            badgeForeground: Color.white
+        )
         #endif
     }
 }
