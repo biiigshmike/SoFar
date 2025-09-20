@@ -20,6 +20,15 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Private
     private let incomeService: IncomeService
     private let calendar: Calendar = .current
+
+    /// Cache of month-start anchors → day/event mappings to avoid re-fetching
+    /// the entire multi-year range on every selection change. Each entry holds
+    /// the results of `IncomeService.eventsByDay(inMonthContaining:)`.
+    private var cachedMonthlyEvents: [Date: [Date: [IncomeService.IncomeEvent]]] = [:]
+
+    /// Maximum number of distinct months to keep in memory at once. Older
+    /// months are pruned when this limit is exceeded.
+    private let maxCachedMonths: Int = 6
     
     // MARK: Init
     init(incomeService: IncomeService = IncomeService()) {
@@ -37,22 +46,16 @@ final class IncomeScreenViewModel: ObservableObject {
     }
     
     // MARK: Loading
-    func reloadForSelectedDay() {
+    func reloadForSelectedDay(forceMonthReload: Bool = false) {
         guard let d = selectedDate else { return }
-        load(day: d)
+        load(day: d, forceMonthReload: forceMonthReload)
     }
-    
-    func load(day: Date) {
+
+    func load(day: Date, forceMonthReload: Bool = false) {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
-            // Preload events for the full calendar range so each month displays
-            // income summaries without requiring an explicit selection.
-            let today = Date()
-            let start = calendar.date(byAdding: .year, value: -5, to: today) ?? today
-            let end = calendar.date(byAdding: .year, value: 5, to: today) ?? today
-            let interval = DateInterval(start: start, end: end)
-            eventsByDay = (try? incomeService.eventsByDay(in: interval)) ?? [:]
+            refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
             #if DEBUG
             print("Income fetch error:", error)
@@ -60,15 +63,19 @@ final class IncomeScreenViewModel: ObservableObject {
             incomesForDay = []
             totalForSelectedDate = 0
             eventsByDay = [:]
+            cachedMonthlyEvents.removeAll()
         }
     }
-    
+
     // MARK: CRUD
     func delete(income: Income, scope: RecurrenceScope = .all) {
         do {
             try incomeService.deleteIncome(income, scope: scope)
             let day = selectedDate ?? income.date ?? Date()
-            load(day: day)
+            if scope == .future || scope == .all {
+                clearEventCaches()
+            }
+            load(day: day, forceMonthReload: true)
         } catch {
             #if DEBUG
             print("Income delete error:", error)
@@ -89,6 +96,84 @@ final class IncomeScreenViewModel: ObservableObject {
         let actual = events.filter { !$0.isPlanned }.reduce(0) { $0 + $1.amount }
         if planned == 0 && actual == 0 { return nil }
         return (planned, actual)
+    }
+
+    // MARK: - Event Cache Management
+    /// Refreshes the cached calendar events for the month containing `date`.
+    /// When `force` is `true` the month is re-fetched even if it already
+    /// exists in the cache.
+    private func refreshEventsCache(for date: Date, force: Bool) {
+        let monthAnchor = monthStart(for: date)
+        if !force, cachedMonthlyEvents[monthAnchor] != nil {
+            // Still prefetch adjacent months if they aren't cached yet.
+            prefetchAdjacentMonths(from: date)
+            return
+        }
+
+        if let monthEvents = try? incomeService.eventsByDay(inMonthContaining: date) {
+            cachedMonthlyEvents[monthAnchor] = monthEvents
+            trimCacheIfNeeded()
+            rebuildEventsByDay()
+        }
+
+        prefetchAdjacentMonths(from: date)
+    }
+
+    /// Prefetch the previous and next months when they are not already cached
+    /// to keep calendar scrolling responsive.
+    private func prefetchAdjacentMonths(from date: Date) {
+        if let previous = calendar.date(byAdding: .month, value: -1, to: date) {
+            _ = ensureMonthCached(for: previous)
+        }
+        if let next = calendar.date(byAdding: .month, value: 1, to: date) {
+            _ = ensureMonthCached(for: next)
+        }
+    }
+
+    /// Ensures the month containing `date` is cached. Returns `true` when a
+    /// fetch occurred.
+    @discardableResult
+    private func ensureMonthCached(for date: Date) -> Bool {
+        let monthAnchor = monthStart(for: date)
+        guard cachedMonthlyEvents[monthAnchor] == nil else { return false }
+        guard let monthEvents = try? incomeService.eventsByDay(inMonthContaining: date) else {
+            return false
+        }
+        cachedMonthlyEvents[monthAnchor] = monthEvents
+        trimCacheIfNeeded()
+        rebuildEventsByDay()
+        return true
+    }
+
+    /// Removes older cached months when the limit is exceeded.
+    private func trimCacheIfNeeded() {
+        guard cachedMonthlyEvents.count > maxCachedMonths else { return }
+        let sortedKeys = cachedMonthlyEvents.keys.sorted()
+        let overflow = cachedMonthlyEvents.count - maxCachedMonths
+        for key in sortedKeys.prefix(overflow) {
+            cachedMonthlyEvents.removeValue(forKey: key)
+        }
+    }
+
+    /// Rebuilds the published `eventsByDay` dictionary from the cached months.
+    private func rebuildEventsByDay() {
+        eventsByDay = cachedMonthlyEvents.values.reduce(into: [:]) { partial, monthMap in
+            for (day, events) in monthMap {
+                partial[day] = events
+            }
+        }
+    }
+
+    /// Clears all cached month data and published summaries.
+    private func clearEventCaches() {
+        cachedMonthlyEvents.removeAll()
+        eventsByDay = [:]
+    }
+
+    /// Normalized start-of-month date for caching keys.
+    private func monthStart(for date: Date) -> Date {
+        calendar.date(from: calendar.dateComponents([.year, .month], from: date))
+        ?? calendar.startOfDay(for: date)
     }
 }
 
