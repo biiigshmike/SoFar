@@ -275,7 +275,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Theme-aware base color used when rendering OS 26 translucent surfaces.
     var glassBaseColor: Color {
         #if canImport(UIKit) || canImport(AppKit)
-        var accentWash = AppThemeColorUtilities.adjust(
+        let accentWash = AppThemeColorUtilities.adjust(
             resolvedTint,
             saturationMultiplier: 0.45,
             brightnessMultiplier: 1.12,
