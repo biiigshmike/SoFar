@@ -116,7 +116,6 @@ struct SettingsCard<Content: View>: View {
     let subtitle: String
     @ViewBuilder var content: Content
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -125,7 +124,6 @@ struct SettingsCard<Content: View>: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.title3).fontWeight(.semibold)
-                        .foregroundStyle(themeManager.selectedTheme.primaryTextColor(for: colorScheme))
                     Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -166,8 +164,6 @@ struct SettingsRow<Trailing: View>: View {
     let title: String
     var detail: String? = nil
     @ViewBuilder var trailing: Trailing
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.colorScheme) private var colorScheme
 
     init(title: String, detail: String? = nil, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
@@ -179,7 +175,6 @@ struct SettingsRow<Trailing: View>: View {
         HStack {
             Text(title)
                 .font(.body)
-                .foregroundStyle(themeManager.selectedTheme.primaryTextColor(for: colorScheme))
             Spacer()
             if let detail {
                 Text(detail)
