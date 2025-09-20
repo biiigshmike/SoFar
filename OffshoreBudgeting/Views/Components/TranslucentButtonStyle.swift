@@ -15,15 +15,20 @@ struct TranslucentButtonStyle: ButtonStyle {
 
         return configuration.label
             .font(.headline)
-            .foregroundStyle(Color.white)
+            .foregroundStyle(labelForeground)
             .padding(.vertical, DS.Spacing.m)
             .padding(.horizontal, DS.Spacing.l)
             .frame(maxWidth: .infinity)
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .background(background(isPressed: configuration.isPressed, radius: radius))
+            .overlay(border(isPressed: configuration.isPressed, radius: radius))
             .overlay(highlight(radius: radius))
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+
+    private var labelForeground: Color {
+        Color.white
     }
 
     @ViewBuilder
@@ -31,56 +36,55 @@ struct TranslucentButtonStyle: ButtonStyle {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
         if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-            let whiteOverlayOpacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.20 : 0.26) : (isPressed ? 0.18 : 0.22)
-            let tintOverlayOpacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.30 : 0.36) : (isPressed ? 0.24 : 0.30)
-            let tintShadowOpacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.18 : 0.26) : (isPressed ? 0.16 : 0.22)
-            let whiteShadowOpacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.24 : 0.40) : (isPressed ? 0.18 : 0.30)
-
             shape
                 .fill(.ultraThinMaterial)
-                .overlay(
-                    shape
-                        .fill(Color.white.opacity(whiteOverlayOpacity))
-                        .blendMode(.plusLighter)
-                )
-                .overlay(
-                    shape
-                        .fill(tint.opacity(tintOverlayOpacity))
-                        .blendMode(.plusLighter)
-                )
-                .shadow(
-                    color: tint.opacity(tintShadowOpacity),
-                    radius: isPressed ? 12 : 22,
-                    x: 0,
-                    y: isPressed ? 6 : 12
-                )
-                .shadow(
-                    color: Color.white.opacity(whiteShadowOpacity),
-                    radius: isPressed ? 3 : 9,
-                    x: 0,
-                    y: isPressed ? 1 : 4
-                )
+                .overlay(shape.fill(fillColor(isPressed: isPressed)))
+                .shadow(color: shadowColor(isPressed: isPressed), radius: shadowRadius(isPressed: isPressed), x: 0, y: shadowY(isPressed: isPressed))
                 .compositingGroup()
         } else {
             shape
-                .fill(tint.opacity(isPressed ? 0.32 : 0.38))
-                .shadow(color: tint.opacity(isPressed ? 0.16 : 0.22), radius: isPressed ? 10 : 18, x: 0, y: isPressed ? 6 : 12)
-                .shadow(color: Color.black.opacity(isPressed ? 0.04 : 0.08), radius: isPressed ? 6 : 12, x: 0, y: isPressed ? 2 : 6)
+                .fill(fillColor(isPressed: isPressed))
+                .shadow(color: shadowColor(isPressed: isPressed), radius: legacyShadowRadius(isPressed: isPressed), x: 0, y: legacyShadowY(isPressed: isPressed))
         }
     }
 
-    @ViewBuilder
-    private func highlight(radius: CGFloat) -> some View {
-        let whiteOpacity = capabilities.supportsOS26Translucency ? 0.42 : 0.28
-        let tintOpacity = capabilities.supportsOS26Translucency ? 0.24 : 0.18
+    private func fillColor(isPressed: Bool) -> Color {
+        tint.opacity(isPressed ? 0.32 : 0.24)
+    }
 
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(Color.white.opacity(whiteOpacity), lineWidth: capabilities.supportsOS26Translucency ? 1.2 : 1)
+    private func shadowColor(isPressed: Bool) -> Color {
+        tint.opacity(isPressed ? 0.28 : 0.34)
+    }
+
+    private func shadowRadius(isPressed: Bool) -> CGFloat {
+        isPressed ? 12 : 22
+    }
+
+    private func shadowY(isPressed: Bool) -> CGFloat {
+        isPressed ? 6 : 12
+    }
+
+    private func legacyShadowRadius(isPressed: Bool) -> CGFloat {
+        isPressed ? 10 : 18
+    }
+
+    private func legacyShadowY(isPressed: Bool) -> CGFloat {
+        isPressed ? 6 : 12
+    }
+
+    private func border(isPressed: Bool, radius: CGFloat) -> some View {
+        let opacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.65 : 0.52) : (isPressed ? 0.55 : 0.42)
+        let lineWidth: CGFloat = capabilities.supportsOS26Translucency ? 1.2 : 1.0
+
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(tint.opacity(opacity), lineWidth: lineWidth)
+    }
+
+    private func highlight(radius: CGFloat) -> some View {
+        let whiteOpacity = capabilities.supportsOS26Translucency ? 0.28 : 0.20
+
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(Color.white.opacity(whiteOpacity), lineWidth: capabilities.supportsOS26Translucency ? 1.0 : 0.9)
             .blendMode(.screen)
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(tint.opacity(tintOpacity), lineWidth: 0.9)
-                    .blendMode(.plusLighter)
-            )
     }
 }
