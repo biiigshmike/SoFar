@@ -111,7 +111,7 @@ struct CustomRecurrenceEditorView: View {
                                     onSave(draft)
                                     dismiss()
                                 }
-                                .bold()
+                                .fontWeight(.semibold)
                             }
                         }
                 }
@@ -131,7 +131,7 @@ struct CustomRecurrenceEditorView: View {
                                     onSave(draft)
                                     dismiss()
                                 }
-                                .bold()
+                                .fontWeight(.semibold)
                             }
                         }
                 }
