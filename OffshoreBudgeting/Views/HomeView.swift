@@ -35,72 +35,11 @@ struct HomeView: View {
 
     // MARK: Body
     var body: some View {
-        // MARK: Root layout: Header + Content Container
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-
-            // MARK: Header (Month chevrons + DatePicker)
-            header
-
-            // MARK: Content Container
-            // ZStack gives us a stable area below the header.
-            // - When empty: we show UBEmptyState centered here.
-            // - When non-empty: we show the budget details here.
-            contentContainer
-        }
+        mainLayout
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Home")
-        .toolbar {
-            // Budget period picker varies by platform because
-            // `.navigationBarLeading` is unavailable on macOS.
-#if os(macOS)
-            ToolbarItem(placement: .navigation) {
-                Menu {
-                    ForEach(BudgetPeriod.selectableCases) { period in
-                        Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                    }
-                } label: {
-                    Label(budgetPeriod.displayName, systemImage: "calendar")
-                }
-            }
-#else
-            ToolbarItem(placement: .navigationBarLeading) {
-                Menu {
-                    ForEach(BudgetPeriod.selectableCases) { period in
-                        Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                    }
-                } label: {
-                    Label(budgetPeriod.displayName, systemImage: "calendar")
-                }
-            }
-#endif
-            if case .empty = vm.state {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingAddBudget = true
-                    } label: {
-                        Label("Add Budget", systemImage: "plus")
-                    }
-                }
-            } else if case .loaded(let summaries) = vm.state, let first = summaries.first {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            editingBudget = first
-                        } label: {
-                            Label("Edit Budget", systemImage: "pencil")
-                        }
-                        Button(role: .destructive) {
-                            vm.requestDelete(budgetID: first.id)
-                        } label: {
-                            Label("Delete Budget", systemImage: "trash")
-                        }
-                    } label: {
-                        Label("Actions", systemImage: "ellipsis.circle")
-                    }
-                }
-            }
-        }
+        .toolbar { toolbarContent() }
         .refreshable { await vm.refresh() }
         .task {
             CoreDataService.shared.ensureLoaded()
@@ -119,48 +58,135 @@ struct HomeView: View {
         }
 
         // MARK: ADD SHEET — present new budget UI for the selected period
-        .sheet(isPresented: $isPresentingAddBudget) {
-            let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
-            AddBudgetView(
-                initialStartDate: start,
-                initialEndDate: end,
-                onSaved: { Task { await vm.refresh() } }
-            )
-            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-            .presentationDetents([.large, .medium])
-        }
-        .sheet(item: $editingBudget) { summary in
-            AddBudgetView(
-                editingBudgetObjectID: summary.id,
-                fallbackStartDate: summary.periodStart,
-                fallbackEndDate: summary.periodEnd,
-                onSaved: { Task { await vm.refresh() } }
-            )
-            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-            .presentationDetents([.large, .medium])
-        }
-        .alert(item: $vm.alert) { alert in
-            switch alert.kind {
-            case .error(let message):
-                return Alert(
-                    title: Text("Error"),
-                    message: Text(message),
-                    dismissButton: .default(Text("OK"))
-                )
-            case .confirmDelete(let id):
-                return Alert(
-                    title: Text("Delete Budget?"),
-                    message: Text("This action cannot be undone."),
-                    primaryButton: .destructive(Text("Delete"), action: { Task { await vm.confirmDelete(budgetID: id) } }),
-                    secondaryButton: .cancel()
-                )
-            }
-        }
+        .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
+        .sheet(item: $editingBudget, content: makeEditBudgetView)
+        .alert(item: $vm.alert, content: alert(for:))
         .ub_glassBackground(
             themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
+    }
+
+    // MARK: Root Layout
+    private var mainLayout: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+
+            // MARK: Header (Month chevrons + DatePicker)
+            header
+
+            // MARK: Content Container
+            // ZStack gives us a stable area below the header.
+            // - When empty: we show UBEmptyState centered here.
+            // - When non-empty: we show the budget details here.
+            contentContainer
+        }
+    }
+
+    // MARK: Toolbar
+    @ToolbarContentBuilder
+    private func toolbarContent() -> some ToolbarContent {
+        periodPickerToolbarItem()
+        actionToolbarItem()
+    }
+
+    @ToolbarContentBuilder
+    private func periodPickerToolbarItem() -> some ToolbarContent {
+        // Budget period picker varies by platform because
+        // `.navigationBarLeading` is unavailable on macOS.
+#if os(macOS)
+        ToolbarItem(placement: .navigation) {
+            Menu {
+                ForEach(BudgetPeriod.selectableCases) { period in
+                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                }
+            } label: {
+                Label(budgetPeriod.displayName, systemImage: "calendar")
+            }
+        }
+#else
+        ToolbarItem(placement: .navigationBarLeading) {
+            Menu {
+                ForEach(BudgetPeriod.selectableCases) { period in
+                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                }
+            } label: {
+                Label(budgetPeriod.displayName, systemImage: "calendar")
+            }
+        }
+#endif
+    }
+
+    @ToolbarContentBuilder
+    private func actionToolbarItem() -> some ToolbarContent {
+        if case .empty = vm.state {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isPresentingAddBudget = true
+                } label: {
+                    Label("Add Budget", systemImage: "plus")
+                }
+            }
+        }
+        if case .loaded(let summaries) = vm.state, let first = summaries.first {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        editingBudget = first
+                    } label: {
+                        Label("Edit Budget", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        vm.requestDelete(budgetID: first.id)
+                    } label: {
+                        Label("Delete Budget", systemImage: "trash")
+                    }
+                } label: {
+                    Label("Actions", systemImage: "ellipsis.circle")
+                }
+            }
+        }
+    }
+
+    // MARK: Sheets & Alerts
+    private func makeAddBudgetView() -> some View {
+        let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
+        return AddBudgetView(
+            initialStartDate: start,
+            initialEndDate: end,
+            onSaved: { Task { await vm.refresh() } }
+        )
+        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        .presentationDetents([.large, .medium])
+    }
+
+    private func makeEditBudgetView(summary: BudgetSummary) -> some View {
+        AddBudgetView(
+            editingBudgetObjectID: summary.id,
+            fallbackStartDate: summary.periodStart,
+            fallbackEndDate: summary.periodEnd,
+            onSaved: { Task { await vm.refresh() } }
+        )
+        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        .presentationDetents([.large, .medium])
+    }
+
+    private func alert(for alert: HomeViewAlert) -> Alert {
+        switch alert.kind {
+        case .error(let message):
+            return Alert(
+                title: Text("Error"),
+                message: Text(message),
+                dismissButton: .default(Text("OK"))
+            )
+        case .confirmDelete(let id):
+            return Alert(
+                title: Text("Delete Budget?"),
+                message: Text("This action cannot be undone."),
+                primaryButton: .destructive(Text("Delete"), action: { Task { await vm.confirmDelete(budgetID: id) } }),
+                secondaryButton: .cancel()
+            )
+        }
     }
 
     // MARK: Content Container
