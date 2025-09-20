@@ -5,7 +5,6 @@
 //  Created by Michael Brown on 8/8/25.
 //
 
-
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
@@ -52,6 +51,12 @@ struct RootTabView: View {
                 )
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
+        // Give the tab chrome its own glass background so macOS matches iOS.
+        .ub_chromeGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
+            configuration: themeManager.glassConfiguration
+        )
+        // Keep the page background as well.
         .ub_glassBackground(
             themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration,
@@ -66,7 +71,7 @@ struct RootTabView: View {
         }
     }
 
-    /// Ensures the tab bar always matches the current theme and hides the default top border.
+    /// Ensures the tab bar matches the current theme and hides the default top border.
     private func updateTabBarAppearance() {
         #if canImport(UIKit)
         DispatchQueue.main.async {
@@ -92,3 +97,4 @@ struct RootTabView: View {
         #endif
     }
 }
+

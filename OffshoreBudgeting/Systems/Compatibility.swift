@@ -128,6 +128,23 @@ extension View {
         )
     }
 
+    /// Applies a platform-aware chrome background to container chrome like TabView bars
+    /// and equivalent macOS tab/tool strip backgrounds, tuned to the provided Liquid Glass
+    /// configuration. On iOS, TabView chrome is customized via UIKit appearance; on macOS,
+    /// we insert an NSVisualEffectView behind the chrome and overlay a subtle tint wash
+    /// so the appearance matches iOS OS26 aesthetics.
+    func ub_chromeGlassBackground(
+        baseColor: Color,
+        configuration: AppTheme.GlassConfiguration
+    ) -> some View {
+        modifier(
+            UBChromeGlassModifier(
+                baseColor: baseColor,
+                configuration: configuration
+            )
+        )
+    }
+
     // MARK: ub_formStyleGrouped()
     /// Applies a grouped form style on platforms that support it.  On iOS 16+
     /// and macOS 13+, `.formStyle(.grouped)` gives a subtle, neutral
@@ -247,6 +264,20 @@ private struct UBNavigationGlassModifier: ViewModifier {
         } else {
             content
         }
+        #elseif os(macOS)
+        if capabilities.supportsLiquidGlass {
+            if #available(macOS 13.0, *) {
+                // Apply a subtle gradient wash on top of the material for macOS toolbars.
+                content
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(configuration.glass.material.shapeStyle, for: .windowToolbar)
+                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
+            } else {
+                content
+            }
+        } else {
+            content
+        }
         #else
         content
         #endif
@@ -268,6 +299,49 @@ private struct UBNavigationGlassModifier: ViewModifier {
         )
     }
     #endif
+
+    #if os(macOS)
+    @available(macOS 13.0, *)
+    private var macToolbarGradientStyle: AnyShapeStyle {
+        // Slightly lighter than baseColor toward top-left; slightly darker toward bottom-right.
+        let highlight = Color.white.opacity(min(configuration.glass.highlightOpacity * 0.45, 0.22))
+        let mid = baseColor.opacity(min(configuration.liquid.tintOpacity + 0.10, 0.85))
+        let shadow = configuration.glass.shadowColor.opacity(min(configuration.glass.shadowOpacity * 0.60, 0.5))
+
+        return AnyShapeStyle(
+            LinearGradient(
+                colors: [highlight, mid, shadow],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+    #endif
+}
+
+private struct UBChromeGlassModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    let baseColor: Color
+    let configuration: AppTheme.GlassConfiguration
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        if capabilities.supportsLiquidGlass {
+            content
+                .background(
+                    UBMacChromeGlassBackground(
+                        baseColor: baseColor,
+                        configuration: configuration
+                    )
+                )
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
 }
 
 private struct UBGlassBackgroundView: View {
@@ -425,6 +499,94 @@ private struct UBGlassBackgroundView: View {
             .blendMode(.softLight)
     }
 }
+
+#if os(macOS)
+/// A macOS-only background view that uses NSVisualEffectView to supply the chrome blur
+/// matching the desired AppTheme.GlassConfiguration material, and overlays a subtle
+/// tint wash derived from baseColor so the tab/tool chrome matches iOS OS26 aesthetics.
+private struct UBMacChromeGlassBackground: NSViewRepresentable {
+    let baseColor: Color
+    let configuration: AppTheme.GlassConfiguration
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let v = NSVisualEffectView()
+        v.state = .active
+        v.blendingMode = .behindWindow
+        if #available(macOS 13.0, *) {
+            v.material = configuration.glass.material.visualEffectMaterial
+        } else {
+            v.material = .underWindowBackground
+        }
+
+        // Insert a CALayer overlay to apply the tint wash and subtle highlight.
+        v.wantsLayer = true
+        let layer = CALayer()
+        layer.masksToBounds = true
+        v.layer = layer
+
+        // Create a sublayer for the tint wash.
+        let tintLayer = CALayer()
+        tintLayer.name = "tint-wash"
+        tintLayer.backgroundColor = NSColor(baseColor).withAlphaComponent(CGFloat(min(configuration.liquid.tintOpacity + 0.10, 0.90))).cgColor
+        layer.addSublayer(tintLayer)
+
+        // Create a subtle highlight gradient layer.
+        let highlightLayer = CAGradientLayer()
+        highlightLayer.name = "highlight"
+        highlightLayer.colors = [
+            NSColor.white.withAlphaComponent(CGFloat(min(configuration.glass.highlightOpacity * 0.45, 0.22))).cgColor,
+            NSColor.clear.cgColor
+        ]
+        highlightLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
+        highlightLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
+        layer.addSublayer(highlightLayer)
+
+        // Shadow gradient layer (soft, bottom-right)
+        let shadowLayer = CAGradientLayer()
+        shadowLayer.name = "shadow"
+        shadowLayer.colors = [
+            NSColor.clear.cgColor,
+            NSColor(configuration.glass.shadowColor).withAlphaComponent(CGFloat(min(configuration.glass.shadowOpacity * 0.60, 0.5))).cgColor
+        ]
+        shadowLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
+        shadowLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
+        layer.addSublayer(shadowLayer)
+
+        return v
+    }
+
+    func updateNSView(_ v: NSVisualEffectView, context: Context) {
+        if #available(macOS 13.0, *) {
+            v.material = configuration.glass.material.visualEffectMaterial
+        }
+
+        guard let layer = v.layer else { return }
+        layer.frame = v.bounds
+
+        // Update sublayer frames and colors dynamically.
+        let sublayers = layer.sublayers ?? []
+        let tintLayer = sublayers.first(where: { $0.name == "tint-wash" })
+        let highlightLayer = sublayers.first(where: { $0.name == "highlight" }) as? CAGradientLayer
+        let shadowLayer = sublayers.first(where: { $0.name == "shadow" }) as? CAGradientLayer
+
+        let tintAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.10, 0.90))
+        (tintLayer)?.frame = layer.bounds
+        (tintLayer)?.backgroundColor = NSColor(baseColor).withAlphaComponent(tintAlpha).cgColor
+
+        highlightLayer?.frame = layer.bounds
+        highlightLayer?.colors = [
+            NSColor.white.withAlphaComponent(CGFloat(min(configuration.glass.highlightOpacity * 0.45, 0.22))).cgColor,
+            NSColor.clear.cgColor
+        ]
+
+        shadowLayer?.frame = layer.bounds
+        shadowLayer?.colors = [
+            NSColor.clear.cgColor,
+            NSColor(configuration.glass.shadowColor).withAlphaComponent(CGFloat(min(configuration.glass.shadowOpacity * 0.60, 0.5))).cgColor
+        ]
+    }
+}
+#endif
 
 private extension Edge.Set {
     var isEmpty: Bool { self == [] }
@@ -656,3 +818,4 @@ enum UBPlatform {
         #endif
     }
 }
+

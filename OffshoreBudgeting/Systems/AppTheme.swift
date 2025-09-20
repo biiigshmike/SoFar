@@ -28,6 +28,11 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    /// UI-facing list of selectable themes. Hides Liquid Glass from pickers.
+    static var selectableCases: [AppTheme] {
+        allCases.filter { $0 != .liquidGlass }
+    }
+
     /// Human readable name shown in pickers.
     var displayName: String {
         switch self {
@@ -90,9 +95,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// when the theme opts into the system tint on iOS.
     var resolvedTint: Color { tint ?? accent }
 
-    /// Secondary accent color derived from the primary accent. Used for
-    /// distinguishing secondary actions (e.g., Edit vs. Delete) while still
-    /// remaining harmonious with the selected theme.
+    /// Secondary accent color derived from the primary accent.
     var secondaryAccent: Color {
         #if canImport(UIKit)
         let uiColor = UIColor(accent)
@@ -123,8 +126,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #endif
         case .classic:
             #if canImport(UIKit)
-            // Use the grouped background so form rows stand out against the
-            // surrounding view, matching the native Settings appearance.
             return Color(UIColor.systemGroupedBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
@@ -171,8 +172,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #endif
         case .classic:
             #if canImport(UIKit)
-            // Provide a subtle card color that contrasts with the grouped
-            // sheet background on iOS.
             return Color(UIColor.secondarySystemGroupedBackground)
             #elseif canImport(AppKit)
             if #available(macOS 11.0, *) {
@@ -292,9 +291,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Theme-aware base color used when rendering Liquid Glass surfaces. The
-    /// value blends the theme's background with a softened version of the
-    /// accent tint so that every palette gains a hint of the selected hue.
+    /// Theme-aware base color used when rendering Liquid Glass surfaces.
     var glassBaseColor: Color {
         #if canImport(UIKit) || canImport(AppKit)
         var accentWash = AppThemeColorUtilities.adjust(
@@ -342,8 +339,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         #endif
     }
 
-    /// Palette describing the vibrant accent colors applied to highlights,
-    /// shadows, and rims when rendering Liquid Glass.
+    /// Palette used when rendering Liquid Glass.
     var glassPalette: GlassConfiguration.Palette {
         #if canImport(UIKit) || canImport(AppKit)
         let accent: Color
@@ -356,186 +352,85 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if os(macOS)
             return SystemThemeMac.glassPalette(resolvedTint: resolvedTint)
             #else
-            accent = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.28,
-                brightnessMultiplier: 1.10,
-                alpha: 1.0
-            )
-            shadow = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.18,
-                brightnessMultiplier: 0.78,
-                alpha: 1.0
-            )
-            specular = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.20,
-                brightnessMultiplier: 1.24,
-                alpha: 1.0
-            )
-            rim = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.20,
-                brightnessMultiplier: 1.16,
-                alpha: 1.0
-            )
+            // Neutral: very low saturation, slightly brighter
+            accent = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.10, brightnessMultiplier: 1.08, alpha: 1.0)
+            shadow = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 0.76, alpha: 1.0)
+            specular = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.30, alpha: 1.0)
+            rim = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.18, alpha: 1.0)
             #endif
         case .liquidGlass:
-            accent = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 1.25,
-                brightnessMultiplier: 0.98,
-                alpha: 1.0
-            )
-            shadow = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 1.32,
-                brightnessMultiplier: 0.42,
-                alpha: 1.0
-            )
-            specular = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.92,
-                brightnessMultiplier: 1.38,
-                alpha: 1.0
-            )
-            rim = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.96,
-                brightnessMultiplier: 1.24,
-                alpha: 1.0
-            )
+            accent = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 1.25, brightnessMultiplier: 0.98, alpha: 1.0)
+            shadow = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 1.32, brightnessMultiplier: 0.42, alpha: 1.0)
+            specular = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.92, brightnessMultiplier: 1.38, alpha: 1.0)
+            rim = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.96, brightnessMultiplier: 1.24, alpha: 1.0)
         default:
             accent = resolvedTint
-            shadow = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 1.05,
-                brightnessMultiplier: 0.48,
-                alpha: 1.0
-            )
-            specular = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.62,
-                brightnessMultiplier: 1.32,
-                alpha: 1.0
-            )
-            rim = AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.68,
-                brightnessMultiplier: 1.18,
-                alpha: 1.0
-            )
+            shadow = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 1.05, brightnessMultiplier: 0.48, alpha: 1.0)
+            specular = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.62, brightnessMultiplier: 1.32, alpha: 1.0)
+            rim = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.68, brightnessMultiplier: 1.18, alpha: 1.0)
         }
 
-        return GlassConfiguration.Palette(
-            accent: accent,
-            shadow: shadow,
-            specular: specular,
-            rim: rim
-        )
+        return GlassConfiguration.Palette(accent: accent, shadow: shadow, specular: specular, rim: rim)
         #else
-        switch self {
-        case .system:
-            return GlassConfiguration.Palette(
-                accent: resolvedTint,
-                shadow: Color(red: 0.82, green: 0.85, blue: 0.92),
-                specular: Color(red: 0.93, green: 0.95, blue: 1.0),
-                rim: Color(red: 0.90, green: 0.93, blue: 0.99)
-            )
-        case .liquidGlass:
-            return GlassConfiguration.Palette(
-                accent: resolvedTint,
-                shadow: Color(red: 0.30, green: 0.49, blue: 0.82),
-                specular: Color(red: 0.60, green: 0.82, blue: 1.0),
-                rim: Color(red: 0.55, green: 0.78, blue: 1.0)
-            )
-        default:
-            return GlassConfiguration.Palette(
-                accent: resolvedTint,
-                shadow: Color(red: 0.30, green: 0.49, blue: 0.82),
-                specular: Color(red: 0.60, green: 0.82, blue: 1.0),
-                rim: Color(red: 0.55, green: 0.78, blue: 1.0)
-            )
-        }
+        return GlassConfiguration.Palette(accent: resolvedTint, shadow: .gray, specular: .white, rim: .white)
         #endif
     }
 }
 
 #if canImport(UIKit)
 extension AppTheme {
-    /// Tuned configuration that mimics Apple's system materials on iOS/tvOS.
+    /// iOS/iPadOS System glass tuned brighter and more neutral.
     static func systemGlassConfiguration(resolvedTint: Color) -> GlassConfiguration {
         var configuration = AppTheme.GlassConfiguration.standard
 
-        configuration.liquid.tintOpacity = 0.12
-        configuration.liquid.saturation = 1.05
-        configuration.liquid.brightness = 0.02
-        configuration.liquid.contrast = 1.02
-        configuration.liquid.bloom = 0.14
+        // Lift the surface: less tinting, neutral response
+        configuration.liquid.tintOpacity = 0.06
+        configuration.liquid.saturation = 0.98
+        configuration.liquid.brightness = 0.01
+        configuration.liquid.contrast = 1.00
+        configuration.liquid.bloom = 0.06
 
-        let shadowTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.20,
-            brightnessMultiplier: 0.52,
-            alpha: 1.0
-        )
-        let specularTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.16,
-            brightnessMultiplier: 1.32,
-            alpha: 1.0
-        )
-        let rimTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.18,
-            brightnessMultiplier: 1.20,
-            alpha: 1.0
-        )
+        let shadowTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.72, alpha: 1.0)
+        let specularTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.28, alpha: 1.0)
+        let rimTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
 
-        configuration.glass.highlightOpacity = 0.38
-        configuration.glass.highlightBlur = 48
+        configuration.glass.highlightOpacity = 0.40
+        configuration.glass.highlightBlur = 22
         configuration.glass.shadowColor = shadowTone
-        configuration.glass.shadowOpacity = 0.14
-        configuration.glass.shadowBlur = 52
+        configuration.glass.shadowOpacity = 0.08
+        configuration.glass.shadowBlur = 28
         configuration.glass.specularColor = specularTone
-        configuration.glass.specularOpacity = 0.30
-        configuration.glass.specularWidth = 0.10
-        configuration.glass.noiseOpacity = 0.02
+        configuration.glass.specularOpacity = 0.14
+        configuration.glass.specularWidth = 0.11
+        configuration.glass.noiseOpacity = 0.012
         configuration.glass.rimColor = rimTone
-        configuration.glass.rimOpacity = 0.06
-        configuration.glass.rimWidth = 1.02
-        configuration.glass.rimBlur = 18
+        configuration.glass.rimOpacity = 0.03
+        configuration.glass.rimWidth = 0.80
+        configuration.glass.rimBlur = 12
         configuration.glass.material = .thin
 
         return configuration
     }
 
-    /// Dynamic base tint that brightens the underlying material while
-    /// borrowing a subtle wash from the system accent color.
+    /// Near‑neutral base color for System theme (dynamic).
     static func systemGlassBaseColor(resolvedTint: Color) -> Color {
         let dynamicBase = UIColor { trait in
-            let baseLight = UIColor(red: 0.94, green: 0.96, blue: 0.99, alpha: 1.0)
-            let baseDark = UIColor(red: 0.16, green: 0.18, blue: 0.22, alpha: 1.0)
+            // Brighter in light, moderately deeper in dark
+            let baseLight = UIColor(red: 0.985, green: 0.99, blue: 1.00, alpha: 1.0)
+            let baseDark  = UIColor(red: 0.15, green: 0.16, blue: 0.19, alpha: 1.0)
             let base = trait.userInterfaceStyle == .dark ? baseDark : baseLight
 
+            // Minimal neutral wash
             let accent = UIColor(resolvedTint).resolvedColor(with: trait)
-            var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
-            if accent.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
-                let wash = UIColor(
-                    hue: hue,
-                    saturation: saturation * 0.18,
-                    brightness: min(brightness * 1.06, 1.0),
-                    alpha: 1.0
-                )
-                if let blended = base.blended(withFraction: 0.08, of: wash) {
+            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            if accent.getHue(&h, saturation: &s, brightness: &b, alpha: &a) {
+                let wash = UIColor(hue: h, saturation: s * 0.04, brightness: min(b * 1.04, 1.0), alpha: 1.0)
+                if let blended = base.blended(withFraction: 0.03, of: wash) {
                     return blended
                 }
             }
-
             return base
         }
-
         return Color(dynamicBase)
     }
 }
@@ -572,16 +467,11 @@ extension AppTheme {
                 @available(iOS 15.0, macOS 13.0, tvOS 15.0, *)
                 var shapeStyle: AnyShapeStyle {
                     switch self {
-                    case .ultraThin:
-                        return AnyShapeStyle(.ultraThinMaterial)
-                    case .thin:
-                        return AnyShapeStyle(.thinMaterial)
-                    case .regular:
-                        return AnyShapeStyle(.regularMaterial)
-                    case .thick:
-                        return AnyShapeStyle(.thickMaterial)
-                    case .ultraThick:
-                        return AnyShapeStyle(.ultraThickMaterial)
+                    case .ultraThin: return AnyShapeStyle(.ultraThinMaterial)
+                    case .thin: return AnyShapeStyle(.thinMaterial)
+                    case .regular: return AnyShapeStyle(.regularMaterial)
+                    case .thick: return AnyShapeStyle(.thickMaterial)
+                    case .ultraThick: return AnyShapeStyle(.ultraThickMaterial)
                     }
                 }
                 #endif
@@ -589,16 +479,11 @@ extension AppTheme {
                 #if canImport(UIKit)
                 var uiBlurEffectStyle: UIBlurEffect.Style {
                     switch self {
-                    case .ultraThin:
-                        return .systemUltraThinMaterial
-                    case .thin:
-                        return .systemThinMaterial
-                    case .regular:
-                        return .systemMaterial
-                    case .thick:
-                        return .systemThickMaterial
-                    case .ultraThick:
-                        return .systemChromeMaterial
+                    case .ultraThin: return .systemUltraThinMaterial
+                    case .thin: return .systemThinMaterial
+                    case .regular: return .systemMaterial
+                    case .thick: return .systemThickMaterial
+                    case .ultraThick: return .systemChromeMaterial
                     }
                 }
                 #endif
@@ -607,16 +492,11 @@ extension AppTheme {
                 @available(macOS 13.0, *)
                 var visualEffectMaterial: NSVisualEffectView.Material {
                     switch self {
-                    case .ultraThin:
-                        return .headerView
-                    case .thin:
-                        return .titlebar
-                    case .regular:
-                        return .menu
-                    case .thick:
-                        return .windowBackground
-                    case .ultraThick:
-                        return .hudWindow
+                    case .ultraThin: return .headerView
+                    case .thin: return .titlebar
+                    case .regular: return .menu
+                    case .thick: return .windowBackground
+                    case .ultraThick: return .hudWindow
                     }
                 }
                 #endif
@@ -715,12 +595,9 @@ extension AppTheme.GlassConfiguration {
 
         let material: AppTheme.GlassConfiguration.GlassSettings.MaterialStyle
         switch clampedGlass {
-        case ..<0.33:
-            material = .ultraThin
-        case ..<0.66:
-            material = .thin
-        default:
-            material = .regular
+        case ..<0.33: material = .ultraThin
+        case ..<0.66: material = .thin
+        default:      material = .regular
         }
 
         return AppTheme.GlassConfiguration(
@@ -769,10 +646,9 @@ private enum SystemThemeMac {
     static var background: Color {
         if #available(macOS 13.0, *) {
             return Color(nsColor: .windowBackgroundColor)
-        } else if #available(macOS 11.0, *) {
-            return Color(nsColor: .underPageBackgroundColor)
         } else {
-            return Color(nsColor: .controlBackgroundColor)
+            // Covers macOS 11 and 12 with an appropriate fallback
+            return Color(nsColor: .underPageBackgroundColor)
         }
     }
 
@@ -795,92 +671,55 @@ private enum SystemThemeMac {
     static func glassConfiguration(resolvedTint: Color) -> AppTheme.GlassConfiguration {
         var configuration = AppTheme.GlassConfiguration.standard
 
-        configuration.liquid.tintOpacity = 0.14
-        configuration.liquid.saturation = 1.08
-        configuration.liquid.brightness = 0.04
-        configuration.liquid.contrast = 1.04
-        configuration.liquid.bloom = 0.18
+        // Lift and neutralize on macOS
+        configuration.liquid.tintOpacity = 0.06
+        configuration.liquid.saturation = 0.98
+        configuration.liquid.brightness = 0.02
+        configuration.liquid.contrast = 1.02
+        configuration.liquid.bloom = 0.06
 
-        let shadowTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.24,
-            brightnessMultiplier: 0.54,
-            alpha: 1.0
-        )
-        let specularTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.20,
-            brightnessMultiplier: 1.34,
-            alpha: 1.0
-        )
-        let rimTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.22,
-            brightnessMultiplier: 1.24,
-            alpha: 1.0
-        )
+        let shadowTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.70, alpha: 1.0)
+        let specularTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.30, alpha: 1.0)
+        let rimTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
 
-        configuration.glass.highlightOpacity = 0.40
-        configuration.glass.highlightBlur = 56
+        configuration.glass.highlightOpacity = 0.42
+        configuration.glass.highlightBlur = 24
         configuration.glass.shadowColor = shadowTone
-        configuration.glass.shadowOpacity = 0.16
-        configuration.glass.shadowBlur = 60
+        configuration.glass.shadowOpacity = 0.08
+        configuration.glass.shadowBlur = 30
         configuration.glass.specularColor = specularTone
-        configuration.glass.specularOpacity = 0.32
+        configuration.glass.specularOpacity = 0.14
         configuration.glass.specularWidth = 0.12
-        configuration.glass.noiseOpacity = 0.024
+        configuration.glass.noiseOpacity = 0.010
         configuration.glass.rimColor = rimTone
-        configuration.glass.rimOpacity = 0.10
-        configuration.glass.rimWidth = 1.08
-        configuration.glass.rimBlur = 18
+        configuration.glass.rimOpacity = 0.03
+        configuration.glass.rimWidth = 0.85
+        configuration.glass.rimBlur = 12
         configuration.glass.material = .thin
 
         return configuration
     }
 
     static func glassBaseColor(background: Color, resolvedTint: Color) -> Color {
-        let softenedBackground = AppThemeColorUtilities.mix(
-            background,
-            Color.white,
-            amount: 0.24
-        )
+        // Brighter base, very small neutral wash
+        let softenedBackground = AppThemeColorUtilities.mix(background, Color.white, amount: 0.22)
 
         let accentWash = AppThemeColorUtilities.adjust(
             resolvedTint,
-            saturationMultiplier: 0.20,
-            brightnessMultiplier: 1.14,
+            saturationMultiplier: 0.04,
+            brightnessMultiplier: 1.04,
             alpha: 1.0
         )
 
-        return AppThemeColorUtilities.mix(softenedBackground, accentWash, amount: 0.12)
+        return AppThemeColorUtilities.mix(softenedBackground, accentWash, amount: 0.03)
     }
 
     static func glassPalette(resolvedTint: Color) -> AppTheme.GlassConfiguration.Palette {
         AppTheme.GlassConfiguration.Palette(
-            accent: AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.48,
-                brightnessMultiplier: 1.18,
-                alpha: 1.0
-            ),
-            shadow: AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.30,
-                brightnessMultiplier: 0.68,
-                alpha: 1.0
-            ),
-            specular: AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.28,
-                brightnessMultiplier: 1.32,
-                alpha: 1.0
-            ),
-            rim: AppThemeColorUtilities.adjust(
-                resolvedTint,
-                saturationMultiplier: 0.30,
-                brightnessMultiplier: 1.24,
-                alpha: 1.0
-            )
+            accent: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.10, alpha: 1.0),
+            shadow: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.74, alpha: 1.0),
+            specular: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.30, alpha: 1.0),
+            rim: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
         )
     }
 
@@ -1027,9 +866,6 @@ fileprivate extension Double {
 }
 
 // MARK: - ThemeManager
-/// Observable theme source of truth. Persists selection via `UserDefaults`
-/// so the chosen theme survives app relaunches. Syncs with iCloud when
-/// enabled in settings.
 @MainActor
 final class ThemeManager: ObservableObject {
     @Published var selectedTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() }; applyAppearance() } }
@@ -1040,12 +876,6 @@ final class ThemeManager: ObservableObject {
     private let ubiquitousStore = NSUbiquitousKeyValueStore.default
     private var isApplyingRemoteChange = false
 
-    /// Determines if theme syncing is enabled via Settings and iCloud.
-    ///
-    /// This property does not rely on any instance state, so it is defined as
-    /// a `static` computed property. Doing so allows it to be accessed before
-    /// the class has completed initialization, avoiding "self used before all
-    /// stored properties are initialized" errors during `init`.
     private static var isSyncEnabled: Bool {
         let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? false
         let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
@@ -1064,7 +894,12 @@ final class ThemeManager: ObservableObject {
             raw = UserDefaults.standard.string(forKey: storageKey)
         }
 
-        selectedTheme = raw.flatMap { AppTheme(rawValue: $0) } ?? .system
+        // Map legacy "tahoe" (Liquid Glass) to System
+        if let raw, raw == AppTheme.liquidGlass.rawValue {
+            selectedTheme = .system
+        } else {
+            selectedTheme = raw.flatMap { AppTheme(rawValue: $0) } ?? .system
+        }
 
         if Self.isSyncEnabled {
             NotificationCenter.default.addObserver(
@@ -1116,16 +951,12 @@ final class ThemeManager: ObservableObject {
         UserDefaults.standard.set(data, forKey: Self.liquidGlassStorageKey)
     }
 
-    /// Updates the current theme based on the provided system color scheme.
-    /// When using the System theme, this ensures views update as the user
-    /// toggles light/dark mode.
     func refreshSystemAppearance(_ colorScheme: ColorScheme) {
         guard selectedTheme.colorScheme == nil else { return }
         applyAppearance()
         objectWillChange.send()
     }
 
-    /// Applies the appropriate system appearance for the selected theme.
     private func applyAppearance() {
         #if canImport(UIKit)
         let style: UIUserInterfaceStyle
@@ -1187,3 +1018,4 @@ extension ThemeManager {
         )
     }
 }
+
