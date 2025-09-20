@@ -182,7 +182,7 @@ struct ExpenseCategoryManagerView: View {
         UBEmptyState(
             iconSystemName: "tag",
             title: "Categories",
-            message: "Create a category to track unplanned expenses.",
+            message: "Create categories to track your spending. You can always edit them later.",
             primaryButtonTitle: "Add Category",
             onPrimaryTap: { isPresentingAddSheet = true }
         )
