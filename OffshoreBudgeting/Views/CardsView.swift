@@ -173,7 +173,7 @@ struct CardsView: View {
         UBEmptyState(
             iconSystemName: "creditcard",
             title: "Cards",
-            message: "Create a card to start tracking unplanned expenses.",
+            message: "Add the cards you use for spending. We'll use them in budgets later.",
             primaryButtonTitle: "Add Card",
             onPrimaryTap: { isPresentingAddCard = true }
         )

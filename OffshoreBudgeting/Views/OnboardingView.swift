@@ -314,36 +314,19 @@ private struct ThemePreviewTile: View {
 private struct CardsStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
-    @State private var showIntro: Bool = true
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         navigationContainer {
             ZStack(alignment: .bottom) {
                 CardsView()
-                if showIntro {
-                    introOverlay
-                } else {
-                    doneButton
-                }
+                doneButton
             }
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
-    }
-
-    // MARK: introOverlay
-    /// Instruction overlay with blurred background.
-    private var introOverlay: some View {
-        OnboardingGlassCard(alignment: .center) {
-            Text("Add the cards you use for spending. We'll use them in budgets later.")
-                .multilineTextAlignment(.center)
-            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton
@@ -394,28 +377,12 @@ private struct CardsStep: View {
 private struct PresetsStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
-    @State private var showIntro: Bool = true
 
     var body: some View {
         ZStack(alignment: .bottom) {
             PresetsView()
-            if showIntro {
-                introOverlay
-            } else {
-                doneButton
-            }
+            doneButton
         }
-    }
-
-    // MARK: introOverlay
-    private var introOverlay: some View {
-        OnboardingGlassCard(alignment: .center) {
-            Text("Presets are recurring expenses you have every month. Add them here so budgets are faster to create.")
-                .multilineTextAlignment(.center)
-            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton
@@ -563,35 +530,19 @@ private struct CloudSyncStep: View {
 private struct CategoriesStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
-    @State private var showIntro: Bool = true
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         navigationContainer {
             ZStack(alignment: .bottom) {
                 ExpenseCategoryManagerView()
-                if showIntro {
-                    introOverlay
-                } else {
-                    doneButton
-                }
+                doneButton
             }
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
-    }
-
-    // MARK: introOverlay
-    private var introOverlay: some View {
-        OnboardingGlassCard(alignment: .center) {
-            Text("Create categories to track your spending. You can always edit them later.")
-                .multilineTextAlignment(.center)
-            OnboardingPrimaryButton(title: "Next") { withAnimation { showIntro = false } }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: doneButton

@@ -60,7 +60,7 @@ struct PresetsView: View {
                     UBEmptyState(
                         iconSystemName: "list.bullet.rectangle",
                         title: "Presets",
-                        message: "Create a preset planned expense to reuse across budgets.",
+                        message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
                         primaryButtonTitle: "Add Preset",
                         onPrimaryTap: { isPresentingAddSheet = true }
                     )
@@ -276,6 +276,8 @@ final class PresetsViewModel: ObservableObject {
     func loadTemplates(using context: NSManagedObjectContext) {
         let templates = PlannedExpenseService.shared.fetchGlobalTemplates(in: context)
 
+        let referenceDate = Calendar.current.startOfDay(for: Date())
+
         var built: [PresetListItem] = []
         for t in templates {
             let children = PlannedExpenseService.shared.fetchChildren(of: t, in: context)
@@ -284,11 +286,16 @@ final class PresetsViewModel: ObservableObject {
             let actual = t.actualAmount
             let assignedCount = children.count
 
-            // Next upcoming date among children; safely unwrap optionals
-            let futureDates: [Date] = children
+            // Next upcoming date among the template and children; safely unwrap optionals
+            var upcomingDates: [Date] = children
                 .compactMap { $0.transactionDate }
-                .filter { $0 > Date() }
-            let nextDate = futureDates.min()
+                .filter { $0 >= referenceDate }
+
+            if let templateDate = t.transactionDate, templateDate >= referenceDate {
+                upcomingDates.append(templateDate)
+            }
+
+            let nextDate = upcomingDates.min()
 
             built.append(
                 PresetListItem(
