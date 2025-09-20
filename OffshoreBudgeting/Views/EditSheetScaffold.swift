@@ -199,7 +199,7 @@ struct EditSheetScaffold<Content: View>: View {
 }
 
 // MARK: - Detents application helper
-private extension View {
+extension View {
     // Applies presentationDetents and drag indicator only on iOS 16+.
     func applyDetentsIfAvailable(
         detents: [UBPresentationDetent],

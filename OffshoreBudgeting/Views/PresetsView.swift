@@ -53,7 +53,7 @@ struct PresetsView: View {
     }
 
     private var content: some View {
-        NavigationStack {
+        navigationContainer {
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
                 if viewModel.items.isEmpty {
@@ -131,7 +131,7 @@ struct PresetsView: View {
                     viewModel.loadTemplates(using: viewContext)
                 })
                 .environment(\.managedObjectContext, viewContext)
-                .presentationDetents([.medium, .large])
+                .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
             }
             // MARK: Assign Budgets Sheet
             .sheet(item: $sheetTemplateToAssign) { template in
@@ -139,7 +139,7 @@ struct PresetsView: View {
                     viewModel.loadTemplates(using: viewContext)
                 }
                 .environment(\.managedObjectContext, viewContext)
-                .presentationDetents([.medium, .large])
+                .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
             }
             // MARK: Edit Template Sheet
             .sheet(item: $editingTemplate) { template in
@@ -158,6 +158,19 @@ struct PresetsView: View {
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
+    }
+
+    // MARK: - Navigation container compatibility
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack { content() }
+        } else {
+            NavigationView { content() }
+            #if os(iOS)
+                .navigationViewStyle(.stack)
+            #endif
+        }
     }
 
     // MARK: - Actions
