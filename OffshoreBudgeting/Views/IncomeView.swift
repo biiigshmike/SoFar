@@ -82,11 +82,11 @@ struct IncomeView: View {
         // Keep list in sync without deprecated APIs
         .modifier(SelectionChangeHandler(viewModel: viewModel))
         // Pull to refresh to reload entries for the selected day
-        .refreshable { viewModel.reloadForSelectedDay() }
+        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
         // MARK: Present Add Income Form
         .sheet(item: $addIncomeInitialDate, onDismiss: {
             // Reload entries for the selected day after adding/saving
-            viewModel.reloadForSelectedDay()
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
         }) { item in
             AddIncomeFormView(
                 incomeObjectID: nil,
@@ -97,7 +97,7 @@ struct IncomeView: View {
         // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
         .sheet(item: $editingIncome, onDismiss: {
             // Reload after edit
-            viewModel.reloadForSelectedDay()
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
         }) { income in
             AddIncomeFormView(
                 incomeObjectID: income.objectID,
@@ -109,7 +109,6 @@ struct IncomeView: View {
             // Ensure the calendar opens on today's date and load entries
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
-            viewModel.load(day: initial)
         }
         .ub_glassBackground(
             themeManager.selectedTheme.glassBaseColor,
@@ -335,8 +334,6 @@ struct IncomeView: View {
             viewModel.selectedDate = target
             calendarScrollDate = target
         }
-        // Load incomes for the newly selected day
-        viewModel.load(day: target)
         // Reset the scroll target on the next run loop cycle without animation
         DispatchQueue.main.async {
             withTransaction(Transaction(animation: nil)) {
@@ -506,11 +503,11 @@ private struct SelectionChangeHandler: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 17.0, macOS 14.0, *) {
             return content.onChange(of: viewModel.selectedDate) {
-                viewModel.reloadForSelectedDay()
+                viewModel.reloadForSelectedDay(forceMonthReload: false)
             }
         } else {
             return content.onChange(of: viewModel.selectedDate) { _ in
-                viewModel.reloadForSelectedDay()
+                viewModel.reloadForSelectedDay(forceMonthReload: false)
             }
         }
     }
