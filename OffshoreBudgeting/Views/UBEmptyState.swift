@@ -97,7 +97,7 @@ struct UBEmptyState: View {
                             .labelStyle(.titleAndIcon)
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(LiquidGlassButtonStyle(tint: onboardingTint))
+                    .buttonStyle(TranslucentButtonStyle(tint: onboardingTint))
                     .frame(maxWidth: 320)
                 } else {
                     Button(action: onPrimaryTap) {

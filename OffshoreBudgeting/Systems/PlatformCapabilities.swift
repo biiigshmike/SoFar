@@ -5,9 +5,9 @@ import SwiftUI
 /// point so that every scene and modifier can consult the same source of
 /// truth when opting into newer system behaviours.
 struct PlatformCapabilities: Equatable {
-    /// Whether the current OS supports the new "Liquid Glass" background
-    /// treatments introduced alongside the OS 26 family releases.
-    let supportsLiquidGlass: Bool
+    /// Whether the current OS supports the refreshed OS 26 translucent chrome
+    /// treatments introduced alongside the latest system releases.
+    let supportsOS26Translucency: Bool
 
     /// Whether the adaptive numeric keyboard layout from OS 26 is available on
     /// this device. Only meaningful on iOS/iPadOS builds.
@@ -20,23 +20,23 @@ extension PlatformCapabilities {
     static var current: PlatformCapabilities {
         #if os(iOS) || os(tvOS)
         if #available(iOS 18.0, tvOS 18.0, *) {
-            return PlatformCapabilities(supportsLiquidGlass: true, supportsAdaptiveKeypad: true)
+            return PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: true)
         } else {
-            return PlatformCapabilities(supportsLiquidGlass: false, supportsAdaptiveKeypad: false)
+            return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
         }
         #elseif os(macOS)
         if #available(macOS 15.0, *) {
-            return PlatformCapabilities(supportsLiquidGlass: true, supportsAdaptiveKeypad: false)
+            return PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: false)
         } else {
-            return PlatformCapabilities(supportsLiquidGlass: false, supportsAdaptiveKeypad: false)
+            return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
         }
         #else
-        return PlatformCapabilities(supportsLiquidGlass: false, supportsAdaptiveKeypad: false)
+        return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
         #endif
     }
 
     /// Baseline set of capabilities used as a default value in the environment.
-    static let fallback = PlatformCapabilities(supportsLiquidGlass: false, supportsAdaptiveKeypad: false)
+    static let fallback = PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
 }
 
 // MARK: - Environment support

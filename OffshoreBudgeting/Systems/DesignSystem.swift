@@ -122,7 +122,7 @@ private struct UBCardContainerModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if platformCapabilities.supportsLiquidGlass {
+        if platformCapabilities.supportsOS26Translucency {
             if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
                 content
                     .background(

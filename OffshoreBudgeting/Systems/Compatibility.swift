@@ -93,7 +93,7 @@ extension View {
         modifier(UBDecimalKeyboardModifier())
     }
 
-    /// Applies the platform-aware Liquid Glass background when supported,
+    /// Applies the platform-aware OS 26 translucent background when supported,
     /// falling back to the provided base color elsewhere.
     /// - Parameters:
     ///   - baseColor: The theme/tint-aware fallback color.
@@ -113,7 +113,7 @@ extension View {
     }
 
     /// Applies a translucent navigation bar treatment that mirrors the
-    /// Liquid Glass surface configuration when supported by the platform.
+    /// OS 26 surface configuration when supported by the platform.
     /// Uses the provided base color and configuration to build a subtle
     /// gradient wash that picks up the current theme's accent tint.
     func ub_navigationGlassBackground(
@@ -129,7 +129,7 @@ extension View {
     }
 
     /// Applies a platform-aware chrome background to container chrome like TabView bars
-    /// and equivalent macOS tab/tool strip backgrounds, tuned to the provided Liquid Glass
+    /// and equivalent macOS tab/tool strip backgrounds, tuned to the provided OS 26
     /// configuration. On iOS, TabView chrome is customized via UIKit appearance; on macOS,
     /// we insert an NSVisualEffectView behind the chrome and overlay a subtle tint wash
     /// so the appearance matches iOS OS26 aesthetics.
@@ -252,7 +252,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         #if os(iOS)
-        if capabilities.supportsLiquidGlass {
+        if capabilities.supportsOS26Translucency {
             if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
@@ -265,7 +265,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
             content
         }
         #elseif os(macOS)
-        if capabilities.supportsLiquidGlass {
+        if capabilities.supportsOS26Translucency {
             if #available(macOS 13.0, *) {
                 // Apply a subtle gradient wash on top of the material for macOS toolbars.
                 content
@@ -327,7 +327,7 @@ private struct UBChromeGlassModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         #if os(macOS)
-        if capabilities.supportsLiquidGlass {
+        if capabilities.supportsOS26Translucency {
             content
                 .background(
                     UBMacChromeGlassBackground(
@@ -365,7 +365,7 @@ private struct UBGlassBackgroundView: View {
 
     @ViewBuilder
     private var baseLayer: some View {
-        if capabilities.supportsLiquidGlass {
+        if capabilities.supportsOS26Translucency {
             if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
                 #if os(iOS) || os(tvOS) || os(macOS)
                 decoratedGlass

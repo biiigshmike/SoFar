@@ -623,7 +623,7 @@ private struct OnboardingPrimaryButton: View {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(LiquidGlassButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+        .buttonStyle(TranslucentButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
     }
 }
 
@@ -668,7 +668,7 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
 
     @ViewBuilder
     private func background(isPressed: Bool, radius: CGFloat) -> some View {
-        if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(tint.opacity(isPressed ? 0.2 : 0.14))
                 .background(
@@ -690,7 +690,7 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
     private func highlight(radius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
             .stroke(
-                Color.white.opacity(capabilities.supportsLiquidGlass ? 0.22 : 0.14),
+                Color.white.opacity(capabilities.supportsOS26Translucency ? 0.22 : 0.14),
                 lineWidth: 1
             )
             .blendMode(.screen)
@@ -753,7 +753,7 @@ private struct OnboardingGlassBackground: View {
 
     var body: some View {
         Group {
-            if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(tint.opacity(0.26))
                     .background(
@@ -823,7 +823,7 @@ private struct OnboardingBackgroundSurface: View {
         ZStack {
             baseColor
 
-            if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
                 Rectangle()
                     .fill(tint.opacity(0.08))
                     .background(.ultraThinMaterial)

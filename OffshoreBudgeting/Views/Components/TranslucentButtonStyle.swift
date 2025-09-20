@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Button style that mirrors the "liquid glass" appearance used throughout the
-/// onboarding flow. It automatically consults `PlatformCapabilities` so that
-/// modern systems render the translucent material treatment while older
-/// versions fall back to a vibrant gradient.
-struct LiquidGlassButtonStyle: ButtonStyle {
+/// Button style that mirrors the OS 26 translucent appearance used throughout
+/// the onboarding flow. It automatically consults `PlatformCapabilities` so
+/// that modern systems render the material treatment while older versions fall
+/// back to a vibrant gradient.
+struct TranslucentButtonStyle: ButtonStyle {
     @Environment(\.platformCapabilities) private var capabilities
 
     /// Primary tint used for the button background and glow treatments.
@@ -28,7 +28,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
 
     @ViewBuilder
     private func background(isPressed: Bool, radius: CGFloat) -> some View {
-        if capabilities.supportsLiquidGlass, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(tint.opacity(isPressed ? 0.32 : 0.4))
                 .background(
@@ -61,7 +61,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
     @ViewBuilder
     private func highlight(radius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(Color.white.opacity(capabilities.supportsLiquidGlass ? 0.28 : 0.18), lineWidth: 1)
+            .stroke(Color.white.opacity(capabilities.supportsOS26Translucency ? 0.28 : 0.18), lineWidth: 1)
             .blendMode(.screen)
     }
 }
