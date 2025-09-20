@@ -49,7 +49,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// Accent color applied to interactive elements.
     var accent: Color {
         switch self {
-        case .system: return .accentColor
+        case .system:
+            #if os(macOS)
+            return SystemThemeMac.accent
+            #else
+            return .accentColor
+            #endif
         case .classic: return .blue
         case .midnight: return .purple
         case .forest: return .green
@@ -72,9 +77,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .system:
             #if os(macOS)
-            // Mimic the default iOS link color rather than adopting the user's
-            // chosen macOS accent color to keep cross-platform cohesion.
-            return Color(nsColor: .systemBlue)
+            return SystemThemeMac.tint
             #else
             return nil
             #endif
@@ -114,11 +117,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if canImport(UIKit)
             return Color(UIColor.systemBackground)
             #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.windowBackgroundColor)
-            } else {
-                return Color.white
-            }
+            return SystemThemeMac.background
             #else
             return Color.white
             #endif
@@ -166,11 +165,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if canImport(UIKit)
             return Color(UIColor.secondarySystemBackground)
             #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.white.opacity(0.92)
-            }
+            return SystemThemeMac.secondaryBackground
             #else
             return Color.white.opacity(0.9)
             #endif
@@ -218,11 +213,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if canImport(UIKit)
             return Color(UIColor.tertiarySystemBackground)
             #elseif canImport(AppKit)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.white.opacity(0.88)
-            }
+            return SystemThemeMac.tertiaryBackground
             #else
             return Color.white.opacity(0.85)
             #endif
@@ -286,6 +277,16 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount,
                 palette: glassPalette
             )
+        case .system:
+            #if os(macOS)
+            return SystemThemeMac.glassConfiguration(resolvedTint: resolvedTint)
+            #else
+            return .liquidGlass(
+                liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
+                glassAmount: GlassConfiguration.LiquidGlassDefaults.glassAmount,
+                palette: glassPalette
+            )
+            #endif
         default:
             return .liquidGlass(
                 liquidAmount: GlassConfiguration.LiquidGlassDefaults.liquidAmount,
@@ -322,6 +323,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
+            #if os(macOS)
+            return SystemThemeMac.glassBaseColor(background: background, resolvedTint: resolvedTint)
+            #else
             accentWash = AppThemeColorUtilities.adjust(
                 resolvedTint,
                 saturationMultiplier: 0.25,
@@ -329,6 +333,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 alpha: 1.0
             )
             blendAmount = min(blendAmount * 0.35, 0.18)
+            #endif
         case .liquidGlass:
             accentWash = AppThemeColorUtilities.adjust(
                 resolvedTint,
@@ -358,6 +363,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
+            #if os(macOS)
+            return SystemThemeMac.glassPalette(resolvedTint: resolvedTint)
+            #else
             accent = AppThemeColorUtilities.adjust(
                 resolvedTint,
                 saturationMultiplier: 0.35,
@@ -382,6 +390,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 brightnessMultiplier: 1.12,
                 alpha: 1.0
             )
+            #endif
         case .liquidGlass:
             accent = AppThemeColorUtilities.adjust(
                 resolvedTint,
@@ -673,6 +682,152 @@ extension AppTheme.GlassConfiguration {
         )
     }
 }
+
+#if os(macOS)
+private enum SystemThemeMac {
+    static var accent: Color {
+        Color(nsColor: .controlAccentColor)
+    }
+
+    static var tint: Color {
+        Color(nsColor: accentBaseColor())
+    }
+
+    static var background: Color {
+        Color(nsColor: lighten(.underPageBackgroundColor, lightFraction: 0.12, darkFraction: 0.26))
+    }
+
+    static var secondaryBackground: Color {
+        let softened = lighten(.windowBackgroundColor, lightFraction: 0.18, darkFraction: 0.32)
+        let tinted = blend(softened, with: accentBaseColor(), lightFraction: 0.03, darkFraction: 0.07)
+        return Color(nsColor: tinted)
+    }
+
+    static var tertiaryBackground: Color {
+        let softened = lighten(.controlBackgroundColor, lightFraction: 0.24, darkFraction: 0.36)
+        let tinted = blend(softened, with: accentBaseColor(), lightFraction: 0.05, darkFraction: 0.1)
+        return Color(nsColor: tinted)
+    }
+
+    static func glassConfiguration(resolvedTint: Color) -> AppTheme.GlassConfiguration {
+        var configuration = AppTheme.GlassConfiguration.liquidGlass(
+            liquidAmount: 0.86,
+            glassAmount: 0.82,
+            palette: glassPalette(resolvedTint: resolvedTint)
+        )
+
+        configuration.liquid.tintOpacity = max(configuration.liquid.tintOpacity, 0.30)
+        configuration.liquid.saturation = max(configuration.liquid.saturation, 1.22)
+        configuration.liquid.brightness = max(configuration.liquid.brightness, 0.04)
+        configuration.liquid.bloom = max(configuration.liquid.bloom, 0.16)
+
+        configuration.glass.highlightOpacity = max(configuration.glass.highlightOpacity, 0.40)
+        configuration.glass.highlightBlur = max(configuration.glass.highlightBlur, 48)
+        configuration.glass.shadowOpacity = max(configuration.glass.shadowOpacity, 0.22)
+        configuration.glass.shadowBlur = max(configuration.glass.shadowBlur, 56)
+        configuration.glass.specularOpacity = max(configuration.glass.specularOpacity, 0.34)
+        configuration.glass.specularWidth = max(configuration.glass.specularWidth, 0.10)
+        configuration.glass.noiseOpacity = max(configuration.glass.noiseOpacity, 0.05)
+        configuration.glass.rimOpacity = max(configuration.glass.rimOpacity, 0.16)
+        configuration.glass.rimWidth = max(configuration.glass.rimWidth, 1.22)
+        configuration.glass.rimBlur = max(configuration.glass.rimBlur, 18)
+        configuration.glass.material = .regular
+
+        return configuration
+    }
+
+    static func glassBaseColor(background: Color, resolvedTint: Color) -> Color {
+        let backgroundColor = NSColor(background)
+        let tintColor = NSColor(resolvedTint)
+
+        let dynamic = NSColor(name: nil) { appearance in
+            let base = backgroundColor.resolvedColor(with: appearance)
+            let whitened = base.blended(withFraction: fraction(for: appearance, light: 0.18, dark: 0.32), of: .white) ?? base
+            let tint = tintColor.resolvedColor(with: appearance)
+            let accentWash = tint.blended(withFraction: 0.58, of: .white) ?? tint
+            return whitened.blended(withFraction: fraction(for: appearance, light: 0.28, dark: 0.42), of: accentWash) ?? whitened
+        }
+
+        return Color(nsColor: dynamic)
+    }
+
+    static func glassPalette(resolvedTint: Color) -> AppTheme.GlassConfiguration.Palette {
+        AppTheme.GlassConfiguration.Palette(
+            accent: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.72,
+                brightnessMultiplier: 1.18,
+                alpha: 1.0
+            ),
+            shadow: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.58,
+                brightnessMultiplier: 0.60,
+                alpha: 1.0
+            ),
+            specular: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.44,
+                brightnessMultiplier: 1.36,
+                alpha: 1.0
+            ),
+            rim: AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.50,
+                brightnessMultiplier: 1.26,
+                alpha: 1.0
+            )
+        )
+    }
+
+    private static func accentBaseColor() -> NSColor {
+        if #available(macOS 11.0, *) {
+            return .systemBlue
+        } else {
+            return NSColor(calibratedRed: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
+        }
+    }
+
+    private static func lighten(_ color: NSColor, lightFraction: CGFloat, darkFraction: CGFloat) -> NSColor {
+        NSColor(name: nil) { appearance in
+            let resolved = color.resolvedColor(with: appearance)
+            return resolved.blended(withFraction: fraction(for: appearance, light: lightFraction, dark: darkFraction), of: .white) ?? resolved
+        }
+    }
+
+    private static func blend(_ base: NSColor, with accent: NSColor, lightFraction: CGFloat, darkFraction: CGFloat) -> NSColor {
+        NSColor(name: nil) { appearance in
+            let resolvedBase = base.resolvedColor(with: appearance)
+            let resolvedAccent = accent.resolvedColor(with: appearance)
+            return resolvedBase.blended(withFraction: fraction(for: appearance, light: lightFraction, dark: darkFraction), of: resolvedAccent) ?? resolvedBase
+        }
+    }
+
+    private static func fraction(for appearance: NSAppearance, light: CGFloat, dark: CGFloat) -> CGFloat {
+        isDark(appearance) ? dark : light
+    }
+
+    private static func isDark(_ appearance: NSAppearance) -> Bool {
+        let bestMatch = appearance.bestMatch(from: [
+            .darkAqua,
+            .vibrantDark,
+            .accessibilityHighContrastDarkAqua,
+            .accessibilityHighContrastVibrantDark,
+            .aqua,
+            .vibrantLight,
+            .accessibilityHighContrastAqua,
+            .accessibilityHighContrastVibrantLight
+        ])
+
+        switch bestMatch {
+        case .darkAqua?, .vibrantDark?, .accessibilityHighContrastDarkAqua?, .accessibilityHighContrastVibrantDark?:
+            return true
+        default:
+            return false
+        }
+    }
+}
+#endif
 
 // MARK: - Color Utilities
 
