@@ -107,24 +107,15 @@ struct UBEmptyState: View {
     // MARK: Primary Button Helpers
     @ViewBuilder
     private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
-        if isOnboardingPresentation {
+        if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            let tint = isOnboardingPresentation ? onboardingTint : primaryButtonTint
+
             Button(action: action) {
                 primaryButtonLabel(title: title)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(TranslucentButtonStyle(tint: onboardingTint))
+            .buttonStyle(TranslucentButtonStyle(tint: tint))
             .frame(maxWidth: 320)
-        } else if capabilities.supportsOS26Translucency {
-            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                Button(action: action) {
-                    primaryButtonLabel(title: title)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(TranslucentButtonStyle(tint: primaryButtonTint))
-                .frame(maxWidth: 320)
-            } else {
-                legacyPrimaryButton(title: title, action: action)
-            }
         } else {
             legacyPrimaryButton(title: title, action: action)
         }

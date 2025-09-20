@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Button style that renders compact circular/squircle controls for the income calendar
 /// navigation row. The style mirrors the OS 26 translucent appearance while falling back
-/// to a soft gradient on older systems.
+/// to a subtly tinted material treatment on older systems.
 struct CalendarNavigationButtonStyle: ButtonStyle {
     enum Role {
         case icon
@@ -37,12 +37,13 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
     private func background(for theme: AppTheme, radius: CGFloat, isPressed: Bool) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
-        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
             shape
-                .fill(fillColor(for: theme, isPressed: isPressed))
-                .background(
+                .fill(.ultraThinMaterial)
+                .overlay(
                     shape
-                        .fill(.ultraThinMaterial)
+                        .fill(fillColor(for: theme, isPressed: isPressed))
+                        .blendMode(.plusLighter)
                 )
                 .shadow(
                     color: shadowColor(for: theme, isPressed: isPressed),
@@ -53,13 +54,7 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
                 .compositingGroup()
         } else {
             shape
-                .fill(
-                    LinearGradient(
-                        colors: legacyGradient(for: theme, isPressed: isPressed),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(fillColor(for: theme, isPressed: isPressed))
                 .shadow(
                     color: shadowColor(for: theme, isPressed: isPressed),
                     radius: isPressed ? 6 : 10,
@@ -86,20 +81,6 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
             return Color.white.opacity(isPressed ? 0.26 : 0.20)
         } else {
             return theme.resolvedTint.opacity(isPressed ? 0.32 : 0.24)
-        }
-    }
-
-    private func legacyGradient(for theme: AppTheme, isPressed: Bool) -> [Color] {
-        if theme == .system {
-            return [
-                Color.white.opacity(isPressed ? 0.92 : 0.82),
-                Color.white.opacity(isPressed ? 0.74 : 0.68)
-            ]
-        } else {
-            return [
-                theme.resolvedTint.opacity(isPressed ? 0.95 : 0.82),
-                theme.resolvedTint.opacity(isPressed ? 0.72 : 0.60)
-            ]
         }
     }
 
