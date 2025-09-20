@@ -52,7 +52,7 @@ struct HomeView: View {
         ) { _ in
             Task { await vm.refresh() }
         }
-        .onChange(of: budgetPeriodRawValue) { _, newValue in
+        .onChange(of: budgetPeriodRawValue) { newValue in
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly
             vm.updateBudgetPeriod(to: newPeriod)
         }
@@ -119,17 +119,23 @@ struct HomeView: View {
 
     @ToolbarContentBuilder
     private func actionToolbarItem() -> some ToolbarContent {
-        if case .empty = vm.state {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingAddBudget = true
-                } label: {
-                    Label("Add Budget", systemImage: "plus")
-                }
-            }
+        ToolbarItem(placement: .primaryAction) {
+            actionToolbarItemContent
         }
-        if case .loaded(let summaries) = vm.state, let first = summaries.first {
-            ToolbarItem(placement: .primaryAction) {
+    }
+
+    @ViewBuilder
+    private var actionToolbarItemContent: some View {
+        switch vm.state {
+        case .empty:
+            Button {
+                isPresentingAddBudget = true
+            } label: {
+                Label("Add Budget", systemImage: "plus")
+            }
+
+        case .loaded(let summaries):
+            if let first = summaries.first {
                 Menu {
                     Button {
                         editingBudget = first
@@ -144,31 +150,57 @@ struct HomeView: View {
                 } label: {
                     Label("Actions", systemImage: "ellipsis.circle")
                 }
+            } else {
+                EmptyView()
             }
+
+        default:
+            EmptyView()
         }
     }
 
     // MARK: Sheets & Alerts
+    @ViewBuilder
     private func makeAddBudgetView() -> some View {
         let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
-        return AddBudgetView(
-            initialStartDate: start,
-            initialEndDate: end,
-            onSaved: { Task { await vm.refresh() } }
-        )
-        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-        .presentationDetents([.large, .medium])
+        if #available(iOS 16.0, *) {
+            AddBudgetView(
+                initialStartDate: start,
+                initialEndDate: end,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            .presentationDetents([.large, .medium])
+        } else {
+            AddBudgetView(
+                initialStartDate: start,
+                initialEndDate: end,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
     }
 
+    @ViewBuilder
     private func makeEditBudgetView(summary: BudgetSummary) -> some View {
-        AddBudgetView(
-            editingBudgetObjectID: summary.id,
-            fallbackStartDate: summary.periodStart,
-            fallbackEndDate: summary.periodEnd,
-            onSaved: { Task { await vm.refresh() } }
-        )
-        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-        .presentationDetents([.large, .medium])
+        if #available(iOS 16.0, *) {
+            AddBudgetView(
+                editingBudgetObjectID: summary.id,
+                fallbackStartDate: summary.periodStart,
+                fallbackEndDate: summary.periodEnd,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            .presentationDetents([.large, .medium])
+        } else {
+            AddBudgetView(
+                editingBudgetObjectID: summary.id,
+                fallbackStartDate: summary.periodStart,
+                fallbackEndDate: summary.periodEnd,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
     }
 
     private func alert(for alert: HomeViewAlert) -> Alert {
