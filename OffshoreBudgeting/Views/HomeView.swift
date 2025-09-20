@@ -111,7 +111,7 @@ struct HomeView: View {
                     Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
                 }
             } label: {
-                Label(budgetPeriod.displayName, systemImage: "calendar")
+                toolbarIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
             }
         }
 #endif
@@ -131,7 +131,7 @@ struct HomeView: View {
             Button {
                 isPresentingAddBudget = true
             } label: {
-                Label("Add Budget", systemImage: "plus")
+                toolbarIconLabel(title: "Add Budget", systemImage: "plus")
             }
 
         case .loaded(let summaries):
@@ -148,7 +148,7 @@ struct HomeView: View {
                         Label("Delete Budget", systemImage: "trash")
                     }
                 } label: {
-                    Label("Actions", systemImage: "ellipsis.circle")
+                    toolbarIconLabel(title: "Actions", systemImage: "ellipsis.circle")
                 }
             } else {
                 EmptyView()
@@ -157,6 +157,22 @@ struct HomeView: View {
         default:
             EmptyView()
         }
+    }
+
+    private enum ToolbarButtonMetrics {
+        static let dimension: CGFloat = 44
+    }
+
+    @ViewBuilder
+    private func toolbarIconLabel(title: String, systemImage: String) -> some View {
+#if os(macOS)
+        Label(title, systemImage: systemImage)
+#else
+        Label(title, systemImage: systemImage)
+            .labelStyle(.iconOnly)
+            .frame(width: ToolbarButtonMetrics.dimension, height: ToolbarButtonMetrics.dimension)
+            .contentShape(Rectangle())
+#endif
     }
 
     // MARK: Sheets & Alerts
