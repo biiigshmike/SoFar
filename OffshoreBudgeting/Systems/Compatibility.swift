@@ -455,11 +455,7 @@ enum UBColor {
         return Color(UIColor.secondarySystemBackground) // iOS
         #elseif canImport(AppKit)
         if #available(macOS 11.0, *) {
-            let window = NSColor.windowBackgroundColor.ub_convertedToWorkingSpace()
-            let lifted = window.ub_blend(with: .white, amount: 0.32)
-            let accent = NSColor.controlAccentColor.withAlphaComponent(0.35)
-            let tinted = lifted.ub_blend(with: accent, amount: 0.08)
-            return Color(nsColor: tinted) // macOS
+            return Color(nsColor: NSColor.windowBackgroundColor) // macOS
         } else {
             return Color.gray.opacity(0.16)
         }
@@ -474,11 +470,7 @@ enum UBColor {
         return Color(UIColor.tertiarySystemBackground) // iOS
         #elseif canImport(AppKit)
         if #available(macOS 11.0, *) {
-            let control = NSColor.controlBackgroundColor.ub_convertedToWorkingSpace()
-            let elevated = control.ub_blend(with: .white, amount: 0.26)
-            let accent = NSColor.controlAccentColor.withAlphaComponent(0.28)
-            let tinted = elevated.ub_blend(with: accent, amount: 0.1)
-            return Color(nsColor: tinted) // macOS
+            return Color(nsColor: NSColor.controlBackgroundColor) // macOS
         } else {
             return Color.gray.opacity(0.22)
         }
@@ -487,21 +479,6 @@ enum UBColor {
         #endif
     }
 }
-
-#if canImport(AppKit)
-private extension NSColor {
-    func ub_convertedToWorkingSpace() -> NSColor {
-        usingColorSpace(.displayP3) ?? usingColorSpace(.deviceRGB) ?? self
-    }
-
-    func ub_blend(with color: NSColor, amount: CGFloat) -> NSColor {
-        let clamped = max(0, min(1, amount))
-        let base = ub_convertedToWorkingSpace()
-        let target = color.ub_convertedToWorkingSpace()
-        return base.blended(withFraction: clamped, of: target) ?? base
-    }
-}
-#endif
 
 // MARK: - UBTypography (Cross-Platform text colors)
 
