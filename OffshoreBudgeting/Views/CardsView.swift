@@ -129,7 +129,7 @@ struct CardsView: View {
                     onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
                 )
             }
-            .tint(themeManager.selectedTheme.tint)
+            .tint(themeManager.selectedTheme.resolvedTint)
     }
 
     // MARK: - Content View (Type-Safe)

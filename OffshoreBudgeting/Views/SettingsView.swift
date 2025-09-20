@@ -224,8 +224,8 @@ struct SettingsView: View {
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
-        .accentColor(themeManager.selectedTheme.tint)
-        .tint(themeManager.selectedTheme.tint)
+        .accentColor(themeManager.selectedTheme.resolvedTint)
+        .tint(themeManager.selectedTheme.resolvedTint)
         .navigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
             Button("Erase", role: .destructive) {

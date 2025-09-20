@@ -63,8 +63,8 @@ struct ExpenseCategoryManagerView: View {
                     )
             }
         }
-        .accentColor(themeManager.selectedTheme.tint)
-        .tint(themeManager.selectedTheme.tint)
+        .accentColor(themeManager.selectedTheme.resolvedTint)
+        .tint(themeManager.selectedTheme.resolvedTint)
         .sheet(isPresented: $isPresentingAddSheet) {
             ExpenseCategoryEditorSheet(
                 initialName: "",
