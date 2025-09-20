@@ -49,42 +49,42 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func fillColor(isPressed: Bool) -> Color {
-        tint.opacity(isPressed ? 0.32 : 0.24)
+        Color.white.opacity(isPressed ? 0.22 : 0.18)
     }
 
     private func shadowColor(isPressed: Bool) -> Color {
-        tint.opacity(isPressed ? 0.28 : 0.34)
+        Color.black.opacity(isPressed ? 0.10 : 0.14)
     }
 
     private func shadowRadius(isPressed: Bool) -> CGFloat {
-        isPressed ? 12 : 22
+        isPressed ? 5 : 9
     }
 
     private func shadowY(isPressed: Bool) -> CGFloat {
-        isPressed ? 6 : 12
+        isPressed ? 2 : 5
     }
 
     private func legacyShadowRadius(isPressed: Bool) -> CGFloat {
-        isPressed ? 10 : 18
+        isPressed ? 4 : 8
     }
 
     private func legacyShadowY(isPressed: Bool) -> CGFloat {
-        isPressed ? 6 : 12
+        isPressed ? 2 : 5
     }
 
     private func border(isPressed: Bool, radius: CGFloat) -> some View {
-        let opacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.65 : 0.52) : (isPressed ? 0.55 : 0.42)
-        let lineWidth: CGFloat = capabilities.supportsOS26Translucency ? 1.2 : 1.0
+        let opacity = capabilities.supportsOS26Translucency ? (isPressed ? 0.48 : 0.36) : (isPressed ? 0.40 : 0.30)
+        let lineWidth: CGFloat = capabilities.supportsOS26Translucency ? 0.9 : 0.8
 
         return RoundedRectangle(cornerRadius: radius, style: .continuous)
             .stroke(tint.opacity(opacity), lineWidth: lineWidth)
     }
 
     private func highlight(radius: CGFloat) -> some View {
-        let whiteOpacity = capabilities.supportsOS26Translucency ? 0.28 : 0.20
+        let whiteOpacity = capabilities.supportsOS26Translucency ? 0.20 : 0.16
 
         return RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(Color.white.opacity(whiteOpacity), lineWidth: capabilities.supportsOS26Translucency ? 1.0 : 0.9)
+            .stroke(Color.white.opacity(whiteOpacity), lineWidth: capabilities.supportsOS26Translucency ? 0.8 : 0.75)
             .blendMode(.screen)
     }
 }
