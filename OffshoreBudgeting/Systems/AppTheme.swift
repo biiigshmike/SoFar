@@ -347,11 +347,68 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if os(macOS)
             return SystemThemeMac.glassPalette(resolvedTint: resolvedTint)
             #else
-            // Neutral: very low saturation, slightly brighter
-            accent = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.10, brightnessMultiplier: 1.08, alpha: 1.0)
-            shadow = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 0.76, alpha: 1.0)
-            specular = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.30, alpha: 1.0)
-            rim = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.18, alpha: 1.0)
+            let tintSaturation = AppThemeColorUtilities
+                .hsba(from: resolvedTint)?.saturation ?? 0.0
+            let tintBlend = tintSaturation.clamped(to: 0...1)
+
+            let neutralAccent = Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor(red: 0.70, green: 0.74, blue: 0.84, alpha: 1.0)
+                } else {
+                    return UIColor(red: 0.58, green: 0.62, blue: 0.72, alpha: 1.0)
+                }
+            })
+            let neutralShadow = Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor(red: 0.05, green: 0.06, blue: 0.10, alpha: 1.0)
+                } else {
+                    return UIColor(red: 0.68, green: 0.72, blue: 0.80, alpha: 1.0)
+                }
+            })
+            let neutralSpecular = Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor(red: 0.96, green: 0.97, blue: 1.00, alpha: 1.0)
+                } else {
+                    return UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 1.0)
+                }
+            })
+            let neutralRim = Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor(red: 0.82, green: 0.86, blue: 0.94, alpha: 1.0)
+                } else {
+                    return UIColor(red: 0.70, green: 0.74, blue: 0.84, alpha: 1.0)
+                }
+            })
+
+            let accentTone = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.10,
+                brightnessMultiplier: 1.08,
+                alpha: 1.0
+            )
+            let shadowTone = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.10,
+                brightnessMultiplier: 0.70,
+                alpha: 1.0
+            )
+            let specularTone = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.08,
+                brightnessMultiplier: 1.30,
+                alpha: 1.0
+            )
+            let rimTone = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: 0.08,
+                brightnessMultiplier: 1.18,
+                alpha: 1.0
+            )
+
+            accent = AppThemeColorUtilities.mix(neutralAccent, accentTone, amount: tintBlend)
+            shadow = AppThemeColorUtilities.mix(neutralShadow, shadowTone, amount: tintBlend)
+            specular = AppThemeColorUtilities.mix(neutralSpecular, specularTone, amount: tintBlend)
+            rim = AppThemeColorUtilities.mix(neutralRim, rimTone, amount: tintBlend)
             #endif
         default:
             accent = resolvedTint
@@ -425,30 +482,91 @@ extension AppTheme {
     static func systemGlassConfiguration(resolvedTint: Color) -> GlassConfiguration {
         var configuration = AppTheme.GlassConfiguration.standard
 
-        // Lift the surface: less tinting, neutral response
-        configuration.liquid.tintOpacity = 0.06
+        // Neutralize the glass surface like Apple's Settings background. Only blend
+        // in the accent color when it is truly colorful so black/white AccentColor
+        // assets do not muddy the grouped background.
+        let tintSaturation = AppThemeColorUtilities
+            .hsba(from: resolvedTint)?.saturation ?? 0.0
+        let tintBlend = tintSaturation.clamped(to: 0...1)
+
+        configuration.liquid.tintOpacity = 0.045
         configuration.liquid.saturation = 0.98
-        configuration.liquid.brightness = 0.01
-        configuration.liquid.contrast = 1.00
-        configuration.liquid.bloom = 0.06
+        configuration.liquid.brightness = 0.015
+        configuration.liquid.contrast = 1.01
+        configuration.liquid.bloom = 0.08
 
-        let shadowTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.72, alpha: 1.0)
-        let specularTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.28, alpha: 1.0)
-        let rimTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
+        let neutralShadow = Color(UIColor { trait in
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.04, green: 0.05, blue: 0.08, alpha: 1.0)
+            } else {
+                return UIColor(red: 0.68, green: 0.72, blue: 0.80, alpha: 1.0)
+            }
+        })
+        let neutralSpecular = Color(UIColor { trait in
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.96, green: 0.97, blue: 1.00, alpha: 1.0)
+            } else {
+                return UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 1.0)
+            }
+        })
+        let neutralRim = Color(UIColor { trait in
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.82, green: 0.86, blue: 0.94, alpha: 1.0)
+            } else {
+                return UIColor(red: 0.70, green: 0.74, blue: 0.84, alpha: 1.0)
+            }
+        })
 
-        configuration.glass.highlightOpacity = 0.40
-        configuration.glass.highlightBlur = 22
-        configuration.glass.shadowColor = shadowTone
-        configuration.glass.shadowOpacity = 0.08
-        configuration.glass.shadowBlur = 28
-        configuration.glass.specularColor = specularTone
-        configuration.glass.specularOpacity = 0.14
-        configuration.glass.specularWidth = 0.11
-        configuration.glass.noiseOpacity = 0.012
-        configuration.glass.rimColor = rimTone
-        configuration.glass.rimOpacity = 0.03
-        configuration.glass.rimWidth = 0.80
-        configuration.glass.rimBlur = 12
+        let accentTone = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.08,
+            brightnessMultiplier: 1.10,
+            alpha: 1.0
+        )
+        let shadowTone = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.10,
+            brightnessMultiplier: 0.70,
+            alpha: 1.0
+        )
+        let specularTone = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.08,
+            brightnessMultiplier: 1.30,
+            alpha: 1.0
+        )
+        let rimTone = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.08,
+            brightnessMultiplier: 1.18,
+            alpha: 1.0
+        )
+
+        configuration.glass.highlightOpacity = 0.36
+        configuration.glass.highlightBlur = 26
+        configuration.glass.shadowColor = AppThemeColorUtilities.mix(
+            neutralShadow,
+            shadowTone,
+            amount: tintBlend
+        )
+        configuration.glass.shadowOpacity = 0.06
+        configuration.glass.shadowBlur = 44
+        configuration.glass.specularColor = AppThemeColorUtilities.mix(
+            neutralSpecular,
+            specularTone,
+            amount: tintBlend
+        )
+        configuration.glass.specularOpacity = 0.12
+        configuration.glass.specularWidth = 0.10
+        configuration.glass.noiseOpacity = 0.018
+        configuration.glass.rimColor = AppThemeColorUtilities.mix(
+            neutralRim,
+            rimTone,
+            amount: tintBlend
+        )
+        configuration.glass.rimOpacity = 0.025
+        configuration.glass.rimWidth = 0.78
+        configuration.glass.rimBlur = 16
         configuration.glass.material = .thin
 
         return configuration
@@ -457,25 +575,32 @@ extension AppTheme {
     /// Near‑neutral base color for System theme (dynamic).
     static func systemGlassBaseColor(resolvedTint: Color) -> Color {
         let dynamicBase = UIColor { trait in
-            // Brighter in light, moderately deeper in dark
-            let baseLight = UIColor(red: 0.985, green: 0.99, blue: 1.00, alpha: 1.0)
-            let baseDark  = UIColor(red: 0.15, green: 0.16, blue: 0.19, alpha: 1.0)
-            let base = trait.userInterfaceStyle == .dark ? baseDark : baseLight
-
-            // Minimal neutral wash
-            let accent = UIColor(resolvedTint).resolvedColor(with: trait)
-            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            if accent.getHue(&h, saturation: &s, brightness: &b, alpha: &a) {
-                let wash = UIColor(hue: h, saturation: s * 0.04, brightness: min(b * 1.04, 1.0), alpha: 1.0)
-                // Blend 3% of the neutralized accent into the base; convert to SwiftUI Color and use our mixer.
-                let baseColor = Color(base)
-                let washColor = Color(wash)
-                let mixed = AppThemeColorUtilities.mix(baseColor, washColor, amount: 0.03)
-                return UIColor(mixed).resolvedColor(with: trait)
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.11, green: 0.12, blue: 0.14, alpha: 1.0)
+            } else {
+                return UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1.0)
             }
-            return base
         }
-        return Color(dynamicBase)
+
+        let baseColor = Color(dynamicBase)
+        let tintSaturation = AppThemeColorUtilities
+            .hsba(from: resolvedTint)?.saturation ?? 0.0
+        let tintInfluence = tintSaturation.clamped(to: 0...1)
+
+        guard tintInfluence > 0 else { return baseColor }
+
+        let wash = AppThemeColorUtilities.adjust(
+            resolvedTint,
+            saturationMultiplier: 0.06,
+            brightnessMultiplier: 1.06,
+            alpha: 1.0
+        )
+
+        return AppThemeColorUtilities.mix(
+            baseColor,
+            wash,
+            amount: 0.02 * tintInfluence
+        )
     }
 }
 #endif
