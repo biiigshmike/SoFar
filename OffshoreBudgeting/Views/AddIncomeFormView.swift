@@ -76,7 +76,7 @@ struct AddIncomeFormView: View {
         }
         // MARK: Eager load (edit) / Prefill date (add)
         _eagerLoadHook
-        .onChange(of: viewModel.isPresentingCustomRecurrenceEditor) { old, newValue in
+        .onChange(of: viewModel.isPresentingCustomRecurrenceEditor) { newValue in
             if newValue {
                 if case .custom(let raw, _) = viewModel.recurrenceRule {
                     viewModel.customRuleSeed = CustomRecurrence.roughParse(rruleString: raw)

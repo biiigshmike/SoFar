@@ -29,7 +29,7 @@ struct PresetBudgetAssignmentSheet: View {
 
     // MARK: Body
     var body: some View {
-        NavigationStack {
+        navigationContainer {
             List {
                 ForEach(budgets, id: \.self) { budget in
                     HStack {
@@ -89,6 +89,16 @@ struct PresetBudgetAssignmentSheet: View {
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
+    }
+
+    // MARK: - Navigation container (iOS 16+/macOS 13+ NavigationStack; older NavigationView)
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack { content() }
+        } else {
+            NavigationView { content() }
+        }
     }
 
     // MARK: - Load

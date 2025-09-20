@@ -391,9 +391,11 @@ extension AppTheme {
             var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             if accent.getHue(&h, saturation: &s, brightness: &b, alpha: &a) {
                 let wash = UIColor(hue: h, saturation: s * 0.04, brightness: min(b * 1.04, 1.0), alpha: 1.0)
-                if let blended = base.blended(withFraction: 0.03, of: wash) {
-                    return blended
-                }
+                // Blend 3% of the neutralized accent into the base; convert to SwiftUI Color and use our mixer.
+                let baseColor = Color(base)
+                let washColor = Color(wash)
+                let mixed = AppThemeColorUtilities.mix(baseColor, washColor, amount: 0.03)
+                return UIColor(mixed).resolvedColor(with: trait)
             }
             return base
         }
@@ -928,3 +930,4 @@ final class ThemeManager: ObservableObject {
         }
     }
 }
+

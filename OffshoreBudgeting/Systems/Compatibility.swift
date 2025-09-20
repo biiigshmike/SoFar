@@ -40,7 +40,7 @@ extension View {
     /// Uses the best available API per OS version and is a no-op if unavailable.
     func ub_toolbarTitleInline() -> some View {
         #if os(iOS) || os(tvOS)
-        if #available(iOS 16.0, tvOS 16.0, *) {
+        if #available(iOS 17.0, tvOS 17.0, *) {
             return self.toolbarTitleDisplayMode(.inline)
         } else {
             return self.navigationBarTitleDisplayMode(.inline)
@@ -818,4 +818,3 @@ enum UBPlatform {
         #endif
     }
 }
-
