@@ -128,21 +128,27 @@ struct IncomeView: View {
         let start = cal.date(byAdding: .year, value: -5, to: today)!
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: DS.Spacing.s) {
                 Button("<<") { goToPreviousMonth() }
+                    .accessibilityLabel("Previous Month")
+                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
                 Button("<") { goToPreviousDay() }
+                    .accessibilityLabel("Previous Day")
+                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
                 Button("Today") { goToToday() }
+                    .accessibilityLabel("Jump to Today")
+                    .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+
                 Button(">") { goToNextDay() }
+                    .accessibilityLabel("Next Day")
+                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
                 Button(">>") { goToNextMonth() }
+                    .accessibilityLabel("Next Month")
+                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#else
-            .buttonStyle(.bordered)
-#endif
-            //.accentColor(themeManager.selectedTheme.tint)
-            .tint(themeManager.selectedTheme.tint)
-            .font(.subheadline)
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call
             MCalendarView(
