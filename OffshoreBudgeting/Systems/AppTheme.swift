@@ -304,6 +304,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #endif
         default:
             return AppThemeColorUtilities.mix(background, accentWash, amount: blendAmount)
+        }
         #else
         return background
         #endif
@@ -560,9 +561,9 @@ extension AppTheme.GlassConfiguration {
 
         let material: AppTheme.GlassConfiguration.GlassSettings.MaterialStyle
         switch clampedGlass {
-        case ..<0.33: material = .ultraThin
-        case ..<0.66: material = .thin
-        default:      material = .regular
+            case ..<0.33: material = .ultraThin
+            case ..<0.66: material = .thin
+            default:      material = .regular
         }
 
         return AppTheme.GlassConfiguration(
