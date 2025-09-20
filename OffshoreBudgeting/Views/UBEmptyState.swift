@@ -101,7 +101,7 @@ struct UBEmptyState: View {
     }
 
     private var onboardingTint: Color {
-        themeManager.selectedTheme.tint ?? themeManager.selectedTheme.accent
+        themeManager.selectedTheme.resolvedTint
     }
 
     // MARK: Primary Button Helpers

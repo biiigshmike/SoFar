@@ -97,14 +97,14 @@ struct EditSheetScaffold<Content: View>: View {
                             onCancel?()
                             dismiss()
                         }
-                        .tint(themeManager.selectedTheme.tint)
+                        .tint(themeManager.selectedTheme.resolvedTint)
                     }
                     // Save
                     ToolbarItem(placement: .confirmationAction) {
                         Button(saveButtonTitle) {
                             if onSave() { dismiss() }
                         }
-                        .tint(themeManager.selectedTheme.tint)
+                        .tint(themeManager.selectedTheme.resolvedTint)
                         .disabled(!isSaveEnabled)
                     }
                 }
@@ -113,8 +113,8 @@ struct EditSheetScaffold<Content: View>: View {
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
-        .accentColor(themeManager.selectedTheme.tint)
-        .tint(themeManager.selectedTheme.tint)
+        .accentColor(themeManager.selectedTheme.resolvedTint)
+        .tint(themeManager.selectedTheme.resolvedTint)
         .ub_glassBackground(
             themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration

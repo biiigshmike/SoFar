@@ -62,7 +62,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             #if os(macOS)
             return SystemThemeMac.accent
             #else
-            return .accentColor
+            return Color("AccentColor", bundle: .main)
             #endif
         case .classic: return .blue
         case .midnight: return .purple
@@ -81,13 +81,16 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     ///
     /// All custom themes specify a tint color. The System theme intentionally
     /// returns platform-appropriate values so controls match native styling.
+    /// On iOS and related platforms we rely on the `AccentColor` asset so the
+    /// theme respects the project's light (black) and dark (white) accents
+    /// instead of defaulting to the system blue.
     var tint: Color? {
         switch self {
         case .system:
             #if os(macOS)
             return SystemThemeMac.tint
             #else
-            return nil
+            return Color("AccentColor", bundle: .main)
             #endif
         default:
             return accent
@@ -673,15 +676,11 @@ extension AppTheme.GlassConfiguration {
 #if os(macOS)
 private enum SystemThemeMac {
     static var accent: Color {
-        Color(nsColor: .controlAccentColor)
+        Color("AccentColor", bundle: .main)
     }
 
     static var tint: Color {
-        if #available(macOS 11.0, *) {
-            return Color(nsColor: .controlAccentColor)
-        } else {
-            return Color(nsColor: fallbackAccentColor)
-        }
+        Color("AccentColor", bundle: .main)
     }
 
     static var background: Color {
@@ -764,9 +763,6 @@ private enum SystemThemeMac {
         )
     }
 
-    private static var fallbackAccentColor: NSColor {
-        NSColor(calibratedRed: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
-    }
 }
 #endif
 
