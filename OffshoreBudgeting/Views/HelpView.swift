@@ -47,29 +47,61 @@ struct HelpView: View {
         )
         .frame(minWidth: 400, minHeight: 500)
 #else
-        NavigationStack {
-            List {
-                // MARK: Getting Started
-                Section("Getting Started") {
-                    NavigationLink("Introduction") { intro }
-                    NavigationLink("Onboarding") { onboarding }
-                }
+        Group {
+            if #available(iOS 16.0, *) {
+                NavigationStack {
+                    List {
+                        // MARK: Getting Started
+                        Section("Getting Started") {
+                            NavigationLink("Introduction") { intro }
+                            NavigationLink("Onboarding") { onboarding }
+                        }
 
-                // MARK: Core Screens
-                Section("Core Screens") {
-                    NavigationLink("Home") { home }
-                    NavigationLink("Income") { income }
-                    NavigationLink("Cards") { cards }
-                    NavigationLink("Presets") { presets }
-                    NavigationLink("Settings") { settings }
-                }
+                        // MARK: Core Screens
+                        Section("Core Screens") {
+                            NavigationLink("Home") { home }
+                            NavigationLink("Income") { income }
+                            NavigationLink("Cards") { cards }
+                            NavigationLink("Presets") { presets }
+                            NavigationLink("Settings") { settings }
+                        }
 
-                // MARK: Tips & Tricks
-                Section("Tips & Tricks") {
-                    NavigationLink("Shortcuts & Gestures") { tips }
+                        // MARK: Tips & Tricks
+                        Section("Tips & Tricks") {
+                            NavigationLink("Shortcuts & Gestures") { tips }
+                        }
+                    }
+                    .navigationTitle("Help")
+                }
+            } else {
+                NavigationView {
+                    List {
+                        // MARK: Getting Started
+                        Section("Getting Started") {
+                            NavigationLink("Introduction") { intro }
+                            NavigationLink("Onboarding") { onboarding }
+                        }
+
+                        // MARK: Core Screens
+                        Section("Core Screens") {
+                            NavigationLink("Home") { home }
+                            NavigationLink("Income") { income }
+                            NavigationLink("Cards") { cards }
+                            NavigationLink("Presets") { presets }
+                            NavigationLink("Settings") { settings }
+                        }
+
+                        // MARK: Tips & Tricks
+                        Section("Tips & Tricks") {
+                            NavigationLink("Shortcuts & Gestures") { tips }
+                        }
+                    }
+                    .navigationBarTitle("Help")
+                    #if os(iOS)
+                    .navigationViewStyle(StackNavigationViewStyle())
+                    #endif
                 }
             }
-            .navigationTitle("Help")
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
@@ -222,4 +254,3 @@ struct HelpView_Previews: PreviewProvider {
         HelpView()
     }
 }
-

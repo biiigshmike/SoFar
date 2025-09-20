@@ -131,7 +131,7 @@ struct CustomRecurrenceEditorView: View {
                                     onSave(draft)
                                     dismiss()
                                 }
-                                .fontWeight(.bold)
+                                .bold()
                             }
                         }
                 }
