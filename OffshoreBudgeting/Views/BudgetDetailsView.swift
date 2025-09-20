@@ -232,8 +232,6 @@ private struct SummarySection: View {
     let summary: BudgetSummary
     let selectedSegment: BudgetDetailsViewModel.Segment
 
-    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
-
     var body: some View {
         HStack(alignment: .top, spacing: DS.Spacing.l) {
             // MARK: Sum of Expenses
@@ -242,53 +240,94 @@ private struct SummarySection: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                Text(selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal, format: .currency(code: currencyCode))
+                Text(CurrencyFormatterHelper.string(for: selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal))
                     .font(.title3.weight(.semibold))
             }
 
             Spacer(minLength: 0)
 
             // MARK: Income/Savings Grid
-            Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
-                GridRow {
-                    Text("POTENTIAL INCOME")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Text("POTENTIAL SAVINGS")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
+                    GridRow {
+                        Text("POTENTIAL INCOME")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text("POTENTIAL SAVINGS")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
+                    GridRow {
+                        Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.plannedIncome)
+                        Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.savingsGood)
+                    }
+                    GridRow {
+                        Text("ACTUAL INCOME")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text("ACTUAL SAVINGS")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
+                    GridRow {
+                        Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.actualIncome)
+                        Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                    }
                 }
-                GridRow {
-                    Text(summary.potentialIncomeTotal, format: .currency(code: currencyCode))
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(DS.Colors.plannedIncome)
-                    Text(summary.potentialSavingsTotal, format: .currency(code: currencyCode))
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(DS.Colors.savingsGood)
-                }
-                GridRow {
-                    Text("ACTUAL INCOME")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Text("ACTUAL SAVINGS")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                }
-                GridRow {
-                    Text(summary.actualIncomeTotal, format: .currency(code: currencyCode))
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(DS.Colors.actualIncome)
-                    Text(summary.actualSavingsTotal, format: .currency(code: currencyCode))
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+            } else {
+                HStack(alignment: .top, spacing: DS.Spacing.m) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("POTENTIAL INCOME")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.plannedIncome)
+                        Text("ACTUAL INCOME")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.actualIncome)
+                    }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("POTENTIAL SAVINGS")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(DS.Colors.savingsGood)
+                        Text("ACTUAL SAVINGS")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                    }
                 }
             }
         }
@@ -300,8 +339,6 @@ private struct SummarySection: View {
 private struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
 
-    private var currencyCode: String { Locale.current.currency?.identifier ?? "USD" }
-
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: DS.Spacing.s) {
@@ -312,7 +349,7 @@ private struct CategoryTotalsRow: View {
                             .frame(width: 10, height: 10)
                         Text(cat.categoryName)
                             .font(.subheadline.weight(.semibold))
-                        Text(cat.amount, format: .currency(code: currencyCode))
+                        Text(CurrencyFormatterHelper.string(for: cat.amount))
                             .font(.subheadline.weight(.semibold))
                     }
                     .padding(.horizontal, DS.Spacing.m)
@@ -370,9 +407,9 @@ private struct FilterBar: View {
             }
             .pickerStyle(.segmented)
         }
-        .onChange(of: startDate) { onChanged() }
-        .onChange(of: endDate)   { onChanged() }
-        .onChange(of: sort)      { onChanged() }
+        .onChange(of: startDate) { _ in onChanged() }
+        .onChange(of: endDate)   { _ in onChanged() }
+        .onChange(of: sort)      { _ in onChanged() }
     }
 }
 
@@ -436,11 +473,11 @@ private struct PlannedListFR: View {
                                 .font(.title3.weight(.semibold))
                             HStack {
                                 Text("Planned:").foregroundStyle(.secondary)
-                                Text(item.plannedAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                                Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
                             }
                             HStack {
                                 Text("Actual:").foregroundStyle(.secondary)
-                                Text(item.actualAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                                Text(CurrencyFormatterHelper.string(for: item.actualAmount))
                             }
                         }
                         .padding(.vertical, 6)
@@ -631,7 +668,7 @@ private struct VariableListFR: View {
                             Spacer()
 
                             VStack(alignment: .trailing) {
-                                Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                                Text(CurrencyFormatterHelper.string(for: item.amount))
                                 Text(Self.mediumDate(item.transactionDate ?? .distantPast))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
@@ -764,5 +801,33 @@ private extension View {
         } else {
             self.listStyle(.plain)
         }
+    }
+}
+
+// MARK: - Currency Formatting Helper
+private enum CurrencyFormatterHelper {
+    private static let fallbackCurrencyCode = "USD"
+
+    static func string(for amount: Double) -> String {
+        if #available(iOS 15.0, macOS 12.0, *) {
+            return amount.formatted(.currency(code: currencyCode))
+        } else {
+            return legacyString(for: amount)
+        }
+    }
+
+    private static var currencyCode: String {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return Locale.current.currency?.identifier ?? fallbackCurrencyCode
+        } else {
+            return Locale.current.currencyCode ?? fallbackCurrencyCode
+        }
+    }
+
+    private static func legacyString(for amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
     }
 }
