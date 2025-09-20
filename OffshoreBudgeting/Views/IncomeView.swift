@@ -283,9 +283,7 @@ struct IncomeView: View {
                     }
                 }
                 .listStyle(.plain)
-                #if os(iOS)
-                .scrollIndicators(.hidden)
-                #endif
+                .ub_hideScrollIndicators()
                 .applyIfAvailableScrollContentBackgroundHidden()
                 .frame(minHeight: 50, maxHeight: 100) // compact pill; scroll when needed
             }

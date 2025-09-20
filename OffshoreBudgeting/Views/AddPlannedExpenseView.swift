@@ -203,7 +203,7 @@ struct AddPlannedExpenseView: View {
                 didApplyDefaultGlobal = true
             }
         }
-        .onChange(of: isAssigningToBudget) { _, newValue in
+        .onChange(of: isAssigningToBudget) { newValue in
             guard showAssignBudgetToggle else { return }
             if newValue {
                 vm.selectedBudgetID = vm.allBudgets.first?.objectID
@@ -361,14 +361,30 @@ private struct CategoryChipsRow: View {
                     #endif
                 }
             }
-            .presentationDetents([.medium])
+            // Guard presentationDetents for iOS 16+ only.
+            .modifier(PresentationDetentsCompat())
             .environment(\.managedObjectContext, viewContext)
         }
-        .onChange(of: categories.count) { _, _ in
+        .onChange(of: categories.count) { _ in
             if selectedCategoryID == nil, let first = categories.first {
                 selectedCategoryID = first.objectID
             }
         }
+    }
+}
+
+// A tiny compatibility wrapper to avoid directly calling presentationDetents on older OSes.
+private struct PresentationDetentsCompat: ViewModifier {
+    func body(content: Content) -> some View {
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        if #available(iOS 16.0, *) {
+            content.presentationDetents([.medium])
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 

@@ -83,7 +83,7 @@ struct OnboardingView: View {
         .onboardingPresentation()
         .animation(.easeInOut, value: step)
         .transition(.opacity)
-        .onChange(of: enableCloudSync) { _, newValue in
+        .onChange(of: enableCloudSync) { newValue in
             guard !newValue else { return }
             syncCardThemes = false
             syncAppTheme = false
@@ -153,7 +153,7 @@ private struct ThemeStep: View {
             .frame(maxWidth: .infinity)
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
-        .onChange(of: themeManager.selectedTheme) { _, newValue in
+        .onChange(of: themeManager.selectedTheme) { newValue in
             guard newValue != selectedTheme else { return }
             selectedTheme = newValue
         }
@@ -318,7 +318,7 @@ private struct CardsStep: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        NavigationStack {
+        navigationContainer {
             ZStack(alignment: .bottom) {
                 CardsView()
                 if showIntro {
@@ -361,6 +361,19 @@ private struct CardsStep: View {
         }
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.xxl)
+    }
+
+    // MARK: - Navigation container compatibility
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack { content() }
+        } else {
+            NavigationView { content() }
+            #if os(iOS)
+            .navigationViewStyle(.stack)
+            #endif
+        }
     }
 }
 
@@ -440,7 +453,7 @@ private struct CloudSyncStep: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: enableCloudSync) { _, newValue in
+        .onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }
@@ -545,7 +558,7 @@ private struct CategoriesStep: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        NavigationStack {
+        navigationContainer {
             ZStack(alignment: .bottom) {
                 ExpenseCategoryManagerView()
                 if showIntro {
@@ -586,6 +599,19 @@ private struct CategoriesStep: View {
         }
         .padding(.horizontal, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.xxl)
+    }
+
+    // MARK: - Navigation container compatibility
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack { content() }
+        } else {
+            NavigationView { content() }
+            #if os(iOS)
+            .navigationViewStyle(.stack)
+            #endif
+        }
     }
 }
 
@@ -860,4 +886,3 @@ private struct OnboardingBackgroundSurface: View {
         .blendMode(.screen)
     }
 }
-
