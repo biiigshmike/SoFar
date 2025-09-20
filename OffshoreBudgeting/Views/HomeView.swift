@@ -113,6 +113,8 @@ struct HomeView: View {
             } label: {
                 toolbarIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
             }
+            .frame(width: ToolbarButtonMetrics.dimension, height: ToolbarButtonMetrics.dimension)
+            .contentShape(Rectangle())
         }
 #endif
     }
