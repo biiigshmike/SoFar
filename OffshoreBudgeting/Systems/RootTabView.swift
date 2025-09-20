@@ -16,35 +16,35 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
-            NavigationStack { HomeView() }
+            navigationContainer { HomeView() }
                 .ub_navigationGlassBackground(
                     baseColor: themeManager.selectedTheme.glassBaseColor,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Home", systemImage: "house") }
 
-            NavigationStack { IncomeView() }
+            navigationContainer { IncomeView() }
                 .ub_navigationGlassBackground(
                     baseColor: themeManager.selectedTheme.glassBaseColor,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Income", systemImage: "calendar") }
 
-            NavigationStack { CardsView() }
+            navigationContainer { CardsView() }
                 .ub_navigationGlassBackground(
                     baseColor: themeManager.selectedTheme.glassBaseColor,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Cards", systemImage: "creditcard") }
 
-            NavigationStack { PresetsView() }
+            navigationContainer { PresetsView() }
                 .ub_navigationGlassBackground(
                     baseColor: themeManager.selectedTheme.glassBaseColor,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Presets", systemImage: "list.bullet.rectangle") }
 
-            NavigationStack { SettingsView() }
+            navigationContainer { SettingsView() }
                 .ub_navigationGlassBackground(
                     baseColor: themeManager.selectedTheme.glassBaseColor,
                     configuration: themeManager.glassConfiguration
@@ -63,11 +63,23 @@ struct RootTabView: View {
             ignoringSafeArea: .all
         )
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { _, _ in
+        .onChange(of: themeManager.selectedTheme) { _ in
             updateTabBarAppearance()
         }
-        .onChange(of: platformCapabilities) { _, _ in
+        .onChange(of: platformCapabilities) { _ in
             updateTabBarAppearance()
+        }
+    }
+
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack { content() }
+        } else {
+            NavigationView { content() }
+                #if os(iOS)
+                .navigationViewStyle(StackNavigationViewStyle())
+                #endif
         }
     }
 
@@ -89,9 +101,6 @@ struct RootTabView: View {
                 let resolvedTint = UIColor(themeManager.selectedTheme.resolvedTint)
                 applyOS26TabItemAppearance(
                     to: appearance,
-                    configuration: configuration,
-                    baseColor: UIColor(baseColor),
-                    blurStyle: blurStyle,
                     tintColor: resolvedTint
                 )
                 UITabBar.appearance().unselectedItemTintColor = resolvedTint.withAlphaComponent(0.72)
@@ -115,30 +124,18 @@ struct RootTabView: View {
 private extension RootTabView {
     func applyOS26TabItemAppearance(
         to appearance: UITabBarAppearance,
-        configuration: AppTheme.GlassConfiguration,
-        baseColor: UIColor,
-        blurStyle: UIBlurEffect.Style,
         tintColor: UIColor
     ) {
         appearance.stackedLayoutAppearance = makeTabItemAppearance(
             style: .stacked,
-            configuration: configuration,
-            baseColor: baseColor,
-            blurStyle: blurStyle,
             tintColor: tintColor
         )
         appearance.inlineLayoutAppearance = makeTabItemAppearance(
             style: .inline,
-            configuration: configuration,
-            baseColor: baseColor,
-            blurStyle: blurStyle,
             tintColor: tintColor
         )
         appearance.compactInlineLayoutAppearance = makeTabItemAppearance(
             style: .compactInline,
-            configuration: configuration,
-            baseColor: baseColor,
-            blurStyle: blurStyle,
             tintColor: tintColor
         )
     }
@@ -151,9 +148,6 @@ private extension RootTabView {
 
     func makeTabItemAppearance(
         style: UITabBarItemAppearance.Style,
-        configuration: AppTheme.GlassConfiguration,
-        baseColor: UIColor,
-        blurStyle: UIBlurEffect.Style,
         tintColor: UIColor
     ) -> UITabBarItemAppearance {
         let itemAppearance = UITabBarItemAppearance(style: style)
@@ -163,19 +157,6 @@ private extension RootTabView {
         configure(state: itemAppearance.selected, tintColor: tintColor, emphasis: 1.0)
         configure(state: itemAppearance.focused, tintColor: tintColor, emphasis: 1.0)
         configureDisabledState(itemAppearance.disabled, tintColor: tintColor)
-
-        let selectedAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.16, 0.92))
-        let focusedAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.12, 0.88))
-        let blurEffect = UIBlurEffect(style: blurStyle)
-
-        itemAppearance.normal.backgroundEffect = nil
-        itemAppearance.normal.backgroundColor = .clear
-
-        itemAppearance.selected.backgroundEffect = blurEffect
-        itemAppearance.selected.backgroundColor = baseColor.withAlphaComponent(selectedAlpha)
-
-        itemAppearance.focused.backgroundEffect = blurEffect
-        itemAppearance.focused.backgroundColor = baseColor.withAlphaComponent(focusedAlpha)
 
         return itemAppearance
     }
