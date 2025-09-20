@@ -63,12 +63,16 @@ enum DesignSystem {
         /// `underPageBackgroundColor` (fallback to `windowBackgroundColor` on older targets).
         static var containerBackground: Color {
             #if os(iOS) || os(tvOS)
-            return Color(UIColor.clear)
+            if #available(iOS 13.0, tvOS 13.0, *) {
+                return Color(UIColor.secondarySystemBackground)
+            } else {
+                return Color(UIColor(white: 0.92, alpha: 1.0))
+            }
             #elseif os(macOS)
             if #available(macOS 12.0, *) {
-                return Color(nsColor: NSColor.clear)
+                return Color(nsColor: NSColor.underPageBackgroundColor)
             } else {
-                return Color(nsColor: NSColor.clear)
+                return Color(nsColor: NSColor.windowBackgroundColor)
             }
             #else
             return Color.gray.opacity(0.12)
