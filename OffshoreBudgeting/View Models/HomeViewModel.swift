@@ -38,7 +38,7 @@ struct HomeViewAlert: Identifiable {
 
 // MARK: - BudgetSummary (View Model DTO)
 /// Immutable data passed to the card view for rendering.
-struct BudgetSummary: Identifiable, Equatable {
+struct BudgetSummary: Identifiable, Equatable, Sendable {
 
     // MARK: Identity
     /// Stable identifier derived from the managed object's ID.
@@ -50,7 +50,7 @@ struct BudgetSummary: Identifiable, Equatable {
     let periodEnd: Date
 
     // MARK: Variable Spend (Unplanned) by Category
-    struct CategorySpending: Identifiable, Equatable {
+    struct CategorySpending: Identifiable, Equatable, Sendable {
         let id = UUID()
         let categoryName: String
         let hexColor: String?
@@ -172,27 +172,48 @@ final class HomeViewModel: ObservableObject {
     /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
     func refresh() async {
-        let (start, end) = period.range(containing: selectedDate)
+        CoreDataService.shared.ensureLoaded()
+        await CoreDataService.shared.waitUntilStoresLoaded()
 
-        // Fetch budgets overlapping period and matching the selected budget period
-        let budgets: [Budget] = fetchBudgets(overlapping: start...end).filter { budget in
-            guard let s = budget.startDate, let e = budget.endDate else { return false }
-            return period.matches(startDate: s, endDate: e)
-        }
+        let currentPeriod = period
+        let (start, end) = currentPeriod.range(containing: selectedDate)
 
-        // Build summaries
-        let summaries: [BudgetSummary] = budgets.compactMap { (budget: Budget) -> BudgetSummary? in
-            guard let startDate = budget.startDate, let endDate = budget.endDate else { return nil }
-            return buildSummary(for: budget, periodStart: startDate, periodEnd: endDate)
-        }
-        .sorted { (first: BudgetSummary, second: BudgetSummary) -> Bool in
-            (first.periodStart, first.budgetName) < (second.periodStart, second.budgetName)
-        }
+        let summaries = await loadSummaries(period: currentPeriod, dateRange: start...end)
+
+        guard !Task.isCancelled else { return }
 
         if summaries.isEmpty {
             self.state = .empty
         } else {
             self.state = .loaded(summaries)
+        }
+    }
+
+    private func loadSummaries(period: BudgetPeriod, dateRange: ClosedRange<Date>) async -> [BudgetSummary] {
+        await withCheckedContinuation { continuation in
+            let backgroundContext = CoreDataService.shared.newBackgroundContext()
+            backgroundContext.perform {
+                let budgets = Self.fetchBudgets(overlapping: dateRange, in: backgroundContext).filter { budget in
+                    guard let start = budget.startDate, let end = budget.endDate else { return false }
+                    return period.matches(startDate: start, endDate: end)
+                }
+
+                let summaries: [BudgetSummary] = budgets.compactMap { budget -> BudgetSummary? in
+                    guard let startDate = budget.startDate, let endDate = budget.endDate else { return nil }
+                    return Self.buildSummary(
+                        for: budget,
+                        periodStart: startDate,
+                        periodEnd: endDate,
+                        in: backgroundContext
+                    )
+                }
+                .sorted { (first: BudgetSummary, second: BudgetSummary) -> Bool in
+                    (first.periodStart, first.budgetName) < (second.periodStart, second.budgetName)
+                }
+
+                backgroundContext.reset()
+                continuation.resume(returning: summaries)
+            }
         }
     }
 
@@ -240,7 +261,7 @@ final class HomeViewModel: ObservableObject {
     // MARK: fetchBudgets(overlapping:)
     /// Returns budgets that overlap the given date range.
     /// - Parameter range: The date window to match against budget start/end.
-    private func fetchBudgets(overlapping range: ClosedRange<Date>) -> [Budget] {
+    private static func fetchBudgets(overlapping range: ClosedRange<Date>, in context: NSManagedObjectContext) -> [Budget] {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
         let start = range.lowerBound
         let end = range.upperBound
@@ -264,7 +285,12 @@ final class HomeViewModel: ObservableObject {
     ///   - periodStart: Inclusive start date for calculations.
     ///   - periodEnd: Inclusive end date for calculations.
     /// - Returns: A `BudgetSummary` for display.
-    private func buildSummary(for budget: Budget, periodStart: Date, periodEnd: Date) -> BudgetSummary {
+    private static func buildSummary(
+        for budget: Budget,
+        periodStart: Date,
+        periodEnd: Date,
+        in context: NSManagedObjectContext
+    ) -> BudgetSummary {
         // MARK: Planned Expenses (attached to budget)
         let plannedFetch = NSFetchRequest<PlannedExpense>(entityName: "PlannedExpense")
         plannedFetch.predicate = NSPredicate(format: "budget == %@", budget)
