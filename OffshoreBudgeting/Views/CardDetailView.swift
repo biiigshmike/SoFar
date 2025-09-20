@@ -46,74 +46,7 @@ struct CardDetailView: View {
     
     // MARK: Body
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(card.name)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-                .toolbar {
-                #if os(iOS)
-                    // iOS placements
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Done") { onDone() }
-                            .keyboardShortcut(.escape, modifiers: [])
-                    }
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        if isSearchActive {
-                            TextField("Search expenses", text: $viewModel.searchText)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 200)
-                                .focused($isSearchFieldFocused)
-                            Button("Cancel") {
-                                withAnimation {
-                                    isSearchActive = false
-                                    viewModel.searchText = ""
-                                    isSearchFieldFocused = false
-                                }
-                            }
-                        } else {
-                            IconOnlyButton(systemName: "magnifyingglass") {
-                                withAnimation { isSearchActive = true }
-                                isSearchFieldFocused = true
-                            }
-                            IconOnlyButton(systemName: "pencil") {
-                                onEdit()
-                            }
-                        }
-                    }
-                #else
-                    // macOS placements
-                    ToolbarItem(placement: .automatic) {
-                        Button("Done") { onDone() }
-                            .keyboardShortcut(.escape, modifiers: [])
-                    }
-                    ToolbarItemGroup(placement: .automatic) {
-                        if isSearchActive {
-                            TextField("Search expenses", text: $viewModel.searchText)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 200)
-                                .focused($isSearchFieldFocused)
-                            Button("Cancel") {
-                                withAnimation {
-                                    isSearchActive = false
-                                    viewModel.searchText = ""
-                                    isSearchFieldFocused = false
-                                }
-                            }
-                        } else {
-                            IconOnlyButton(systemName: "magnifyingglass") {
-                                withAnimation { isSearchActive = true }
-                                isSearchFieldFocused = true
-                            }
-                            IconOnlyButton(systemName: "pencil") {
-                                onEdit()
-                            }
-                        }
-                    }
-                #endif
-                }
-        }
+        navigationContainer
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
@@ -141,7 +74,7 @@ struct CardDetailView: View {
             ignoringSafeArea: .all
         )
     }
-    
+
     // MARK: content
     @ViewBuilder
     private var content: some View {
@@ -187,6 +120,97 @@ struct CardDetailView: View {
     }
     }
 
+    private var currencyCode: String {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return Locale.current.currency?.identifier ?? "USD"
+        } else {
+            return Locale.current.currencyCode ?? "USD"
+        }
+    }
+
+    // MARK: navigationContainer
+    @ViewBuilder
+    private var navigationContainer: some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            NavigationStack {
+                navigationContent
+            }
+        } else {
+            NavigationView {
+                navigationContent
+            }
+        }
+    }
+
+    private var navigationContent: some View {
+        content
+            .navigationTitle(card.name)
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
+            .toolbar {
+            #if os(iOS)
+                // iOS placements
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") { onDone() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                }
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    if isSearchActive {
+                        TextField("Search expenses", text: $viewModel.searchText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 200)
+                            .focused($isSearchFieldFocused)
+                        Button("Cancel") {
+                            withAnimation {
+                                isSearchActive = false
+                                viewModel.searchText = ""
+                                isSearchFieldFocused = false
+                            }
+                        }
+                    } else {
+                        IconOnlyButton(systemName: "magnifyingglass") {
+                            withAnimation { isSearchActive = true }
+                            isSearchFieldFocused = true
+                        }
+                        IconOnlyButton(systemName: "pencil") {
+                            onEdit()
+                        }
+                    }
+                }
+            #else
+                // macOS placements
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") { onDone() }
+                        .keyboardShortcut(.escape, modifiers: [])
+                }
+                ToolbarItemGroup(placement: .automatic) {
+                    if isSearchActive {
+                        TextField("Search expenses", text: $viewModel.searchText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
+                            .focused($isSearchFieldFocused)
+                        Button("Cancel") {
+                            withAnimation {
+                                isSearchActive = false
+                                viewModel.searchText = ""
+                                isSearchFieldFocused = false
+                            }
+                        }
+                    } else {
+                        IconOnlyButton(systemName: "magnifyingglass") {
+                            withAnimation { isSearchActive = true }
+                            isSearchFieldFocused = true
+                        }
+                        IconOnlyButton(systemName: "pencil") {
+                            onEdit()
+                        }
+                    }
+                }
+            #endif
+            }
+    }
+
     
     // MARK: totalsSection
     private func totalsSection(total: Double) -> some View {
@@ -194,7 +218,7 @@ struct CardDetailView: View {
             Text("TOTAL SPENT")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(total, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(total, format: .currency(code: currencyCode))
                 .font(.system(size: 32, weight: .bold, design: .rounded))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -216,7 +240,7 @@ struct CardDetailView: View {
                         .frame(width: 10, height: 10)
                     Text(cat.name)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(cat.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    Text(cat.amount, format: .currency(code: currencyCode))
                         .monospacedDigit()
                         .font(.callout.weight(.semibold))
                 }
@@ -241,7 +265,7 @@ struct CardDetailView: View {
                     .padding(.vertical, 8)
             } else {
                 ForEach(viewModel.filteredExpenses) { expense in
-                    ExpenseRow(expense: expense)
+                    ExpenseRow(expense: expense, currencyCode: currencyCode)
                     Divider().opacity(0.15)
                 }
             }
@@ -260,6 +284,7 @@ struct CardDetailView: View {
 // MARK: - ExpenseRow
 private struct ExpenseRow: View {
     let expense: CardExpense
+    let currencyCode: String
     private let df: DateFormatter = {
         let d = DateFormatter()
         d.dateStyle = .medium
@@ -275,7 +300,7 @@ private struct ExpenseRow: View {
                 }
             }
             Spacer()
-            Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(expense.amount, format: .currency(code: currencyCode))
                 .font(.body.weight(.semibold)).monospacedDigit()
         }
         .contentShape(Rectangle())
