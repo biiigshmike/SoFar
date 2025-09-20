@@ -29,57 +29,17 @@ struct TranslucentButtonStyle: ButtonStyle {
     @ViewBuilder
     private func background(isPressed: Bool, radius: CGFloat) -> some View {
         if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-            let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-
-            shape
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    shape
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(isPressed ? 0.32 : 0.45),
-                                    tint.opacity(isPressed ? 0.42 : 0.58)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .blendMode(.plusLighter)
-                )
-                .overlay(
-                    shape
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(isPressed ? 0.18 : 0.24),
-                                    Color.clear
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .blur(radius: isPressed ? 18 : 22)
-                        .offset(y: isPressed ? 6 : 10)
-                        .allowsHitTesting(false)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(tint.opacity(isPressed ? 0.32 : 0.4))
+                .background(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(.ultraThinMaterial)
                 )
                 .shadow(
-                    color: Color.white.opacity(isPressed ? 0.22 : 0.34),
-                    radius: isPressed ? 8 : 14,
+                    color: tint.opacity(isPressed ? 0.26 : 0.38),
+                    radius: isPressed ? 14 : 24,
                     x: 0,
-                    y: isPressed ? 2 : 4
-                )
-                .shadow(
-                    color: tint.opacity(isPressed ? 0.16 : 0.26),
-                    radius: isPressed ? 18 : 28,
-                    x: 0,
-                    y: isPressed ? 8 : 16
-                )
-                .shadow(
-                    color: Color.black.opacity(isPressed ? 0.04 : 0.06),
-                    radius: isPressed ? 4 : 6,
-                    x: 0,
-                    y: isPressed ? 1 : 3
+                    y: isPressed ? 10 : 16
                 )
                 .compositingGroup()
         } else {
@@ -87,48 +47,21 @@ struct TranslucentButtonStyle: ButtonStyle {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(isPressed ? 0.28 : 0.4),
-                            tint.opacity(isPressed ? 0.6 : 0.72)
+                            tint.opacity(0.95),
+                            tint.opacity(0.75)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: tint.opacity(isPressed ? 0.2 : 0.28), radius: isPressed ? 10 : 18, x: 0, y: isPressed ? 6 : 12)
-                .shadow(color: Color.white.opacity(isPressed ? 0.16 : 0.24), radius: isPressed ? 4 : 6, x: 0, y: isPressed ? 1 : 2)
+                .shadow(color: tint.opacity(0.28), radius: 12, x: 0, y: 8)
         }
     }
 
     @ViewBuilder
     private func highlight(radius: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-
-        shape
-            .inset(by: 0.5)
-            .stroke(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(capabilities.supportsOS26Translucency ? 0.65 : 0.32),
-                        Color.white.opacity(capabilities.supportsOS26Translucency ? 0.18 : 0.12)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: capabilities.supportsOS26Translucency ? 1.1 : 1
-            )
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .stroke(Color.white.opacity(capabilities.supportsOS26Translucency ? 0.28 : 0.18), lineWidth: 1)
             .blendMode(.screen)
-            .overlay(
-                shape
-                    .stroke(Color.white.opacity(capabilities.supportsOS26Translucency ? 0.22 : 0.14), lineWidth: 0.6)
-                    .blur(radius: 1.2)
-                    .blendMode(.screen)
-                    .mask(
-                        LinearGradient(
-                            colors: [Color.white, Color.clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-            )
     }
 }
