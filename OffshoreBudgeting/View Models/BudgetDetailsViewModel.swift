@@ -47,6 +47,14 @@ final class BudgetDetailsViewModel: ObservableObject {
     @Published private(set) var plannedExpenses: [PlannedExpense] = []
     @Published private(set) var unplannedExpenses: [UnplannedExpense] = []
 
+    private struct IncomeTotals: Equatable {
+        var planned: Double
+        var actual: Double
+
+        static let zero = IncomeTotals(planned: 0, actual: 0)
+    }
+    @Published private(set) var incomeTotals: IncomeTotals = .zero
+
     // MARK: Summary
     /// Computed summary of totals used by the header.
     var summary: BudgetSummary? {
@@ -77,8 +85,6 @@ final class BudgetDetailsViewModel: ObservableObject {
         let categoryBreakdown = categoryMap
             .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
             .sorted { $0.amount > $1.amount }
-
-        let incomeTotals = (try? BudgetIncomeCalculator.totals(for: DateInterval(start: startDate, end: endDate), context: context)) ?? (planned: 0, actual: 0)
 
         return BudgetSummary(
             id: budget.objectID,
@@ -198,8 +204,18 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Re-fetches rows for current filters (date window driven on fetch).
     func refreshRows() async {
-        plannedExpenses = fetchPlannedExpenses(for: budget, in: startDate...endDate)
-        unplannedExpenses = fetchUnplannedExpenses(for: budget, in: startDate...endDate)
+        let range = normalizedRange()
+        plannedExpenses = fetchPlannedExpenses(for: budget, in: range)
+        unplannedExpenses = fetchUnplannedExpenses(for: budget, in: range)
+
+        if let totals = try? BudgetIncomeCalculator.totals(
+            for: DateInterval(start: range.lowerBound, end: range.upperBound),
+            context: context
+        ) {
+            incomeTotals = IncomeTotals(planned: totals.planned, actual: totals.actual)
+        } else {
+            incomeTotals = .zero
+        }
     }
 
     /// Resets the date window to the budget's own period.
@@ -252,5 +268,11 @@ final class BudgetDetailsViewModel: ObservableObject {
             NSSortDescriptor(key: "descriptionText", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))
         ]
         return (try? context.fetch(req)) ?? []
+    }
+
+    private func normalizedRange() -> ClosedRange<Date> {
+        let lower = min(startDate, endDate)
+        let upper = max(startDate, endDate)
+        return lower...upper
     }
 }
