@@ -844,7 +844,7 @@ private extension Edge.Set {
     var isEmpty: Bool { self == [] }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
     func ub_ignoreSafeArea(edges: Edge.Set) -> some View {
         #if os(iOS) || os(tvOS) || os(macOS) || os(watchOS)
