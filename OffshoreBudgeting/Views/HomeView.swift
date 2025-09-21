@@ -71,9 +71,9 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootTabHeader(title: "Home")
-            // MARK: Header (Month chevrons + DatePicker)
-            header
+            RootViewTopPlanes(title: "Home") {
+                header
+            }
 
             // MARK: Content Container
             // ZStack gives us a stable area below the header.
@@ -319,7 +319,7 @@ struct HomeView: View {
             .labelsHidden()
             .ub_compactDatePickerStyle()
         }
-        .padding(.horizontal, DS.Spacing.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Helpers

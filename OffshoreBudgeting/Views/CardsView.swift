@@ -62,7 +62,7 @@ struct CardsView: View {
 
     private var baseView: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootTabHeader(title: "Cards")
+            RootViewTopPlanes(title: "Cards")
             contentView
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

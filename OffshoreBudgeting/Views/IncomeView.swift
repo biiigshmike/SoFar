@@ -71,6 +71,30 @@ struct IncomeView: View {
         static let iconSize: CGFloat = 18
     }
 
+    private var addIncomeActionPlane: some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            addIncomeButton
+        }
+    }
+
+    private var addIncomeButton: some View {
+        Button { beginAddingIncome() } label: {
+            Image(systemName: "plus")
+                .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
+                .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
+                .foregroundStyle(Color.white)
+                .background(
+                    Circle()
+                        .fill(themeManager.selectedTheme.resolvedTint)
+                )
+                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add Income")
+        .accessibilityIdentifier("add_income_button")
+    }
+
     // MARK: Calendar
     /// Calendar configured to begin weeks on Sunday.
     private var sundayFirstCalendar: Calendar {
@@ -83,21 +107,8 @@ struct IncomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                RootTabHeader(title: "Income") {
-                    Button { beginAddingIncome() } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
-                            .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
-                            .foregroundStyle(Color.white)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.selectedTheme.resolvedTint)
-                            )
-                            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add Income")
-                    .accessibilityIdentifier("add_income_button")
+                RootViewTopPlanes(title: "Income") {
+                    addIncomeActionPlane
                 }
 
                 VStack(spacing: 12) {

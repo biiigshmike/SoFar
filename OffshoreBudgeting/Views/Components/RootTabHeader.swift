@@ -10,10 +10,13 @@ struct RootTabHeader<Trailing: View>: View {
     private let horizontalPadding: CGFloat
     @ViewBuilder private let trailing: () -> Trailing
 
+    /// Shared default padding value so other "planes" can align with the title row.
+    static let defaultHorizontalPadding: CGFloat = DS.Spacing.l
+
     // MARK: Init
     init(
         title: String,
-        horizontalPadding: CGFloat = DS.Spacing.l,
+        horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
@@ -21,7 +24,7 @@ struct RootTabHeader<Trailing: View>: View {
         self.trailing = trailing
     }
 
-    init(title: String, horizontalPadding: CGFloat = DS.Spacing.l) where Trailing == EmptyView {
+    init(title: String, horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding) where Trailing == EmptyView {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.trailing = { EmptyView() }
@@ -29,7 +32,7 @@ struct RootTabHeader<Trailing: View>: View {
 
     // MARK: Body
     var body: some View {
-        HStack(spacing: DS.Spacing.m) {
+        HStack(alignment: .top, spacing: DS.Spacing.m) {
             Text(title)
                 .font(.largeTitle.bold())
                 .lineLimit(1)
