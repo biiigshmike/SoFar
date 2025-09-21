@@ -9,6 +9,9 @@ import SwiftUI
 import MijickCalendarView
 import CoreData
 import Combine
+#if os(iOS)
+import UIKit
+#endif
 
 /// Wrapper to provide `Identifiable` conformance for sheet presentation.
 private struct AddIncomeSheetDate: Identifiable {
@@ -46,7 +49,14 @@ struct IncomeView: View {
 
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
-    private let calendarCardMinimumHeight: CGFloat = 380
+    /// Caps the minimum height to roughly half of the active screen so shorter devices don’t lose
+    /// the sections below the calendar while taller devices keep the spacious layout.
+    private var calendarCardMinimumHeight: CGFloat {
+        let base: CGFloat = 380
+        let screenHeight = UIScreen.main.bounds.height
+        let adaptiveCap = screenHeight * 0.5
+        return max(320, min(base, adaptiveCap))
+    }
 #endif
 
     // MARK: Calendar
@@ -59,6 +69,75 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
+        contentContainer
+        // Keep list in sync without deprecated APIs
+            .ub_onChange(of: viewModel.selectedDate) {
+                viewModel.reloadForSelectedDay(forceMonthReload: false)
+            }
+        // MARK: Present Add Income Form
+            .sheet(item: $addIncomeInitialDate, onDismiss: {
+                // Reload entries for the selected day after adding/saving
+                viewModel.reloadForSelectedDay(forceMonthReload: true)
+            }) { item in
+                AddIncomeFormView(
+                    incomeObjectID: nil,
+                    budgetObjectID: nil,
+                    initialDate: item.value
+                )
+            }
+        // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
+            .sheet(item: $editingIncome, onDismiss: {
+                // Reload after edit
+                viewModel.reloadForSelectedDay(forceMonthReload: true)
+            }) { income in
+                AddIncomeFormView(
+                    incomeObjectID: income.objectID,
+                    budgetObjectID: nil,
+                    initialDate: nil
+                )
+            }
+            .onAppear {
+                // Ensure the calendar opens on today's date and load entries
+                let initial = viewModel.selectedDate ?? Date()
+                navigate(to: initial)
+            }
+            .ub_tabNavigationTitle("Income")
+            .ub_surfaceBackground(
+                themeManager.selectedTheme,
+                configuration: themeManager.glassConfiguration,
+                ignoringSafeArea: .all
+            )
+        // MARK: Toolbar (+ button) → Present Add Income sheet
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
+                    } label: {
+                        Label("Add Income", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("add_income_button")
+                }
+            }
+    }
+
+    // MARK: Layout Containers
+    @ViewBuilder
+    private var contentContainer: some View {
+#if os(iOS)
+        ScrollView {
+            contentBody
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .ub_hideScrollIndicators()
+        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
+#else
+        contentBody
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .top)
+#endif
+    }
+
+    private var contentBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
 #if os(macOS) || targetEnvironment(macCatalyst)
             Text("Income")
@@ -71,69 +150,18 @@ struct IncomeView: View {
 #endif
 
             VStack(spacing: 12) {
-            // Calendar section in a padded card
-            calendarSection
+                // Calendar section in a padded card
+                calendarSection
 
-            // Weekly summary bar
-            weeklySummaryBar
+                // Weekly summary bar
+                weeklySummaryBar
 
-            // Selected day entries
-            selectedDaySection
+                // Selected day entries
+                selectedDaySection
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .frame(maxHeight: .infinity, alignment: .top)
-        // Keep list in sync without deprecated APIs
-        .ub_onChange(of: viewModel.selectedDate) {
-            viewModel.reloadForSelectedDay(forceMonthReload: false)
-        }
-        // Pull to refresh to reload entries for the selected day
-        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
-        // MARK: Present Add Income Form
-        .sheet(item: $addIncomeInitialDate, onDismiss: {
-            // Reload entries for the selected day after adding/saving
-            viewModel.reloadForSelectedDay(forceMonthReload: true)
-        }) { item in
-            AddIncomeFormView(
-                incomeObjectID: nil,
-                budgetObjectID: nil,
-                initialDate: item.value
-            )
-        }
-        // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
-        .sheet(item: $editingIncome, onDismiss: {
-            // Reload after edit
-            viewModel.reloadForSelectedDay(forceMonthReload: true)
-        }) { income in
-            AddIncomeFormView(
-                incomeObjectID: income.objectID,
-                budgetObjectID: nil,
-                initialDate: nil
-            )
-        }
-        .onAppear {
-            // Ensure the calendar opens on today's date and load entries
-            let initial = viewModel.selectedDate ?? Date()
-            navigate(to: initial)
-        }
-        .ub_tabNavigationTitle("Income")
-        .ub_surfaceBackground(
-            themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration,
-            ignoringSafeArea: .all
-        )
-        // MARK: Toolbar (+ button) → Present Add Income sheet
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
-                } label: {
-                    Label("Add Income", systemImage: "plus")
-                }
-                .accessibilityIdentifier("add_income_button")
-            }
-        }
     }
 
     // MARK: - Calendar Section
@@ -277,8 +305,8 @@ struct IncomeView: View {
     }
 
     // MARK: - Selected Day Section (WITH swipe to delete & edit)
-    /// Displays the selected date and a list of income entries for that day.
-    /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
+    /// Displays the selected date and a scrollable list of income entries for that day.
+    /// Entries keep the unified swipe actions while the lightweight stack scrolls when tall.
     private var selectedDaySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
@@ -296,26 +324,29 @@ struct IncomeView: View {
                     .font(.subheadline)
                     .padding(.vertical, 4)
             } else {
-                // MARK: Scrollable List with Unified Swipe Actions
-                List {
-                    ForEach(entries, id: \.objectID) { income in
-                        IncomeRow(
-                            income: income,
-                            onEdit: { beginEditingIncome(income) },
-                            onDelete: { handleDeleteRequest(income) }
-                        )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+                // MARK: Scrollable Stack with Unified Swipe Actions
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(entries.enumerated()), id: \.element.objectID) { index, income in
+                            IncomeRow(
+                                income: income,
+                                onEdit: { beginEditingIncome(income) },
+                                onDelete: { handleDeleteRequest(income) }
+                            )
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+
+                            if index < entries.count - 1 {
+                                Divider()
+                                    .padding(.leading, 12)
+                            }
+                        }
                     }
-                    .onDelete { indexSet in
-                        handleDelete(indexSet, in: entries)
-                    }
+                    .padding(.vertical, 4)
                 }
-                .listStyle(.plain)
                 .ub_hideScrollIndicators()
-                .applyIfAvailableScrollContentBackgroundHidden()
-                .frame(minHeight: 50, maxHeight: 100) // compact pill; scroll when needed
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 50, maxHeight: 120)
             }
         }
         .padding()
@@ -461,10 +492,6 @@ struct IncomeView: View {
         }
     }
 
-    private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
-        let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
-        targets.forEach { handleDeleteRequest($0) }
-    }
 }
 
 // MARK: - IncomeRow
