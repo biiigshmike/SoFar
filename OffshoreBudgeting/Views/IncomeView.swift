@@ -34,6 +34,9 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+#if os(iOS)
+    @Environment(\.colorScheme) private var colorScheme
+#endif
 
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
@@ -51,6 +54,12 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 380
+
+    /// Determines whether we should replace the navigation bar chrome with a custom
+    /// safe-area header (primarily for compact-width environments like iPhone).
+    private var usesCompactTitleHeader: Bool {
+        horizontalSizeClass == .compact
+    }
 #endif
 
     private var topPadding: CGFloat {
@@ -72,10 +81,14 @@ struct IncomeView: View {
 #if os(iOS)
     @ViewBuilder
     private var iOSTitleHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Income")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: DS.Spacing.s) {
+            HStack(spacing: DS.Spacing.m) {
+                Text("Income")
+                    .font(.largeTitle.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                headerAddIncomeButton
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, DS.Spacing.xxl)
@@ -86,6 +99,11 @@ struct IncomeView: View {
         )
     }
 #endif
+
+    private func beginAddingIncome(for date: Date? = nil) {
+        let baseDate = date ?? viewModel.selectedDate ?? Date()
+        addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
+    }
 
     // MARK: Calendar
     /// Calendar configured to begin weeks on Sunday.
@@ -159,20 +177,16 @@ struct IncomeView: View {
         )
 #if os(iOS)
         .safeAreaInset(edge: .top, spacing: 0) {
-            iOSTitleHeader
+            if usesCompactTitleHeader {
+                iOSTitleHeader
+            }
         }
 #endif
         // MARK: Toolbar (+ button) → Present Add Income sheet
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
-                } label: {
-                    Label("Add Income", systemImage: "plus")
-                }
-                .accessibilityIdentifier("add_income_button")
-            }
-        }
+        .toolbar { incomeToolbarContent }
+#if os(iOS)
+        .applyNavigationBarVisibility(compactHeader: usesCompactTitleHeader)
+#endif
     }
 
     // MARK: - Calendar Section
@@ -240,7 +254,7 @@ struct IncomeView: View {
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
-                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? today)
+                    beginAddingIncome(for: viewModel.selectedDate ?? today)
                 }
             )
             #else
@@ -288,6 +302,7 @@ struct IncomeView: View {
             themeManager.selectedTheme.secondaryBackground,
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 
@@ -313,6 +328,7 @@ struct IncomeView: View {
             themeManager.selectedTheme.secondaryBackground,
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .shadow(radius: 1, y: 1)
     }
@@ -339,6 +355,7 @@ struct IncomeView: View {
             themeManager.selectedTheme.secondaryBackground,
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .shadow(radius: 1, y: 1)
         .layoutPriority(2)
@@ -465,6 +482,52 @@ struct IncomeView: View {
            let next = cal.date(byAdding: .month, value: 1, to: startOfCurrent) {
             navigate(to: next)
         }
+    }
+
+#if os(iOS)
+    @ViewBuilder
+    private var headerAddIncomeButton: some View {
+        Button {
+            beginAddingIncome()
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(
+                    themeManager.selectedTheme.resolvedTint,
+                    themeManager.selectedTheme.resolvedTint.opacity(colorScheme == .dark ? 0.28 : 0.18)
+                )
+                .font(.system(size: 26, weight: .semibold))
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .accessibilityLabel("Add Income")
+        .accessibilityIdentifier("add_income_button")
+    }
+#endif
+
+    @ToolbarContentBuilder
+    private var incomeToolbarContent: some ToolbarContent {
+#if os(iOS)
+        if !usesCompactTitleHeader {
+            ToolbarItem(placement: .primaryAction) {
+                toolbarAddIncomeButton
+            }
+        }
+#else
+        ToolbarItem(placement: .primaryAction) {
+            toolbarAddIncomeButton
+        }
+#endif
+    }
+
+    private var toolbarAddIncomeButton: some View {
+        Button {
+            beginAddingIncome()
+        } label: {
+            Label("Add Income", systemImage: "plus")
+        }
+        .accessibilityIdentifier("add_income_button")
     }
 
     // MARK: - Edit Flow Helpers
@@ -619,3 +682,16 @@ private extension View {
     }
 
 }
+
+#if os(iOS)
+private extension View {
+    @ViewBuilder
+    func applyNavigationBarVisibility(compactHeader: Bool) -> some View {
+        if #available(iOS 16.0, *) {
+            self.toolbar(compactHeader ? .hidden : .visible, for: .navigationBar)
+        } else {
+            self.navigationBarHidden(compactHeader)
+        }
+    }
+}
+#endif
