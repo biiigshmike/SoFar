@@ -54,55 +54,64 @@ struct PresetsView: View {
     }
 
     private var content: some View {
-        Group {
-            // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
-            if viewModel.items.isEmpty {
-                UBEmptyState(
-                    iconSystemName: "list.bullet.rectangle",
-                    title: "Presets",
-                    message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
-                    primaryButtonTitle: "Add Preset",
-                    onPrimaryTap: { isPresentingAddSheet = true }
-                )
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            Text("Presets")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, DS.Spacing.l)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            } else {
-                // MARK: Non-empty List
-                List {
-                    ForEach(viewModel.items) { item in
-                        PresetRowView(
-                            item: item,
-                            onAssignTapped: { template in
-                                sheetTemplateToAssign = template
-                            }
-                        )
-                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                        .unifiedSwipeActions(
-                            presetsSwipeConfig,
-                            onEdit: { editingTemplate = item.template },
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    templateToDelete = item.template
-                                } else {
-                                    delete(template: item.template)
+                .padding(.top, DS.Spacing.l)
+
+            Group {
+                // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
+                if viewModel.items.isEmpty {
+                    UBEmptyState(
+                        iconSystemName: "list.bullet.rectangle",
+                        title: "Presets",
+                        message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
+                        primaryButtonTitle: "Add Preset",
+                        onPrimaryTap: { isPresentingAddSheet = true }
+                    )
+                    .padding(.horizontal, DS.Spacing.l)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                } else {
+                    // MARK: Non-empty List
+                    List {
+                        ForEach(viewModel.items) { item in
+                            PresetRowView(
+                                item: item,
+                                onAssignTapped: { template in
+                                    sheetTemplateToAssign = template
                                 }
+                            )
+                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                            .unifiedSwipeActions(
+                                presetsSwipeConfig,
+                                onEdit: { editingTemplate = item.template },
+                                onDelete: {
+                                    if confirmBeforeDelete {
+                                        templateToDelete = item.template
+                                    } else {
+                                        delete(template: item.template)
+                                    }
+                                }
+                            )
+                        }
+                        .onDelete { indexSet in
+                            let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
+                            if confirmBeforeDelete, let first = targets.first {
+                                templateToDelete = first
+                            } else {
+                                targets.forEach(delete(template:))
                             }
-                        )
-                    }
-                    .onDelete { indexSet in
-                        let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
-                        if confirmBeforeDelete, let first = targets.first {
-                            templateToDelete = first
-                        } else {
-                            targets.forEach(delete(template:))
                         }
                     }
+                    .listStyle(.plain)
+                    .applyIfAvailableScrollContentBackgroundHidden()
                 }
-                .listStyle(.plain)
-                .applyIfAvailableScrollContentBackgroundHidden()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // MARK: Data lifecycle
         .onAppear { viewModel.loadTemplates(using: viewContext) }
         .onReceive(

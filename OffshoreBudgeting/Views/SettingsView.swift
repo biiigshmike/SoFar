@@ -27,6 +27,11 @@ struct SettingsView: View {
         ScrollView {
 
             VStack(spacing: 16) {
+                Text("Settings")
+                    .font(.largeTitle.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, DS.Spacing.l)
 
                 // MARK: General Hero Card
                 SettingsCard(

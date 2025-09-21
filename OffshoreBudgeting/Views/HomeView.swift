@@ -71,6 +71,11 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            Text("Home")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.l)
+                .padding(.top, DS.Spacing.l)
 
             // MARK: Header (Month chevrons + DatePicker)
             header
@@ -319,7 +324,7 @@ struct HomeView: View {
             .labelsHidden()
             .ub_compactDatePickerStyle()
         }
-        .padding(.horizontal, DS.Spacing.s)
+        .padding(.horizontal, DS.Spacing.l)
     }
 
     // MARK: Helpers
