@@ -37,9 +37,6 @@ struct OffshoreBudgetingApp: App {
         labelAppearance.adjustsFontSizeToFitWidth = true
         labelAppearance.minimumScaleFactor = 0.5
         labelAppearance.lineBreakMode = .byClipping
-
-        // Restore the system's large, leading navigation titles across the app.
-        UINavigationBar.appearance().prefersLargeTitles = true
 #endif
     }
     
