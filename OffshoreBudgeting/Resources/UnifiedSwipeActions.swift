@@ -90,7 +90,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
     let customActions: [UnifiedSwipeCustomAction]
-    @Environment(\.colorScheme) private var environmentColorScheme
 
     func body(content: Content) -> some View {
         let base = content.contextMenu {
@@ -152,7 +151,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             triggerDelete()
         } label: {
             UnifiedSwipeActionButtonLabel(
-                colorSchemeOverride: environmentColorScheme,
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
                 tint: config.deleteTint,
@@ -168,7 +166,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     private func editButton(onEdit: @escaping () -> Void) -> some View {
         Button { onEdit() } label: {
             UnifiedSwipeActionButtonLabel(
-                colorSchemeOverride: environmentColorScheme,
                 title: config.editTitle,
                 systemImageName: config.editSystemImageName,
                 tint: config.editTint,
@@ -185,7 +182,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         ForEach(customActions) { item in
             Button(role: item.role) { item.action() } label: {
                 UnifiedSwipeActionButtonLabel(
-                    colorSchemeOverride: environmentColorScheme,
                     title: item.title,
                     systemImageName: item.systemImageName,
                     tint: item.tint,
@@ -200,8 +196,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
     // MARK: - Label
     private struct UnifiedSwipeActionButtonLabel: View {
-        @Environment(\.colorScheme) private var fallbackColorScheme
-        let colorSchemeOverride: ColorScheme?
+        @Environment(\.colorScheme) private var colorScheme
         let title: String
         let systemImageName: String
         let tint: Color
@@ -233,18 +228,18 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
         private var resolvedIconColor: Color {
             if let override = iconOverride { return override }
-            if activeColorScheme == .dark { return .black }       // minimal rule: always black in dark mode
+            if colorScheme == .dark { return .black }       // minimal rule: always black in dark mode
             return tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                return activeColorScheme == .dark ? Color.white.opacity(0.95)
-                                                  : resolvedTint(opacity: 0.65, colorScheme: activeColorScheme)
+                return colorScheme == .dark ? Color.white.opacity(0.95)
+                                            : resolvedTint(opacity: 0.65)
             }
             #if canImport(UIKit) || canImport(AppKit)
-            if let c = tint.ub_resolvedRGBA(for: activeColorScheme) {
-                if activeColorScheme == .dark {
+            if let c = tint.ub_resolvedRGBA(for: colorScheme) {
+                if colorScheme == .dark {
                     let blend: CGFloat = 0.35
                     return Color(red: Double(c.red*(1-blend)),
                                 green: Double(c.green*(1-blend)),
@@ -255,14 +250,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 }
             }
             #endif
-            return tint.opacity(activeColorScheme == .dark ? 0.35 : 0.25)
+            return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
 
-        private var activeColorScheme: ColorScheme {
-            colorSchemeOverride ?? fallbackColorScheme
-        }
-
-        private func resolvedTint(opacity: Double, colorScheme: ColorScheme) -> Color {
+        private func resolvedTint(opacity: Double) -> Color {
             #if canImport(UIKit) || canImport(AppKit)
             if let c = tint.ub_resolvedRGBA(for: colorScheme) {
                 return Color(red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha)).opacity(opacity)
