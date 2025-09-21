@@ -59,23 +59,21 @@ struct IncomeView: View {
             Text("Income")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.top, DS.Spacing.l)
 #endif
 
-            VStack(spacing: DS.Spacing.m) {
-                // Calendar section in a padded card
-                calendarSection
+            VStack(spacing: 12) {
+            // Calendar section in a padded card
+            calendarSection
 
-                // Weekly summary bar
-                weeklySummaryBar
+            // Weekly summary bar
+            weeklySummaryBar
 
-                // Selected day entries
-                selectedDaySection
+            // Selected day entries
+            selectedDaySection
             }
         }
-        .padding(.horizontal, DS.Spacing.l)
-        .padding(.vertical, DS.Spacing.m)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
