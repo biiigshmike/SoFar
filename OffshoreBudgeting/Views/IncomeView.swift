@@ -44,6 +44,11 @@ struct IncomeView: View {
     @State private var showDeleteAlert: Bool = false
     @State private var showDeleteOptions: Bool = false
 
+#if os(iOS)
+    /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
+    private let calendarCardMinimumHeight: CGFloat = 380
+#endif
+
     // MARK: Calendar
     /// Calendar configured to begin weeks on Sunday.
     private var sundayFirstCalendar: Calendar {
@@ -229,9 +234,15 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
+#if os(iOS)
+            .frame(maxHeight: .infinity)
+#endif
             #endif
         }
         .frame(maxWidth: .infinity)
+#if os(iOS)
+        .frame(minHeight: calendarCardMinimumHeight, alignment: .top)
+#endif
         .layoutPriority(1)
         .padding(12)
         .background(
