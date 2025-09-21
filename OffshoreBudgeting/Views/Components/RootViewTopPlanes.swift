@@ -8,7 +8,7 @@ struct RootViewTopPlanes<ActionContent: View>: View {
     private let horizontalPadding: CGFloat
     private let actionContent: ActionContent?
 
-    init(title: String, horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding) where ActionContent == EmptyView {
+    init(title: String, horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding) where ActionContent == EmptyView {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.actionContent = nil
@@ -16,7 +16,7 @@ struct RootViewTopPlanes<ActionContent: View>: View {
 
     init(
         title: String,
-        horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding,
+        horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         @ViewBuilder actions: () -> ActionContent
     ) {
         self.title = title

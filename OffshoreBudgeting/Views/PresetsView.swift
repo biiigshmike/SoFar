@@ -57,7 +57,7 @@ struct PresetsView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.s) {
                 RootViewTopPlanes(title: "Presets")
                 presetsActionPlane
-                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
             }
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)

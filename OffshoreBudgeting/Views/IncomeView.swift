@@ -98,7 +98,7 @@ struct IncomeView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.s) {
                     RootViewTopPlanes(title: "Income")
                     addIncomeActionPlane
-                        .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+                        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
                 }
 
                 VStack(spacing: 12) {

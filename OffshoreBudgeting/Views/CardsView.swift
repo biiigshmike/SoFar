@@ -65,7 +65,7 @@ struct CardsView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.s) {
                 RootViewTopPlanes(title: "Cards")
                 cardsActionPlane
-                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
             }
             contentView
         }
