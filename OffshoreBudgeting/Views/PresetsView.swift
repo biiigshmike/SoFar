@@ -156,7 +156,12 @@ struct PresetsView: View {
             Image(systemName: "plus")
                 .font(.system(size: 18, weight: .semibold))
         }
-        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+        .buttonStyle(
+            TranslucentButtonStyle(
+                tint: themeManager.selectedTheme.resolvedTint,
+                metrics: .rootActionIcon
+            )
+        )
         .accessibilityLabel("Add Preset Planned Expense")
     }
 
