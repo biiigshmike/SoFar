@@ -71,8 +71,10 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Home") {
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                RootViewTopPlanes(title: "Home")
                 header
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
             }
 
             // MARK: Content Container
@@ -305,7 +307,10 @@ struct HomeView: View {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Helpers
