@@ -24,206 +24,208 @@ struct SettingsView: View {
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
 
     var body: some View {
-        ScrollView {
+        RootTabScaffold(
+            title: "Settings",
+            macHeaderPadding: EdgeInsets(
+                top: DS.Spacing.l,
+                leading: horizontalPadding,
+                bottom: DS.Spacing.l,
+                trailing: horizontalPadding
+            )
+        ) {
+            ScrollView {
 
-            VStack(spacing: cardStackSpacing) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-                Text("Settings")
-                    .font(.largeTitle.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, DS.Spacing.l)
-#endif
-
-                // MARK: General Hero Card
-                SettingsCard(
-                    iconSystemName: "gearshape",
-                    title: "General",
-                    subtitle: "Manage default behaviors."
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Confirm Before Deleting", showsTopDivider: false) {
-                            Toggle("", isOn: $viewModel.confirmBeforeDelete)
+                VStack(spacing: cardStackSpacing) {
+                    // MARK: General Hero Card
+                    SettingsCard(
+                        iconSystemName: "gearshape",
+                        title: "General",
+                        subtitle: "Manage default behaviors."
+                    ) {
+                        VStack(spacing: 0) {
+                            SettingsRow(title: "Confirm Before Deleting", showsTopDivider: false) {
+                                Toggle("", isOn: $viewModel.confirmBeforeDelete)
+                                    .labelsHidden()
+                            }
+                            SettingsRow(title: "Default Budget Period") {
+                                Picker("", selection: $viewModel.budgetPeriod) {
+                                    ForEach(BudgetPeriod.selectableCases) { period in
+                                        Text(period.displayName).tag(period)
+                                    }
+                                }
                                 .labelsHidden()
+                            }
                         }
-                        SettingsRow(title: "Default Budget Period") {
-                            Picker("", selection: $viewModel.budgetPeriod) {
-                                ForEach(BudgetPeriod.selectableCases) { period in
-                                    Text(period.displayName).tag(period)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    // MARK: Appearance Card
+                    SettingsCard(
+                        iconSystemName: "paintpalette",
+                        title: "Appearance",
+                        subtitle: "Select a theme for the app.",
+                    ) {
+                        VStack(spacing: 0) {
+                            SettingsRow(title: "Theme", showsTopDivider: false) {
+                                Picker("", selection: $themeManager.selectedTheme) {
+                                    ForEach(AppTheme.allCases) { theme in
+                                        Text(theme.displayName).tag(theme)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
+
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    // MARK: Sync Card
+                    SettingsCard(
+                        iconSystemName: "icloud",
+                        title: "iCloud Services",
+                        subtitle: "Sync your data and settings across your devices signed into the same iCloud account.",
+                    ) {
+                        VStack(spacing: 0) {
+                            SettingsRow(title: "Enable iCloud Sync", showsTopDivider: false) {
+                                Toggle("", isOn: $viewModel.enableCloudSync)
+                                    .labelsHidden()
+                            }
+                            SettingsRow(title: "Sync Card Themes Across Devices") {
+                                Toggle("", isOn: $viewModel.syncCardThemes)
+                                    .labelsHidden()
+                            }
+                            .disabled(!viewModel.enableCloudSync)
+                            .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+
+                            SettingsRow(title: "Sync App Theme Across Devices") {
+                                Toggle("", isOn: $viewModel.syncAppTheme)
+                                    .labelsHidden()
+                            }
+                            .disabled(!viewModel.enableCloudSync)
+                            .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                            SettingsRow(title: "Sync Budget Period Across Devices") {
+                                Toggle("", isOn: $viewModel.syncBudgetPeriod)
+                                    .labelsHidden()
+                            }
+                            .disabled(!viewModel.enableCloudSync)
+                            .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+    //                // MARK: Calendar Card
+    //                SettingsCard(
+    //                    iconSystemName: "calendar",
+    //                    title: "Calendar",
+    //                    subtitle: "Choose how your income calendar is presented."
+    //                ) {
+    //                    VStack(spacing: 0) {
+    //                        SettingsRow(title: "Horizontal Scrolling") {
+    //                            Toggle("", isOn: $viewModel.calendarHorizontal)
+    //                                .labelsHidden()
+    //                        }
+    //                    }
+    //                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    //                }
+
+                    // MARK: Presets Card
+                    SettingsCard(
+                        iconSystemName: "list.bullet.rectangle",
+                        title: "Presets",
+                        subtitle: "Planned Expenses default to being created as a Preset Planned Expense."
+                    ) {
+                        VStack(spacing: 0) {
+                            SettingsRow(title: "Use in Future Budgets by Default", showsTopDivider: false) {
+                                Toggle("", isOn: $viewModel.presetsDefaultUseInFutureBudgets)
+                                    .labelsHidden()
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+
+                    // MARK: Expenses Card (with sub-page)
+                    SettingsCard(
+                        iconSystemName: "tag",
+                        title: "Expense Categories",
+                        subtitle: "Manage expense categories for Variable Expenses."
+                    ) {
+                        VStack(spacing: 0) {
+                            NavigationLink {
+                                ExpenseCategoryManagerView()
+                                    .environment(\.managedObjectContext, viewContext)
+                            } label: {
+                                SettingsRow(title: "Manage Categories", detail: "Open", showsTopDivider: false) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.secondary)
                                 }
                             }
-                            .labelsHidden()
+                            .buttonStyle(.plain)
                         }
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
 
-                // MARK: Appearance Card
-                SettingsCard(
-                    iconSystemName: "paintpalette",
-                    title: "Appearance",
-                    subtitle: "Select a theme for the app.",
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Theme", showsTopDivider: false) {
-                            Picker("", selection: $themeManager.selectedTheme) {
-                                ForEach(AppTheme.allCases) { theme in
-                                    Text(theme.displayName).tag(theme)
+                    // MARK: Help Card
+                    SettingsCard(
+                        iconSystemName: "book",
+                        title: "Help",
+                        subtitle: "Open the in-app guide.",
+                    ) {
+                        VStack(spacing: 0) {
+                            NavigationLink {
+                                HelpView()
+                            } label: {
+                                SettingsRow(title: "View Help", detail: "Open", showsTopDivider: false) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.secondary)
                                 }
                             }
-                            .labelsHidden()
+                            .buttonStyle(.plain)
                         }
-
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
 
-                // MARK: Sync Card
-                SettingsCard(
-                    iconSystemName: "icloud",
-                    title: "iCloud Services",
-                    subtitle: "Sync your data and settings across your devices signed into the same iCloud account.",
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Enable iCloud Sync", showsTopDivider: false) {
-                            Toggle("", isOn: $viewModel.enableCloudSync)
-                                .labelsHidden()
-                        }
-                        SettingsRow(title: "Sync Card Themes Across Devices") {
-                            Toggle("", isOn: $viewModel.syncCardThemes)
-                                .labelsHidden()
-                        }
-                        .disabled(!viewModel.enableCloudSync)
-                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
-
-                        SettingsRow(title: "Sync App Theme Across Devices") {
-                            Toggle("", isOn: $viewModel.syncAppTheme)
-                                .labelsHidden()
-                        }
-                        .disabled(!viewModel.enableCloudSync)
-                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
-                        SettingsRow(title: "Sync Budget Period Across Devices") {
-                            Toggle("", isOn: $viewModel.syncBudgetPeriod)
-                                .labelsHidden()
-                        }
-                        .disabled(!viewModel.enableCloudSync)
-                        .opacity(viewModel.enableCloudSync ? 1 : 0.5)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
-//                // MARK: Calendar Card
-//                SettingsCard(
-//                    iconSystemName: "calendar",
-//                    title: "Calendar",
-//                    subtitle: "Choose how your income calendar is presented."
-//                ) {
-//                    VStack(spacing: 0) {
-//                        SettingsRow(title: "Horizontal Scrolling") {
-//                            Toggle("", isOn: $viewModel.calendarHorizontal)
-//                                .labelsHidden()
-//                        }
-//                    }
-//                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-//                }
-
-                // MARK: Presets Card
-                SettingsCard(
-                    iconSystemName: "list.bullet.rectangle",
-                    title: "Presets",
-                    subtitle: "Planned Expenses default to being created as a Preset Planned Expense."
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsRow(title: "Use in Future Budgets by Default", showsTopDivider: false) {
-                            Toggle("", isOn: $viewModel.presetsDefaultUseInFutureBudgets)
-                                .labelsHidden()
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
-                // MARK: Expenses Card (with sub-page)
-                SettingsCard(
-                    iconSystemName: "tag",
-                    title: "Expense Categories",
-                    subtitle: "Manage expense categories for Variable Expenses."
-                ) {
-                    VStack(spacing: 0) {
-                        NavigationLink {
-                            ExpenseCategoryManagerView()
-                                .environment(\.managedObjectContext, viewContext)
-                        } label: {
-                            SettingsRow(title: "Manage Categories", detail: "Open", showsTopDivider: false) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.secondary)
+                    // MARK: Onboarding Card
+                    SettingsCard(
+                        iconSystemName: "questionmark.circle",
+                        title: "Onboarding",
+                        subtitle: "Replay the initial setup flow.",
+                    ) {
+                        VStack(spacing: 0) {
+                            Button {
+                                didCompleteOnboarding = false
+                            } label: {
+                                SettingsRow(title: "Repeat Onboarding Process", showsTopDivider: false) { EmptyView() }
                             }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
 
-                // MARK: Help Card
-                SettingsCard(
-                    iconSystemName: "book",
-                    title: "Help",
-                    subtitle: "Open the in-app guide.",
-                ) {
-                    VStack(spacing: 0) {
-                        NavigationLink {
-                            HelpView()
-                        } label: {
-                            SettingsRow(title: "View Help", detail: "Open", showsTopDivider: false) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.secondary)
+                    // MARK: Reset Card
+                    SettingsCard(
+                        iconSystemName: "trash",
+                        title: "Reset",
+                        subtitle: "Clear all stored data."
+                    ) {
+                        VStack(spacing: 0) {
+                            Button(role: .destructive) {
+                                showResetAlert = true
+                            } label: {
+                                SettingsRow(title: "Erase All Data", showsTopDivider: false) { EmptyView() }
                             }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
 
-                // MARK: Onboarding Card
-                SettingsCard(
-                    iconSystemName: "questionmark.circle",
-                    title: "Onboarding",
-                    subtitle: "Replay the initial setup flow.",
-                ) {
-                    VStack(spacing: 0) {
-                        Button {
-                            didCompleteOnboarding = false
-                        } label: {
-                            SettingsRow(title: "Repeat Onboarding Process", showsTopDivider: false) { EmptyView() }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-
-                // MARK: Reset Card
-                SettingsCard(
-                    iconSystemName: "trash",
-                    title: "Reset",
-                    subtitle: "Clear all stored data."
-                ) {
-                    VStack(spacing: 0) {
-                        Button(role: .destructive) {
-                            showResetAlert = true
-                        } label: {
-                            SettingsRow(title: "Erase All Data", showsTopDivider: false) { EmptyView() }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, scrollViewVerticalPadding)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, scrollViewVerticalPadding)
-            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_surfaceBackground(
@@ -233,7 +235,6 @@ struct SettingsView: View {
         )
         .accentColor(themeManager.selectedTheme.resolvedTint)
         .tint(themeManager.selectedTheme.resolvedTint)
-        .ub_tabNavigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
             Button("Erase", role: .destructive) {
                 try? CoreDataService.shared.wipeAllData()

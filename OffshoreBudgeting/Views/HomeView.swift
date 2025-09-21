@@ -35,10 +35,11 @@ struct HomeView: View {
 
     // MARK: Body
     var body: some View {
-        mainLayout
+        RootTabScaffold(title: "Home") {
+            mainLayout
+        }
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ub_tabNavigationTitle("Home")
         .toolbar { toolbarContent() }
         .refreshable { await vm.refresh() }
         .task {
@@ -71,14 +72,6 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Home")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.top, DS.Spacing.l)
-#endif
-
             // MARK: Header (Month chevrons + DatePicker)
             header
 
