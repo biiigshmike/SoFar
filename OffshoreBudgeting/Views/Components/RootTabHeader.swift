@@ -5,6 +5,7 @@ import SwiftUI
 /// (such as summary buttons or quick actions).
 struct RootTabHeader<Trailing: View>: View {
     // MARK: Properties
+    @Environment(\.safeAreaInsets) private var safeAreaInsets
     private let title: String
     private let horizontalPadding: CGFloat
     @ViewBuilder private let trailing: () -> Trailing
@@ -47,7 +48,9 @@ struct RootTabHeader<Trailing: View>: View {
         #if os(macOS) || targetEnvironment(macCatalyst)
         return DS.Spacing.l
         #else
-        return DS.Spacing.xl
+        let basePadding = DS.Spacing.xxl
+        let adjusted = safeAreaInsets.top + DS.Spacing.m
+        return min(max(basePadding, adjusted), basePadding + DS.Spacing.l)
         #endif
     }
 }

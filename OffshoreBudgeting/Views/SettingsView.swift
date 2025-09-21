@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.safeAreaInsets) private var safeAreaInsets
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert: Bool = false
@@ -215,7 +216,8 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, scrollViewVerticalPadding)
+            .padding(.top, scrollViewTopPadding)
+            .padding(.bottom, scrollViewBottomPadding)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -256,11 +258,20 @@ struct SettingsView: View {
         #endif
     }
 
-    private var scrollViewVerticalPadding: CGFloat {
+    private var scrollViewTopPadding: CGFloat {
         #if os(iOS)
-        return horizontalSizeClass == .compact ? 10 : 20
+        return horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
         #else
-        return 20
+        return DS.Spacing.l
+        #endif
+    }
+
+    private var scrollViewBottomPadding: CGFloat {
+        #if os(iOS)
+        let base = horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
+        return safeAreaInsets.bottom + base
+        #else
+        return DS.Spacing.l
         #endif
     }
 
