@@ -58,7 +58,7 @@ struct RecurrencePickerView: View {
                     Text(p.rawValue).tag(p)
                 }
             }
-            .onChange(of: selectedPreset) { newValue in
+            .onChange(of: selectedPreset) { _, newValue in
                 applyPresetChange(newValue)
             }
 
@@ -66,13 +66,19 @@ struct RecurrencePickerView: View {
             switch selectedPreset {
             case .weekly, .biWeekly:
                 WeekdayPicker(selected: $selectedWeekday)
-                    .onChange(of: selectedWeekday) { _ in applyPresetChange(selectedPreset) }
+                    .onChange(of: selectedWeekday) {
+                        applyPresetChange(selectedPreset)
+                    }
             case .semiMonthly:
                 HStack(spacing: 12) {
                     DayOfMonthPicker(title: "First day", selection: $firstDay)
-                        .onChange(of: firstDay) { _ in applyPresetChange(selectedPreset) }
+                        .onChange(of: firstDay) {
+                            applyPresetChange(selectedPreset)
+                        }
                     DayOfMonthPicker(title: "Second day", selection: $secondDay)
-                        .onChange(of: secondDay) { _ in applyPresetChange(selectedPreset) }
+                        .onChange(of: secondDay) {
+                            applyPresetChange(selectedPreset)
+                        }
                 }
             default:
                 EmptyView()
@@ -80,11 +86,15 @@ struct RecurrencePickerView: View {
 
             // End Date Controls
             Toggle("Set End Date", isOn: $hasEndDate)
-                .onChange(of: hasEndDate) { _ in applyPresetChange(selectedPreset) }
+                .onChange(of: hasEndDate) {
+                    applyPresetChange(selectedPreset)
+                }
 
             if hasEndDate {
                 DatePicker("End Date", selection: $endDate, displayedComponents: [.date])
-                    .onChange(of: endDate) { _ in applyPresetChange(selectedPreset) }
+                    .onChange(of: endDate) {
+                        applyPresetChange(selectedPreset)
+                    }
             }
 
             // Custom Editor Launch
