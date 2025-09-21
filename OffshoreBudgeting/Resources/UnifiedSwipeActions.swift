@@ -210,7 +210,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
                 tint: config.deleteTint,
-                iconOverride: .white
+                iconOverride: config.deleteTint.ub_contrastingForegroundColor
             )
         }
         .tint(config.deleteTint)
@@ -244,7 +244,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                     title: item.title,
                     systemImageName: item.systemImageName,
                     tint: item.tint,
-                    iconOverride: item.role == .destructive ? .white : nil
+                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
                 )
             }
             .tint(item.tint)
