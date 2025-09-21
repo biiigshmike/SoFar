@@ -41,8 +41,8 @@ struct HelpView: View {
                     .navigationTitle("Help")
             }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         .frame(minWidth: 400, minHeight: 500)
@@ -103,8 +103,8 @@ struct HelpView: View {
                 }
             }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         .frame(minWidth: 400, minHeight: 500)

@@ -47,8 +47,8 @@ struct CardDetailView: View {
     // MARK: Body
     var body: some View {
         navigationContainer
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         .task { await viewModel.load() }
@@ -68,8 +68,8 @@ struct CardDetailView: View {
             .presentationSizing(.fitted)   // <- ensures the sheet respects the view’s ideal size
             #endif
         }
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )

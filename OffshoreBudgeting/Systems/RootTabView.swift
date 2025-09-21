@@ -18,48 +18,48 @@ struct RootTabView: View {
     var body: some View {
         TabView {
             navigationContainer { HomeView() }
-                .ub_navigationGlassBackground(
-                    baseColor: themeManager.selectedTheme.glassBaseColor,
+                .ub_navigationBackground(
+                    theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Home", systemImage: "house") }
 
             navigationContainer { IncomeView() }
-                .ub_navigationGlassBackground(
-                    baseColor: themeManager.selectedTheme.glassBaseColor,
+                .ub_navigationBackground(
+                    theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Income", systemImage: "calendar") }
 
             navigationContainer { CardsView() }
-                .ub_navigationGlassBackground(
-                    baseColor: themeManager.selectedTheme.glassBaseColor,
+                .ub_navigationBackground(
+                    theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Cards", systemImage: "creditcard") }
 
             navigationContainer { PresetsView() }
-                .ub_navigationGlassBackground(
-                    baseColor: themeManager.selectedTheme.glassBaseColor,
+                .ub_navigationBackground(
+                    theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Presets", systemImage: "list.bullet.rectangle") }
 
             navigationContainer { SettingsView() }
-                .ub_navigationGlassBackground(
-                    baseColor: themeManager.selectedTheme.glassBaseColor,
+                .ub_navigationBackground(
+                    theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         // Give the tab chrome its own glass background so macOS matches iOS.
-        .ub_chromeGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_chromeBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         // Keep the page background as well.
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
@@ -92,20 +92,25 @@ struct RootTabView: View {
         #if canImport(UIKit)
         DispatchQueue.main.async {
             let appearance = UITabBarAppearance()
-            let palette = themeManager.selectedTheme.tabBarPalette
+            let theme = themeManager.selectedTheme
+            let palette = theme.tabBarPalette
 
-            if platformCapabilities.supportsOS26Translucency {
+            if theme.usesGlassMaterials && platformCapabilities.supportsOS26Translucency {
                 appearance.configureWithTransparentBackground()
                 let configuration = themeManager.glassConfiguration
                 let blurStyle = configuration.glass.material.uiBlurEffectStyle
                 appearance.backgroundEffect = UIBlurEffect(style: blurStyle)
 
-                let baseColor = themeManager.selectedTheme.glassBaseColor
+                let baseColor = theme.glassBaseColor
                 let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
                 appearance.backgroundColor = UIColor(baseColor).withAlphaComponent(opacity)
+            } else if theme.usesGlassMaterials {
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = UIColor(theme.glassBaseColor)
             } else {
                 appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(themeManager.selectedTheme.glassBaseColor)
+                appearance.backgroundEffect = nil
+                appearance.backgroundColor = UIColor(theme.background)
             }
             applyTabItemAppearance(
                 to: appearance,

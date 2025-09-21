@@ -112,6 +112,22 @@ extension View {
         )
     }
 
+    /// Applies either the custom glass background or a plain system background
+    /// depending on the active theme.
+    func ub_surfaceBackground(
+        _ theme: AppTheme,
+        configuration: AppTheme.GlassConfiguration,
+        ignoringSafeArea edges: Edge.Set = []
+    ) -> some View {
+        modifier(
+            UBSurfaceBackgroundModifier(
+                theme: theme,
+                configuration: configuration,
+                ignoresSafeAreaEdges: edges
+            )
+        )
+    }
+
     /// Applies a translucent navigation bar treatment that mirrors the
     /// OS 26 surface configuration when supported by the platform.
     /// Uses the provided base color and configuration to build a subtle
@@ -123,6 +139,21 @@ extension View {
         modifier(
             UBNavigationGlassModifier(
                 baseColor: baseColor,
+                configuration: configuration
+            )
+        )
+    }
+
+    /// Applies navigation styling appropriate for the current theme. System
+    /// theme favors the platform's plain backgrounds while custom themes keep
+    /// the glass treatment.
+    func ub_navigationBackground(
+        theme: AppTheme,
+        configuration: AppTheme.GlassConfiguration
+    ) -> some View {
+        modifier(
+            UBNavigationBackgroundModifier(
+                theme: theme,
                 configuration: configuration
             )
         )
@@ -140,6 +171,19 @@ extension View {
         modifier(
             UBChromeGlassModifier(
                 baseColor: baseColor,
+                configuration: configuration
+            )
+        )
+    }
+
+    /// Applies theme-aware chrome styling for tab bars and other container chrome.
+    func ub_chromeBackground(
+        theme: AppTheme,
+        configuration: AppTheme.GlassConfiguration
+    ) -> some View {
+        modifier(
+            UBChromeBackgroundModifier(
+                theme: theme,
                 configuration: configuration
             )
         )
@@ -243,6 +287,26 @@ private struct UBGlassBackgroundModifier: ViewModifier {
     }
 }
 
+private struct UBSurfaceBackgroundModifier: ViewModifier {
+    let theme: AppTheme
+    let configuration: AppTheme.GlassConfiguration
+    let ignoresSafeAreaEdges: Edge.Set
+
+    func body(content: Content) -> some View {
+        if theme.usesGlassMaterials {
+            content.ub_glassBackground(
+                theme.glassBaseColor,
+                configuration: configuration,
+                ignoringSafeArea: ignoresSafeAreaEdges
+            )
+        } else {
+            content.background(
+                theme.background.ub_ignoreSafeArea(edges: ignoresSafeAreaEdges)
+            )
+        }
+    }
+}
+
 private struct UBNavigationGlassModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
 
@@ -341,6 +405,57 @@ private struct UBChromeGlassModifier: ViewModifier {
         #else
         content
         #endif
+    }
+}
+
+private struct UBChromeBackgroundModifier: ViewModifier {
+    let theme: AppTheme
+    let configuration: AppTheme.GlassConfiguration
+
+    func body(content: Content) -> some View {
+        if theme.usesGlassMaterials {
+            content.ub_chromeGlassBackground(
+                baseColor: theme.glassBaseColor,
+                configuration: configuration
+            )
+        } else {
+            content.background(theme.background)
+        }
+    }
+}
+
+private struct UBNavigationBackgroundModifier: ViewModifier {
+    let theme: AppTheme
+    let configuration: AppTheme.GlassConfiguration
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if theme.usesGlassMaterials {
+            content.ub_navigationGlassBackground(
+                baseColor: theme.glassBaseColor,
+                configuration: configuration
+            )
+        } else {
+            #if os(iOS)
+            if #available(iOS 16.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(theme.background, for: .navigationBar)
+            } else {
+                content
+            }
+            #elseif os(macOS)
+            if #available(macOS 13.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(theme.background, for: .windowToolbar)
+            } else {
+                content
+            }
+            #else
+            content
+            #endif
+        }
     }
 }
 

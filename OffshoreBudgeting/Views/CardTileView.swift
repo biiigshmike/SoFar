@@ -26,6 +26,8 @@ struct CardTileView: View {
     /// Optional tap callback.
     var onTap: (() -> Void)? = nil
 
+    @EnvironmentObject private var themeManager: ThemeManager
+
     // MARK: Layout
     private let cornerRadius: CGFloat = DS.Radius.card
     private let aspectRatio: CGFloat = 1.586 // credit card proportion
@@ -38,7 +40,7 @@ struct CardTileView: View {
                 // MARK: Card Background (STATIC gradient + pattern)
                 ZStack {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(backgroundGradient)
+                        .fill(backgroundStyle)
                     card.theme
                         .patternOverlay(cornerRadius: cornerRadius)
                         .blendMode(.overlay)
@@ -75,8 +77,8 @@ struct CardTileView: View {
 private extension CardTileView {
 
     // MARK: Background Gradient (STATIC)
-    var backgroundGradient: LinearGradient {
-        card.theme.gradient()
+    var backgroundStyle: AnyShapeStyle {
+        card.theme.backgroundStyle(for: themeManager.selectedTheme)
     }
 
     // MARK: Selection Ring (always visible, not clipped)

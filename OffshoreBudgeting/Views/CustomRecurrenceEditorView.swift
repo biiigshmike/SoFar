@@ -138,8 +138,8 @@ struct CustomRecurrenceEditorView: View {
                 .navigationViewStyle(StackNavigationViewStyle())
             }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
     }

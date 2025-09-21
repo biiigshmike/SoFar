@@ -27,6 +27,32 @@ private func labelCGColor(_ alpha: CGFloat) -> CGColor {
     #endif
 }
 
+private func rgbaComponents(from color: Color) -> (Double, Double, Double, Double)? {
+    #if canImport(UIKit)
+    let platformColor = UIColor(color)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    guard platformColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
+    return (Double(red), Double(green), Double(blue), Double(alpha))
+    #elseif canImport(AppKit)
+    let platformColor = NSColor(color)
+    let converted = platformColor.usingColorSpace(.deviceRGB)
+        ?? platformColor.usingColorSpace(.sRGB)
+        ?? platformColor.usingColorSpace(.genericRGB)
+    guard let converted else { return nil }
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+    return (Double(red), Double(green), Double(blue), Double(alpha))
+    #else
+    return nil
+    #endif
+}
+
 // MARK: - CardTheme
 /// Palette + behavior for card backgrounds and overlay patterns.
 enum CardTheme: String, CaseIterable, Identifiable, Codable {
@@ -107,6 +133,22 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
     /// Use the leading gradient color as the selection glow.
     var glowColor: Color { colors.0 }
 
+    /// Single flat color used when gradients should be avoided (System theme).
+    var flatColor: Color {
+        let (top, bottom) = colors
+        guard
+            let a = rgbaComponents(from: top),
+            let b = rgbaComponents(from: bottom)
+        else { return top }
+
+        let red = (a.0 + b.0) / 2
+        let green = (a.1 + b.1) / 2
+        let blue = (a.2 + b.2) / 2
+        let alpha = (a.3 + b.3) / 2
+
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+
     // MARK: Gradient (tilt-aware)
     /// Returns a background gradient that can subtly rotate with motion.
     /// - Parameters:
@@ -120,6 +162,16 @@ enum CardTheme: String, CaseIterable, Identifiable, Codable {
         let start = UnitPoint(x: 1 - dx, y: dy)
         let end   = UnitPoint(x: dx, y: 1 - dy)
         return LinearGradient(colors: [a, b], startPoint: start, endPoint: end)
+    }
+
+    /// Returns a shape style that respects the current app theme preference
+    /// for gradients versus flat fills.
+    func backgroundStyle(for appTheme: AppTheme) -> AnyShapeStyle {
+        if appTheme.usesGlassMaterials {
+            return AnyShapeStyle(gradient())
+        } else {
+            return AnyShapeStyle(flatColor)
+        }
     }
 }
 

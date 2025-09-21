@@ -192,13 +192,14 @@ struct AddCardFormView: View {
 private struct ThemeSwatch: View {
     let theme: CardTheme
     let isSelected: Bool
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         ZStack {
             // Background: theme gradient + subtle outline
             ZStack {
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .fill(theme.gradient()) // function returns LinearGradient
+                    .fill(theme.backgroundStyle(for: themeManager.selectedTheme))
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                     .stroke(Color.white.opacity(0.06), lineWidth: 1)
             }
