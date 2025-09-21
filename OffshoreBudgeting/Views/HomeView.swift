@@ -130,6 +130,12 @@ struct HomeView: View {
             } label: {
                 toolbarIconLabel(title: "Add Budget", systemImage: "plus")
             }
+            .buttonStyle(
+                TranslucentButtonStyle(
+                    tint: themeManager.selectedTheme.resolvedTint,
+                    metrics: .rootActionLabel
+                )
+            )
 
         case .loaded(let summaries):
             if let first = summaries.first {
