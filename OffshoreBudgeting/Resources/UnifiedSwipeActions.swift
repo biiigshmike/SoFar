@@ -57,7 +57,7 @@ public struct UnifiedSwipeConfig {
     public static let deleteOnly = UnifiedSwipeConfig(showsEditAction: false)
 
     // MARK: Platform Defaults
-    static var defaultDeleteTint: Color {
+    public static var defaultDeleteTint: Color {
         #if os(iOS)
         return Color(UIColor.systemRed)
         #elseif os(macOS)
@@ -71,7 +71,7 @@ public struct UnifiedSwipeConfig {
         #endif
     }
 
-    static var defaultEditTint: Color {
+    public static var defaultEditTint: Color {
         #if os(iOS)
         return Color(UIColor.systemGray5)
         #elseif os(macOS)
