@@ -15,6 +15,7 @@ final class IncomeScreenViewModel: ObservableObject {
     @Published var selectedDate: Date? = Date()
     @Published private(set) var incomesForDay: [Income] = []
     @Published private(set) var totalForSelectedDate: Double = 0
+    @Published private(set) var totalForSelectedWeek: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
     // MARK: Private
@@ -55,6 +56,7 @@ final class IncomeScreenViewModel: ObservableObject {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
+            totalForSelectedWeek = try weekTotal(containing: day)
             refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
             #if DEBUG
@@ -62,6 +64,7 @@ final class IncomeScreenViewModel: ObservableObject {
             #endif
             incomesForDay = []
             totalForSelectedDate = 0
+            totalForSelectedWeek = 0
             eventsByDay = [:]
             cachedMonthlyEvents.removeAll()
         }
@@ -174,6 +177,24 @@ final class IncomeScreenViewModel: ObservableObject {
     private func monthStart(for date: Date) -> Date {
         calendar.date(from: calendar.dateComponents([.year, .month], from: date))
         ?? calendar.startOfDay(for: date)
+    }
+
+    /// Calculates the sum of incomes for the week containing the provided date.
+    private func weekTotal(containing date: Date) throws -> Double {
+        guard let interval = weekInterval(containing: date) else { return 0 }
+        let incomes = try incomeService.fetchIncomes(in: interval)
+        return incomes.reduce(0) { $0 + $1.amount }
+    }
+
+    /// Returns the closed date interval for the week containing `date` using a Sunday-based calendar.
+    private func weekInterval(containing date: Date) -> DateInterval? {
+        var cal = calendar
+        cal.firstWeekday = 1
+        guard let start = cal.dateInterval(of: .weekOfYear, for: date)?.start,
+              let end = cal.date(byAdding: DateComponents(day: 7, second: -1), to: start) else {
+            return nil
+        }
+        return DateInterval(start: start, end: end)
     }
 }
 
