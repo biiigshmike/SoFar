@@ -247,9 +247,14 @@ struct IncomeView: View {
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
 #if os(iOS)
-            .frame(maxHeight: .infinity)
+            // Allow the calendar to size itself naturally so the weekly summary
+            // and selected-day cards remain visible beneath it. Using
+            // `maxHeight: .infinity` caused the card to consume the entire
+            // scroll view height on iPhone, pushing the other sections off
+            // screen.
+            .fixedSize(horizontal: false, vertical: true)
 #endif
-            #endif
+#endif
         }
         .frame(maxWidth: .infinity)
 #if os(iOS)
