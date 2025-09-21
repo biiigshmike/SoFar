@@ -59,6 +59,10 @@ struct IncomeView: View {
             Text("Income")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
+#else
+            Text("Income")
+                .font(.system(.largeTitle, design: .default).weight(.bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
 #endif
 
             VStack(spacing: 12) {
