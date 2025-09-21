@@ -292,35 +292,7 @@ struct IncomeView: View {
                 .font(.headline)
                 .padding(.bottom, DS.Spacing.xs)
 
-            if entries.isEmpty {
-                // MARK: Empty State
-                Text("No income for \(formattedDate(date)).")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-                    .padding(.vertical, 4)
-            } else {
-                // MARK: Scrollable List with Unified Swipe Actions
-                List {
-                    ForEach(entries, id: \.objectID) { income in
-                        IncomeRow(
-                            income: income,
-                            onEdit: { beginEditingIncome(income) },
-                            onDelete: { handleDeleteRequest(income) }
-                        )
-                        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-                    .onDelete { indexSet in
-                        handleDelete(indexSet, in: entries)
-                    }
-                }
-                .listStyle(.plain)
-                .ub_hideScrollIndicators()
-                .applyIfAvailableScrollContentBackgroundHidden()
-                .applyIfAvailableScrollClipDisabled()
-                .frame(height: dayListHeight(for: entries.count))
-            }
+            selectedDayContent(for: entries, date: date)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -354,6 +326,46 @@ struct IncomeView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+    }
+
+    @ViewBuilder
+    private func selectedDayContent(for entries: [Income], date: Date) -> some View {
+        if entries.isEmpty {
+            selectedDayEmptyState(for: date)
+        } else {
+            incomeList(for: entries)
+        }
+    }
+
+    @ViewBuilder
+    private func selectedDayEmptyState(for date: Date) -> some View {
+        Text("No income for \(formattedDate(date)).")
+            .foregroundStyle(.secondary)
+            .font(.subheadline)
+            .padding(.vertical, 4)
+    }
+
+    private func incomeList(for entries: [Income]) -> some View {
+        List {
+            ForEach(entries, id: \.objectID) { income in
+                IncomeRow(
+                    income: income,
+                    onEdit: { beginEditingIncome(income) },
+                    onDelete: { handleDeleteRequest(income) }
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+            .onDelete { indexSet in
+                handleDelete(indexSet, in: entries)
+            }
+        }
+        .listStyle(.plain)
+        .ub_hideScrollIndicators()
+        .applyIfAvailableScrollContentBackgroundHidden()
+        .applyIfAvailableScrollClipDisabled()
+        .frame(height: dayListHeight(for: entries.count))
     }
 
     // MARK: - Calendar Navigation Helpers
