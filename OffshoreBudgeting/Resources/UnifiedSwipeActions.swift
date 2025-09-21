@@ -86,6 +86,7 @@ public struct UnifiedSwipeCustomAction: Identifiable {
 
 // MARK: - UnifiedSwipeActionsModifier
 private struct UnifiedSwipeActionsModifier: ViewModifier {
+    @Environment(\.colorScheme) private var environmentColorScheme
     let config: UnifiedSwipeConfig
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
@@ -154,10 +155,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
                 tint: config.deleteTint,
-                iconOverride: nil
+                iconOverride: nil,
+                colorScheme: effectiveColorScheme
             )
         }
-        .enforceDarkGlyph()
+        .enforceDarkGlyph(using: effectiveColorScheme)
         .ub_swipeActionTint(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
@@ -169,10 +171,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 title: config.editTitle,
                 systemImageName: config.editSystemImageName,
                 tint: config.editTint,
-                iconOverride: nil
+                iconOverride: nil,
+                colorScheme: effectiveColorScheme
             )
         }
-        .enforceDarkGlyph()
+        .enforceDarkGlyph(using: effectiveColorScheme)
         .ub_swipeActionTint(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
@@ -185,10 +188,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                     title: item.title,
                     systemImageName: item.systemImageName,
                     tint: item.tint,
-                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
+                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil,
+                    colorScheme: effectiveColorScheme
                 )
             }
-            .enforceDarkGlyph()
+            .enforceDarkGlyph(using: effectiveColorScheme)
             .ub_swipeActionTint(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
@@ -196,11 +200,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
     // MARK: - Label
     private struct UnifiedSwipeActionButtonLabel: View {
-        @Environment(\.colorScheme) private var colorScheme
         let title: String
         let systemImageName: String
         let tint: Color
         let iconOverride: Color?
+        let colorScheme: ColorScheme
 
         var body: some View {
             if #available(iOS 18.0, macOS 15.0, *) {
@@ -273,6 +277,16 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         #endif
         onDelete()
     }
+
+    private var effectiveColorScheme: ColorScheme {
+        #if os(macOS)
+        let application = NSApp ?? NSApplication.shared
+        let match = application.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        if match == .darkAqua { return .dark }
+        if match == .aqua { return .light }
+        #endif
+        return environmentColorScheme
+    }
 }
 
 // MARK: - View Extension
@@ -309,8 +323,8 @@ private extension View {
 
     // Ensure black glyphs in Dark Mode regardless of system styling
     @ViewBuilder
-    func enforceDarkGlyph() -> some View {
-        self.modifier(ForceDarkGlyphModifier())
+    func enforceDarkGlyph(using colorScheme: ColorScheme) -> some View {
+        self.modifier(ForceDarkGlyphModifier(colorScheme: colorScheme))
     }
 
     @ViewBuilder
@@ -326,7 +340,7 @@ private extension View {
 }
 
 private struct ForceDarkGlyphModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
+    let colorScheme: ColorScheme
     func body(content: Content) -> some View {
         if colorScheme == .dark {
             // Avoid any system tint from overriding the glyph color
