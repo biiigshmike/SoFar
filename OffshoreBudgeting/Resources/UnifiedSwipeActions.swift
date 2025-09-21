@@ -213,7 +213,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 iconOverride: config.deleteTint.ub_contrastingForegroundColor
             )
         }
-        .ub_applySwipeTint(config.deleteTint)
+        .tint(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
@@ -229,7 +229,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 tint: config.editTint
             )
         }
-        .ub_applySwipeTint(config.editTint)
+        .tint(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
@@ -247,7 +247,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                     iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
                 )
             }
-            .ub_applySwipeTint(item.tint)
+            .tint(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
     }
@@ -296,25 +296,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            if let iconOverride {
-                return iconOverride
-            }
-
-            if tint.ub_isEffectivelyMonochrome {
-                return colorScheme == .dark ? .black : .white
-            }
-
-            return tint.ub_contrastingForegroundColor
+            iconOverride ?? tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
-            if tint.ub_isEffectivelyMonochrome {
-                let base = colorScheme == .dark ? Color.white : Color.black
-                let opacity = colorScheme == .dark ? 0.28 : 0.22
-                return base.opacity(opacity)
-            }
-
-            return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+            tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
     }
 
@@ -381,29 +367,6 @@ private extension View {
             self
         }
     }
-
-    /// Applies `.tint(_:)` on platforms/versions that still rely on it to color
-    /// swipe buttons. Newer releases (iOS 18, macOS 15) render the circular swipe
-    /// buttons using the label content directly, so tinting would override the
-    /// custom colors we apply there.
-    @ViewBuilder
-    func ub_applySwipeTint(_ color: Color) -> some View {
-        #if os(iOS)
-        if #available(iOS 18.0, *) {
-            self
-        } else {
-            self.tint(color)
-        }
-        #elseif os(macOS)
-        if #available(macOS 15.0, *) {
-            self
-        } else {
-            self.tint(color)
-        }
-        #else
-        self.tint(color)
-        #endif
-    }
 }
 
 // MARK: - Color Helpers
@@ -412,33 +375,6 @@ private extension Color {
     /// contrast for the supplied color. Used to ensure OS 26 style swipe
     /// buttons remain legible regardless of tint.
     var ub_contrastingForegroundColor: Color {
-        guard let components = ub_rgbComponents else {
-            return .white
-        }
-        return Color.contrastingColor(red: components.red, green: components.green, blue: components.blue)
-    }
-
-    /// Detects whether the color is effectively monochrome (black/white/gray).
-    /// Used so we can provide better contrasting circle fills when the accent
-    /// color follows the system accent (black in light mode, white in dark).
-    var ub_isEffectivelyMonochrome: Bool {
-        guard let components = ub_rgbComponents else {
-            return false
-        }
-
-        let deltaRG = abs(components.red - components.green)
-        let deltaRB = abs(components.red - components.blue)
-        let deltaGB = abs(components.green - components.blue)
-        let maxDelta = max(deltaRG, deltaRB, deltaGB)
-        return maxDelta < 0.04
-    }
-
-    static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
-        let brightness = (0.299 * red) + (0.587 * green) + (0.114 * blue)
-        return brightness < 0.6 ? .white : .black
-    }
-
-    var ub_rgbComponents: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
         #if canImport(UIKit)
         let uiColor = UIColor(self)
         var red: CGFloat = 0
@@ -446,9 +382,9 @@ private extension Color {
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
         guard uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
-            return nil
+            return .white
         }
-        return (red, green, blue, alpha)
+        return Color.contrastingColor(red: red, green: green, blue: blue)
         #elseif canImport(AppKit)
         let nsColor = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
         var red: CGFloat = 0
@@ -456,9 +392,14 @@ private extension Color {
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
         nsColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return (red, green, blue, alpha)
+        return Color.contrastingColor(red: red, green: green, blue: blue)
         #else
-        return nil
+        return .white
         #endif
+    }
+
+    static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
+        let brightness = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+        return brightness < 0.6 ? .white : .black
     }
 }
