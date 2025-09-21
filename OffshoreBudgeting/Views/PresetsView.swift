@@ -16,6 +16,7 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
 
     // MARK: State
@@ -78,7 +79,7 @@ struct PresetsView: View {
                         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .unifiedSwipeActions(
-                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+                            swipeActionsConfig,
                             onEdit: { editingTemplate = item.template },
                             onDelete: {
                                 if confirmBeforeDelete {
@@ -152,6 +153,14 @@ struct PresetsView: View {
                 }
             }
         }
+    }
+
+    private var swipeActionsConfig: UnifiedSwipeConfig {
+        var config = UnifiedSwipeConfig.standard
+        let neutralTint: Color = colorScheme == .dark ? .white : .black
+        config.deleteTint = neutralTint
+        config.editTint = neutralTint
+        return config
     }
 
     // MARK: - Actions
