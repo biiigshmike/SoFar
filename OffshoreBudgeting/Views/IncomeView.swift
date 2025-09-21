@@ -53,6 +53,40 @@ struct IncomeView: View {
     private let calendarCardMinimumHeight: CGFloat = 380
 #endif
 
+    private var topPadding: CGFloat {
+#if os(iOS)
+        return DS.Spacing.s
+#else
+        return 12
+#endif
+    }
+
+    private var bottomPadding: CGFloat {
+#if os(iOS)
+        return DS.Spacing.xl
+#else
+        return 12
+#endif
+    }
+
+#if os(iOS)
+    @ViewBuilder
+    private var iOSTitleHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Income")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, DS.Spacing.l)
+        .padding(.bottom, DS.Spacing.s)
+        .background(
+            themeManager.selectedTheme.background
+                .ub_ignoreSafeArea(edges: .top)
+        )
+    }
+#endif
+
     // MARK: Calendar
     /// Calendar configured to begin weeks on Sunday.
     private var sundayFirstCalendar: Calendar {
@@ -82,7 +116,8 @@ struct IncomeView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.top, topPadding)
+        .padding(.bottom, bottomPadding)
         .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
@@ -123,6 +158,11 @@ struct IncomeView: View {
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
+#if os(iOS)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            iOSTitleHeader
+        }
+#endif
         // MARK: Toolbar (+ button) → Present Add Income sheet
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
