@@ -54,7 +54,11 @@ struct PresetsView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Presets")
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                RootViewTopPlanes(title: "Presets")
+                presetsActionPlane
+                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+            }
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
                 if viewModel.items.isEmpty {
@@ -145,16 +149,24 @@ struct PresetsView: View {
             .environment(\.managedObjectContext, viewContext)
         }
         .ub_tabNavigationTitle("Presets")
-        // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingAddSheet = true
-                } label: {
-                    Label("Add Preset Planned Expense", systemImage: "plus")
-                }
-            }
+    }
+
+    private var presetsActionPlane: some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            addPresetButton
         }
+    }
+
+    private var addPresetButton: some View {
+        Button {
+            isPresentingAddSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 18, weight: .semibold))
+        }
+        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+        .accessibilityLabel("Add Preset Planned Expense")
     }
 
     // MARK: - Actions

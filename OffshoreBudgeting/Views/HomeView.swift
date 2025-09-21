@@ -71,8 +71,10 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Home") {
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                RootViewTopPlanes(title: "Home")
                 header
+                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
             }
 
             // MARK: Content Container
@@ -307,17 +309,6 @@ struct HomeView: View {
             .buttonStyle(.plain)
 
             Spacer(minLength: 0)
-
-//            DatePicker(
-//                "",
-//                selection: Binding(
-//                    get: { vm.selectedMonth },
-//                    set: { vm.selectedMonth = Month.start(of: $0) }
-//                ),
-//                displayedComponents: [.date]
-//            )
-            .labelsHidden()
-            .ub_compactDatePickerStyle()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
