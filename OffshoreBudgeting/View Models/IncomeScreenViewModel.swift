@@ -15,6 +15,7 @@ final class IncomeScreenViewModel: ObservableObject {
     @Published var selectedDate: Date? = Date()
     @Published private(set) var incomesForDay: [Income] = []
     @Published private(set) var totalForSelectedDate: Double = 0
+    @Published private(set) var totalForSelectedWeek: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
     // MARK: Private
@@ -55,6 +56,7 @@ final class IncomeScreenViewModel: ObservableObject {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
+            totalForSelectedWeek = try totalIncomeForWeek(containing: day)
             refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
             #if DEBUG
@@ -62,6 +64,7 @@ final class IncomeScreenViewModel: ObservableObject {
             #endif
             incomesForDay = []
             totalForSelectedDate = 0
+            totalForSelectedWeek = 0
             eventsByDay = [:]
             cachedMonthlyEvents.removeAll()
         }
@@ -174,6 +177,21 @@ final class IncomeScreenViewModel: ObservableObject {
     private func monthStart(for date: Date) -> Date {
         calendar.date(from: calendar.dateComponents([.year, .month], from: date))
         ?? calendar.startOfDay(for: date)
+    }
+
+    /// Computes the inclusive start/end of the week containing `date` and
+    /// returns the aggregated income total.
+    private func totalIncomeForWeek(containing date: Date) throws -> Double {
+        guard let rawInterval = calendar.dateInterval(of: .weekOfYear, for: date) else {
+            return totalForSelectedDate
+        }
+
+        let inclusiveEnd = calendar.date(byAdding: DateComponents(second: -1), to: rawInterval.end)
+            ?? rawInterval.end
+
+        let interval = DateInterval(start: rawInterval.start, end: inclusiveEnd)
+        let incomes = try incomeService.fetchIncomes(in: interval)
+        return incomes.reduce(0) { $0 + $1.amount }
     }
 }
 

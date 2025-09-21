@@ -19,7 +19,7 @@ private struct AddIncomeSheetDate: Identifiable {
 // MARK: - IncomeView
 /// Shows a calendar (MijickCalendarView). Tap a date to add income (Planned/Actual; optional recurrence).
 /// Below the calendar, displays incomes for the selected day with edit/delete.
-/// A weekly summary bar shows total income for the current week.
+/// A weekly summary card shows the total income for the current week alongside the selected-day breakdown.
 struct IncomeView: View {
 
     // MARK: State
@@ -51,7 +51,30 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 380
+    private let calendarCardMaximumHeight: CGFloat = 420
 #endif
+
+    /// Limits how far backward and forward the calendar can scroll from today.
+    private let calendarYearsBack = 2
+    private let calendarYearsForward = 2
+
+    /// Cached month boundaries for the current calendar range.
+    private var calendarMonthRange: (start: Date, end: Date) {
+        let today = Date()
+        let cal = sundayFirstCalendar
+        let start = monthAnchor(from: today, offsetYears: -calendarYearsBack, calendar: cal)
+        let end = monthAnchor(from: today, offsetYears: calendarYearsForward, calendar: cal)
+        return (start, end)
+    }
+
+    /// Returns the inclusive date range users can select in the calendar.
+    private var calendarSelectableRange: (min: Date, max: Date) {
+        let cal = sundayFirstCalendar
+        let months = calendarMonthRange
+        let monthAfterEnd = cal.date(byAdding: .month, value: 1, to: months.end) ?? months.end
+        let max = cal.date(byAdding: DateComponents(second: -1), to: monthAfterEnd) ?? months.end
+        return (normalize(months.start), normalize(max))
+    }
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
@@ -102,7 +125,7 @@ struct IncomeView: View {
                     calendarSection
 
                     // Weekly summary bar
-                    weeklySummaryBar
+                    weeklySummaryCard
 
                     // Selected day entries
                     selectedDaySection
@@ -158,10 +181,9 @@ struct IncomeView: View {
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
     @ViewBuilder
     private var calendarSection: some View {
-        let today = Date()
-        let cal = sundayFirstCalendar
-        let start = cal.date(byAdding: .year, value: -5, to: today)!
-        let end = cal.date(byAdding: .year, value: 5, to: today)!
+        let bounds = calendarMonthRange
+        let start = bounds.start
+        let end = bounds.end
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
                 Button("<<") { goToPreviousMonth() }
@@ -221,7 +243,8 @@ struct IncomeView: View {
                     beginAddingIncome(for: viewModel.selectedDate ?? today)
                 }
             )
-            #else
+            .applyScrollDisabledIfAvailable(true)
+#else
             // iOS
             MCalendarView(
                 selectedDate: $viewModel.selectedDate,
@@ -251,19 +274,14 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
-#if os(iOS)
-            // Allow the calendar to size itself naturally so the weekly summary
-            // and selected-day cards remain visible beneath it. Using
-            // `maxHeight: .infinity` caused the card to consume the entire
-            // scroll view height on iPhone, pushing the other sections off
-            // screen.
-            .fixedSize(horizontal: false, vertical: true)
-#endif
+            .applyScrollDisabledIfAvailable(true)
 #endif
         }
         .frame(maxWidth: .infinity)
 #if os(iOS)
-        .frame(minHeight: calendarCardMinimumHeight, alignment: .top)
+        .frame(minHeight: calendarCardMinimumHeight,
+               maxHeight: calendarCardMaximumHeight,
+               alignment: .top)
 #endif
         .layoutPriority(1)
         .padding(12)
@@ -275,23 +293,23 @@ struct IncomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 
-    // MARK: - Weekly Summary Bar
-    /// Small bar that totals the week containing the selected date.
+    // MARK: - Weekly Summary Card
+    /// Card summarizing the total income for the week containing the selected date.
     @ViewBuilder
-    private var weeklySummaryBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "calendar").imageScale(.large)
-            VStack(alignment: .leading, spacing: 4) {
-                let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
-                Text("\(formattedDate(start)) – \(formattedDate(end))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(currencyString(for: viewModel.totalForSelectedDate))
-                    .font(.headline)
-            }
-            Spacer()
+    private var weeklySummaryCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text("Week Total Income")
+                .font(.headline)
+
+            let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
+            Text("\(formattedDate(start)) – \(formattedDate(end))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text(currencyString(for: viewModel.totalForSelectedWeek))
+                .font(.title3.weight(.semibold))
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -307,14 +325,22 @@ struct IncomeView: View {
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
     @ViewBuilder
     private var selectedDaySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
             let date = viewModel.selectedDate ?? Date()
             let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
 
             // MARK: Section Title — Selected Day
-            Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
-                .font(.headline)
-                .padding(.bottom, DS.Spacing.xs)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Selected Day Income")
+                    .font(.headline)
+
+                Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text(currencyString(for: viewModel.totalForSelectedDate))
+                    .font(.title3.weight(.semibold))
+            }
 
             selectedDayContent(for: entries, date: date)
         }
@@ -364,7 +390,7 @@ struct IncomeView: View {
 
     @ViewBuilder
     private func selectedDayEmptyState(for date: Date) -> some View {
-        Text("No income for \(formattedDate(date)).")
+        Text("No income recorded for \(formattedDate(date)).")
             .foregroundStyle(.secondary)
             .font(.subheadline)
             .padding(.vertical, 4)
@@ -395,7 +421,8 @@ struct IncomeView: View {
     // MARK: - Calendar Navigation Helpers
     /// Updates the selected date and scroll target for the calendar.
     private func navigate(to date: Date) {
-        let target = normalize(date)
+        let clamped = clampToCalendarRange(date)
+        let target = normalize(clamped)
         // Update without animation to prevent visible jumps
         withTransaction(Transaction(animation: nil)) {
             viewModel.selectedDate = target
@@ -415,6 +442,13 @@ struct IncomeView: View {
         comps.minute = 0
         comps.second = 0
         return Calendar.current.date(from: comps) ?? date
+    }
+    /// Clamps navigation requests so we stay within the supported calendar range.
+    private func clampToCalendarRange(_ date: Date) -> Date {
+        let range = calendarSelectableRange
+        if date < range.min { return range.min }
+        if date > range.max { return range.max }
+        return date
     }
     /// Scrolls to the first day of the previous month.
     private func goToPreviousMonth() {
@@ -531,6 +565,17 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         targets.forEach { handleDeleteRequest($0) }
     }
+
+    /// Returns the first day of the month (at noon) offset by a number of years from `base`.
+    private func monthAnchor(from base: Date, offsetYears: Int, calendar: Calendar) -> Date {
+        let offset = calendar.date(byAdding: .year, value: offsetYears, to: base) ?? base
+        var components = calendar.dateComponents([.year, .month], from: offset)
+        components.day = 1
+        components.hour = 12
+        components.minute = 0
+        components.second = 0
+        return calendar.date(from: components) ?? offset
+    }
 }
 
 // MARK: - IncomeRow
@@ -604,5 +649,14 @@ private extension View {
         }
     }
 
+    @ViewBuilder
+    func applyScrollDisabledIfAvailable(_ disabled: Bool) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            scrollDisabled(disabled)
+        } else {
+            self
+        }
+    }
+    
 }
 
