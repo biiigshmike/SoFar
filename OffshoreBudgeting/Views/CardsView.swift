@@ -61,7 +61,16 @@ struct CardsView: View {
     }
 
     private var baseView: some View {
-        contentView
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            Text("Cards")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.l)
+                .padding(.top, DS.Spacing.l)
+
+            contentView
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             // Let SwiftUI handle transitions between loading/empty/loaded states.
             .animation(.default, value: viewModel.state)
             // MARK: Start observing when view appears
