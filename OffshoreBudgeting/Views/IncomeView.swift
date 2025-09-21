@@ -487,8 +487,7 @@ private struct IncomeRow: View {
         .padding(.vertical, 6)
         // Consistent: slow drag reveals Edit + Delete; full swipe commits Delete on iOS/iPadOS.
         .unifiedSwipeActions(
-            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
-                               allowsFullSwipeToDelete: false),
+            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
             onEdit: onEdit,
             onDelete: onDelete
         )

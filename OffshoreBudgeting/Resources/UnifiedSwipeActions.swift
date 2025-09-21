@@ -18,10 +18,10 @@ public struct UnifiedSwipeConfig {
     public var showsEditAction: Bool
     public var deleteTitle: String
     public var deleteSystemImageName: String
-    public var deleteTint: Color
+    public var deleteTint: Color?
     public var editTitle: String
     public var editSystemImageName: String
-    public var editTint: Color = .accentColor.opacity(0.01)
+    public var editTint: Color?
     public var allowsFullSwipeToDelete: Bool
     public var playHapticOnDelete: Bool
     public var deleteAccessibilityID: String?
@@ -31,10 +31,10 @@ public struct UnifiedSwipeConfig {
         showsEditAction: Bool = true,
         deleteTitle: String = "Delete",
         deleteSystemImageName: String = "trash",
-        deleteTint: Color = .accentColor,
+        deleteTint: Color? = nil,
         editTitle: String = "Edit",
         editSystemImageName: String = "pencil",
-        editTint: Color = .accentColor,
+        editTint: Color? = nil,
         allowsFullSwipeToDelete: Bool = true,
         playHapticOnDelete: Bool = true,
         deleteAccessibilityID: String? = "swipe_delete",
@@ -86,7 +86,6 @@ public struct UnifiedSwipeCustomAction: Identifiable {
 
 // MARK: - UnifiedSwipeActionsModifier
 private struct UnifiedSwipeActionsModifier: ViewModifier {
-    @Environment(\.colorScheme) private var environmentColorScheme
     let config: UnifiedSwipeConfig
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
@@ -154,13 +153,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             UnifiedSwipeActionButtonLabel(
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
-                tint: config.deleteTint,
-                iconOverride: nil,
-                colorScheme: effectiveColorScheme
+                iconOverride: nil
             )
         }
-        .enforceDarkGlyph(using: effectiveColorScheme)
-        .ub_swipeActionTint(config.deleteTint)
+        .applySwipeActionTintIfNeeded(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
@@ -170,13 +166,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             UnifiedSwipeActionButtonLabel(
                 title: config.editTitle,
                 systemImageName: config.editSystemImageName,
-                tint: config.editTint,
-                iconOverride: nil,
-                colorScheme: effectiveColorScheme
+                iconOverride: nil
             )
         }
-        .enforceDarkGlyph(using: effectiveColorScheme)
-        .ub_swipeActionTint(config.editTint)
+        .applySwipeActionTintIfNeeded(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
@@ -187,13 +180,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 UnifiedSwipeActionButtonLabel(
                     title: item.title,
                     systemImageName: item.systemImageName,
-                    tint: item.tint,
-                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil,
-                    colorScheme: effectiveColorScheme
+                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
                 )
             }
-            .enforceDarkGlyph(using: effectiveColorScheme)
-            .ub_swipeActionTint(item.tint)
+            .applySwipeActionTintIfNeeded(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
     }
@@ -202,72 +192,21 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     private struct UnifiedSwipeActionButtonLabel: View {
         let title: String
         let systemImageName: String
-        let tint: Color
         let iconOverride: Color?
-        let colorScheme: ColorScheme
 
         var body: some View {
-            if #available(iOS 18.0, macOS 15.0, *) {
-                ZStack {
-                    Circle().fill(backgroundCircleColor)
+            Label {
+                Text(title)
+            } icon: {
+                if let iconOverride {
                     Image(systemName: systemImageName)
                         .renderingMode(.template)
                         .symbolRenderingMode(.monochrome)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(resolvedIconColor)
-                        .foregroundColor(resolvedIconColor)
-                }
-                .frame(width: 44, height: 44)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Circle())
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(title))
-            } else {
-                Label { Text(title) } icon: {
-                    Image(systemName: systemImageName)
-                        .renderingMode(.template)
-                        .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(resolvedIconColor)
-                        .foregroundColor(resolvedIconColor)
-                }
-                .foregroundColor(resolvedIconColor)
-            }
-        }
-
-        private var resolvedIconColor: Color {
-            if let override = iconOverride { return override }
-            if colorScheme == .dark { return .black }       // minimal rule: always black in dark mode
-            return tint.ub_contrastingForegroundColor
-        }
-
-        private var backgroundCircleColor: Color {
-            if #available(iOS 18.0, macOS 15.0, *) {
-                return colorScheme == .dark ? .white
-                                            : resolvedTint(opacity: 0.65)
-            }
-            #if canImport(UIKit) || canImport(AppKit)
-            if let c = tint.ub_resolvedRGBA(for: colorScheme) {
-                if colorScheme == .dark {
-                    let blend: CGFloat = 0.35
-                    return Color(red: Double(c.red*(1-blend)),
-                                green: Double(c.green*(1-blend)),
-                                blue: Double(c.blue*(1-blend)),
-                                opacity: Double(c.alpha)).opacity(0.55)
+                        .foregroundStyle(iconOverride)
                 } else {
-                    return Color(red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha)).opacity(0.25)
+                    Image(systemName: systemImageName)
                 }
             }
-            #endif
-            return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
-        }
-
-        private func resolvedTint(opacity: Double) -> Color {
-            #if canImport(UIKit) || canImport(AppKit)
-            if let c = tint.ub_resolvedRGBA(for: colorScheme) {
-                return Color(red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha)).opacity(opacity)
-            }
-            #endif
-            return tint.opacity(opacity)
         }
     }
 
@@ -282,15 +221,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         onDelete()
     }
 
-    private var effectiveColorScheme: ColorScheme {
-        #if os(macOS)
-        let application = NSApp ?? NSApplication.shared
-        let match = application.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-        if match == .darkAqua { return .dark }
-        if match == .aqua { return .light }
-        #endif
-        return environmentColorScheme
-    }
 }
 
 // MARK: - View Extension
@@ -325,12 +255,6 @@ private extension View {
         }
     }
 
-    // Ensure black glyphs in Dark Mode regardless of system styling
-    @ViewBuilder
-    func enforceDarkGlyph(using colorScheme: ColorScheme) -> some View {
-        self.modifier(ForceDarkGlyphModifier(colorScheme: colorScheme))
-    }
-
     @ViewBuilder
     func ub_swipeActionTint(_ color: Color) -> some View {
         #if os(iOS)
@@ -341,39 +265,13 @@ private extension View {
         self.tint(color)
         #endif
     }
-}
 
-private struct ForceDarkGlyphModifier: ViewModifier {
-    let colorScheme: ColorScheme
-    func body(content: Content) -> some View {
-        if colorScheme == .dark {
-            #if os(iOS)
-            if #available(iOS 18.0, *) {
-                content
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.black)
-            } else {
-                content
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.black)
-            }
-            #elseif os(macOS)
-            if #available(macOS 15.0, *) {
-                content
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.black)
-            } else {
-                content
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.black)
-            }
-            #else
-            content
-                .buttonStyle(.plain)
-                .foregroundStyle(.black)
-            #endif
+    @ViewBuilder
+    func applySwipeActionTintIfNeeded(_ color: Color?) -> some View {
+        if let color {
+            ub_swipeActionTint(color)
         } else {
-            content
+            self
         }
     }
 }
@@ -393,25 +291,6 @@ private extension Color {
         return Color.contrastingColor(red: r, green: g, blue: b)
         #else
         return .white
-        #endif
-    }
-
-    func ub_resolvedRGBA(for colorScheme: ColorScheme) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
-        #if canImport(UIKit)
-        let ui = UIColor(self)
-        let trait = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        let resolved = ui.resolvedColor(with: trait)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard resolved.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
-        return (r, g, b, a)
-        #elseif canImport(AppKit)
-        let ns = NSColor(self)
-        let converted = ns.usingColorSpace(.sRGB) ?? ns
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        converted.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return (r, g, b, a)
-        #else
-        return nil
         #endif
     }
 

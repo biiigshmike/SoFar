@@ -487,8 +487,7 @@ private struct PlannedListFR: View {
                         .unifiedSwipeActions(
                             // Disable full swipe-to-delete to prevent unintended automatic deletes. Only
                             // tapping the Delete button will confirm removal.
-                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
-                                               allowsFullSwipeToDelete: false),
+                            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
                             onEdit: { editingItem = item },
                             onDelete: {
                                 if confirmBeforeDelete {
@@ -678,8 +677,7 @@ private struct VariableListFR: View {
                         .contentShape(Rectangle())
                         // MARK: Unified swipe → Edit & Delete
                         .unifiedSwipeActions(
-                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent,
-                                               allowsFullSwipeToDelete: false),
+                            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
                             onEdit: { editingItem = item },
                             onDelete: {
                                 if confirmBeforeDelete {
