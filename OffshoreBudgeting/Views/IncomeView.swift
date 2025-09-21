@@ -9,9 +9,6 @@ import SwiftUI
 import MijickCalendarView
 import CoreData
 import Combine
-#if os(iOS)
-import UIKit
-#endif
 
 /// Wrapper to provide `Identifiable` conformance for sheet presentation.
 private struct AddIncomeSheetDate: Identifiable {
@@ -48,13 +45,8 @@ struct IncomeView: View {
     @State private var showDeleteOptions: Bool = false
 
 #if os(iOS)
-    /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone while
-    /// still adapting to the available screen height so smaller devices do not clip content.
-    private var calendarCardMinimumHeight: CGFloat {
-        let screenHeight = UIScreen.main.bounds.height
-        let adaptive = screenHeight * 0.52
-        return min(max(adaptive, 360), 420)
-    }
+    /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
+    private let calendarCardMinimumHeight: CGFloat = 380
 #endif
 
     // MARK: Calendar
@@ -67,11 +59,37 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        rootContent
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
+            Text("Income")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+#else
+            Text("Income")
+                .font(.system(.largeTitle, design: .default).weight(.bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+#endif
+
+            VStack(spacing: 12) {
+            // Calendar section in a padded card
+            calendarSection
+
+            // Weekly summary bar
+            weeklySummaryBar
+
+            // Selected day entries
+            selectedDaySection
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
         }
+        // Pull to refresh to reload entries for the selected day
+        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
         // MARK: Present Add Income Form
         .sheet(item: $addIncomeInitialDate, onDismiss: {
             // Reload entries for the selected day after adding/saving
@@ -114,55 +132,6 @@ struct IncomeView: View {
                     Label("Add Income", systemImage: "plus")
                 }
                 .accessibilityIdentifier("add_income_button")
-            }
-        }
-    }
-
-    // MARK: - Root Layout
-    /// Wraps the main content to provide scrolling on compact devices while keeping macOS layout unchanged.
-    @ViewBuilder
-    private var rootContent: some View {
-#if os(iOS)
-        ScrollView(.vertical) {
-            mainContent
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        // Pull to refresh to reload entries for the selected day
-        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
-#else
-        mainContent
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        // Pull to refresh to reload entries for the selected day
-            .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
-#endif
-    }
-
-    /// The primary vertical stack holding the screen content.
-    private var mainContent: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Income")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-#else
-            Text("Income")
-                .font(.system(.largeTitle, design: .default).weight(.bold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-#endif
-
-            VStack(spacing: 12) {
-                // Calendar section in a padded card
-                calendarSection
-
-                // Weekly summary bar
-                weeklySummaryBar
-
-                // Selected day entries
-                selectedDaySection
             }
         }
     }
