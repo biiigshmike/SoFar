@@ -28,6 +28,7 @@ struct CardsView: View {
     @StateObject private var viewModel = CardsViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
+    @Environment(\.platformCapabilities) private var capabilities
     @State private var isPresentingAddCard = false
     @State private var editingCard: CardItem? = nil // NEW: for edit sheet
     @State private var isPresentingAddExpense = false
@@ -43,6 +44,7 @@ struct CardsView: View {
 
     // MARK: Layout Constants
     private let fixedCardHeight: CGFloat = 160
+    private let addButtonDimension: CGFloat = 44
 
     // MARK: Body
     var body: some View {
@@ -125,8 +127,9 @@ struct CardsView: View {
             .tint(themeManager.selectedTheme.resolvedTint)
     }
 
+    @ViewBuilder
     private var addCardButton: some View {
-        Button {
+        let button = Button {
             if selectedCardStableID == nil {
                 isPresentingAddCard = true
             } else {
@@ -135,14 +138,21 @@ struct CardsView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 18, weight: .semibold))
+                .frame(width: addButtonDimension, height: addButtonDimension)
         }
-        .buttonStyle(
-            TranslucentButtonStyle(
-                tint: themeManager.selectedTheme.resolvedTint,
-                metrics: .rootActionIcon
-            )
-        )
+        .tint(themeManager.selectedTheme.resolvedTint)
         .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
+
+        if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
+            button.buttonStyle(.glassProminent)
+        } else {
+            button.buttonStyle(
+                TranslucentButtonStyle(
+                    tint: themeManager.selectedTheme.resolvedTint,
+                    metrics: .rootActionIcon
+                )
+            )
+        }
     }
 
     // MARK: - Content View (Type-Safe)

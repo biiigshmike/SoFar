@@ -35,6 +35,7 @@ struct IncomeView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
+    @Environment(\.platformCapabilities) private var capabilities
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
@@ -53,6 +54,8 @@ struct IncomeView: View {
     private let calendarCardMinimumHeight: CGFloat = 380
 #endif
 
+    private let addButtonDimension: CGFloat = 44
+
     private var bottomPadding: CGFloat {
 #if os(iOS)
         return safeAreaInsets.bottom + DS.Spacing.xl
@@ -66,19 +69,27 @@ struct IncomeView: View {
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
     }
 
+    @ViewBuilder
     private var addIncomeButton: some View {
-        Button { beginAddingIncome() } label: {
+        let button = Button { beginAddingIncome() } label: {
             Image(systemName: "plus")
                 .font(.system(size: 18, weight: .semibold))
+                .frame(width: addButtonDimension, height: addButtonDimension)
         }
-        .buttonStyle(
-            TranslucentButtonStyle(
-                tint: themeManager.selectedTheme.resolvedTint,
-                metrics: .rootActionIcon
-            )
-        )
+        .tint(themeManager.selectedTheme.resolvedTint)
         .accessibilityLabel("Add Income")
         .accessibilityIdentifier("add_income_button")
+
+        if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
+            button.buttonStyle(.glassProminent)
+        } else {
+            button.buttonStyle(
+                TranslucentButtonStyle(
+                    tint: themeManager.selectedTheme.resolvedTint,
+                    metrics: .rootActionIcon
+                )
+            )
+        }
     }
 
     // MARK: Calendar

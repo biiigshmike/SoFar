@@ -17,6 +17,7 @@ struct PresetsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
+    @Environment(\.platformCapabilities) private var capabilities
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -25,6 +26,8 @@ struct PresetsView: View {
     @State private var editingTemplate: PlannedExpense? = nil
     @State private var templateToDelete: PlannedExpense? = nil
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
+
+    private let addButtonDimension: CGFloat = 44
 
     // MARK: Body
     var body: some View {
@@ -149,20 +152,28 @@ struct PresetsView: View {
         .ub_tabNavigationTitle("Presets")
     }
 
+    @ViewBuilder
     private var addPresetButton: some View {
-        Button {
+        let button = Button {
             isPresentingAddSheet = true
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 18, weight: .semibold))
+                .frame(width: addButtonDimension, height: addButtonDimension)
         }
-        .buttonStyle(
-            TranslucentButtonStyle(
-                tint: themeManager.selectedTheme.resolvedTint,
-                metrics: .rootActionIcon
-            )
-        )
+        .tint(themeManager.selectedTheme.resolvedTint)
         .accessibilityLabel("Add Preset Planned Expense")
+
+        if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
+            button.buttonStyle(.glassProminent)
+        } else {
+            button.buttonStyle(
+                TranslucentButtonStyle(
+                    tint: themeManager.selectedTheme.resolvedTint,
+                    metrics: .rootActionIcon
+                )
+            )
+        }
     }
 
     // MARK: - Actions
