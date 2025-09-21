@@ -62,11 +62,13 @@ struct CardsView: View {
 
     private var baseView: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
             Text("Cards")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, DS.Spacing.l)
                 .padding(.top, DS.Spacing.l)
+#endif
 
             contentView
         }
