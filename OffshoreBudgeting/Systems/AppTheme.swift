@@ -551,12 +551,6 @@ extension AppTheme {
             }
         })
 
-        let accentTone = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.08,
-            brightnessMultiplier: 1.10,
-            alpha: 1.0
-        )
         let shadowTone = AppThemeColorUtilities.adjust(
             resolvedTint,
             saturationMultiplier: 0.10,
@@ -1158,4 +1152,3 @@ final class ThemeManager: ObservableObject {
         }
     }
 }
-
