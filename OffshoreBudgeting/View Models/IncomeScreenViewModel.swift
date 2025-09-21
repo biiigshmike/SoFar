@@ -98,6 +98,34 @@ final class IncomeScreenViewModel: ObservableObject {
         return (planned, actual)
     }
 
+    /// Totals the income for the week containing `date` using the provided `firstWeekday`.
+    /// Returns a tuple of `(planned, actual)` values so the UI can render each segment.
+    func weeklyTotals(containing date: Date, firstWeekday: Int) -> (planned: Double, actual: Double) {
+        var calendar = self.calendar
+        calendar.firstWeekday = firstWeekday
+
+        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+
+        var result: (planned: Double, actual: Double) = (0, 0)
+
+        for offset in 0..<7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: startOfWeek) else { continue }
+            let normalized = self.calendar.startOfDay(for: day)
+            guard let events = eventsByDay[normalized] else { continue }
+
+            for event in events {
+                if event.isPlanned {
+                    result.planned += event.amount
+                } else {
+                    result.actual += event.amount
+                }
+            }
+        }
+
+        return result
+    }
+
     // MARK: - Event Cache Management
     /// Refreshes the cached calendar events for the month containing `date`.
     /// When `force` is `true` the month is re-fetched even if it already
