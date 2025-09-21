@@ -155,7 +155,6 @@ struct IncomeView: View {
             // Ensure the calendar opens on today's date and load entries
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
-            viewModel.load(day: initial, forceMonthReload: true)
         }
         .ub_tabNavigationTitle("Income")
         .ub_surfaceBackground(
@@ -172,11 +171,8 @@ struct IncomeView: View {
     private var calendarSection: some View {
         let today = Date()
         let cal = sundayFirstCalendar
-        let currentYear = cal.component(.year, from: today)
-        let startComponents = DateComponents(year: currentYear - 2, month: 1, day: 1, hour: 12)
-        let endComponents = DateComponents(year: currentYear + 2, month: 12, day: 31, hour: 12)
-        let start = cal.date(from: startComponents) ?? today
-        let end = cal.date(from: endComponents) ?? today
+        let start = cal.date(byAdding: .year, value: -5, to: today)!
+        let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
                 Button("<<") { goToPreviousMonth() }
@@ -294,22 +290,19 @@ struct IncomeView: View {
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
     private var weeklySummaryBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Week Total Income")
-                        .font(.headline)
-                    let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
-                    Text("\(formattedDate(start)) – \(formattedDate(end))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text(viewModel.totalForSelectedWeekText)
-                    .font(.title3.weight(.semibold))
+        HStack(spacing: 12) {
+            Image(systemName: "calendar").imageScale(.large)
+            VStack(alignment: .leading, spacing: 4) {
+                let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
+                Text("\(formattedDate(start)) – \(formattedDate(end))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(currencyString(for: viewModel.totalForSelectedDate))
+                    .font(.headline)
             }
+            Spacer()
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -325,24 +318,14 @@ struct IncomeView: View {
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
     @ViewBuilder
     private var selectedDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
             let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
 
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Selected Day Income")
-                        .font(.headline)
-                    Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text(viewModel.totalForSelectedDateText)
-                    .font(.title3.weight(.semibold))
-            }
-
-            Divider()
+            // MARK: Section Title — Selected Day
+            Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
+                .font(.headline)
+                .padding(.bottom, DS.Spacing.xs)
 
             selectedDayContent(for: entries, date: date)
         }
@@ -505,6 +488,14 @@ struct IncomeView: View {
             return (date, date)
         }
         return (start, end)
+    }
+
+    /// Locale-aware currency string for display.
+    private func currencyString(for amount: Double) -> String {
+        let nf = NumberFormatter()
+        nf.numberStyle = .currency
+        nf.locale = .current
+        return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
     }
 
     /// Determines how tall the daily income list should be so rows have space and longer days can scroll.

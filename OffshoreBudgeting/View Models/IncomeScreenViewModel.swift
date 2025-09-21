@@ -15,7 +15,6 @@ final class IncomeScreenViewModel: ObservableObject {
     @Published var selectedDate: Date? = Date()
     @Published private(set) var incomesForDay: [Income] = []
     @Published private(set) var totalForSelectedDate: Double = 0
-    @Published private(set) var totalForSelectedWeek: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
     // MARK: Private
@@ -45,10 +44,6 @@ final class IncomeScreenViewModel: ObservableObject {
     var totalForSelectedDateText: String {
         NumberFormatter.currency.string(from: totalForSelectedDate as NSNumber) ?? ""
     }
-
-    var totalForSelectedWeekText: String {
-        NumberFormatter.currency.string(from: totalForSelectedWeek as NSNumber) ?? ""
-    }
     
     // MARK: Loading
     func reloadForSelectedDay(forceMonthReload: Bool = false) {
@@ -60,12 +55,6 @@ final class IncomeScreenViewModel: ObservableObject {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
             totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
-            if let interval = weekInterval(containing: day) {
-                let weekIncomes = try incomeService.fetchIncomes(in: interval)
-                totalForSelectedWeek = weekIncomes.reduce(0) { $0 + $1.amount }
-            } else {
-                totalForSelectedWeek = 0
-            }
             refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
             #if DEBUG
@@ -73,7 +62,6 @@ final class IncomeScreenViewModel: ObservableObject {
             #endif
             incomesForDay = []
             totalForSelectedDate = 0
-            totalForSelectedWeek = 0
             eventsByDay = [:]
             cachedMonthlyEvents.removeAll()
         }
@@ -186,14 +174,6 @@ final class IncomeScreenViewModel: ObservableObject {
     private func monthStart(for date: Date) -> Date {
         calendar.date(from: calendar.dateComponents([.year, .month], from: date))
         ?? calendar.startOfDay(for: date)
-    }
-
-    private func weekInterval(containing date: Date) -> DateInterval? {
-        guard let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start,
-              let weekEnd = calendar.date(byAdding: DateComponents(day: 7, second: -1), to: weekStart) else {
-            return nil
-        }
-        return DateInterval(start: weekStart, end: weekEnd)
     }
 }
 
