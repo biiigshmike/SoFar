@@ -150,11 +150,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         Button(role: .destructive) {
             triggerDelete()
         } label: {
-            UnifiedSwipeActionButtonLabel(
-                title: config.deleteTitle,
-                systemImageName: config.deleteSystemImageName,
-                iconOverride: nil
-            )
+            Label(config.deleteTitle, systemImage: config.deleteSystemImageName)
         }
         .applySwipeActionTintIfNeeded(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
@@ -163,11 +159,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     @ViewBuilder
     private func editButton(onEdit: @escaping () -> Void) -> some View {
         Button { onEdit() } label: {
-            UnifiedSwipeActionButtonLabel(
-                title: config.editTitle,
-                systemImageName: config.editSystemImageName,
-                iconOverride: nil
-            )
+            Label(config.editTitle, systemImage: config.editSystemImageName)
         }
         .applySwipeActionTintIfNeeded(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
@@ -177,36 +169,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     private func customButtons() -> some View {
         ForEach(customActions) { item in
             Button(role: item.role) { item.action() } label: {
-                UnifiedSwipeActionButtonLabel(
-                    title: item.title,
-                    systemImageName: item.systemImageName,
-                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
-                )
+                Label(item.title, systemImage: item.systemImageName)
             }
             .applySwipeActionTintIfNeeded(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
-        }
-    }
-
-    // MARK: - Label
-    private struct UnifiedSwipeActionButtonLabel: View {
-        let title: String
-        let systemImageName: String
-        let iconOverride: Color?
-
-        var body: some View {
-            Label {
-                Text(title)
-            } icon: {
-                if let iconOverride {
-                    Image(systemName: systemImageName)
-                        .renderingMode(.template)
-                        .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(iconOverride)
-                } else {
-                    Image(systemName: systemImageName)
-                }
-            }
         }
     }
 
@@ -273,29 +239,5 @@ private extension View {
         } else {
             self
         }
-    }
-}
-
-// MARK: - Color Helpers
-private extension Color {
-    var ub_contrastingForegroundColor: Color {
-        #if canImport(UIKit)
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
-        return Color.contrastingColor(red: r, green: g, blue: b)
-        #elseif canImport(AppKit)
-        let ns = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        ns.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return Color.contrastingColor(red: r, green: g, blue: b)
-        #else
-        return .white
-        #endif
-    }
-
-    static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
-        let brightness = 0.299*red + 0.587*green + 0.114*blue
-        return brightness < 0.6 ? .white : .black
     }
 }
