@@ -9,6 +9,9 @@ import SwiftUI
 import MijickCalendarView
 import CoreData
 import Combine
+#if os(iOS)
+import UIKit
+#endif
 
 /// Wrapper to provide `Identifiable` conformance for sheet presentation.
 private struct AddIncomeSheetDate: Identifiable {
@@ -29,7 +32,7 @@ struct IncomeView: View {
     @State private var editingIncome: Income? = nil
     /// Controls which date the calendar should scroll to when navigation buttons are used.
     /// A `nil` value means no programmatic scroll is requested.
-    @State private var calendarScrollDate: Date? = nil
+    @State private var calendarScrollDate: Date? = Date()
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -252,6 +255,7 @@ struct IncomeView: View {
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
 #if os(iOS)
+            .background(CalendarScrollDisabler())
             // Allow the calendar to size itself naturally so the weekly summary
             // and selected-day cards remain visible beneath it. Using
             // `maxHeight: .infinity` caused the card to consume the entire
@@ -279,19 +283,34 @@ struct IncomeView: View {
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
     private var weeklySummaryBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "calendar").imageScale(.large)
-            VStack(alignment: .leading, spacing: 4) {
-                let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
-                Text("\(formattedDate(start)) – \(formattedDate(end))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(currencyString(for: viewModel.totalForSelectedDate))
+        let date = viewModel.selectedDate ?? Date()
+        let (start, end) = weekBounds(for: date)
+        let weeklyTotals = viewModel.weeklyTotals(
+            containing: date,
+            firstWeekday: sundayFirstCalendar.firstWeekday
+        )
+        let totalAmount = weeklyTotals.planned + weeklyTotals.actual
+
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Week Total Income")
+                    .font(.headline)
+                Spacer()
+                Text(currencyString(for: totalAmount))
                     .font(.headline)
             }
-            Spacer()
+
+            Text("\(formattedDate(start)) – \(formattedDate(end))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: DS.Spacing.s) {
+                summaryPill(title: "Planned", amount: weeklyTotals.planned, tint: DS.Colors.plannedIncome)
+                summaryPill(title: "Actual", amount: weeklyTotals.actual, tint: DS.Colors.actualIncome)
+                Spacer(minLength: 0)
+            }
         }
-        .padding(12)
+        .padding(DS.Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -307,18 +326,37 @@ struct IncomeView: View {
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
     @ViewBuilder
     private var selectedDaySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
             let date = viewModel.selectedDate ?? Date()
             let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
+            let totals = plannedActualTotals(for: entries)
+            let totalAmount = totals.planned + totals.actual
 
-            // MARK: Section Title — Selected Day
-            Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
-                .font(.headline)
-                .padding(.bottom, DS.Spacing.xs)
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Selected Day Income")
+                        .font(.headline)
+                    Spacer()
+                    Text(currencyString(for: totalAmount))
+                        .font(.headline)
+                }
+
+                Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !entries.isEmpty {
+                HStack(spacing: DS.Spacing.s) {
+                    summaryPill(title: "Planned", amount: totals.planned, tint: DS.Colors.plannedIncome)
+                    summaryPill(title: "Actual", amount: totals.actual, tint: DS.Colors.actualIncome)
+                    Spacer(minLength: 0)
+                }
+            }
 
             selectedDayContent(for: entries, date: date)
         }
-        .padding()
+        .padding(DS.Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -511,6 +549,34 @@ struct IncomeView: View {
         return min(max(preferred, minHeight), maxHeight)
     }
 
+    private func plannedActualTotals(for entries: [Income]) -> (planned: Double, actual: Double) {
+        entries.reduce(into: (planned: 0.0, actual: 0.0)) { result, income in
+            if income.isPlanned {
+                result.planned += income.amount
+            } else {
+                result.actual += income.amount
+            }
+        }
+    }
+
+    private func summaryPill(title: String, amount: Double, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title.uppercased())
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+            Text(currencyString(for: amount))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(
+            tint.opacity(0.12),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+    }
+
     // MARK: - Delete Handler
     /// Handles deleting selected rows from the day's entries.
     /// - Parameters:
@@ -605,4 +671,33 @@ private extension View {
     }
 
 }
+
+#if os(iOS)
+private struct CalendarScrollDisabler: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async { disableScroll(in: view.superview) }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async { disableScroll(in: uiView.superview) }
+    }
+
+    private func disableScroll(in root: UIView?) {
+        guard let root else { return }
+
+        if let scrollView = root as? UIScrollView {
+            scrollView.isScrollEnabled = false
+            scrollView.bounces = false
+            scrollView.alwaysBounceVertical = false
+        }
+
+        for subview in root.subviews {
+            disableScroll(in: subview)
+        }
+    }
+}
+#endif
 
