@@ -259,7 +259,7 @@ private struct CategoryChipsRow: View {
                 }
             }
         }
-        .onChange(of: categories.count) { _ in
+        .onChange(of: categories.count) { _, _ in
             // Auto-pick first category if none selected yet
             if selectedCategoryID == nil, let first = categories.first {
                 selectedCategoryID = first.objectID

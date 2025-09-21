@@ -506,15 +506,22 @@ private struct IncomeRow: View {
 /// Behavior: Calls `viewModel.reloadForSelectedDay()` whenever `selectedDate` changes.
 private struct SelectionChangeHandler: ViewModifier {
     @ObservedObject var viewModel: IncomeScreenViewModel
+    @State private var previousDate: Date?
     func body(content: Content) -> some View {
         if #available(iOS 17.0, macOS 14.0, *) {
             return content.onChange(of: viewModel.selectedDate) {
                 viewModel.reloadForSelectedDay(forceMonthReload: false)
             }
         } else {
-            return content.onChange(of: viewModel.selectedDate) { _ in
-                viewModel.reloadForSelectedDay(forceMonthReload: false)
-            }
+            return content
+                .task(id: viewModel.selectedDate) {
+                    if let previousDate, previousDate != viewModel.selectedDate {
+                        self.previousDate = viewModel.selectedDate
+                        viewModel.reloadForSelectedDay(forceMonthReload: false)
+                    } else if previousDate == nil {
+                        self.previousDate = viewModel.selectedDate
+                    }
+                }
         }
     }
 }

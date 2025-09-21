@@ -82,12 +82,12 @@ struct OnboardingView: View {
         .onboardingPresentation()
         .animation(.easeInOut, value: step)
         .transition(.opacity)
-        .onChange(of: enableCloudSync, perform: { newValue in
+        .onChange(of: enableCloudSync) { _, newValue in
             guard !newValue else { return }
             syncCardThemes = false
             syncAppTheme = false
             syncBudgetPeriod = false
-        })
+        }
     }
 }
 
@@ -171,10 +171,10 @@ private struct ThemeStep: View {
             .frame(maxWidth: .infinity)
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
-        .onChange(of: themeManager.selectedTheme, perform: { newValue in
+        .onChange(of: themeManager.selectedTheme) { _, newValue in
             guard newValue != selectedTheme else { return }
             selectedTheme = newValue
-        })
+        }
     }
 
     private var header: some View {
@@ -416,12 +416,12 @@ private struct CloudSyncStep: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: enableCloudSync, perform: { newValue in
+        .onChange(of: enableCloudSync) { _, newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
-        })
+        }
     }
 
     @ViewBuilder

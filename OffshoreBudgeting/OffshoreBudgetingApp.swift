@@ -103,6 +103,7 @@ struct OffshoreBudgetingApp: App {
 private struct ColorSchemeChangeHandler: ViewModifier {
     let systemColorScheme: ColorScheme
     let refresh: (ColorScheme) -> Void
+    @State private var previousValue: ColorScheme?
 
     func body(content: Content) -> some View {
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
@@ -110,9 +111,15 @@ private struct ColorSchemeChangeHandler: ViewModifier {
                 refresh(newValue)
             }
         } else {
-            content.onChange(of: systemColorScheme) { newValue in
-                refresh(newValue)
-            }
+            content
+                .task(id: systemColorScheme) {
+                    if let previousValue, previousValue != systemColorScheme {
+                        self.previousValue = systemColorScheme
+                        refresh(systemColorScheme)
+                    } else if previousValue == nil {
+                        self.previousValue = systemColorScheme
+                    }
+                }
         }
     }
 }
