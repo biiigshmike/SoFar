@@ -38,7 +38,7 @@ struct HomeView: View {
         mainLayout
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("Home")
+        .ub_tabNavigationTitle("Home")
         .toolbar { toolbarContent() }
         .refreshable { await vm.refresh() }
         .task {

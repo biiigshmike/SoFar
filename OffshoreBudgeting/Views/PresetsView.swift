@@ -141,7 +141,7 @@ struct PresetsView: View {
             )
             .environment(\.managedObjectContext, viewContext)
         }
-        .navigationTitle("Presets")
+        .ub_tabNavigationTitle("Presets")
         // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

@@ -226,7 +226,7 @@ struct SettingsView: View {
         )
         .accentColor(themeManager.selectedTheme.resolvedTint)
         .tint(themeManager.selectedTheme.resolvedTint)
-        .navigationTitle("Settings")
+        .ub_tabNavigationTitle("Settings")
         .alert("Erase All Data?", isPresented: $showResetAlert) {
             Button("Erase", role: .destructive) {
                 try? CoreDataService.shared.wipeAllData()
