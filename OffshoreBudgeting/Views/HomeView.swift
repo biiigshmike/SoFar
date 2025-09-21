@@ -39,7 +39,6 @@ struct HomeView: View {
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_tabNavigationTitle("Home")
-        .toolbar { toolbarContent() }
         .refreshable { await vm.refresh() }
         .task {
             CoreDataService.shared.ensureLoaded()
@@ -86,54 +85,40 @@ struct HomeView: View {
             RootViewTopPlanes(
                 title: "Home",
                 topPaddingStyle: .navigationBarAligned
-            )
+            ) {
+                headerActions
+            }
 
             header
                 .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
     }
 
-    // MARK: Toolbar
-    @ToolbarContentBuilder
-    private func toolbarContent() -> some ToolbarContent {
-        periodPickerToolbarItem()
-        actionToolbarItem()
+    private var headerActions: some View {
+        HStack(spacing: DS.Spacing.s) {
+            periodPickerControl
+            actionControl
+        }
     }
 
-    @ToolbarContentBuilder
-    private func periodPickerToolbarItem() -> some ToolbarContent {
-        // Budget period picker varies by platform because
-        // `.navigationBarLeading` is unavailable on macOS.
+    @ViewBuilder
+    private var periodPickerControl: some View {
+        Menu {
+            ForEach(BudgetPeriod.selectableCases) { period in
+                Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+            }
+        } label: {
 #if os(macOS)
-        ToolbarItem(placement: .navigation) {
-            Menu {
-                ForEach(BudgetPeriod.selectableCases) { period in
-                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                }
-            } label: {
-                Label(budgetPeriod.displayName, systemImage: "calendar")
-            }
-        }
+            Label(budgetPeriod.displayName, systemImage: "calendar")
 #else
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Menu {
-                ForEach(BudgetPeriod.selectableCases) { period in
-                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                }
-            } label: {
-                toolbarIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
-            }
-            .frame(width: ToolbarButtonMetrics.dimension, height: ToolbarButtonMetrics.dimension)
-            .contentShape(Rectangle())
-        }
+            toolbarIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
 #endif
+        }
     }
 
-    @ToolbarContentBuilder
-    private func actionToolbarItem() -> some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            actionToolbarItemContent
-        }
+    @ViewBuilder
+    private var actionControl: some View {
+        actionToolbarItemContent
     }
 
     @ViewBuilder
