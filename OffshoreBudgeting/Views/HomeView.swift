@@ -35,11 +35,11 @@ struct HomeView: View {
 
     // MARK: Body
     var body: some View {
-        mainLayout
+        RootTabScaffold(title: "Home", trailing: { headerActions }) {
+            mainLayout
+        }
         // Make the whole screen participate so the ZStack gets the full height.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ub_tabNavigationTitle("Home")
-        .toolbar { toolbarContent() }
         .refreshable { await vm.refresh() }
         .task {
             CoreDataService.shared.ensureLoaded()
@@ -71,14 +71,6 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Home")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.top, DS.Spacing.l)
-#endif
-
             // MARK: Header (Month chevrons + DatePicker)
             header
 
@@ -90,58 +82,35 @@ struct HomeView: View {
         }
     }
 
-    // MARK: Toolbar
-    @ToolbarContentBuilder
-    private func toolbarContent() -> some ToolbarContent {
-        periodPickerToolbarItem()
-        actionToolbarItem()
+    // MARK: Header Actions
+    private var headerActions: some View {
+        HStack(spacing: DS.Spacing.s) {
+            periodPickerControl
+            headerActionControl
+        }
     }
 
-    @ToolbarContentBuilder
-    private func periodPickerToolbarItem() -> some ToolbarContent {
-        // Budget period picker varies by platform because
-        // `.navigationBarLeading` is unavailable on macOS.
-#if os(macOS)
-        ToolbarItem(placement: .navigation) {
-            Menu {
-                ForEach(BudgetPeriod.selectableCases) { period in
-                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                }
-            } label: {
-                Label(budgetPeriod.displayName, systemImage: "calendar")
+    private var periodPickerControl: some View {
+        Menu {
+            ForEach(BudgetPeriod.selectableCases) { period in
+                Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
             }
+        } label: {
+            headerIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
         }
-#else
-        ToolbarItem(placement: .navigationBarLeading) {
-            Menu {
-                ForEach(BudgetPeriod.selectableCases) { period in
-                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                }
-            } label: {
-                toolbarIconLabel(title: budgetPeriod.displayName, systemImage: "calendar")
-            }
-            .frame(width: ToolbarButtonMetrics.dimension, height: ToolbarButtonMetrics.dimension)
-            .contentShape(Rectangle())
-        }
-#endif
-    }
-
-    @ToolbarContentBuilder
-    private func actionToolbarItem() -> some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            actionToolbarItemContent
-        }
+        .accessibilityLabel("Change budget period")
     }
 
     @ViewBuilder
-    private var actionToolbarItemContent: some View {
+    private var headerActionControl: some View {
         switch vm.state {
         case .empty:
             Button {
                 isPresentingAddBudget = true
             } label: {
-                toolbarIconLabel(title: "Add Budget", systemImage: "plus")
+                RootTabHeaderButtonLabel(title: "Add Budget", systemImage: "plus")
             }
+            .buttonStyle(.plain)
 
         case .loaded(let summaries):
             if let first = summaries.first {
@@ -157,10 +126,8 @@ struct HomeView: View {
                         Label("Delete Budget", systemImage: "trash")
                     }
                 } label: {
-                    toolbarIconLabel(title: "Actions", systemImage: "ellipsis.circle")
+                    RootTabHeaderButtonLabel(title: "Actions", systemImage: "ellipsis.circle")
                 }
-            } else {
-                EmptyView()
             }
 
         default:
@@ -168,20 +135,15 @@ struct HomeView: View {
         }
     }
 
-    private enum ToolbarButtonMetrics {
+    private enum HeaderButtonMetrics {
         static let dimension: CGFloat = 44
     }
 
-    @ViewBuilder
-    private func toolbarIconLabel(title: String, systemImage: String) -> some View {
-#if os(macOS)
-        Label(title, systemImage: systemImage)
-#else
+    private func headerIconLabel(title: String, systemImage: String) -> some View {
         Label(title, systemImage: systemImage)
             .labelStyle(.iconOnly)
-            .frame(width: ToolbarButtonMetrics.dimension, height: ToolbarButtonMetrics.dimension)
+            .frame(width: HeaderButtonMetrics.dimension, height: HeaderButtonMetrics.dimension)
             .contentShape(Rectangle())
-#endif
     }
 
     // MARK: Sheets & Alerts

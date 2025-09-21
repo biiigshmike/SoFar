@@ -30,9 +30,9 @@ struct PresetsView: View {
     var body: some View {
         Group {
             if isOnboardingPresentation {
-                content
+                rootScaffold
             } else {
-                content
+                rootScaffold
                     .ub_surfaceBackground(
                         themeManager.selectedTheme,
                         configuration: themeManager.glassConfiguration,
@@ -52,16 +52,54 @@ struct PresetsView: View {
         }
     }
 
-    private var content: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Presets")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.top, DS.Spacing.l)
-#endif
+    private var rootScaffold: some View {
+        RootTabScaffold(title: "Presets", trailing: { headerPrimaryAction }) {
+            contentLayout
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // MARK: Data lifecycle
+        .onAppear { viewModel.loadTemplates(using: viewContext) }
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .NSManagedObjectContextObjectsDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            viewModel.loadTemplates(using: viewContext)
+        }
+        // Pull to refresh to force reload of templates
+        .refreshable { viewModel.loadTemplates(using: viewContext) }
+        // MARK: Add Preset Sheet
+        .sheet(isPresented: $isPresentingAddSheet) {
+            AddGlobalPlannedExpenseSheet(onSaved: {
+                viewModel.loadTemplates(using: viewContext)
+            })
+            .environment(\.managedObjectContext, viewContext)
+            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
+        }
+        // MARK: Assign Budgets Sheet
+        .sheet(item: $sheetTemplateToAssign) { template in
+            PresetBudgetAssignmentSheet(template: template) {
+                viewModel.loadTemplates(using: viewContext)
+            }
+            .environment(\.managedObjectContext, viewContext)
+            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
+        }
+        // MARK: Edit Template Sheet
+        .sheet(item: $editingTemplate) { template in
+            AddPlannedExpenseView(
+                plannedExpenseID: template.objectID,
+                preselectedBudgetID: nil,
+                defaultSaveAsGlobalPreset: true,
+                onSaved: {
+                    viewModel.loadTemplates(using: viewContext)
+                }
+            )
+            .environment(\.managedObjectContext, viewContext)
+        }
+    }
 
+    private var contentLayout: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
                 if viewModel.items.isEmpty {
@@ -111,57 +149,15 @@ struct PresetsView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // MARK: Data lifecycle
-        .onAppear { viewModel.loadTemplates(using: viewContext) }
-        .onReceive(
-            NotificationCenter.default
-                .publisher(for: .NSManagedObjectContextObjectsDidChange)
-                .receive(on: RunLoop.main)
-        ) { _ in
-            viewModel.loadTemplates(using: viewContext)
+    }
+
+    private var headerPrimaryAction: some View {
+        Button {
+            isPresentingAddSheet = true
+        } label: {
+            RootTabHeaderButtonLabel(title: "Add Preset", systemImage: "plus")
         }
-        // Pull to refresh to force reload of templates
-        .refreshable { viewModel.loadTemplates(using: viewContext) }
-        // MARK: Add Preset Sheet
-        .sheet(isPresented: $isPresentingAddSheet) {
-            AddGlobalPlannedExpenseSheet(onSaved: {
-                viewModel.loadTemplates(using: viewContext)
-            })
-            .environment(\.managedObjectContext, viewContext)
-            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
-        }
-        // MARK: Assign Budgets Sheet
-        .sheet(item: $sheetTemplateToAssign) { template in
-            PresetBudgetAssignmentSheet(template: template) {
-                viewModel.loadTemplates(using: viewContext)
-            }
-            .environment(\.managedObjectContext, viewContext)
-            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
-        }
-        // MARK: Edit Template Sheet
-        .sheet(item: $editingTemplate) { template in
-            AddPlannedExpenseView(
-                plannedExpenseID: template.objectID,
-                preselectedBudgetID: nil,
-                defaultSaveAsGlobalPreset: true,
-                onSaved: {
-                    viewModel.loadTemplates(using: viewContext)
-                }
-            )
-            .environment(\.managedObjectContext, viewContext)
-        }
-        .ub_tabNavigationTitle("Presets")
-        // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingAddSheet = true
-                } label: {
-                    Label("Add Preset Planned Expense", systemImage: "plus")
-                }
-            }
-        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Actions
