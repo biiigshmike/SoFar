@@ -270,7 +270,7 @@ struct SettingsView: View {
     private var scrollViewBottomPadding: CGFloat {
         #if os(iOS)
         let base = horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
-        return max(safeAreaInsets.bottom, base)
+        return safeAreaInsets.bottom + base
         #else
         return DS.Spacing.l
         #endif
