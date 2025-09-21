@@ -296,11 +296,41 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            iconOverride ?? tint.ub_contrastingForegroundColor
+            if let iconOverride {
+                return resolvedColor(iconOverride)
+            }
+            return resolvedTint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
-            tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+            resolvedTint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+        }
+
+        private var resolvedTint: Color {
+            resolvedColor(tint)
+        }
+
+        private func resolvedColor(_ color: Color) -> Color {
+            #if canImport(UIKit)
+            if #available(iOS 14.0, *) {
+                let uiColor = UIColor(color)
+                let interfaceStyle: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
+                let resolved = uiColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: interfaceStyle))
+                return Color(uiColor: resolved)
+            } else {
+                return color
+            }
+            #elseif canImport(AppKit)
+            let nsColor = NSColor(color)
+            let appearanceName: NSAppearance.Name = colorScheme == .dark ? .darkAqua : .aqua
+            if let appearance = NSAppearance(named: appearanceName) {
+                let resolved = nsColor.resolvedColor(with: appearance)
+                return Color(nsColor: resolved)
+            }
+            return color
+            #else
+            return color
+            #endif
         }
     }
 
