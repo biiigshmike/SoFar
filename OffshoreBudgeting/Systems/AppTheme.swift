@@ -101,6 +101,28 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// when the theme opts into the system tint on iOS.
     var resolvedTint: Color { tint ?? accent }
 
+    /// Preferred tint for toggle controls. Matches Apple's default green
+    /// when following the system appearance so switches remain legible in
+    /// both light and dark modes on newer OS releases.
+    var toggleTint: Color {
+        switch self {
+        case .system:
+#if canImport(UIKit)
+            return Color(UIColor.systemGreen)
+#elseif canImport(AppKit)
+            if #available(macOS 11.0, *) {
+                return Color(nsColor: .systemGreen)
+            } else {
+                return Color.green
+            }
+#else
+            return Color.green
+#endif
+        default:
+            return resolvedTint
+        }
+    }
+
     /// Secondary accent color derived from the primary accent.
     var secondaryAccent: Color {
         #if canImport(UIKit)
