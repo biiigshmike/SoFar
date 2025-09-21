@@ -59,80 +59,6 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        contentWrapper
-            .frame(maxHeight: .infinity, alignment: .top)
-            // Keep list in sync without deprecated APIs
-            .ub_onChange(of: viewModel.selectedDate) {
-                viewModel.reloadForSelectedDay(forceMonthReload: false)
-            }
-            // Pull to refresh to reload entries for the selected day
-            .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
-            // MARK: Present Add Income Form
-            .sheet(item: $addIncomeInitialDate, onDismiss: {
-                // Reload entries for the selected day after adding/saving
-                viewModel.reloadForSelectedDay(forceMonthReload: true)
-            }) { item in
-                AddIncomeFormView(
-                    incomeObjectID: nil,
-                    budgetObjectID: nil,
-                    initialDate: item.value
-                )
-            }
-            // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
-            .sheet(item: $editingIncome, onDismiss: {
-                // Reload after edit
-                viewModel.reloadForSelectedDay(forceMonthReload: true)
-            }) { income in
-                AddIncomeFormView(
-                    incomeObjectID: income.objectID,
-                    budgetObjectID: nil,
-                    initialDate: nil
-                )
-            }
-            .onAppear {
-                // Ensure the calendar opens on today's date and load entries
-                let initial = viewModel.selectedDate ?? Date()
-                navigate(to: initial)
-            }
-            .ub_tabNavigationTitle("Income")
-            .ub_surfaceBackground(
-                themeManager.selectedTheme,
-                configuration: themeManager.glassConfiguration,
-                ignoringSafeArea: .all
-            )
-            // MARK: Toolbar (+ button) → Present Add Income sheet
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
-                    } label: {
-                        Label("Add Income", systemImage: "plus")
-                    }
-                    .accessibilityIdentifier("add_income_button")
-                }
-            }
-    }
-
-    @ViewBuilder
-    private var contentWrapper: some View {
-#if os(iOS)
-        ScrollView {
-            incomeContent
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, DS.Spacing.l)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .scrollIndicators(.hidden)
-#else
-        incomeContent
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-#endif
-    }
-
-    @ViewBuilder
-    private var incomeContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
 #if os(macOS) || targetEnvironment(macCatalyst)
             Text("Income")
@@ -145,14 +71,67 @@ struct IncomeView: View {
 #endif
 
             VStack(spacing: 12) {
-                // Calendar section in a padded card
-                calendarSection
+            // Calendar section in a padded card
+            calendarSection
 
-                // Weekly summary bar
-                weeklySummaryBar
+            // Weekly summary bar
+            weeklySummaryBar
 
-                // Selected day entries
-                selectedDaySection
+            // Selected day entries
+            selectedDaySection
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxHeight: .infinity, alignment: .top)
+        // Keep list in sync without deprecated APIs
+        .ub_onChange(of: viewModel.selectedDate) {
+            viewModel.reloadForSelectedDay(forceMonthReload: false)
+        }
+        // Pull to refresh to reload entries for the selected day
+        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
+        // MARK: Present Add Income Form
+        .sheet(item: $addIncomeInitialDate, onDismiss: {
+            // Reload entries for the selected day after adding/saving
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
+        }) { item in
+            AddIncomeFormView(
+                incomeObjectID: nil,
+                budgetObjectID: nil,
+                initialDate: item.value
+            )
+        }
+        // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
+        .sheet(item: $editingIncome, onDismiss: {
+            // Reload after edit
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
+        }) { income in
+            AddIncomeFormView(
+                incomeObjectID: income.objectID,
+                budgetObjectID: nil,
+                initialDate: nil
+            )
+        }
+        .onAppear {
+            // Ensure the calendar opens on today's date and load entries
+            let initial = viewModel.selectedDate ?? Date()
+            navigate(to: initial)
+        }
+        .ub_tabNavigationTitle("Income")
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
+            configuration: themeManager.glassConfiguration,
+            ignoringSafeArea: .all
+        )
+        // MARK: Toolbar (+ button) → Present Add Income sheet
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    addIncomeInitialDate = AddIncomeSheetDate(value: viewModel.selectedDate ?? Date())
+                } label: {
+                    Label("Add Income", systemImage: "plus")
+                }
+                .accessibilityIdentifier("add_income_button")
             }
         }
     }
