@@ -107,7 +107,7 @@ private struct ColorSchemeChangeHandler: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            content.onChange(of: systemColorScheme) { _, newValue in
+            content.onChange(of: systemColorScheme) { newValue in
                 refresh(newValue)
             }
         } else {
