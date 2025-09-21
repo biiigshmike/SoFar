@@ -297,6 +297,8 @@ struct IncomeView: View {
                     .padding(.vertical, 4)
             } else {
                 // MARK: Scrollable List with Unified Swipe Actions
+                let listHeight = estimatedDailyListHeight(forEntryCount: entries.count)
+
                 List {
                     ForEach(entries, id: \.objectID) { income in
                         IncomeRow(
@@ -315,7 +317,7 @@ struct IncomeView: View {
                 .listStyle(.plain)
                 .ub_hideScrollIndicators()
                 .applyIfAvailableScrollContentBackgroundHidden()
-                .frame(minHeight: 50, maxHeight: 100) // compact pill; scroll when needed
+                .frame(height: listHeight) // expand naturally, scroll when taller than the cap
             }
         }
         .padding()
@@ -464,6 +466,19 @@ struct IncomeView: View {
     private func handleDelete(_ indexSet: IndexSet, in entries: [Income]) {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         targets.forEach { handleDeleteRequest($0) }
+    }
+
+    /// Provides a dynamic height for the daily income list so that short days expand while
+    /// still allowing longer lists to scroll within a capped region. The calculation intentionally
+    /// overestimates row height to account for padding and swipe affordances.
+    private func estimatedDailyListHeight(forEntryCount count: Int) -> CGFloat {
+        let minHeight: CGFloat = 140
+        let maxHeight: CGFloat = 420
+        guard count > 0 else { return minHeight }
+
+        let estimatedRowHeight: CGFloat = 68
+        let total = CGFloat(count) * estimatedRowHeight
+        return min(max(total, minHeight), maxHeight)
     }
 }
 
