@@ -74,11 +74,8 @@ extension View {
             return self
         }
         #elseif os(macOS)
-        if #available(macOS 13.0, *) {
-            return self.toolbarTitleDisplayMode(.large)
-        } else {
-            return self
-        }
+        // macOS does not support `.large` title display mode; leave unchanged.
+        return self
         #else
         return self
         #endif
