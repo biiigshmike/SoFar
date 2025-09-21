@@ -297,7 +297,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                         .symbolRenderingMode(.monochrome)
                         .foregroundStyle(iconColor)
                 }
-                .foregroundColor(tint)
+                .foregroundColor(iconColor)
             }
         }
 
