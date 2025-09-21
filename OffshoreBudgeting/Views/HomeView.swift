@@ -94,6 +94,7 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder
     private var headerActions: some View {
 #if os(macOS)
         HStack(spacing: DS.Spacing.s) {
@@ -331,9 +332,9 @@ struct HomeView: View {
 #if os(iOS)
 private struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
     private enum Metrics {
-        static let horizontalPadding: CGFloat = 6
-        static let verticalPadding: CGFloat = 6
-        static let dividerInset: CGFloat = 4
+        static var horizontalPadding: CGFloat { 6 }
+        static var verticalPadding: CGFloat { 6 }
+        static var dividerInset: CGFloat { 4 }
     }
 
     @EnvironmentObject private var themeManager: ThemeManager
@@ -370,7 +371,7 @@ private struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         .padding(.vertical, Metrics.verticalPadding)
         .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 content
                     .glassEffect(in: Capsule(style: .continuous))
@@ -403,7 +404,7 @@ private struct RootHeaderGlassControl<Content: View>: View {
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
             .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 control
                     .glassEffect(in: Capsule(style: .continuous))
