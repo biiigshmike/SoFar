@@ -163,7 +163,16 @@ struct PresetsView: View {
     }
 
     private var swipeActionTint: Color {
-        colorScheme == .dark ? .white : .black
+        if colorScheme == .dark {
+            // Dark mode needs a deeper neutral so the iOS 18 circular swipe
+            // buttons render with a visible glyph instead of a white disk.
+            // Picking a mid-gray keeps enough contrast for the label helper
+            // (`ub_contrastingForegroundColor`) to choose a white icon while
+            // still reading as a subtle neutral accent.
+            return Color(red: 0.52, green: 0.55, blue: 0.6)
+        } else {
+            return .black
+        }
     }
 
     // MARK: - Actions
