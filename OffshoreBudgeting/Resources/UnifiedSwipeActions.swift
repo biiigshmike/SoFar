@@ -10,6 +10,8 @@ import SwiftUI
 #if os(iOS)
 // MARK: - iOS-only import for haptics
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 // MARK: - UnifiedSwipeConfig
@@ -204,7 +206,12 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         Button(role: .destructive) {
             triggerDelete()
         } label: {
-            Label(config.deleteTitle, systemImage: config.deleteSystemImageName)
+            UnifiedSwipeActionButtonLabel(
+                title: config.deleteTitle,
+                systemImageName: config.deleteSystemImageName,
+                tint: config.deleteTint,
+                iconOverride: .white
+            )
         }
         .tint(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
@@ -216,7 +223,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         Button {
             onEdit()
         } label: {
-            Label(config.editTitle, systemImage: config.editSystemImageName)
+            UnifiedSwipeActionButtonLabel(
+                title: config.editTitle,
+                systemImageName: config.editSystemImageName,
+                tint: config.editTint
+            )
         }
         .tint(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
@@ -229,10 +240,42 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             Button(role: item.role) {
                 item.action()
             } label: {
-                Label(item.title, systemImage: item.systemImageName)
+                UnifiedSwipeActionButtonLabel(
+                    title: item.title,
+                    systemImageName: item.systemImageName,
+                    tint: item.tint,
+                    iconOverride: item.role == .destructive ? .white : nil
+                )
             }
             .tint(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
+        }
+    }
+
+    // MARK: - UnifiedSwipeActionButtonLabel
+    /// Produces a label that adapts to the new OS 26 circular swipe buttons while
+    /// maintaining the legacy label appearance on older releases.
+    private struct UnifiedSwipeActionButtonLabel: View {
+        let title: String
+        let systemImageName: String
+        let tint: Color
+        let iconOverride: Color? = nil
+
+        var body: some View {
+            if #available(iOS 18.0, macOS 15.0, *) {
+                Image(systemName: systemImageName)
+                    .symbolRenderingMode(.monochrome)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel(Text(title))
+            } else {
+                Label(title, systemImage: systemImageName)
+            }
+        }
+
+        private var iconColor: Color {
+            iconOverride ?? tint.ub_contrastingForegroundColor
         }
     }
 
@@ -298,5 +341,40 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+// MARK: - Color Helpers
+private extension Color {
+    /// Returns either black or white depending on which provides the best
+    /// contrast for the supplied color. Used to ensure OS 26 style swipe
+    /// buttons remain legible regardless of tint.
+    var ub_contrastingForegroundColor: Color {
+        #if canImport(UIKit)
+        let uiColor = UIColor(self)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return .white
+        }
+        return Color.contrastingColor(red: red, green: green, blue: blue)
+        #elseif canImport(AppKit)
+        let nsColor = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        nsColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return Color.contrastingColor(red: red, green: green, blue: blue)
+        #else
+        return .white
+        #endif
+    }
+
+    static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
+        let brightness = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+        return brightness < 0.6 ? .white : .black
     }
 }
