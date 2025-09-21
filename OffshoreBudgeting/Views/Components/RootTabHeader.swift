@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// Shared layout values for ``RootTabHeader`` and aligned components.
+enum RootTabHeaderLayout {
+    static let defaultHorizontalPadding: CGFloat = DS.Spacing.l
+}
+
 /// Shared header for root tab screens. Ensures a large, bold title is consistently
 /// rendered across platforms while leaving space for optional trailing controls
 /// (such as summary buttons or quick actions).
@@ -10,13 +15,10 @@ struct RootTabHeader<Trailing: View>: View {
     private let horizontalPadding: CGFloat
     @ViewBuilder private let trailing: () -> Trailing
 
-    /// Shared default padding value so other "planes" can align with the title row.
-    static let defaultHorizontalPadding: CGFloat = DS.Spacing.l
-
     // MARK: Init
     init(
         title: String,
-        horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding,
+        horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
@@ -24,7 +26,7 @@ struct RootTabHeader<Trailing: View>: View {
         self.trailing = trailing
     }
 
-    init(title: String, horizontalPadding: CGFloat = RootTabHeader.defaultHorizontalPadding) where Trailing == EmptyView {
+    init(title: String, horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding) where Trailing == EmptyView {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.trailing = { EmptyView() }

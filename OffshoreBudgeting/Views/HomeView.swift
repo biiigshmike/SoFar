@@ -74,7 +74,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.s) {
                 RootViewTopPlanes(title: "Home")
                 header
-                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
             }
 
             // MARK: Content Container
