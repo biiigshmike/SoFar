@@ -102,24 +102,27 @@ extension View {
     /// Applies a large navigation/toolbar title where supported, matching the
     /// default iOS "Settings" appearance. Falls back gracefully on platforms
     /// that do not expose the API.
+    @ViewBuilder
     func ub_toolbarTitleLarge() -> some View {
         #if os(iOS)
         if #available(iOS 17.0, *) {
-            return self.toolbarTitleDisplayMode(.large)
+            self
+                .toolbarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.large)
         } else {
-            return self.navigationBarTitleDisplayMode(.large)
+            self.navigationBarTitleDisplayMode(.large)
         }
         #elseif os(tvOS)
         if #available(tvOS 17.0, *) {
-            return self.toolbarTitleDisplayMode(.large)
+            self.toolbarTitleDisplayMode(.large)
         } else {
-            return self
+            self
         }
         #elseif os(macOS)
         // macOS does not support `.large` title display mode; leave unchanged.
-        return self
+        self
         #else
-        return self
+        self
         #endif
     }
 
