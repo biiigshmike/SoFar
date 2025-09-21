@@ -51,6 +51,13 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 380
+    private var calendarContentHeight: CGFloat {
+        if horizontalSizeClass == .regular { return 520 }
+        if verticalSizeClass == .compact { return 360 }
+        return 420
+    }
+#else
+    private let calendarContentHeight: CGFloat = 420
 #endif
 
     private var bottomPadding: CGFloat {
@@ -215,6 +222,7 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
+            .frame(height: calendarContentHeight, alignment: .top)
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
@@ -251,14 +259,7 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
-#if os(iOS)
-            // Allow the calendar to size itself naturally so the weekly summary
-            // and selected-day cards remain visible beneath it. Using
-            // `maxHeight: .infinity` caused the card to consume the entire
-            // scroll view height on iPhone, pushing the other sections off
-            // screen.
-            .fixedSize(horizontal: false, vertical: true)
-#endif
+            .frame(height: calendarContentHeight, alignment: .top)
 #endif
         }
         .frame(maxWidth: .infinity)
@@ -279,19 +280,29 @@ struct IncomeView: View {
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
     private var weeklySummaryBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "calendar").imageScale(.large)
-            VStack(alignment: .leading, spacing: 4) {
-                let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
-                Text("\(formattedDate(start)) – \(formattedDate(end))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(currencyString(for: viewModel.totalForSelectedDate))
-                    .font(.headline)
+        let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "calendar")
+                    .imageScale(.large)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Week Total Income")
+                        .font(.headline)
+                    Text(currencyString(for: viewModel.totalForSelectedWeek))
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+
+                Spacer(minLength: 0)
             }
-            Spacer()
+
+            Text("\(formattedDate(start)) – \(formattedDate(end))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -307,14 +318,24 @@ struct IncomeView: View {
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
     @ViewBuilder
     private var selectedDaySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             let date = viewModel.selectedDate ?? Date()
             let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
 
             // MARK: Section Title — Selected Day
-            Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
-                .font(.headline)
-                .padding(.bottom, DS.Spacing.xs)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Selected Day Income")
+                        .font(.headline)
+                    Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(currencyString(for: viewModel.totalForSelectedDate))
+                    .font(.title3)
+                    .fontWeight(.semibold)
+            }
 
             selectedDayContent(for: entries, date: date)
         }
