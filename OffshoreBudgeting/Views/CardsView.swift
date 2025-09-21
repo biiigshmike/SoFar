@@ -44,7 +44,6 @@ struct CardsView: View {
 
     // MARK: Layout Constants
     private let fixedCardHeight: CGFloat = 160
-    private let addButtonDimension: CGFloat = 44
 
     // MARK: Body
     var body: some View {
@@ -127,31 +126,16 @@ struct CardsView: View {
             .tint(themeManager.selectedTheme.resolvedTint)
     }
 
-    @ViewBuilder
     private var addCardButton: some View {
-        let button = Button {
+        RootHeaderIconActionButton(
+            systemImage: "plus",
+            accessibilityLabel: selectedCardStableID == nil ? "Add Card" : "Add Expense"
+        ) {
             if selectedCardStableID == nil {
                 isPresentingAddCard = true
             } else {
                 isPresentingAddExpense = true
             }
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: addButtonDimension, height: addButtonDimension)
-        }
-        .tint(themeManager.selectedTheme.resolvedTint)
-        .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
-
-        if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
-            button.buttonStyle(.glassProminent)
-        } else {
-            button.buttonStyle(
-                TranslucentButtonStyle(
-                    tint: themeManager.selectedTheme.resolvedTint,
-                    metrics: .rootActionIcon
-                )
-            )
         }
     }
 

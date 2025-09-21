@@ -27,8 +27,6 @@ struct PresetsView: View {
     @State private var templateToDelete: PlannedExpense? = nil
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    private let addButtonDimension: CGFloat = 44
-
     // MARK: Body
     var body: some View {
         Group {
@@ -152,27 +150,12 @@ struct PresetsView: View {
         .ub_tabNavigationTitle("Presets")
     }
 
-    @ViewBuilder
     private var addPresetButton: some View {
-        let button = Button {
+        RootHeaderIconActionButton(
+            systemImage: "plus",
+            accessibilityLabel: "Add Preset Planned Expense"
+        ) {
             isPresentingAddSheet = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: addButtonDimension, height: addButtonDimension)
-        }
-        .tint(themeManager.selectedTheme.resolvedTint)
-        .accessibilityLabel("Add Preset Planned Expense")
-
-        if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
-            button.buttonStyle(.glassProminent)
-        } else {
-            button.buttonStyle(
-                TranslucentButtonStyle(
-                    tint: themeManager.selectedTheme.resolvedTint,
-                    metrics: .rootActionIcon
-                )
-            )
         }
     }
 
