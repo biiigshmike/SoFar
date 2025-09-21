@@ -38,6 +38,18 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// UI-facing list of selectable themes.
     static var selectableCases: [AppTheme] { allCases }
 
+    #if canImport(UIKit)
+    /// Dynamic neutral accent that mirrors the system's black text in light mode
+    /// and white text in dark mode without relying on an asset catalog color.
+    private static var systemNeutralAccent: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(white: 1.0, alpha: 1.0)
+                : UIColor(white: 0.0, alpha: 1.0)
+        })
+    }
+    #endif
+
     /// Human readable name shown in pickers.
     var displayName: String {
         switch self {
@@ -61,8 +73,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
             #if os(macOS)
             return SystemThemeMac.accent
+            #elseif canImport(UIKit)
+            return AppTheme.systemNeutralAccent
             #else
-            return Color("AccentColor", bundle: .main)
+            return Color.primary
             #endif
         case .classic: return .blue
         case .midnight: return .purple
@@ -81,7 +95,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     ///
     /// All custom themes specify a tint color. The System theme intentionally
     /// returns platform-appropriate values so controls match native styling.
-    /// On iOS and related platforms we rely on the `AccentColor` asset so the
+    /// On iOS and related platforms we rely on a dynamic neutral accent so the
     /// theme respects the project's light (black) and dark (white) accents
     /// instead of defaulting to the system blue.
     var tint: Color? {
@@ -89,8 +103,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
             #if os(macOS)
             return SystemThemeMac.tint
+            #elseif canImport(UIKit)
+            return AppTheme.systemNeutralAccent
             #else
-            return Color("AccentColor", bundle: .main)
+            return Color.primary
             #endif
         default:
             return accent
@@ -517,8 +533,8 @@ extension AppTheme {
         var configuration = AppTheme.GlassConfiguration.standard
 
         // Neutralize the glass surface like Apple's Settings background. Only blend
-        // in the accent color when it is truly colorful so black/white AccentColor
-        // assets do not muddy the grouped background.
+        // in the accent color when it is truly colorful so neutral black/white
+        // accents do not muddy the grouped background.
         let tintSaturation = AppThemeColorUtilities
             .hsba(from: resolvedTint)?.saturation ?? 0.0
         let tintBlend = tintSaturation.clamped(to: 0...1)
@@ -829,11 +845,15 @@ extension AppTheme.GlassConfiguration {
 #if os(macOS)
 private enum SystemThemeMac {
     static var accent: Color {
-        Color("AccentColor", bundle: .main)
+        if #available(macOS 10.15, *) {
+            return Color(nsColor: .labelColor)
+        } else {
+            return Color.white
+        }
     }
 
     static var tint: Color {
-        Color("AccentColor", bundle: .main)
+        accent
     }
 
     static var background: Color {

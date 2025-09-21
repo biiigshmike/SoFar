@@ -211,9 +211,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 ZStack {
                     Circle().fill(backgroundCircleColor)
                     Image(systemName: systemImageName)
+                        .renderingMode(.template)
                         .symbolRenderingMode(.monochrome)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(resolvedIconColor)
+                        .foregroundColor(resolvedIconColor)
                 }
                 .frame(width: 44, height: 44)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -223,8 +225,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             } else {
                 Label { Text(title) } icon: {
                     Image(systemName: systemImageName)
+                        .renderingMode(.template)
                         .symbolRenderingMode(.monochrome)
                         .foregroundStyle(resolvedIconColor)
+                        .foregroundColor(resolvedIconColor)
                 }
                 .foregroundColor(resolvedIconColor)
             }
@@ -343,10 +347,27 @@ private struct ForceDarkGlyphModifier: ViewModifier {
     let colorScheme: ColorScheme
     func body(content: Content) -> some View {
         if colorScheme == .dark {
-            // Avoid any system tint from overriding the glyph color
+            #if os(iOS)
+            if #available(iOS 18.0, *) {
+                content.buttonStyle(.plain)
+            } else {
+                content
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.black)
+            }
+            #elseif os(macOS)
+            if #available(macOS 15.0, *) {
+                content.buttonStyle(.plain)
+            } else {
+                content
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.black)
+            }
+            #else
             content
                 .buttonStyle(.plain)
                 .foregroundStyle(.black)
+            #endif
         } else {
             content
         }
