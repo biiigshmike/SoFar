@@ -63,7 +63,7 @@ struct IncomeView: View {
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        return DS.Spacing.xl
+        return DS.Spacing.xxl
 #else
         return 12
 #endif
@@ -78,7 +78,7 @@ struct IncomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
-        .padding(.top, DS.Spacing.l)
+        .padding(.top, DS.Spacing.xxl)
         .padding(.bottom, DS.Spacing.s)
         .background(
             themeManager.selectedTheme.background
@@ -105,15 +105,16 @@ struct IncomeView: View {
 #endif
 
             VStack(spacing: 12) {
-            // Calendar section in a padded card
-            calendarSection
+                // Calendar section in a padded card
+                calendarSection
 
-            // Weekly summary bar
-            weeklySummaryBar
+                // Weekly summary bar
+                weeklySummaryBar
 
-            // Selected day entries
-            selectedDaySection
+                // Selected day entries
+                selectedDaySection
             }
+            .padding(.bottom, DS.Spacing.l)
         }
         .padding(.horizontal, 16)
         .padding(.top, topPadding)
@@ -123,8 +124,6 @@ struct IncomeView: View {
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
         }
-        // Pull to refresh to reload entries for the selected day
-        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
         // MARK: Present Add Income Form
         .sheet(item: $addIncomeInitialDate, onDismiss: {
             // Reload entries for the selected day after adding/saving
