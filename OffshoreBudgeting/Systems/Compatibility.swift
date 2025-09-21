@@ -56,15 +56,43 @@ extension View {
         #endif
     }
 
+    // MARK: ub_toolbarTitleLarge()
+    /// Applies a large navigation/toolbar title where supported, matching the
+    /// default iOS "Settings" appearance. Falls back gracefully on platforms
+    /// that do not expose the API.
+    func ub_toolbarTitleLarge() -> some View {
+        #if os(iOS)
+        if #available(iOS 17.0, *) {
+            return self.toolbarTitleDisplayMode(.large)
+        } else {
+            return self.navigationBarTitleDisplayMode(.large)
+        }
+        #elseif os(tvOS)
+        if #available(tvOS 17.0, *) {
+            return self.toolbarTitleDisplayMode(.large)
+        } else {
+            return self
+        }
+        #elseif os(macOS)
+        if #available(macOS 13.0, *) {
+            return self.toolbarTitleDisplayMode(.large)
+        } else {
+            return self
+        }
+        #else
+        return self
+        #endif
+    }
+
     // MARK: ub_tabNavigationTitle(_:)
     /// Convenience helper for TabView root screens to ensure the navigation
-    /// title matches the tab label and uses a consistent inline display mode.
+    /// title matches the tab label and uses the standard large-title display.
     /// - Parameter title: The title to show in the navigation bar.
-    /// - Returns: A view with the title and inline display mode applied.
+    /// - Returns: A view with the title and large display mode applied.
     func ub_tabNavigationTitle(_ title: String) -> some View {
         self
             .navigationTitle(title)
-            .ub_toolbarTitleInline()
+            .ub_toolbarTitleLarge()
     }
 
     // MARK: ub_cardTitleShadow()
