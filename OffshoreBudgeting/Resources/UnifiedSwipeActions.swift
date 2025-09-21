@@ -31,10 +31,10 @@ public struct UnifiedSwipeConfig {
         showsEditAction: Bool = true,
         deleteTitle: String = "Delete",
         deleteSystemImageName: String = "trash",
-        deleteTint: Color? = nil,
+        deleteTint: Color? = UnifiedSwipeConfig.defaultDeleteTint,
         editTitle: String = "Edit",
         editSystemImageName: String = "pencil",
-        editTint: Color? = nil,
+        editTint: Color? = UnifiedSwipeConfig.defaultEditTint,
         allowsFullSwipeToDelete: Bool = true,
         playHapticOnDelete: Bool = true,
         deleteAccessibilityID: String? = "swipe_delete",
@@ -55,6 +55,44 @@ public struct UnifiedSwipeConfig {
 
     public static let standard = UnifiedSwipeConfig()
     public static let deleteOnly = UnifiedSwipeConfig(showsEditAction: false)
+
+    // MARK: Platform Defaults
+    static var defaultDeleteTint: Color {
+        #if os(iOS)
+        return Color(UIColor.systemRed)
+        #elseif os(macOS)
+        if #available(macOS 11.0, *) {
+            return Color(nsColor: .systemRed)
+        } else {
+            return .red
+        }
+        #else
+        return .red
+        #endif
+    }
+
+    static var defaultEditTint: Color {
+        #if os(iOS)
+        return Color(UIColor.systemGray5)
+        #elseif os(macOS)
+        if #available(macOS 11.0, *) {
+            if let dynamic = NSColor(name: nil) { appearance in
+                let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                return isDark
+                    ? NSColor(calibratedWhite: 0.28, alpha: 1.0)
+                    : NSColor(calibratedWhite: 0.92, alpha: 1.0)
+            } {
+                return Color(nsColor: dynamic)
+            } else {
+                return Color(nsColor: .systemGray)
+            }
+        } else {
+            return Color.gray.opacity(0.35)
+        }
+        #else
+        return Color.gray.opacity(0.35)
+        #endif
+    }
 }
 
 // MARK: - UnifiedSwipeCustomAction
@@ -147,40 +185,51 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     // MARK: Buttons
     @ViewBuilder
     private func deleteButton() -> some View {
+        let tint = config.deleteTint ?? UnifiedSwipeConfig.defaultDeleteTint
+        let foreground = tint.ub_contrastingForegroundColor
+
         Button(role: .destructive) {
             triggerDelete()
         } label: {
             UnifiedSwipeActionButtonLabel(
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
-                iconOverride: nil
+                iconOverride: foreground,
+                textOverride: foreground
             )
         }
-        .applySwipeActionTintIfNeeded(config.deleteTint)
+        .applySwipeActionTintIfNeeded(tint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
     @ViewBuilder
     private func editButton(onEdit: @escaping () -> Void) -> some View {
+        let tint = config.editTint ?? UnifiedSwipeConfig.defaultEditTint
+        let foreground = tint.ub_contrastingForegroundColor
+
         Button { onEdit() } label: {
             UnifiedSwipeActionButtonLabel(
                 title: config.editTitle,
                 systemImageName: config.editSystemImageName,
-                iconOverride: nil
+                iconOverride: foreground,
+                textOverride: foreground
             )
         }
-        .applySwipeActionTintIfNeeded(config.editTint)
+        .applySwipeActionTintIfNeeded(tint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
     @ViewBuilder
     private func customButtons() -> some View {
         ForEach(customActions) { item in
+            let foreground = item.tint.ub_contrastingForegroundColor
+
             Button(role: item.role) { item.action() } label: {
                 UnifiedSwipeActionButtonLabel(
                     title: item.title,
                     systemImageName: item.systemImageName,
-                    iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
+                    iconOverride: foreground,
+                    textOverride: foreground
                 )
             }
             .applySwipeActionTintIfNeeded(item.tint)
@@ -193,10 +242,12 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         let title: String
         let systemImageName: String
         let iconOverride: Color?
+        let textOverride: Color?
 
         var body: some View {
             Label {
                 Text(title)
+                    .foregroundStyle(textOverride ?? .primary)
             } icon: {
                 if let iconOverride {
                     Image(systemName: systemImageName)
@@ -205,6 +256,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                         .foregroundStyle(iconOverride)
                 } else {
                     Image(systemName: systemImageName)
+                        .foregroundStyle(textOverride ?? .primary)
                 }
             }
         }
@@ -257,13 +309,7 @@ private extension View {
 
     @ViewBuilder
     func ub_swipeActionTint(_ color: Color) -> some View {
-        #if os(iOS)
-        if #available(iOS 18.0, *) { self } else { self.tint(color) }
-        #elseif os(macOS)
-        if #available(macOS 15.0, *) { self } else { self.tint(color) }
-        #else
         self.tint(color)
-        #endif
     }
 
     @ViewBuilder
