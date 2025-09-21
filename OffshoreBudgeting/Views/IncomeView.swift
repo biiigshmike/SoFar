@@ -9,6 +9,9 @@ import SwiftUI
 import MijickCalendarView
 import CoreData
 import Combine
+#if os(iOS)
+import UIKit
+#endif
 
 /// Wrapper to provide `Identifiable` conformance for sheet presentation.
 private struct AddIncomeSheetDate: Identifiable {
@@ -232,6 +235,9 @@ struct IncomeView: View {
             #endif
         }
         .frame(maxWidth: .infinity)
+#if os(iOS)
+        .frame(minHeight: calendarCardMinHeight)
+#endif
         .layoutPriority(1)
         .padding(12)
         .background(
@@ -239,6 +245,18 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
         )
     }
+
+#if os(iOS)
+    /// Ensures the calendar card stays comfortably large on iPhone while remaining flexible on iPad.
+    private var calendarCardMinHeight: CGFloat {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return 340
+        default:
+            return 360
+        }
+    }
+#endif
 
     // MARK: - Weekly Summary Bar
     /// Small bar that totals the week containing the selected date.
