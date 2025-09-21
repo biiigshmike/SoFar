@@ -8,49 +8,25 @@
 
 import SwiftUI
 #if os(iOS)
-// MARK: - iOS-only import for haptics
 import UIKit
 #elseif os(macOS)
 import AppKit
 #endif
 
 // MARK: - UnifiedSwipeConfig
-/// Describes the look and behavior of the standardized swipe actions.
-/// You can tweak titles, icons, tints, and whether a full swipe should auto-trigger Delete (Apple Mail style).
 public struct UnifiedSwipeConfig {
-    // MARK: Properties
-    /// Show an Edit action alongside Delete; only shown if you also provide an `onEdit` closure.
     public var showsEditAction: Bool
-
-    /// Title for the Delete button; localized string is fine.
     public var deleteTitle: String
-
-    /// SF Symbol used for Delete.
     public var deleteSystemImageName: String
-
-    /// Tint color used for Delete in non-destructive contexts; role still sets the red style on iOS automatically.
     public var deleteTint: Color
-
-    /// Title for the Edit button.
     public var editTitle: String
-
-    /// SF Symbol used for Edit.
     public var editSystemImageName: String
-
-    /// Tint color used for Edit.
     public var editTint: Color = .accentColor.opacity(0.01)
-
-    /// When supported, a full swipe should trigger the first destructive action automatically; set to `true` for Mail-like behavior.
     public var allowsFullSwipeToDelete: Bool
-
-    /// Whether to play a subtle haptic on delete (iOS only).
     public var playHapticOnDelete: Bool
-
-    /// Optional accessibility identifiers for UI tests.
     public var deleteAccessibilityID: String?
     public var editAccessibilityID: String?
 
-    // MARK: Init
     public init(
         showsEditAction: Bool = true,
         deleteTitle: String = "Delete",
@@ -77,19 +53,12 @@ public struct UnifiedSwipeConfig {
         self.editAccessibilityID = editAccessibilityID
     }
 
-    // MARK: Presets
-    /// Standard config used across the app; Mail-style full swipe to delete.
     public static let standard = UnifiedSwipeConfig()
-
-    /// A config that hides Edit; useful for rows that do not support editing.
     public static let deleteOnly = UnifiedSwipeConfig(showsEditAction: false)
 }
 
 // MARK: - UnifiedSwipeCustomAction
-/// Represents an extra custom action you may want in addition to Edit/Delete.
-/// Example: "Flag", "Duplicate", etc.
 public struct UnifiedSwipeCustomAction: Identifiable {
-    // MARK: Properties
     public let id = UUID()
     public var title: String
     public var systemImageName: String
@@ -98,7 +67,6 @@ public struct UnifiedSwipeCustomAction: Identifiable {
     public var accessibilityID: String?
     public var action: () -> Void
 
-    // MARK: Init
     public init(
         title: String,
         systemImageName: String,
@@ -111,30 +79,22 @@ public struct UnifiedSwipeCustomAction: Identifiable {
         self.systemImageName = systemImageName
         self.tint = tint
         self.role = role
-               self.accessibilityID = accessibilityID
+        self.accessibilityID = accessibilityID
         self.action = action
     }
 }
 
 // MARK: - UnifiedSwipeActionsModifier
-/// ViewModifier that applies the unified swipe actions to any row-like view.
-/// It uses native `.swipeActions` where available; falls back to `.contextMenu` on older macOS.
 private struct UnifiedSwipeActionsModifier: ViewModifier {
-
-    // MARK: Properties
     let config: UnifiedSwipeConfig
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
     let customActions: [UnifiedSwipeCustomAction]
 
-    // MARK: Body
     func body(content: Content) -> some View {
-        // We always attach a context menu for parity; the native swipe is added where available.
         let base = content.contextMenu {
             if let onEdit, config.showsEditAction {
-                Button {
-                    onEdit()
-                } label: {
+                Button { onEdit() } label: {
                     Label(config.editTitle, systemImage: config.editSystemImageName)
                 }
                 .help(config.editTitle)
@@ -142,9 +102,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             }
 
             ForEach(customActions) { item in
-                Button(role: item.role) {
-                    item.action()
-                } label: {
+                Button(role: item.role) { item.action() } label: {
                     Label(item.title, systemImage: item.systemImageName)
                 }
                 .tint(item.tint)
@@ -154,53 +112,39 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
             Divider()
 
-            Button(role: .destructive) {
-                triggerDelete()
-            } label: {
+            Button(role: .destructive) { triggerDelete() } label: {
                 Label(config.deleteTitle, systemImage: config.deleteSystemImageName)
             }
             .help(config.deleteTitle)
             .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
         }
 
-        // Attach native swipe actions where supported.
         #if os(iOS)
         if #available(iOS 15.0, *) {
-            base
-                .swipeActions(edge: .trailing, allowsFullSwipe: config.allowsFullSwipeToDelete) {
-                    // The first destructive button becomes the "full swipe" commit; put Delete first.
-                    deleteButton()
-                    // A slower reveal shows the remaining actions; mirrors the Mail behavior.
-                    if let onEdit, config.showsEditAction {
-                        editButton(onEdit: onEdit)
-                    }
-                    customButtons()
-                }
+            base.swipeActions(edge: .trailing, allowsFullSwipe: config.allowsFullSwipeToDelete) {
+                deleteButton()
+                if let onEdit, config.showsEditAction { editButton(onEdit: onEdit) }
+                customButtons()
+            }
         } else {
             base
         }
         #elseif os(macOS)
         if #available(macOS 13.0, *) {
-            base
-                // macOS does not support allowsFullSwipe; this still reveals actions with a two-finger swipe.
-                .swipeActions(edge: .trailing) {
-                    deleteButton()
-                    if let onEdit, config.showsEditAction {
-                        editButton(onEdit: onEdit)
-                    }
-                    customButtons()
-                }
+            base.swipeActions(edge: .trailing) {
+                deleteButton()
+                if let onEdit, config.showsEditAction { editButton(onEdit: onEdit) }
+                customButtons()
+            }
         } else {
             base
         }
         #else
-        // tvOS/watchOS not targeted; keep the context menu only.
         base
         #endif
     }
 
-    // MARK: - Button Builders
-    /// Builds the Delete button; first in order to be the full-swipe action on platforms that support it.
+    // MARK: Buttons
     @ViewBuilder
     private func deleteButton() -> some View {
         Button(role: .destructive) {
@@ -209,36 +153,34 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             UnifiedSwipeActionButtonLabel(
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
-                tint: config.deleteTint
+                tint: config.deleteTint,
+                iconOverride: nil
             )
         }
+        .enforceDarkGlyph()
         .ub_swipeActionTint(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
-    /// Builds the Edit button.
     @ViewBuilder
     private func editButton(onEdit: @escaping () -> Void) -> some View {
-        Button {
-            onEdit()
-        } label: {
+        Button { onEdit() } label: {
             UnifiedSwipeActionButtonLabel(
                 title: config.editTitle,
                 systemImageName: config.editSystemImageName,
-                tint: config.editTint
+                tint: config.editTint,
+                iconOverride: nil
             )
         }
+        .enforceDarkGlyph()
         .ub_swipeActionTint(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
-    /// Builds any custom buttons provided by the caller.
     @ViewBuilder
     private func customButtons() -> some View {
         ForEach(customActions) { item in
-            Button(role: item.role) {
-                item.action()
-            } label: {
+            Button(role: item.role) { item.action() } label: {
                 UnifiedSwipeActionButtonLabel(
                     title: item.title,
                     systemImageName: item.systemImageName,
@@ -246,14 +188,13 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                     iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
                 )
             }
+            .enforceDarkGlyph()
             .ub_swipeActionTint(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
     }
 
-    // MARK: - UnifiedSwipeActionButtonLabel
-    /// Produces a label that adapts to the new OS 26 circular swipe buttons while
-    /// maintaining the legacy label appearance on older releases.
+    // MARK: - Label
     private struct UnifiedSwipeActionButtonLabel: View {
         @Environment(\.colorScheme) private var colorScheme
         let title: String
@@ -261,28 +202,14 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         let tint: Color
         let iconOverride: Color?
 
-        init(
-            title: String,
-            systemImageName: String,
-            tint: Color,
-            iconOverride: Color? = nil
-        ) {
-            self.title = title
-            self.systemImageName = systemImageName
-            self.tint = tint
-            self.iconOverride = iconOverride
-        }
-
         var body: some View {
             if #available(iOS 18.0, macOS 15.0, *) {
                 ZStack {
-                    Circle()
-                        .fill(backgroundCircleColor)
-
+                    Circle().fill(backgroundCircleColor)
                     Image(systemName: systemImageName)
                         .symbolRenderingMode(.monochrome)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(iconColor)
+                        .foregroundStyle(resolvedIconColor)
                 }
                 .frame(width: 44, height: 44)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -290,70 +217,46 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(title))
             } else {
-                Label {
-                    Text(title)
-                } icon: {
+                Label { Text(title) } icon: {
                     Image(systemName: systemImageName)
                         .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(iconColor)
+                        .foregroundStyle(resolvedIconColor)
                 }
-                .foregroundColor(iconColor)
+                .foregroundColor(resolvedIconColor)
             }
         }
 
-        // On OS 18+/macOS 15+ we explicitly render the circle and glyph.
-        // In Dark Mode, force a white circle with a black glyph to avoid the “white-on-white” issue.
-        private var iconColor: Color {
-            if #available(iOS 18.0, macOS 15.0, *), colorScheme == .dark {
-                return .black
-            }
-            return iconOverride ?? tint.ub_contrastingForegroundColor
+        private var resolvedIconColor: Color {
+            if let override = iconOverride { return override }
+            if colorScheme == .dark { return .black }       // minimal rule: always black in dark mode
+            return tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                if colorScheme == .dark {
-                    return Color.white.opacity(0.95)
-                } else {
-                    return resolvedTint(opacity: 0.65)
-                }
+                return colorScheme == .dark ? Color.white.opacity(0.95)
+                                            : resolvedTint(opacity: 0.65)
             }
             #if canImport(UIKit) || canImport(AppKit)
-            if let components = tint.ub_resolvedRGBA(for: colorScheme) {
+            if let c = tint.ub_resolvedRGBA(for: colorScheme) {
                 if colorScheme == .dark {
                     let blend: CGFloat = 0.35
-                    let red = components.red * (1 - blend)
-                    let green = components.green * (1 - blend)
-                    let blue = components.blue * (1 - blend)
-                    return Color(
-                        red: Double(red),
-                        green: Double(green),
-                        blue: Double(blue),
-                        opacity: Double(components.alpha)
-                    ).opacity(0.55)
+                    return Color(red: Double(c.red*(1-blend)),
+                                green: Double(c.green*(1-blend)),
+                                blue: Double(c.blue*(1-blend)),
+                                opacity: Double(c.alpha)).opacity(0.55)
                 } else {
-                    return Color(
-                        red: Double(components.red),
-                        green: Double(components.green),
-                        blue: Double(components.blue),
-                        opacity: Double(components.alpha)
-                    ).opacity(0.25)
+                    return Color(red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha)).opacity(0.25)
                 }
             }
             #endif
-
             return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
 
         private func resolvedTint(opacity: Double) -> Color {
             #if canImport(UIKit) || canImport(AppKit)
-            if let components = tint.ub_resolvedRGBA(for: colorScheme) {
-                return Color(
-                    red: Double(components.red),
-                    green: Double(components.green),
-                    blue: Double(components.blue),
-                    opacity: Double(components.alpha)
-                ).opacity(opacity)
+            if let c = tint.ub_resolvedRGBA(for: colorScheme) {
+                return Color(red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha)).opacity(opacity)
             }
             #endif
             return tint.opacity(opacity)
@@ -361,11 +264,9 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     }
 
     // MARK: - Helpers
-    /// Wraps delete action with an optional haptic for iOS; then calls the user-provided delete closure.
     private func triggerDelete() {
         #if os(iOS)
         if config.playHapticOnDelete {
-            // Light impact; keeps it classy.
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
         }
@@ -376,23 +277,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
 // MARK: - View Extension
 public extension View {
-
-    // MARK: unifiedSwipeActions(config:onEdit:onDelete:customActions:)
-    /// Applies unified, consistent swipe actions to any row view.
-    ///
-    /// - Parameters:
-    ///   - config: A `UnifiedSwipeConfig` to control titles, icons, tints, and full-swipe behavior; defaults to `.standard`.
-    ///   - onEdit: Optional closure invoked when the user taps Edit; if `nil` or `config.showsEditAction` is `false`, Edit is omitted.
-    ///   - onDelete: Closure invoked when the user taps Delete or performs a full swipe where supported.
-    ///   - customActions: Optional array of `UnifiedSwipeCustomAction` to add more actions; they appear after Edit.
-    ///
-    /// - Usage:
-    ///   ```swift
-    ///   row.unifiedSwipeActions(
-    ///       onEdit: { viewModel.beginEditing(rowID) },
-    ///       onDelete: { viewModel.delete(rowID) }
-    ///   )
-    ///   ```
     func unifiedSwipeActions(
         _ config: UnifiedSwipeConfig = .standard,
         onEdit: (() -> Void)? = nil,
@@ -408,9 +292,8 @@ public extension View {
     }
 }
 
-// MARK: - Accessibility Identifier Helper
+// MARK: - Helpers
 private extension View {
-    /// Adds an accessibility identifier where supported; no-op where unavailable.
     @ViewBuilder
     func accessibilityIdentifierIfAvailable(_ identifier: String?) -> some View {
         if let identifier {
@@ -424,89 +307,77 @@ private extension View {
         }
     }
 
-    /// Applies a tint color for swipe actions, skipping newer OS releases where
-    /// the system draws circular backgrounds for us and we render the tint
-    /// manually inside the button label.
+    // Ensure black glyphs in Dark Mode regardless of system styling
+    @ViewBuilder
+    func enforceDarkGlyph() -> some View {
+        self.modifier(ForceDarkGlyphModifier())
+    }
+
     @ViewBuilder
     func ub_swipeActionTint(_ color: Color) -> some View {
         #if os(iOS)
-        if #available(iOS 18.0, *) {
-            self
-        } else {
-            self.tint(color)
-        }
+        if #available(iOS 18.0, *) { self } else { self.tint(color) }
         #elseif os(macOS)
-        if #available(macOS 15.0, *) {
-            self
-        } else {
-            self.tint(color)
-        }
+        if #available(macOS 15.0, *) { self } else { self.tint(color) }
         #else
         self.tint(color)
         #endif
     }
 }
 
+private struct ForceDarkGlyphModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    func body(content: Content) -> some View {
+        if colorScheme == .dark {
+            // Avoid any system tint from overriding the glyph color
+            content
+                .buttonStyle(.plain)
+                .foregroundStyle(.black)
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - Color Helpers
 private extension Color {
-    /// Returns either black or white depending on which provides the best
-    /// contrast for the supplied color. Used to ensure OS 26 style swipe
-    /// buttons remain legible regardless of tint.
     var ub_contrastingForegroundColor: Color {
         #if canImport(UIKit)
         let uiColor = UIColor(self)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        guard uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
-            return .white
-        }
-        return Color.contrastingColor(red: red, green: green, blue: blue)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
+        return Color.contrastingColor(red: r, green: g, blue: b)
         #elseif canImport(AppKit)
-        let nsColor = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        nsColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return Color.contrastingColor(red: red, green: green, blue: blue)
+        let ns = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        ns.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return Color.contrastingColor(red: r, green: g, blue: b)
         #else
         return .white
         #endif
     }
 
-    /// Resolves the color for the provided color scheme and exposes RGBA
-    /// components for additional calculations.
     func ub_resolvedRGBA(for colorScheme: ColorScheme) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
         #if canImport(UIKit)
-        let uiColor = UIColor(self)
+        let ui = UIColor(self)
         let trait = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        let resolved = uiColor.resolvedColor(with: trait)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
-            return nil
-        }
-        return (red, green, blue, alpha)
+        let resolved = ui.resolvedColor(with: trait)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard resolved.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
+        return (r, g, b, a)
         #elseif canImport(AppKit)
-        let nsColor = NSColor(self)
-        let converted = nsColor.usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return (red, green, blue, alpha)
+        let ns = NSColor(self)
+        let converted = ns.usingColorSpace(.sRGB) ?? ns
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        converted.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b, a)
         #else
         return nil
         #endif
     }
 
     static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
-        let brightness = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+        let brightness = 0.299*red + 0.587*green + 0.114*blue
         return brightness < 0.6 ? .white : .black
     }
 }
