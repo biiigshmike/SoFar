@@ -256,6 +256,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     /// Produces a label that adapts to the new OS 26 circular swipe buttons while
     /// maintaining the legacy label appearance on older releases.
     private struct UnifiedSwipeActionButtonLabel: View {
+        @Environment(\.colorScheme) private var colorScheme
         let title: String
         let systemImageName: String
         let tint: Color
@@ -275,12 +276,20 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
         var body: some View {
             if #available(iOS 18.0, macOS 15.0, *) {
-                Image(systemName: systemImageName)
-                    .symbolRenderingMode(.monochrome)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(iconColor)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .accessibilityLabel(Text(title))
+                ZStack {
+                    Circle()
+                        .fill(backgroundCircleColor)
+
+                    Image(systemName: systemImageName)
+                        .symbolRenderingMode(.monochrome)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                }
+                .frame(width: 44, height: 44)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Circle())
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(title))
             } else {
                 Label(title, systemImage: systemImageName)
             }
@@ -288,6 +297,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
         private var iconColor: Color {
             iconOverride ?? tint.ub_contrastingForegroundColor
+        }
+
+        private var backgroundCircleColor: Color {
+            tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
     }
 
