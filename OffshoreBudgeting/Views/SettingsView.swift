@@ -269,7 +269,7 @@ struct SettingsView: View {
 
     private var scrollViewBottomPadding: CGFloat {
         #if os(iOS)
-        let base = horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
+        let base = horizontalSizeClass == .compact ? 0 : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
         let bottomInset = safeAreaInsets.bottom
         let safeAreaOverflow = max(0, bottomInset - tabChromeHeight)
