@@ -572,7 +572,7 @@ private extension View {
     /// Helps preserve rounded card corners when embedding scroll views in cards.
     @ViewBuilder
     func applyIfAvailableScrollClipDisabled() -> some View {
-        if #available(iOS 16.4, macOS 13.3, *) {
+        if #available(iOS 17.0, macOS 14.0, *) {
             scrollContentClipDisabled()
         } else {
             self
