@@ -259,7 +259,19 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         let title: String
         let systemImageName: String
         let tint: Color
-        let iconOverride: Color? = nil
+        let iconOverride: Color?
+
+        init(
+            title: String,
+            systemImageName: String,
+            tint: Color,
+            iconOverride: Color? = nil
+        ) {
+            self.title = title
+            self.systemImageName = systemImageName
+            self.tint = tint
+            self.iconOverride = iconOverride
+        }
 
         var body: some View {
             if #available(iOS 18.0, macOS 15.0, *) {
