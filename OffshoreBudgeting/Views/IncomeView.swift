@@ -44,6 +44,7 @@ struct IncomeView: View {
     @State private var incomeToDelete: Income? = nil
     @State private var showDeleteAlert: Bool = false
     @State private var showDeleteOptions: Bool = false
+    @State private var summaryCardHeight: CGFloat = 0
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -104,11 +105,8 @@ struct IncomeView: View {
                     // Calendar section in a padded card
                     calendarSection
 
-                    // Weekly summary bar
-                    weeklySummaryBar
-
-                    // Selected day entries
-                    selectedDaySection
+                    // Weekly summary and selected day entries displayed side-by-side
+                    summarySplit
                 }
                 .padding(.horizontal, DS.Spacing.l)
                 .padding(.bottom, DS.Spacing.m)
@@ -270,6 +268,31 @@ struct IncomeView: View {
         )
         .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+    }
+
+    // MARK: - Summary Layout
+    @ViewBuilder
+    private var summarySplit: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.m) {
+            weeklySummaryBar
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .measureSummaryHeight()
+                .frame(height: summaryCardHeight > 0 ? summaryCardHeight : nil, alignment: .top)
+
+            selectedDaySection
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .measureSummaryHeight()
+                .frame(height: summaryCardHeight > 0 ? summaryCardHeight : nil, alignment: .top)
+        }
+        .onPreferenceChange(IncomeSummaryCardHeightsPreferenceKey.self) { heights in
+            guard let maxHeight = heights.max(), maxHeight > 0 else {
+                summaryCardHeight = 0
+                return
+            }
+            if summaryCardHeight != maxHeight {
+                summaryCardHeight = maxHeight
+            }
+        }
     }
 
     // MARK: - Weekly Summary Bar
@@ -609,8 +632,29 @@ private extension Array {
     }
 }
 
+// MARK: - Shared Height Support
+private struct IncomeSummaryCardHeightsPreferenceKey: PreferenceKey {
+    static var defaultValue: [CGFloat] = []
+
+    static func reduce(value: inout [CGFloat], nextValue: () -> [CGFloat]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 // MARK: - Availability Helpers
 private extension View {
+    func measureSummaryHeight() -> some View {
+        background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(
+                        key: IncomeSummaryCardHeightsPreferenceKey.self,
+                        value: [proxy.size.height]
+                    )
+            }
+        )
+    }
+
     /// Hides list background on supported OS versions; no-ops on older targets.
     @ViewBuilder
     func applyIfAvailableScrollContentBackgroundHidden() -> some View {
