@@ -125,8 +125,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
     let onDelete: () -> Void
     let customActions: [UnifiedSwipeCustomAction]
 
-    @Environment(\.platformCapabilities) private var platformCapabilities
-
     // MARK: Body
     func body(content: Content) -> some View {
         // We always attach a context menu for parity; the native swipe is added where available.
@@ -206,14 +204,9 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         Button(role: .destructive) {
             triggerDelete()
         } label: {
-            swipeActionLabel(
-                title: config.deleteTitle,
-                systemImageName: config.deleteSystemImageName,
-                tint: config.deleteTint
-            )
+            Label(config.deleteTitle, systemImage: config.deleteSystemImageName)
         }
         .tint(config.deleteTint)
-        .help(config.deleteTitle)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
@@ -223,14 +216,9 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         Button {
             onEdit()
         } label: {
-            swipeActionLabel(
-                title: config.editTitle,
-                systemImageName: config.editSystemImageName,
-                tint: config.editTint
-            )
+            Label(config.editTitle, systemImage: config.editSystemImageName)
         }
         .tint(config.editTint)
-        .help(config.editTitle)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
@@ -241,47 +229,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             Button(role: item.role) {
                 item.action()
             } label: {
-                swipeActionLabel(
-                    title: item.title,
-                    systemImageName: item.systemImageName,
-                    tint: item.tint
-                )
+                Label(item.title, systemImage: item.systemImageName)
             }
             .tint(item.tint)
-            .help(item.title)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
-    }
-
-    // MARK: - Label Helpers
-    @ViewBuilder
-    private func swipeActionLabel(title: String, systemImageName: String, tint: Color) -> some View {
-        if usesOS26SwipeStyle {
-            Label(title, systemImage: systemImageName)
-                .labelStyle(.iconOnly)
-                .symbolVariant(.fill)
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(tint.ub_swipeSymbolColor())
-                .accessibilityLabel(Text(title))
-        } else {
-            Label(title, systemImage: systemImageName)
-        }
-    }
-
-    private var usesOS26SwipeStyle: Bool {
-        guard platformCapabilities.supportsOS26Translucency else { return false }
-
-        #if os(iOS) || os(tvOS)
-        if #available(iOS 18.0, tvOS 18.0, *) {
-            return true
-        }
-        #elseif os(macOS)
-        if #available(macOS 15.0, *) {
-            return true
-        }
-        #endif
-
-        return false
     }
 
     // MARK: - Helpers
