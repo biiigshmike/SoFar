@@ -16,7 +16,6 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
 
     // MARK: State
@@ -165,24 +164,7 @@ struct PresetsView: View {
     }
 
     private var presetsSwipeConfig: UnifiedSwipeConfig {
-        UnifiedSwipeConfig(
-            deleteTint: swipeActionTint,
-            editTint: swipeActionTint
-        )
-    }
-
-    private var swipeActionTint: Color {
-        if colorScheme == .dark {
-            // In dark mode we want the new iOS 18 circular swipe buttons to
-            // read as crisp white disks with dark glyphs for maximum contrast.
-            // Using `.white` here keeps the background pure white while
-            // `UnifiedSwipeActions` still forces black icons when in dark
-            // mode. This improves readability of the Edit/Delete actions when
-            // swiping a preset in dark appearance.
-            return .white
-        } else {
-            return .black
-        }
+        UnifiedSwipeConfig(allowsFullSwipeToDelete: false)
     }
 
     // MARK: - Actions
