@@ -302,7 +302,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            iconOverride ?? tint.ub_contrastingForegroundColor(for: colorScheme)
+            iconOverride ?? tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
@@ -465,21 +465,6 @@ private extension Color {
         #else
         return .white
         #endif
-    }
-
-    /// Returns a contrasting foreground color that respects the provided
-    /// color scheme when resolving dynamic colors.
-    func ub_contrastingForegroundColor(for colorScheme: ColorScheme) -> Color {
-        #if canImport(UIKit) || canImport(AppKit)
-        if let components = ub_resolvedRGBA(for: colorScheme) {
-            return Color.contrastingColor(
-                red: components.red,
-                green: components.green,
-                blue: components.blue
-            )
-        }
-        #endif
-        return ub_contrastingForegroundColor
     }
 
     /// Resolves the color for the provided color scheme and exposes RGBA
