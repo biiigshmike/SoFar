@@ -779,26 +779,36 @@ private struct OnboardingGlassBackground: View {
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(tint.opacity(0.26))
+                    .fill(tint.opacity(0.16))
                     .background(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(.ultraThinMaterial)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(Color.white.opacity(0.25), lineWidth: 1.1)
+                            .stroke(Color.white.opacity(0.28), lineWidth: 1)
                             .blendMode(.screen)
                     )
-                    .shadow(color: tint.opacity(0.24), radius: 30, x: 0, y: 18)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(tint.opacity(0.18), lineWidth: 0.8)
+                            .blendMode(.overlay)
+                    )
+                    .shadow(color: tint.opacity(0.14), radius: 26, x: 0, y: 16)
                     .compositingGroup()
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(tint.opacity(0.14))
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(tint.opacity(0.3), lineWidth: 1)
+                            .stroke(tint.opacity(0.2), lineWidth: 1)
                     )
-                    .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(Color.white.opacity(0.16), lineWidth: 0.6)
+                            .blendMode(.screen)
+                    )
+                    .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 8)
             }
         }
     }
