@@ -54,14 +54,7 @@ struct PresetsView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Presets")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.top, DS.Spacing.l)
-#endif
-
+            RootTabHeader(title: "Presets")
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
                 if viewModel.items.isEmpty {

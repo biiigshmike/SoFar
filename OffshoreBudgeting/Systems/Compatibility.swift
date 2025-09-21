@@ -132,9 +132,7 @@ extension View {
     /// - Parameter title: The title to show in the navigation bar.
     /// - Returns: A view with the title and large display mode applied.
     func ub_tabNavigationTitle(_ title: String) -> some View {
-        self
-            .navigationTitle(title)
-            .ub_toolbarTitleLarge()
+        modifier(UBRootTabNavigationTitleModifier(title: title))
     }
 
     // MARK: ub_cardTitleShadow()
@@ -321,6 +319,25 @@ extension View {
         } else {
             return self
         }
+    }
+}
+
+// MARK: - Root Tab Navigation Title Styling
+private struct UBRootTabNavigationTitleModifier: ViewModifier {
+    let title: String
+
+    func body(content: Content) -> some View {
+        let titled = content.navigationTitle(title)
+
+        #if os(iOS)
+        if #available(iOS 17.0, *) {
+            titled.toolbarTitleDisplayMode(.inline)
+        } else {
+            titled.navigationBarTitleDisplayMode(.inline)
+        }
+        #else
+        titled
+        #endif
     }
 }
 

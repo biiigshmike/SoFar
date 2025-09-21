@@ -34,10 +34,6 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-#if os(iOS)
-    @Environment(\.colorScheme) private var colorScheme
-#endif
-
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
@@ -54,21 +50,7 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 380
-
-    /// Determines whether we should replace the navigation bar chrome with a custom
-    /// safe-area header (primarily for compact-width environments like iPhone).
-    private var usesCompactTitleHeader: Bool {
-        horizontalSizeClass == .compact
-    }
 #endif
-
-    private var topPadding: CGFloat {
-#if os(iOS)
-        return DS.Spacing.s
-#else
-        return 12
-#endif
-    }
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
@@ -77,28 +59,6 @@ struct IncomeView: View {
         return 12
 #endif
     }
-
-#if os(iOS)
-    @ViewBuilder
-    private var iOSTitleHeader: some View {
-        VStack(spacing: DS.Spacing.s) {
-            HStack(spacing: DS.Spacing.m) {
-                Text("Income")
-                    .font(.largeTitle.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                headerAddIncomeButton
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, DS.Spacing.xxl)
-        .padding(.bottom, DS.Spacing.s)
-        .background(
-            themeManager.selectedTheme.background
-                .ub_ignoreSafeArea(edges: .top)
-        )
-    }
-#endif
 
     private func beginAddingIncome(for date: Date? = nil) {
         let baseDate = date ?? viewModel.selectedDate ?? Date()
@@ -116,11 +76,7 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-            Text("Income")
-                .font(.largeTitle.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-#endif
+            RootTabHeader(title: "Income")
 
             VStack(spacing: 12) {
                 // Calendar section in a padded card
@@ -132,10 +88,9 @@ struct IncomeView: View {
                 // Selected day entries
                 selectedDaySection
             }
+            .padding(.horizontal, 16)
             .padding(.bottom, DS.Spacing.l)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, topPadding)
         .padding(.bottom, bottomPadding)
         .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
@@ -175,18 +130,8 @@ struct IncomeView: View {
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
-#if os(iOS)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if usesCompactTitleHeader {
-                iOSTitleHeader
-            }
-        }
-#endif
         // MARK: Toolbar (+ button) → Present Add Income sheet
         .toolbar { incomeToolbarContent }
-#if os(iOS)
-        .applyNavigationBarVisibility(compactHeader: usesCompactTitleHeader)
-#endif
     }
 
     // MARK: - Calendar Section
@@ -484,41 +429,11 @@ struct IncomeView: View {
         }
     }
 
-#if os(iOS)
-    @ViewBuilder
-    private var headerAddIncomeButton: some View {
-        Button {
-            beginAddingIncome()
-        } label: {
-            Image(systemName: "plus.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(
-                    themeManager.selectedTheme.resolvedTint,
-                    themeManager.selectedTheme.resolvedTint.opacity(colorScheme == .dark ? 0.28 : 0.18)
-                )
-                .font(.system(size: 26, weight: .semibold))
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
-        .accessibilityLabel("Add Income")
-        .accessibilityIdentifier("add_income_button")
-    }
-#endif
-
     @ToolbarContentBuilder
     private var incomeToolbarContent: some ToolbarContent {
-#if os(iOS)
-        if !usesCompactTitleHeader {
-            ToolbarItem(placement: .primaryAction) {
-                toolbarAddIncomeButton
-            }
-        }
-#else
         ToolbarItem(placement: .primaryAction) {
             toolbarAddIncomeButton
         }
-#endif
     }
 
     private var toolbarAddIncomeButton: some View {
@@ -683,15 +598,3 @@ private extension View {
 
 }
 
-#if os(iOS)
-private extension View {
-    @ViewBuilder
-    func applyNavigationBarVisibility(compactHeader: Bool) -> some View {
-        if #available(iOS 16.0, *) {
-            self.toolbar(compactHeader ? .hidden : .visible, for: .navigationBar)
-        } else {
-            self.navigationBarHidden(compactHeader)
-        }
-    }
-}
-#endif

@@ -27,14 +27,7 @@ struct SettingsView: View {
         ScrollView {
 
             VStack(spacing: cardStackSpacing) {
-#if os(macOS) || targetEnvironment(macCatalyst)
-                Text("Settings")
-                    .font(.largeTitle.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, DS.Spacing.l)
-#endif
-
+                RootTabHeader(title: "Settings", horizontalPadding: horizontalPadding)
                 // MARK: General Hero Card
                 SettingsCard(
                     iconSystemName: "gearshape",
