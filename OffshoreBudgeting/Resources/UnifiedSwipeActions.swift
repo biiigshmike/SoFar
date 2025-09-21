@@ -302,17 +302,36 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
+            if let iconOverride {
+                return iconOverride
+            }
+
             if #available(iOS 18.0, macOS 15.0, *) {
-                return iconOverride ?? (colorScheme == .dark ? .black : .white)
+                return resolvedTintColor.ub_contrastingForegroundColor
             } else {
-                return iconOverride ?? tint.ub_contrastingForegroundColor
+                return tint.ub_contrastingForegroundColor
             }
         }
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                return colorScheme == .dark ? .white : .black
+                return modernBackgroundCircleColor
             }
+
+            return legacyBackgroundCircleColor
+        }
+
+        private var modernBackgroundCircleColor: Color {
+            let base = resolvedTintColor
+
+            if colorScheme == .dark {
+                return base.opacity(0.8)
+            } else {
+                return base.opacity(0.9)
+            }
+        }
+
+        private var legacyBackgroundCircleColor: Color {
             #if canImport(UIKit) || canImport(AppKit)
             if let components = tint.ub_resolvedRGBA(for: colorScheme) {
                 if colorScheme == .dark {
@@ -338,6 +357,21 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             #endif
 
             return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+        }
+
+        private var resolvedTintColor: Color {
+            #if canImport(UIKit) || canImport(AppKit)
+            if let components = tint.ub_resolvedRGBA(for: colorScheme) {
+                return Color(
+                    red: Double(components.red),
+                    green: Double(components.green),
+                    blue: Double(components.blue),
+                    opacity: Double(components.alpha)
+                )
+            }
+            #endif
+
+            return tint
         }
     }
 
