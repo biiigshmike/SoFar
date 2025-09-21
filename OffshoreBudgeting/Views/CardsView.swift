@@ -48,9 +48,9 @@ struct CardsView: View {
     var body: some View {
         Group {
             if isOnboardingPresentation {
-                rootScaffold
+                baseView
             } else {
-                rootScaffold
+                baseView
                     .ub_surfaceBackground(
                         themeManager.selectedTheme,
                         configuration: themeManager.glassConfiguration,
@@ -60,87 +60,87 @@ struct CardsView: View {
         }
     }
 
-    private var rootScaffold: some View {
-        RootTabScaffold(title: "Cards", trailing: { headerPrimaryAction }) {
-            contentLayout
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // Let SwiftUI handle transitions between loading/empty/loaded states.
-        .animation(.default, value: viewModel.state)
-        // MARK: Start observing when view appears
-        .onAppear { viewModel.startIfNeeded() }
-        // Pull to refresh to manually reload cards
-        .refreshable { await viewModel.refresh() }
-        // MARK: Add Sheet
-        .sheet(isPresented: $isPresentingAddCard) {
-            AddCardFormView { newName, selectedTheme in
-                Task { await viewModel.addCard(name: newName, theme: selectedTheme) }
-            }
-        }
-        // MARK: Edit Sheet
-        .sheet(item: $editingCard) { card in
-            AddCardFormView(mode: .edit, editingCard: card) { newName, selectedTheme in
-                Task { await viewModel.edit(card: card, name: newName, theme: selectedTheme) }
-            }
-        }
-        // MARK: Alerts
-        .alert(item: $viewModel.alert) { alert in
-            switch alert.kind {
-            case .error(let message):
-                return Alert(
-                    title: Text("Error"),
-                    message: Text(message),
-                    dismissButton: .default(Text("OK"))
-                )
-            case .confirmDelete(let card):
-                return Alert(
-                    title: Text("Delete “\(card.name)”?"),
-                    message: Text("THis will delete the card and all of its expenses."),
-                    primaryButton: .destructive(Text("Delete"), action: {
-                        Task { await viewModel.confirmDelete(card: card) }
-                    }),
-                    secondaryButton: .cancel()
-                )
-            case .rename:
-                // No longer exposed in the menu; keeping alert route disabled.
-                return Alert(
-                    title: Text("Rename Card"),
-                    message: Text("Use “Edit…” instead."),
-                    dismissButton: .default(Text("OK"))
-                )
-            }
-        }
-        // Keeping this for backwards-compat; not used now that we have “Edit…”.
-        .sheet(item: $viewModel.renameTarget) { card in
-            RenameCardSheet(
-                originalName: card.name,
-                onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
-            )
-        }
-        .tint(themeManager.selectedTheme.resolvedTint)
-    }
-
-    private var contentLayout: some View {
+    private var baseView: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
+            Text("Cards")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.l)
+                .padding(.top, DS.Spacing.l)
+#endif
+
             contentView
         }
-        .padding(.top, DS.Spacing.l)
-    }
-
-    private var headerPrimaryAction: some View {
-        Button {
-            if selectedCardStableID == nil {
-                isPresentingAddCard = true
-            } else {
-                isPresentingAddExpense = true
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Let SwiftUI handle transitions between loading/empty/loaded states.
+            .animation(.default, value: viewModel.state)
+            // MARK: Start observing when view appears
+            .onAppear { viewModel.startIfNeeded() }
+            // Pull to refresh to manually reload cards
+            .refreshable { await viewModel.refresh() }
+            // MARK: App Toolbar
+            .ub_tabNavigationTitle("Cards")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if selectedCardStableID == nil {
+                            isPresentingAddCard = true
+                        } else {
+                            isPresentingAddExpense = true
+                        }
+                    } label: {
+                        Label(selectedCardStableID == nil ? "Add Card" : "Add Expense", systemImage: "plus")
+                    }
+                }
             }
-        } label: {
-            RootTabHeaderButtonLabel(
-                title: selectedCardStableID == nil ? "Add Card" : "Add Expense",
-                systemImage: selectedCardStableID == nil ? "creditcard" : "plus"
-            )
-        }
-        .buttonStyle(.plain)
+            // MARK: Add Sheet
+            .sheet(isPresented: $isPresentingAddCard) {
+                AddCardFormView { newName, selectedTheme in
+                    Task { await viewModel.addCard(name: newName, theme: selectedTheme) }
+                }
+            }
+            // MARK: Edit Sheet
+            .sheet(item: $editingCard) { card in
+                AddCardFormView(mode: .edit, editingCard: card) { newName, selectedTheme in
+                    Task { await viewModel.edit(card: card, name: newName, theme: selectedTheme) }
+                }
+            }
+            // MARK: Alerts
+            .alert(item: $viewModel.alert) { alert in
+                switch alert.kind {
+                case .error(let message):
+                    return Alert(
+                        title: Text("Error"),
+                        message: Text(message),
+                        dismissButton: .default(Text("OK"))
+                    )
+                case .confirmDelete(let card):
+                    return Alert(
+                        title: Text("Delete “\(card.name)”?"),
+                        message: Text("THis will delete the card and all of its expenses."),
+                        primaryButton: .destructive(Text("Delete"), action: {
+                            Task { await viewModel.confirmDelete(card: card) }
+                        }),
+                        secondaryButton: .cancel()
+                    )
+                case .rename:
+                    // No longer exposed in the menu; keeping alert route disabled.
+                    return Alert(
+                        title: Text("Rename Card"),
+                        message: Text("Use “Edit…” instead."),
+                        dismissButton: .default(Text("OK"))
+                    )
+                }
+            }
+            // Keeping this for backwards-compat; not used now that we have “Edit…”.
+            .sheet(item: $viewModel.renameTarget) { card in
+                RenameCardSheet(
+                    originalName: card.name,
+                    onSave: { newName in Task { await viewModel.rename(card: card, to: newName) } }
+                )
+            }
+            .tint(themeManager.selectedTheme.resolvedTint)
     }
 
     // MARK: - Content View (Type-Safe)
