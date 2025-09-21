@@ -43,6 +43,10 @@ struct IncomeView: View {
     @State private var incomeToDelete: Income? = nil
     @State private var showDeleteAlert: Bool = false
     @State private var showDeleteOptions: Bool = false
+#if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+#endif
 
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
@@ -279,6 +283,7 @@ struct IncomeView: View {
     // MARK: - Selected Day Section (WITH swipe to delete & edit)
     /// Displays the selected date and a list of income entries for that day.
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
+    @ViewBuilder
     private var selectedDaySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             let date = viewModel.selectedDate ?? Date()
@@ -315,7 +320,7 @@ struct IncomeView: View {
                 .listStyle(.plain)
                 .ub_hideScrollIndicators()
                 .applyIfAvailableScrollContentBackgroundHidden()
-                .frame(minHeight: 50, maxHeight: 100) // compact pill; scroll when needed
+                .frame(height: dayListHeight(for: entries.count))
             }
         }
         .padding()
@@ -325,6 +330,7 @@ struct IncomeView: View {
                 .fill(themeManager.selectedTheme.secondaryBackground)
                 .shadow(radius: 1, y: 1)
         )
+        .layoutPriority(2)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
                 viewModel.delete(income: income, scope: .all)
@@ -443,6 +449,30 @@ struct IncomeView: View {
         nf.numberStyle = .currency
         nf.locale = .current
         return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+    }
+
+    /// Determines how tall the daily income list should be so rows have space and longer days can scroll.
+    private func dayListHeight(for entryCount: Int) -> CGFloat {
+        guard entryCount > 0 else { return 140 }
+
+        let estimatedRowHeight: CGFloat = 64
+        let basePadding: CGFloat = 28 // top/bottom padding + separators
+        let preferred = CGFloat(entryCount) * estimatedRowHeight + basePadding
+
+#if os(iOS)
+        let isRegularWidth = horizontalSizeClass == .regular
+        let isCompactVertical = verticalSizeClass == .compact
+        let maxHeight: CGFloat = {
+            if isRegularWidth { return 420 }
+            if isCompactVertical { return 240 }
+            return 320
+        }()
+#else
+        let maxHeight: CGFloat = 380
+#endif
+
+        let minHeight: CGFloat = 140
+        return min(max(preferred, minHeight), maxHeight)
     }
 
     // MARK: - Delete Handler
