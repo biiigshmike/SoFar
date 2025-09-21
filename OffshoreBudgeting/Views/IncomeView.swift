@@ -108,8 +108,7 @@ struct IncomeView: View {
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
         }
-        .navigationTitle("Income")
-        .ub_toolbarTitleLarge()
+        .ub_tabNavigationTitle("Income")
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
