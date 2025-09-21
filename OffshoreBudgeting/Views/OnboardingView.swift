@@ -115,9 +115,17 @@ private struct WelcomeStep: View {
 
             Spacer()
 
-            OnboardingPrimaryButton(title: "Get Started", action: onNext)
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xxl)
+            OnboardingButtonRow(
+                buttons: [
+                    .primary("Get Started", action: onNext)
+                ],
+                contentInsets: .init(
+                    top: 0,
+                    leading: DS.Spacing.xl,
+                    bottom: DS.Spacing.xxl,
+                    trailing: DS.Spacing.xl
+                )
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -144,7 +152,18 @@ private struct ThemeStep: View {
                     Text("You can change this anytime from Settings.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    navigationButtons
+                    OnboardingButtonRow(
+                        buttons: [
+                            .secondary("Back", action: onBack),
+                            .primary("Continue", action: onNext)
+                        ],
+                        contentInsets: .init(
+                            top: DS.Spacing.m,
+                            leading: 0,
+                            bottom: 0,
+                            trailing: 0
+                        )
+                    )
                 }
             }
             .padding(.vertical, DS.Spacing.xxl)
@@ -184,14 +203,6 @@ private struct ThemeStep: View {
             .padding(.horizontal, DS.Spacing.s)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var navigationButtons: some View {
-        HStack(spacing: DS.Spacing.m) {
-            OnboardingSecondaryButton(title: "Back", action: onBack)
-            OnboardingPrimaryButton(title: "Continue", action: onNext)
-        }
-        .padding(.top, DS.Spacing.m)
     }
 
     private func select(_ theme: AppTheme) {
@@ -320,30 +331,18 @@ private struct CardsStep: View {
         navigationContainer {
             ZStack(alignment: .bottom) {
                 CardsView()
-                doneButton
+                OnboardingButtonRow(
+                    buttons: [
+                        .secondary("Back", action: onBack),
+                        .primary("Done", action: onNext)
+                    ]
+                )
             }
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
-    }
-
-    // MARK: doneButton
-    /// Bottom aligned button to continue after adding cards.
-    private var doneButton: some View {
-        OnboardingGlassCard(
-            alignment: .center,
-            maxWidth: nil,
-            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
-        ) {
-            HStack(spacing: DS.Spacing.m) {
-                OnboardingSecondaryButton(title: "Back", action: onBack)
-                OnboardingPrimaryButton(title: "Done", action: onNext)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xxl)
     }
 
     // MARK: - Navigation container compatibility
@@ -381,24 +380,13 @@ private struct PresetsStep: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             PresetsView()
-            doneButton
+            OnboardingButtonRow(
+                buttons: [
+                    .secondary("Back", action: onBack),
+                    .primary("Done", action: onNext)
+                ]
+            )
         }
-    }
-
-    // MARK: doneButton
-    private var doneButton: some View {
-        OnboardingGlassCard(
-            alignment: .center,
-            maxWidth: nil,
-            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
-        ) {
-            HStack(spacing: DS.Spacing.m) {
-                OnboardingSecondaryButton(title: "Back", action: onBack)
-                OnboardingPrimaryButton(title: "Done", action: onNext)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xxl)
     }
 }
 
@@ -442,7 +430,18 @@ private struct CloudSyncStep: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xl) {
             header
             cloudOptionsCard
-            navigationButtons
+            OnboardingButtonRow(
+                buttons: [
+                    .secondary("Back", action: onBack),
+                    .primary("Continue", action: onNext)
+                ],
+                contentInsets: .init(
+                    top: DS.Spacing.l,
+                    leading: 0,
+                    bottom: 0,
+                    trailing: 0
+                )
+            )
         }
         .padding(.vertical, DS.Spacing.xxl)
         .padding(.horizontal, DS.Spacing.xl)
@@ -514,12 +513,6 @@ private struct CloudSyncStep: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
-    private var navigationButtons: some View {
-        HStack(spacing: DS.Spacing.m) {
-            OnboardingSecondaryButton(title: "Back", action: onBack)
-            OnboardingPrimaryButton(title: "Continue", action: onNext)
-        }
-    }
 }
 
 // MARK: - CategoriesStep
@@ -536,29 +529,18 @@ private struct CategoriesStep: View {
         navigationContainer {
             ZStack(alignment: .bottom) {
                 ExpenseCategoryManagerView()
-                doneButton
+                OnboardingButtonRow(
+                    buttons: [
+                        .secondary("Back", action: onBack),
+                        .primary("Done", action: onNext)
+                    ]
+                )
             }
         }
         .ub_navigationGlassBackground(
             baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
-    }
-
-    // MARK: doneButton
-    private var doneButton: some View {
-        OnboardingGlassCard(
-            alignment: .center,
-            maxWidth: nil,
-            contentPadding: .init(top: DS.Spacing.m, leading: DS.Spacing.xl, bottom: DS.Spacing.m, trailing: DS.Spacing.xl)
-        ) {
-            HStack(spacing: DS.Spacing.m) {
-                OnboardingSecondaryButton(title: "Back", action: onBack)
-                OnboardingPrimaryButton(title: "Done", action: onNext)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xxl)
     }
 
     // MARK: - Navigation container compatibility
@@ -636,6 +618,53 @@ private struct OnboardingSecondaryButton: View {
         .buttonStyle(
             OnboardingSecondaryButtonStyle(tint: themeManager.selectedTheme.resolvedTint)
         )
+    }
+}
+
+private struct OnboardingButtonRow: View {
+    struct ButtonConfiguration: Identifiable {
+        enum Kind { case primary, secondary }
+
+        let id = UUID()
+        let title: String
+        let kind: Kind
+        let action: () -> Void
+
+        static func primary(_ title: String, action: @escaping () -> Void) -> ButtonConfiguration {
+            ButtonConfiguration(title: title, kind: .primary, action: action)
+        }
+
+        static func secondary(_ title: String, action: @escaping () -> Void) -> ButtonConfiguration {
+            ButtonConfiguration(title: title, kind: .secondary, action: action)
+        }
+    }
+
+    let buttons: [ButtonConfiguration]
+    var contentInsets: EdgeInsets = .init(
+        top: DS.Spacing.m,
+        leading: DS.Spacing.xl,
+        bottom: DS.Spacing.xxl,
+        trailing: DS.Spacing.xl
+    )
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.m) {
+            ForEach(buttons) { configuration in
+                button(for: configuration)
+            }
+        }
+        .padding(contentInsets)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    @ViewBuilder
+    private func button(for configuration: ButtonConfiguration) -> some View {
+        switch configuration.kind {
+        case .primary:
+            OnboardingPrimaryButton(title: configuration.title, action: configuration.action)
+        case .secondary:
+            OnboardingSecondaryButton(title: configuration.title, action: configuration.action)
+        }
     }
 }
 
