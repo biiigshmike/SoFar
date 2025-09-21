@@ -68,10 +68,6 @@ struct IncomeView: View {
             Text("Income")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
-#else
-            Text("Income")
-                .font(.system(.largeTitle, design: .default).weight(.bold))
-                .frame(maxWidth: .infinity, alignment: .leading)
 #endif
 
             VStack(spacing: 12) {
@@ -250,9 +246,10 @@ struct IncomeView: View {
         .layoutPriority(1)
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(themeManager.selectedTheme.secondaryBackground)
+            themeManager.selectedTheme.secondaryBackground,
+            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 
     // MARK: - Weekly Summary Bar
@@ -274,10 +271,11 @@ struct IncomeView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(themeManager.selectedTheme.secondaryBackground)
-                .shadow(radius: 1, y: 1)
+            themeManager.selectedTheme.secondaryBackground,
+            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .shadow(radius: 1, y: 1)
     }
 
     // MARK: - Selected Day Section (WITH swipe to delete & edit)
@@ -320,16 +318,18 @@ struct IncomeView: View {
                 .listStyle(.plain)
                 .ub_hideScrollIndicators()
                 .applyIfAvailableScrollContentBackgroundHidden()
+                .applyIfAvailableScrollClipDisabled()
                 .frame(height: dayListHeight(for: entries.count))
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: DS.Radius.card)
-                .fill(themeManager.selectedTheme.secondaryBackground)
-                .shadow(radius: 1, y: 1)
+            themeManager.selectedTheme.secondaryBackground,
+            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .shadow(radius: 1, y: 1)
         .layoutPriority(2)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
@@ -563,6 +563,17 @@ private extension View {
     func applyIfAvailableScrollContentBackgroundHidden() -> some View {
         if #available(iOS 16.0, macOS 13.0, *) {
             scrollContentBackground(.hidden)
+        } else {
+            self
+        }
+    }
+
+    /// Disables automatic clipping of scrolling content when the API is available.
+    /// Helps preserve rounded card corners when embedding scroll views in cards.
+    @ViewBuilder
+    func applyIfAvailableScrollClipDisabled() -> some View {
+        if #available(iOS 16.4, macOS 13.3, *) {
+            scrollContentClipDisabled()
         } else {
             self
         }
