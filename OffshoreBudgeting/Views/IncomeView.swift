@@ -364,7 +364,6 @@ struct IncomeView: View {
         .listStyle(.plain)
         .ub_hideScrollIndicators()
         .applyIfAvailableScrollContentBackgroundHidden()
-        .applyIfAvailableScrollClipDisabled()
         .frame(height: dayListHeight(for: entries.count))
     }
 
@@ -580,14 +579,4 @@ private extension View {
         }
     }
 
-    /// Disables automatic clipping of scrolling content when the API is available.
-    /// Helps preserve rounded card corners when embedding scroll views in cards.
-    @ViewBuilder
-    func applyIfAvailableScrollClipDisabled() -> some View {
-        if #available(iOS 17.0, macOS 14.0, *) {
-            scrollContentClipDisabled()
-        } else {
-            self
-        }
-    }
 }
