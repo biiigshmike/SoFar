@@ -34,11 +34,7 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-#if os(iOS)
-    @Environment(\.safeAreaInsets) private var safeAreaInsets
-#else
-    private let safeAreaInsets = EdgeInsets()
-#endif
+    @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
@@ -116,6 +112,7 @@ struct IncomeView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, DS.Spacing.m)
         }
+        .ub_captureSafeAreaInsets()
         .padding(.bottom, bottomPadding)
         .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs

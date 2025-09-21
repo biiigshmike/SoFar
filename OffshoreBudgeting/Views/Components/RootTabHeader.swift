@@ -5,7 +5,7 @@ import SwiftUI
 /// (such as summary buttons or quick actions).
 struct RootTabHeader<Trailing: View>: View {
     // MARK: Properties
-    @Environment(\.safeAreaInsets) private var safeAreaInsets
+    @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
     private let title: String
     private let horizontalPadding: CGFloat
     @ViewBuilder private let trailing: () -> Trailing

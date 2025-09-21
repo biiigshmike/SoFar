@@ -18,7 +18,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.safeAreaInsets) private var safeAreaInsets
+    @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert: Bool = false
@@ -220,6 +220,7 @@ struct SettingsView: View {
             .padding(.bottom, scrollViewBottomPadding)
             .frame(maxWidth: .infinity)
         }
+        .ub_captureSafeAreaInsets()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_surfaceBackground(
             themeManager.selectedTheme,
