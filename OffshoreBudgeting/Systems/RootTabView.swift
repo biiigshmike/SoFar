@@ -15,14 +15,25 @@ struct RootTabView: View {
     @Environment(\.platformCapabilities) private var platformCapabilities
     @Environment(\.colorScheme) private var colorScheme
 
+    private enum Tab: Hashable {
+        case home
+        case income
+        case cards
+        case presets
+        case settings
+    }
+
+    @State private var selectedTab: Tab = .home
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             navigationContainer { HomeView() }
                 .ub_navigationBackground(
                     theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Home", systemImage: "house") }
+                .tag(Tab.home)
 
             navigationContainer { IncomeView() }
                 .ub_navigationBackground(
@@ -30,6 +41,7 @@ struct RootTabView: View {
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Income", systemImage: "calendar") }
+                .tag(Tab.income)
 
             navigationContainer { CardsView() }
                 .ub_navigationBackground(
@@ -37,6 +49,7 @@ struct RootTabView: View {
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Cards", systemImage: "creditcard") }
+                .tag(Tab.cards)
 
             navigationContainer { PresetsView() }
                 .ub_navigationBackground(
@@ -44,6 +57,7 @@ struct RootTabView: View {
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Presets", systemImage: "list.bullet.rectangle") }
+                .tag(Tab.presets)
 
             navigationContainer { SettingsView() }
                 .ub_navigationBackground(
@@ -51,6 +65,7 @@ struct RootTabView: View {
                     configuration: themeManager.glassConfiguration
                 )
                 .tabItem { Label("Settings", systemImage: "gear") }
+                .tag(Tab.settings)
         }
         // Give the tab chrome its own glass background so macOS matches iOS.
         .ub_chromeBackground(
@@ -120,7 +135,15 @@ struct RootTabView: View {
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
+            UITabBar.appearance().compactAppearance = appearance
             UITabBar.appearance().tintColor = UIColor(palette.active)
+            UITabBar.appearance().isTranslucent = theme.usesGlassMaterials
+
+            applyAppearanceToVisibleTabBars(
+                appearance: appearance,
+                palette: palette,
+                isTranslucent: theme.usesGlassMaterials
+            )
         }
         #endif
     }
@@ -214,6 +237,47 @@ private extension RootTabView {
         state.badgeTextAttributes = [
             .foregroundColor: badgeForeground.withAlphaComponent(0.75)
         ]
+    }
+
+    func applyAppearanceToVisibleTabBars(
+        appearance: UITabBarAppearance,
+        palette: AppTheme.TabBarPalette,
+        isTranslucent: Bool
+    ) {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .forEach { window in
+                tabBarControllers(in: window.rootViewController).forEach { controller in
+                    let tabBar = controller.tabBar
+                    tabBar.standardAppearance = appearance
+                    tabBar.scrollEdgeAppearance = appearance
+                    tabBar.compactAppearance = appearance
+                    tabBar.tintColor = UIColor(palette.active)
+                    tabBar.unselectedItemTintColor = UIColor(palette.inactive)
+                    tabBar.isTranslucent = isTranslucent
+                }
+            }
+    }
+
+    func tabBarControllers(in root: UIViewController?) -> [UITabBarController] {
+        guard let root else { return [] }
+
+        var controllers: [UITabBarController] = []
+
+        if let tabController = root as? UITabBarController {
+            controllers.append(tabController)
+        }
+
+        controllers.append(contentsOf: root.children.flatMap { child in
+            tabBarControllers(in: child)
+        })
+
+        if let presented = root.presentedViewController {
+            controllers.append(contentsOf: tabBarControllers(in: presented))
+        }
+
+        return controllers
     }
 }
 #endif
