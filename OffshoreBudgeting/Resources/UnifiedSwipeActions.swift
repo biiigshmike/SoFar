@@ -209,8 +209,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             UnifiedSwipeActionButtonLabel(
                 title: config.deleteTitle,
                 systemImageName: config.deleteSystemImageName,
-                tint: config.deleteTint,
-                iconOverride: config.deleteTint.ub_contrastingForegroundColor
+                tint: config.deleteTint
             )
         }
         .ub_swipeActionTint(config.deleteTint)
@@ -303,10 +302,17 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            iconOverride ?? tint.ub_contrastingForegroundColor
+            if #available(iOS 18.0, macOS 15.0, *) {
+                return iconOverride ?? (colorScheme == .dark ? .black : .white)
+            } else {
+                return iconOverride ?? tint.ub_contrastingForegroundColor
+            }
         }
 
         private var backgroundCircleColor: Color {
+            if #available(iOS 18.0, macOS 15.0, *) {
+                return colorScheme == .dark ? .white : .black
+            }
             #if canImport(UIKit) || canImport(AppKit)
             if let components = tint.ub_resolvedRGBA(for: colorScheme) {
                 if colorScheme == .dark {
