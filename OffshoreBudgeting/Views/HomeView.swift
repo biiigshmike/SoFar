@@ -52,7 +52,7 @@ struct HomeView: View {
         ) { _ in
             Task { await vm.refresh() }
         }
-        .onChange(of: budgetPeriodRawValue) { newValue in
+        .onChange(of: budgetPeriodRawValue) { _, newValue in
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly
             vm.updateBudgetPeriod(to: newPeriod)
         }
