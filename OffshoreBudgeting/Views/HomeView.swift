@@ -71,11 +71,13 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
             Text("Home")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, DS.Spacing.l)
                 .padding(.top, DS.Spacing.l)
+#endif
 
             // MARK: Header (Month chevrons + DatePicker)
             header

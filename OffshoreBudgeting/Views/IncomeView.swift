@@ -55,9 +55,11 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
             Text("Income")
                 .font(.largeTitle.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
+#endif
 
             VStack(spacing: 12) {
             // Calendar section in a padded card

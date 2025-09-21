@@ -27,11 +27,13 @@ struct SettingsView: View {
         ScrollView {
 
             VStack(spacing: 16) {
+#if os(macOS) || targetEnvironment(macCatalyst)
                 Text("Settings")
                     .font(.largeTitle.bold())
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPadding)
                     .padding(.top, DS.Spacing.l)
+#endif
 
                 // MARK: General Hero Card
                 SettingsCard(
