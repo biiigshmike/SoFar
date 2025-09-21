@@ -272,15 +272,9 @@ struct SettingsView: View {
         let base = horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
         let bottomInset = safeAreaInsets.bottom
+        let safeAreaOverflow = max(0, bottomInset - tabChromeHeight)
 
-        let adjustedSafeArea: CGFloat
-        if bottomInset >= tabChromeHeight {
-            adjustedSafeArea = max(0, bottomInset - tabChromeHeight)
-        } else {
-            adjustedSafeArea = bottomInset
-        }
-
-        return base + adjustedSafeArea
+        return base + safeAreaOverflow
         #else
         return DS.Spacing.l
         #endif
