@@ -56,6 +56,17 @@ extension View {
         #endif
     }
 
+    // MARK: ub_tabNavigationTitle(_:)
+    /// Convenience helper for TabView root screens to ensure the navigation
+    /// title matches the tab label and uses a consistent inline display mode.
+    /// - Parameter title: The title to show in the navigation bar.
+    /// - Returns: A view with the title and inline display mode applied.
+    func ub_tabNavigationTitle(_ title: String) -> some View {
+        self
+            .navigationTitle(title)
+            .ub_toolbarTitleInline()
+    }
+
     // MARK: ub_cardTitleShadow()
     /// Tight, offset shadow for card titles (small 3D lift). Softer gray tone, not harsh black.
     /// Use on text layers: `.ub_cardTitleShadow()`
