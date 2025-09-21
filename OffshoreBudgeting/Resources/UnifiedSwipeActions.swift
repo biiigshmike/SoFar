@@ -111,7 +111,7 @@ public struct UnifiedSwipeCustomAction: Identifiable {
         self.systemImageName = systemImageName
         self.tint = tint
         self.role = role
-        self.accessibilityID = accessibilityID
+               self.accessibilityID = accessibilityID
         self.action = action
     }
 }
@@ -301,13 +301,22 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             }
         }
 
+        // On OS 18+/macOS 15+ we explicitly render the circle and glyph.
+        // In Dark Mode, force a white circle with a black glyph to avoid the “white-on-white” issue.
         private var iconColor: Color {
-            iconOverride ?? tint.ub_contrastingForegroundColor
+            if #available(iOS 18.0, macOS 15.0, *), colorScheme == .dark {
+                return .black
+            }
+            return iconOverride ?? tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                return resolvedTint(opacity: colorScheme == .dark ? 0.85 : 0.65)
+                if colorScheme == .dark {
+                    return Color.white.opacity(0.95)
+                } else {
+                    return resolvedTint(opacity: 0.65)
+                }
             }
             #if canImport(UIKit) || canImport(AppKit)
             if let components = tint.ub_resolvedRGBA(for: colorScheme) {
