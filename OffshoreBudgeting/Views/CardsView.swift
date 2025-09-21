@@ -62,7 +62,11 @@ struct CardsView: View {
 
     private var baseView: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Cards")
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                RootViewTopPlanes(title: "Cards")
+                cardsActionPlane
+                    .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
+            }
             contentView
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -74,19 +78,6 @@ struct CardsView: View {
             .refreshable { await viewModel.refresh() }
             // MARK: App Toolbar
             .ub_tabNavigationTitle("Cards")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if selectedCardStableID == nil {
-                            isPresentingAddCard = true
-                        } else {
-                            isPresentingAddExpense = true
-                        }
-                    } label: {
-                        Label(selectedCardStableID == nil ? "Add Card" : "Add Expense", systemImage: "plus")
-                    }
-                }
-            }
             // MARK: Add Sheet
             .sheet(isPresented: $isPresentingAddCard) {
                 AddCardFormView { newName, selectedTheme in
@@ -134,6 +125,28 @@ struct CardsView: View {
                 )
             }
             .tint(themeManager.selectedTheme.resolvedTint)
+    }
+
+    private var cardsActionPlane: some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            addCardButton
+        }
+    }
+
+    private var addCardButton: some View {
+        Button {
+            if selectedCardStableID == nil {
+                isPresentingAddCard = true
+            } else {
+                isPresentingAddExpense = true
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 18, weight: .semibold))
+        }
+        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+        .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
     }
 
     // MARK: - Content View (Type-Safe)

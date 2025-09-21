@@ -66,11 +66,6 @@ struct IncomeView: View {
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
     }
 
-    private enum HeaderAddButtonMetrics {
-        static let dimension: CGFloat = 40
-        static let iconSize: CGFloat = 18
-    }
-
     private var addIncomeActionPlane: some View {
         HStack(spacing: 0) {
             Spacer(minLength: 0)
@@ -81,16 +76,9 @@ struct IncomeView: View {
     private var addIncomeButton: some View {
         Button { beginAddingIncome() } label: {
             Image(systemName: "plus")
-                .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
-                .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
-                .foregroundStyle(Color.white)
-                .background(
-                    Circle()
-                        .fill(themeManager.selectedTheme.resolvedTint)
-                )
-                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
+                .font(.system(size: 18, weight: .semibold))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
         .accessibilityLabel("Add Income")
         .accessibilityIdentifier("add_income_button")
     }
@@ -107,8 +95,10 @@ struct IncomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                RootViewTopPlanes(title: "Income") {
+                VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                    RootViewTopPlanes(title: "Income")
                     addIncomeActionPlane
+                        .padding(.horizontal, RootTabHeader.defaultHorizontalPadding)
                 }
 
                 VStack(spacing: 12) {
