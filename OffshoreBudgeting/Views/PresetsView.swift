@@ -53,95 +53,93 @@ struct PresetsView: View {
     }
 
     private var content: some View {
-        navigationContainer {
-            Group {
-                // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
-                if viewModel.items.isEmpty {
-                    UBEmptyState(
-                        iconSystemName: "list.bullet.rectangle",
-                        title: "Presets",
-                        message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
-                        primaryButtonTitle: "Add Preset",
-                        onPrimaryTap: { isPresentingAddSheet = true }
-                    )
-                    .padding(.horizontal, DS.Spacing.l)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                } else {
-                    // MARK: Non-empty List
-                    List {
-                        ForEach(viewModel.items) { item in
-                            PresetRowView(
-                                item: item,
-                                onAssignTapped: { template in
-                                    sheetTemplateToAssign = template
-                                }
-                            )
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                            .unifiedSwipeActions(
-                                UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
-                                onEdit: { editingTemplate = item.template },
-                                onDelete: {
-                                    if confirmBeforeDelete {
-                                        templateToDelete = item.template
-                                    } else {
-                                        delete(template: item.template)
-                                    }
-                                }
-                            )
-                        }
-                        .onDelete { indexSet in
-                            let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
-                            if confirmBeforeDelete, let first = targets.first {
-                                templateToDelete = first
-                            } else {
-                                targets.forEach(delete(template:))
+        Group {
+            // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
+            if viewModel.items.isEmpty {
+                UBEmptyState(
+                    iconSystemName: "list.bullet.rectangle",
+                    title: "Presets",
+                    message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
+                    primaryButtonTitle: "Add Preset",
+                    onPrimaryTap: { isPresentingAddSheet = true }
+                )
+                .padding(.horizontal, DS.Spacing.l)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                // MARK: Non-empty List
+                List {
+                    ForEach(viewModel.items) { item in
+                        PresetRowView(
+                            item: item,
+                            onAssignTapped: { template in
+                                sheetTemplateToAssign = template
                             }
+                        )
+                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .unifiedSwipeActions(
+                            UnifiedSwipeConfig(editTint: themeManager.selectedTheme.secondaryAccent),
+                            onEdit: { editingTemplate = item.template },
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    templateToDelete = item.template
+                                } else {
+                                    delete(template: item.template)
+                                }
+                            }
+                        )
+                    }
+                    .onDelete { indexSet in
+                        let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
+                        if confirmBeforeDelete, let first = targets.first {
+                            templateToDelete = first
+                        } else {
+                            targets.forEach(delete(template:))
                         }
                     }
-                    .listStyle(.plain)
-                    .applyIfAvailableScrollContentBackgroundHidden()
                 }
+                .listStyle(.plain)
+                .applyIfAvailableScrollContentBackgroundHidden()
             }
-            // MARK: Data lifecycle
-            .onAppear { viewModel.loadTemplates(using: viewContext) }
-            .onReceive(
-                NotificationCenter.default
-                    .publisher(for: .NSManagedObjectContextObjectsDidChange)
-                    .receive(on: RunLoop.main)
-            ) { _ in
+        }
+        // MARK: Data lifecycle
+        .onAppear { viewModel.loadTemplates(using: viewContext) }
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .NSManagedObjectContextObjectsDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            viewModel.loadTemplates(using: viewContext)
+        }
+        // Pull to refresh to force reload of templates
+        .refreshable { viewModel.loadTemplates(using: viewContext) }
+        // MARK: Add Preset Sheet
+        .sheet(isPresented: $isPresentingAddSheet) {
+            AddGlobalPlannedExpenseSheet(onSaved: {
+                viewModel.loadTemplates(using: viewContext)
+            })
+            .environment(\.managedObjectContext, viewContext)
+            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
+        }
+        // MARK: Assign Budgets Sheet
+        .sheet(item: $sheetTemplateToAssign) { template in
+            PresetBudgetAssignmentSheet(template: template) {
                 viewModel.loadTemplates(using: viewContext)
             }
-            // Pull to refresh to force reload of templates
-            .refreshable { viewModel.loadTemplates(using: viewContext) }
-            // MARK: Add Preset Sheet
-            .sheet(isPresented: $isPresentingAddSheet) {
-                AddGlobalPlannedExpenseSheet(onSaved: {
-                    viewModel.loadTemplates(using: viewContext)
-                })
-                .environment(\.managedObjectContext, viewContext)
-                .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
-            }
-            // MARK: Assign Budgets Sheet
-            .sheet(item: $sheetTemplateToAssign) { template in
-                PresetBudgetAssignmentSheet(template: template) {
+            .environment(\.managedObjectContext, viewContext)
+            .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
+        }
+        // MARK: Edit Template Sheet
+        .sheet(item: $editingTemplate) { template in
+            AddPlannedExpenseView(
+                plannedExpenseID: template.objectID,
+                preselectedBudgetID: nil,
+                defaultSaveAsGlobalPreset: true,
+                onSaved: {
                     viewModel.loadTemplates(using: viewContext)
                 }
-                .environment(\.managedObjectContext, viewContext)
-                .applyDetentsIfAvailable(detents: [.medium, .large], selection: nil)
-            }
-            // MARK: Edit Template Sheet
-            .sheet(item: $editingTemplate) { template in
-                AddPlannedExpenseView(
-                    plannedExpenseID: template.objectID,
-                    preselectedBudgetID: nil,
-                    defaultSaveAsGlobalPreset: true,
-                    onSaved: {
-                        viewModel.loadTemplates(using: viewContext)
-                    }
-                )
-                .environment(\.managedObjectContext, viewContext)
-            }
+            )
+            .environment(\.managedObjectContext, viewContext)
         }
         .navigationTitle("Presets")
         // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
@@ -158,19 +156,6 @@ struct PresetsView: View {
             theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
-    }
-
-    // MARK: - Navigation container compatibility
-    @ViewBuilder
-    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            NavigationStack { content() }
-        } else {
-            NavigationView { content() }
-            #if os(iOS)
-                .navigationViewStyle(.stack)
-            #endif
-        }
     }
 
     // MARK: - Actions
@@ -360,3 +345,4 @@ private extension View {
         }
     }
 }
+

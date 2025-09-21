@@ -54,58 +54,56 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        navigationContainer {
-            VStack(spacing: 12) {
-                // Calendar section in a padded card
-                calendarSection
+        VStack(spacing: 12) {
+            // Calendar section in a padded card
+            calendarSection
 
-                // Weekly summary bar
-                weeklySummaryBar
+            // Weekly summary bar
+            weeklySummaryBar
 
-                // Selected day entries
-                selectedDaySection
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxHeight: .infinity, alignment: .top)
-            // Keep list in sync without deprecated APIs
-            .modifier(SelectionChangeHandler(viewModel: viewModel))
-            // Pull to refresh to reload entries for the selected day
-            .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
-            // MARK: Present Add Income Form
-            .sheet(item: $addIncomeInitialDate, onDismiss: {
-                // Reload entries for the selected day after adding/saving
-                viewModel.reloadForSelectedDay(forceMonthReload: true)
-            }) { item in
-                AddIncomeFormView(
-                    incomeObjectID: nil,
-                    budgetObjectID: nil,
-                    initialDate: item.value
-                )
-            }
-            // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
-            .sheet(item: $editingIncome, onDismiss: {
-                // Reload after edit
-                viewModel.reloadForSelectedDay(forceMonthReload: true)
-            }) { income in
-                AddIncomeFormView(
-                    incomeObjectID: income.objectID,
-                    budgetObjectID: nil,
-                    initialDate: nil
-                )
-            }
-            .onAppear {
-                // Ensure the calendar opens on today's date and load entries
-                let initial = viewModel.selectedDate ?? Date()
-                navigate(to: initial)
-            }
-            .ub_surfaceBackground(
-                themeManager.selectedTheme,
-                configuration: themeManager.glassConfiguration,
-                ignoringSafeArea: .all
+            // Selected day entries
+            selectedDaySection
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxHeight: .infinity, alignment: .top)
+        // Keep list in sync without deprecated APIs
+        .modifier(SelectionChangeHandler(viewModel: viewModel))
+        // Pull to refresh to reload entries for the selected day
+        .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
+        // MARK: Present Add Income Form
+        .sheet(item: $addIncomeInitialDate, onDismiss: {
+            // Reload entries for the selected day after adding/saving
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
+        }) { item in
+            AddIncomeFormView(
+                incomeObjectID: nil,
+                budgetObjectID: nil,
+                initialDate: item.value
             )
         }
+        // MARK: Present Edit Income Form (triggered by non-nil `editingIncome`)
+        .sheet(item: $editingIncome, onDismiss: {
+            // Reload after edit
+            viewModel.reloadForSelectedDay(forceMonthReload: true)
+        }) { income in
+            AddIncomeFormView(
+                incomeObjectID: income.objectID,
+                budgetObjectID: nil,
+                initialDate: nil
+            )
+        }
+        .onAppear {
+            // Ensure the calendar opens on today's date and load entries
+            let initial = viewModel.selectedDate ?? Date()
+            navigate(to: initial)
+        }
         .navigationTitle("Income")
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
+            configuration: themeManager.glassConfiguration,
+            ignoringSafeArea: .all
+        )
         // MARK: Toolbar (+ button) → Present Add Income sheet
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -118,6 +116,7 @@ struct IncomeView: View {
             }
         }
     }
+
     // MARK: - Calendar Section
     /// Wraps the `MCalendarView` in a card and applies a stark black & white appearance.
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
@@ -277,7 +276,7 @@ struct IncomeView: View {
                     ForEach(entries, id: \.objectID) { income in
                         IncomeRow(
                             income: income,
-                            onEdit: { beginEditingIncome(income) },            // ⟵ FIX: local helper; no VM dynamic member
+                            onEdit: { beginEditingIncome(income) },
                             onDelete: { handleDeleteRequest(income) }
                         )
                         .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
@@ -441,19 +440,6 @@ struct IncomeView: View {
         let targets = indexSet.compactMap { entries.indices.contains($0) ? entries[$0] : nil }
         targets.forEach { handleDeleteRequest($0) }
     }
-
-    // MARK: - Navigation container compatibility
-    @ViewBuilder
-    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            NavigationStack { content() }
-        } else {
-            NavigationView { content() }
-            #if os(iOS)
-                .navigationViewStyle(.stack)
-            #endif
-        }
-    }
 }
 
 // MARK: - IncomeRow
@@ -546,3 +532,4 @@ private extension View {
         }
     }
 }
+
