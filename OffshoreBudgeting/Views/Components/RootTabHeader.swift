@@ -50,7 +50,7 @@ struct RootTabHeader<Trailing: View>: View {
         #else
         let basePadding = DS.Spacing.xxl
         let adjusted = safeAreaInsets.top + DS.Spacing.m
-        return min(max(basePadding, adjusted), basePadding + DS.Spacing.l)
+        return max(basePadding, adjusted)
         #endif
     }
 }

@@ -55,9 +55,9 @@ struct IncomeView: View {
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        return safeAreaInsets.bottom + DS.Spacing.l
+        return safeAreaInsets.bottom + DS.Spacing.xl
 #else
-        return 12
+        return DS.Spacing.xl
 #endif
     }
 
