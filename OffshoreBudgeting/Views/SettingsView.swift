@@ -273,13 +273,14 @@ struct SettingsView: View {
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
         let bottomInset = safeAreaInsets.bottom
 
-        // The tab bar already covers the device's bottom safe area. Only add
-        // additional padding when the safe area extends beyond the chrome (e.g.
-        // when running in Stage Manager or with floating keyboards). This keeps
-        // compact iPhones from showing a large, empty gap above the tab bar.
-        let chromeOverlapCompensation = max(0, bottomInset - tabChromeHeight)
+        let adjustedSafeArea: CGFloat
+        if bottomInset >= tabChromeHeight {
+            adjustedSafeArea = max(0, bottomInset - tabChromeHeight)
+        } else {
+            adjustedSafeArea = bottomInset
+        }
 
-        return base + chromeOverlapCompensation
+        return base + adjustedSafeArea
         #else
         return DS.Spacing.l
         #endif
