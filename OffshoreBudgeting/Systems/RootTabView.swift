@@ -135,7 +135,6 @@ struct RootTabView: View {
             appearance.shadowColor = .clear
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
-            UITabBar.appearance().compactAppearance = appearance
             UITabBar.appearance().tintColor = UIColor(palette.active)
             UITabBar.appearance().isTranslucent = theme.usesGlassMaterials
 
@@ -252,7 +251,6 @@ private extension RootTabView {
                     let tabBar = controller.tabBar
                     tabBar.standardAppearance = appearance
                     tabBar.scrollEdgeAppearance = appearance
-                    tabBar.compactAppearance = appearance
                     tabBar.tintColor = UIColor(palette.active)
                     tabBar.unselectedItemTintColor = UIColor(palette.inactive)
                     tabBar.isTranslucent = isTranslucent
