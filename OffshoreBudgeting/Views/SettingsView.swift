@@ -28,7 +28,7 @@ struct SettingsView: View {
         ScrollView {
 
             VStack(spacing: cardStackSpacing) {
-                RootTabHeader(title: "Settings", horizontalPadding: horizontalPadding)
+                RootViewTopPlanes(title: "Settings", horizontalPadding: horizontalPadding)
                 // MARK: General Hero Card
                 SettingsCard(
                     iconSystemName: "gearshape",

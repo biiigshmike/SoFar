@@ -54,7 +54,7 @@ struct PresetsView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootTabHeader(title: "Presets")
+            RootViewTopPlanes(title: "Presets")
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
                 if viewModel.items.isEmpty {
