@@ -474,8 +474,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         if brightness < 0.45 {
             baseColor = .white
-            inactiveAlpha = 0.88
-            disabledAlpha = 0.36
+            inactiveAlpha = 0.94
+            disabledAlpha = 0.42
         } else {
             baseColor = .black
             inactiveAlpha = 0.78
