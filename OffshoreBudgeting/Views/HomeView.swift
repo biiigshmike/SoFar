@@ -83,7 +83,10 @@ struct HomeView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.s) {
-            RootViewTopPlanes(title: "Home")
+            RootViewTopPlanes(
+                title: "Home",
+                topPaddingStyle: .navigationBarAligned
+            )
 
             header
                 .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
