@@ -242,7 +242,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                return colorScheme == .dark ? Color.white.opacity(0.95)
+                return colorScheme == .dark ? .white
                                             : resolvedTint(opacity: 0.65)
             }
             #if canImport(UIKit) || canImport(AppKit)
@@ -349,7 +349,9 @@ private struct ForceDarkGlyphModifier: ViewModifier {
         if colorScheme == .dark {
             #if os(iOS)
             if #available(iOS 18.0, *) {
-                content.buttonStyle(.plain)
+                content
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.black)
             } else {
                 content
                     .buttonStyle(.plain)
@@ -357,7 +359,9 @@ private struct ForceDarkGlyphModifier: ViewModifier {
             }
             #elseif os(macOS)
             if #available(macOS 15.0, *) {
-                content.buttonStyle(.plain)
+                content
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.black)
             } else {
                 content
                     .buttonStyle(.plain)
