@@ -103,17 +103,6 @@ struct PresetsView: View {
                     .applyIfAvailableScrollContentBackgroundHidden()
                 }
             }
-            .navigationTitle("Presets")
-            // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingAddSheet = true
-                    } label: {
-                        Label("Add Preset Planned Expense", systemImage: "plus")
-                    }
-                }
-            }
             // MARK: Data lifecycle
             .onAppear { viewModel.loadTemplates(using: viewContext) }
             .onReceive(
@@ -152,6 +141,17 @@ struct PresetsView: View {
                     }
                 )
                 .environment(\.managedObjectContext, viewContext)
+            }
+        }
+        .navigationTitle("Presets")
+        // MARK: App Toolbar (pill +) — same pattern used on Home/Cards
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isPresentingAddSheet = true
+                } label: {
+                    Label("Add Preset Planned Expense", systemImage: "plus")
+                }
             }
         }
         .ub_navigationBackground(
