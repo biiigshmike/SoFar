@@ -203,7 +203,7 @@ struct AddPlannedExpenseView: View {
                 didApplyDefaultGlobal = true
             }
         }
-        .onChange(of: isAssigningToBudget) { newValue in
+        .ub_onChange(of: isAssigningToBudget) { newValue in
             guard showAssignBudgetToggle else { return }
             if newValue {
                 vm.selectedBudgetID = vm.allBudgets.first?.objectID
@@ -365,7 +365,7 @@ private struct CategoryChipsRow: View {
             .modifier(PresentationDetentsCompat())
             .environment(\.managedObjectContext, viewContext)
         }
-        .onChange(of: categories.count) { _ in
+        .ub_onChange(of: categories.count) {
             if selectedCategoryID == nil, let first = categories.first {
                 selectedCategoryID = first.objectID
             }

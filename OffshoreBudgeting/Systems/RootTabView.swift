@@ -64,13 +64,13 @@ struct RootTabView: View {
             ignoringSafeArea: .all
         )
         .onAppear(perform: updateTabBarAppearance)
-        .onChange(of: themeManager.selectedTheme) { _ in
+        .ub_onChange(of: themeManager.selectedTheme) {
             updateTabBarAppearance()
         }
-        .onChange(of: colorScheme) { _ in
+        .ub_onChange(of: colorScheme) {
             updateTabBarAppearance()
         }
-        .onChange(of: platformCapabilities) { _ in
+        .ub_onChange(of: platformCapabilities) {
             updateTabBarAppearance()
         }
     }

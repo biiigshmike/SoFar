@@ -18,6 +18,48 @@ import AppKit
 
 extension View {
 
+    // MARK: ub_onChange(of:initial:)
+    /// Bridges the macOS 14 / iOS 17 `onChange` overloads with earlier operating systems.
+    /// - Parameters:
+    ///   - value: The equatable value to observe.
+    ///   - initial: Whether the action should fire immediately on appear.
+    ///   - action: A closure executed whenever `value` changes.
+    /// - Returns: A view that performs the provided action when `value` changes.
+    func ub_onChange<Value: Equatable>(
+        of value: Value,
+        initial: Bool = false,
+        _ action: @escaping () -> Void
+    ) -> some View {
+        modifier(
+            UBOnChangeWithoutValueModifier(
+                value: value,
+                initial: initial,
+                action: action
+            )
+        )
+    }
+
+    /// Bridges the macOS 14 / iOS 17 `onChange` overloads with earlier operating systems.
+    /// Provides the new value back to the caller whenever it changes.
+    /// - Parameters:
+    ///   - value: The equatable value to observe.
+    ///   - initial: Whether the action should fire immediately on appear.
+    ///   - action: A closure receiving the new value whenever `value` changes.
+    /// - Returns: A view that performs the provided action when `value` changes.
+    func ub_onChange<Value: Equatable>(
+        of value: Value,
+        initial: Bool = false,
+        _ action: @escaping (Value) -> Void
+    ) -> some View {
+        modifier(
+            UBOnChangeWithValueModifier(
+                value: value,
+                initial: initial,
+                action: action
+            )
+        )
+    }
+
     // MARK: ub_noAutoCapsAndCorrection()
     /// Disables auto-capitalization and autocorrection where supported (iOS/iPadOS).
     /// On other platforms this is a no-op, allowing a single code path.
@@ -280,6 +322,62 @@ extension View {
 }
 
 // MARK: - Private Modifiers
+
+private struct UBOnChangeWithoutValueModifier<Value: Equatable>: ViewModifier {
+    let value: Value
+    let initial: Bool
+    let action: () -> Void
+    @State private var previousValue: Value?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            content.onChange(of: value, initial: initial, action)
+        } else {
+            content.task(id: value) {
+                let shouldTrigger: Bool
+                if let previousValue {
+                    shouldTrigger = previousValue != value
+                } else {
+                    shouldTrigger = initial
+                }
+                previousValue = value
+                if shouldTrigger {
+                    action()
+                }
+            }
+        }
+    }
+}
+
+private struct UBOnChangeWithValueModifier<Value: Equatable>: ViewModifier {
+    let value: Value
+    let initial: Bool
+    let action: (Value) -> Void
+    @State private var previousValue: Value?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            content.onChange(of: value, initial: initial) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            content.task(id: value) {
+                let shouldTrigger: Bool
+                if let previousValue {
+                    shouldTrigger = previousValue != value
+                } else {
+                    shouldTrigger = initial
+                }
+                previousValue = value
+                if shouldTrigger {
+                    action(value)
+                }
+            }
+        }
+    }
+}
 
 private struct UBDecimalKeyboardModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var platformCapabilities
