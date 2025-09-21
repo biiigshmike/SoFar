@@ -64,13 +64,9 @@ struct OffshoreBudgetingApp: App {
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
-            // Availability-safe onChange: uses old-only value on older OSes.
-            .modifier(ColorSchemeChangeHandler(
-                systemColorScheme: systemColorScheme,
-                refresh: { newScheme in
-                    themeManager.refreshSystemAppearance(newScheme)
-                }
-            ))
+            .ub_onChange(of: systemColorScheme) { newScheme in
+                themeManager.refreshSystemAppearance(newScheme)
+            }
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without
             // dynamically toggling it during editing, which can steal focus.
@@ -96,31 +92,6 @@ struct OffshoreBudgetingApp: App {
             HelpView()
         }
 #endif
-    }
-}
-
-// A helper to bridge the iOS 17+/macOS 14+ onChange overload and older OSes.
-private struct ColorSchemeChangeHandler: ViewModifier {
-    let systemColorScheme: ColorScheme
-    let refresh: (ColorScheme) -> Void
-    @State private var previousValue: ColorScheme?
-
-    func body(content: Content) -> some View {
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            content.onChange(of: systemColorScheme) { newValue in
-                refresh(newValue)
-            }
-        } else {
-            content
-                .task(id: systemColorScheme) {
-                    if let previousValue, previousValue != systemColorScheme {
-                        self.previousValue = systemColorScheme
-                        refresh(systemColorScheme)
-                    } else if previousValue == nil {
-                        self.previousValue = systemColorScheme
-                    }
-                }
-        }
     }
 }
 

@@ -74,7 +74,9 @@ struct IncomeView: View {
         .padding(.vertical, 12)
         .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
-        .modifier(SelectionChangeHandler(viewModel: viewModel))
+        .ub_onChange(of: viewModel.selectedDate) {
+            viewModel.reloadForSelectedDay(forceMonthReload: false)
+        }
         // Pull to refresh to reload entries for the selected day
         .refreshable { viewModel.reloadForSelectedDay(forceMonthReload: true) }
         // MARK: Present Add Income Form
@@ -498,31 +500,6 @@ private struct IncomeRow: View {
         nf.numberStyle = .currency
         nf.locale = .current
         return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
-    }
-}
-
-// MARK: - SelectionChangeHandler
-/// Bridges `onChange` without deprecated macOS 14 signatures; reloads when selectedDate changes.
-/// Behavior: Calls `viewModel.reloadForSelectedDay()` whenever `selectedDate` changes.
-private struct SelectionChangeHandler: ViewModifier {
-    @ObservedObject var viewModel: IncomeScreenViewModel
-    @State private var previousDate: Date?
-    func body(content: Content) -> some View {
-        if #available(iOS 17.0, macOS 14.0, *) {
-            return content.onChange(of: viewModel.selectedDate) {
-                viewModel.reloadForSelectedDay(forceMonthReload: false)
-            }
-        } else {
-            return content
-                .task(id: viewModel.selectedDate) {
-                    if let previousDate, previousDate != viewModel.selectedDate {
-                        self.previousDate = viewModel.selectedDate
-                        viewModel.reloadForSelectedDay(forceMonthReload: false)
-                    } else if previousDate == nil {
-                        self.previousDate = viewModel.selectedDate
-                    }
-                }
-        }
     }
 }
 

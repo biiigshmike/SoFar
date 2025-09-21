@@ -82,7 +82,7 @@ struct OnboardingView: View {
         .onboardingPresentation()
         .animation(.easeInOut, value: step)
         .transition(.opacity)
-        .onChange(of: enableCloudSync) { newValue in
+        .ub_onChange(of: enableCloudSync) { newValue in
             guard !newValue else { return }
             syncCardThemes = false
             syncAppTheme = false
@@ -171,7 +171,7 @@ private struct ThemeStep: View {
             .frame(maxWidth: .infinity)
         }
         .onAppear { selectedTheme = themeManager.selectedTheme }
-        .onChange(of: themeManager.selectedTheme) { newValue in
+        .ub_onChange(of: themeManager.selectedTheme) { newValue in
             guard newValue != selectedTheme else { return }
             selectedTheme = newValue
         }
@@ -416,7 +416,7 @@ private struct CloudSyncStep: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: enableCloudSync) { newValue in
+        .ub_onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }

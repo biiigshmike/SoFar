@@ -58,7 +58,7 @@ struct RecurrencePickerView: View {
                     Text(p.rawValue).tag(p)
                 }
             }
-            .onChange(of: selectedPreset) { newValue in
+            .ub_onChange(of: selectedPreset) { newValue in
                 applyPresetChange(newValue)
             }
 
@@ -66,17 +66,17 @@ struct RecurrencePickerView: View {
             switch selectedPreset {
             case .weekly, .biWeekly:
                 WeekdayPicker(selected: $selectedWeekday)
-                    .onChange(of: selectedWeekday) { _ in
+                    .ub_onChange(of: selectedWeekday) {
                         applyPresetChange(selectedPreset)
                     }
             case .semiMonthly:
                 HStack(spacing: 12) {
                     DayOfMonthPicker(title: "First day", selection: $firstDay)
-                        .onChange(of: firstDay) { _ in
+                        .ub_onChange(of: firstDay) {
                             applyPresetChange(selectedPreset)
                         }
                     DayOfMonthPicker(title: "Second day", selection: $secondDay)
-                        .onChange(of: secondDay) { _ in
+                        .ub_onChange(of: secondDay) {
                             applyPresetChange(selectedPreset)
                         }
                 }
@@ -86,13 +86,13 @@ struct RecurrencePickerView: View {
 
             // End Date Controls
             Toggle("Set End Date", isOn: $hasEndDate)
-                .onChange(of: hasEndDate) { _ in
+                .ub_onChange(of: hasEndDate) {
                     applyPresetChange(selectedPreset)
                 }
 
             if hasEndDate {
                 DatePicker("End Date", selection: $endDate, displayedComponents: [.date])
-                    .onChange(of: endDate) { _ in
+                    .ub_onChange(of: endDate) {
                         applyPresetChange(selectedPreset)
                     }
             }

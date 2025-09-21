@@ -407,9 +407,9 @@ private struct FilterBar: View {
             }
             .pickerStyle(.segmented)
         }
-        .onChange(of: startDate) { _ in onChanged() }
-        .onChange(of: endDate)   { _ in onChanged() }
-        .onChange(of: sort)      { _ in onChanged() }
+        .ub_onChange(of: startDate) { onChanged() }
+        .ub_onChange(of: endDate) { onChanged() }
+        .ub_onChange(of: sort) { onChanged() }
     }
 }
 
