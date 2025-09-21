@@ -71,15 +71,22 @@ struct HomeView: View {
     // MARK: Root Layout
     private var mainLayout: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Home") {
-                header
-            }
+            headerSection
 
             // MARK: Content Container
             // ZStack gives us a stable area below the header.
             // - When empty: we show UBEmptyState centered here.
             // - When non-empty: we show the budget details here.
             contentContainer
+        }
+    }
+
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            RootViewTopPlanes(title: "Home")
+
+            header
+                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
     }
 
