@@ -173,12 +173,13 @@ struct PresetsView: View {
 
     private var swipeActionTint: Color {
         if colorScheme == .dark {
-            // Dark mode needs a deeper neutral so the iOS 18 circular swipe
-            // buttons render with a visible glyph instead of a white disk.
-            // Picking a mid-gray keeps enough contrast for the label helper
-            // (`ub_contrastingForegroundColor`) to choose a white icon while
-            // still reading as a subtle neutral accent.
-            return Color(red: 0.52, green: 0.55, blue: 0.6)
+            // In dark mode we want the new iOS 18 circular swipe buttons to
+            // read as crisp white disks with dark glyphs for maximum contrast.
+            // Using `.white` here keeps the background pure white while
+            // `UnifiedSwipeActions` still forces black icons when in dark
+            // mode. This improves readability of the Edit/Delete actions when
+            // swiping a preset in dark appearance.
+            return .white
         } else {
             return .black
         }
