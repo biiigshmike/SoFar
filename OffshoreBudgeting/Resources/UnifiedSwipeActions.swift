@@ -76,16 +76,13 @@ public struct UnifiedSwipeConfig {
         return Color(UIColor.systemGray5)
         #elseif os(macOS)
         if #available(macOS 11.0, *) {
-            if let dynamic = NSColor(name: nil) { appearance in
+            let dynamic = NSColor(name: nil) { appearance in
                 let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 return isDark
                     ? NSColor(calibratedWhite: 0.28, alpha: 1.0)
                     : NSColor(calibratedWhite: 0.92, alpha: 1.0)
-            } {
-                return Color(nsColor: dynamic)
-            } else {
-                return Color(nsColor: .systemGray)
             }
+            return Color(nsColor: dynamic)
         } else {
             return Color.gray.opacity(0.35)
         }
@@ -114,7 +111,7 @@ public struct UnifiedSwipeCustomAction: Identifiable {
         action: @escaping () -> Void
     ) {
         self.title = title
-        self.systemImageName = systemImageName
+               self.systemImageName = systemImageName
         self.tint = tint
         self.role = role
         self.accessibilityID = accessibilityID
@@ -242,7 +239,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         let title: String
         let systemImageName: String
         let iconOverride: Color?
-        let textOverride: Color?
+               let textOverride: Color?
 
         var body: some View {
             Label {
