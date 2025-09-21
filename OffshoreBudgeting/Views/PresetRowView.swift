@@ -14,9 +14,6 @@ import SwiftUI
 /// Tapping the pill opens the assignment sheet via callback.
 struct PresetRowView: View {
 
-    // MARK: Environment
-    @Environment(\.colorScheme) private var colorScheme
-
     // MARK: Inputs
     let item: PresetListItem
     let onAssignTapped: (PlannedExpense) -> Void
@@ -48,12 +45,9 @@ struct PresetRowView: View {
                         Text("Assigned Budgets")
                         Text("\(item.assignedCount)")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(assignedCountForeground)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(
-                                Capsule().fill(assignedCountBackground)
-                            )
+                            .background(Capsule().fill(Color.accentColor.opacity(0.15)))
                     }
                 }
                 .buttonStyle(.plain)
@@ -72,15 +66,6 @@ struct PresetRowView: View {
             }
         }
         .padding(.vertical, 4)
-    }
-
-    // MARK: Private Helpers
-    private var assignedCountBackground: Color {
-        colorScheme == .dark ? .white : Color.accentColor.opacity(0.15)
-    }
-
-    private var assignedCountForeground: Color {
-        colorScheme == .dark ? .black : .primary
     }
 }
 
