@@ -213,7 +213,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 iconOverride: config.deleteTint.ub_contrastingForegroundColor
             )
         }
-        .tint(config.deleteTint)
+        .ub_swipeActionTint(config.deleteTint)
         .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
     }
 
@@ -229,7 +229,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 tint: config.editTint
             )
         }
-        .tint(config.editTint)
+        .ub_swipeActionTint(config.editTint)
         .accessibilityIdentifierIfAvailable(config.editAccessibilityID)
     }
 
@@ -247,7 +247,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                     iconOverride: item.role == .destructive ? item.tint.ub_contrastingForegroundColor : nil
                 )
             }
-            .tint(item.tint)
+            .ub_swipeActionTint(item.tint)
             .accessibilityIdentifierIfAvailable(item.accessibilityID)
         }
     }
@@ -291,7 +291,14 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(title))
             } else {
-                Label(title, systemImage: systemImageName)
+                Label {
+                    Text(title)
+                } icon: {
+                    Image(systemName: systemImageName)
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(iconColor)
+                }
+                .foregroundColor(tint)
             }
         }
 
@@ -300,7 +307,31 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var backgroundCircleColor: Color {
-            tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+            #if canImport(UIKit) || canImport(AppKit)
+            if let components = tint.ub_resolvedRGBA(for: colorScheme) {
+                if colorScheme == .dark {
+                    let blend: CGFloat = 0.35
+                    let red = components.red * (1 - blend)
+                    let green = components.green * (1 - blend)
+                    let blue = components.blue * (1 - blend)
+                    return Color(
+                        red: Double(red),
+                        green: Double(green),
+                        blue: Double(blue),
+                        opacity: Double(components.alpha)
+                    ).opacity(0.55)
+                } else {
+                    return Color(
+                        red: Double(components.red),
+                        green: Double(components.green),
+                        blue: Double(components.blue),
+                        opacity: Double(components.alpha)
+                    ).opacity(0.25)
+                }
+            }
+            #endif
+
+            return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
     }
 
@@ -367,6 +398,28 @@ private extension View {
             self
         }
     }
+
+    /// Applies a tint color for swipe actions, skipping newer OS releases where
+    /// the system draws circular backgrounds for us and we render the tint
+    /// manually inside the button label.
+    @ViewBuilder
+    func ub_swipeActionTint(_ color: Color) -> some View {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            self
+        } else {
+            self.tint(color)
+        }
+        #elseif os(macOS)
+        if #available(macOS 15.0, *) {
+            self
+        } else {
+            self.tint(color)
+        }
+        #else
+        self.tint(color)
+        #endif
+    }
 }
 
 // MARK: - Color Helpers
@@ -395,6 +448,35 @@ private extension Color {
         return Color.contrastingColor(red: red, green: green, blue: blue)
         #else
         return .white
+        #endif
+    }
+
+    /// Resolves the color for the provided color scheme and exposes RGBA
+    /// components for additional calculations.
+    func ub_resolvedRGBA(for colorScheme: ColorScheme) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)? {
+        #if canImport(UIKit)
+        let uiColor = UIColor(self)
+        let trait = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        let resolved = uiColor.resolvedColor(with: trait)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return nil
+        }
+        return (red, green, blue, alpha)
+        #elseif canImport(AppKit)
+        let nsColor = NSColor(self)
+        let converted = nsColor.usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return (red, green, blue, alpha)
+        #else
+        return nil
         #endif
     }
 
