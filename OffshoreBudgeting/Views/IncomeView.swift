@@ -78,6 +78,28 @@ struct IncomeView: View {
 #endif
     }
 
+#if os(iOS)
+    @ViewBuilder
+    private var iOSTitleHeader: some View {
+        VStack(spacing: DS.Spacing.s) {
+            HStack(spacing: DS.Spacing.m) {
+                Text("Income")
+                    .font(.largeTitle.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                headerAddIncomeButton
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, DS.Spacing.xxl)
+        .padding(.bottom, DS.Spacing.s)
+        .background(
+            themeManager.selectedTheme.background
+                .ub_ignoreSafeArea(edges: .top)
+        )
+    }
+#endif
+
     private func beginAddingIncome(for date: Date? = nil) {
         let baseDate = date ?? viewModel.selectedDate ?? Date()
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
@@ -93,35 +115,29 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        RootTabScaffold(
-            title: "Income",
-            iOSCompactHeader: true,
-            headerActions: {
-#if os(iOS)
-                headerAddIncomeButton
-#else
-                EmptyView()
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
+            Text("Income")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
 #endif
-            }
-        ) {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                VStack(spacing: 12) {
-                    // Calendar section in a padded card
-                    calendarSection
 
-                    // Weekly summary bar
-                    weeklySummaryBar
+            VStack(spacing: 12) {
+                // Calendar section in a padded card
+                calendarSection
 
-                    // Selected day entries
-                    selectedDaySection
-                }
-                .padding(.bottom, DS.Spacing.l)
+                // Weekly summary bar
+                weeklySummaryBar
+
+                // Selected day entries
+                selectedDaySection
             }
-            .padding(.horizontal, 16)
-            .padding(.top, topPadding)
-            .padding(.bottom, bottomPadding)
-            .frame(maxHeight: .infinity, alignment: .top)
+            .padding(.bottom, DS.Spacing.l)
         }
+        .padding(.horizontal, 16)
+        .padding(.top, topPadding)
+        .padding(.bottom, bottomPadding)
+        .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
@@ -153,13 +169,24 @@ struct IncomeView: View {
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
         }
+        .ub_tabNavigationTitle("Income")
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
+#if os(iOS)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if usesCompactTitleHeader {
+                iOSTitleHeader
+            }
+        }
+#endif
         // MARK: Toolbar (+ button) → Present Add Income sheet
         .toolbar { incomeToolbarContent }
+#if os(iOS)
+        .applyNavigationBarVisibility(compactHeader: usesCompactTitleHeader)
+#endif
     }
 
     // MARK: - Calendar Section
@@ -656,3 +683,15 @@ private extension View {
 
 }
 
+#if os(iOS)
+private extension View {
+    @ViewBuilder
+    func applyNavigationBarVisibility(compactHeader: Bool) -> some View {
+        if #available(iOS 16.0, *) {
+            self.toolbar(compactHeader ? .hidden : .visible, for: .navigationBar)
+        } else {
+            self.navigationBarHidden(compactHeader)
+        }
+    }
+}
+#endif

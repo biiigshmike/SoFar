@@ -61,10 +61,16 @@ struct CardsView: View {
     }
 
     private var baseView: some View {
-        RootTabScaffold(title: "Cards") {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                contentView
-            }
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+#if os(macOS) || targetEnvironment(macCatalyst)
+            Text("Cards")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.l)
+                .padding(.top, DS.Spacing.l)
+#endif
+
+            contentView
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             // Let SwiftUI handle transitions between loading/empty/loaded states.
@@ -74,6 +80,7 @@ struct CardsView: View {
             // Pull to refresh to manually reload cards
             .refreshable { await viewModel.refresh() }
             // MARK: App Toolbar
+            .ub_tabNavigationTitle("Cards")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
