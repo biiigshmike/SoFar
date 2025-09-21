@@ -257,7 +257,7 @@ struct SettingsView: View {
 
     private var cardStackSpacing: CGFloat {
         #if os(iOS)
-        return horizontalSizeClass == .compact ? 12 : 16
+        return horizontalSizeClass == .compact ? 10 : 16
         #else
         return 16
         #endif
@@ -265,7 +265,7 @@ struct SettingsView: View {
 
     private var scrollViewVerticalPadding: CGFloat {
         #if os(iOS)
-        return horizontalSizeClass == .compact ? 12 : 20
+        return horizontalSizeClass == .compact ? 10 : 20
         #else
         return 20
         #endif

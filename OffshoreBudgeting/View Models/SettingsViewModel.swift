@@ -88,18 +88,31 @@ struct SettingsIcon: View {
     let systemName: String
     var tint: Color = .primary
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: iconCornerRadius, style: .continuous)
                 .fill(themeManager.selectedTheme.secondaryBackground)
             Image(systemName: systemName)
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .font(.system(size: symbolSize, weight: .semibold, design: .rounded))
                 .foregroundStyle(tint)
         }
-        .frame(width: 48, height: 48)
+        .frame(width: iconDimension, height: iconDimension)
         .accessibilityHidden(true)
     }
+
+    private var isCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    private var iconDimension: CGFloat { isCompact ? 40 : 48 }
+    private var symbolSize: CGFloat { isCompact ? 20 : 24 }
+    private var iconCornerRadius: CGFloat { isCompact ? 14 : 16 }
 }
 
 // MARK: - SettingsCard
@@ -161,9 +174,9 @@ struct SettingsCard<Content: View>: View {
         #endif
     }
 
-    private var cardPadding: CGFloat { isCompact ? 12 : 16 }
-    private var headerSpacing: CGFloat { isCompact ? 8 : 12 }
-    private var outerCornerRadius: CGFloat { isCompact ? 16 : 20 }
+    private var cardPadding: CGFloat { isCompact ? 10 : 16 }
+    private var headerSpacing: CGFloat { isCompact ? 6 : 12 }
+    private var outerCornerRadius: CGFloat { isCompact ? 14 : 20 }
 }
 
 // MARK: - SettingsRow
@@ -222,6 +235,6 @@ struct SettingsRow<Trailing: View>: View {
         #endif
     }
 
-    private var rowHorizontalPadding: CGFloat { isCompact ? 12 : 14 }
-    private var rowMinHeight: CGFloat { isCompact ? 44 : 48 }
+    private var rowHorizontalPadding: CGFloat { isCompact ? 10 : 14 }
+    private var rowMinHeight: CGFloat { isCompact ? 40 : 48 }
 }
