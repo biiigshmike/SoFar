@@ -54,7 +54,12 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            Text("Income")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: 12) {
             // Calendar section in a padded card
             calendarSection
 
@@ -63,6 +68,7 @@ struct IncomeView: View {
 
             // Selected day entries
             selectedDaySection
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
