@@ -34,6 +34,7 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.safeAreaInsets) private var safeAreaInsets
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
     @StateObject var viewModel = IncomeScreenViewModel()
@@ -54,7 +55,7 @@ struct IncomeView: View {
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        return DS.Spacing.xxl
+        return safeAreaInsets.bottom + DS.Spacing.l
 #else
         return 12
 #endif
@@ -63,6 +64,11 @@ struct IncomeView: View {
     private func beginAddingIncome(for date: Date? = nil) {
         let baseDate = date ?? viewModel.selectedDate ?? Date()
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
+    }
+
+    private enum HeaderAddButtonMetrics {
+        static let dimension: CGFloat = 40
+        static let iconSize: CGFloat = 18
     }
 
     // MARK: Calendar
@@ -75,8 +81,23 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootTabHeader(title: "Income")
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            RootTabHeader(title: "Income") {
+                Button { beginAddingIncome() } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
+                        .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
+                        .foregroundStyle(Color.white)
+                        .background(
+                            Circle()
+                                .fill(themeManager.selectedTheme.resolvedTint)
+                        )
+                        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add Income")
+                .accessibilityIdentifier("add_income_button")
+            }
 
             VStack(spacing: 12) {
                 // Calendar section in a padded card
@@ -89,7 +110,7 @@ struct IncomeView: View {
                 selectedDaySection
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, DS.Spacing.l)
+            .padding(.bottom, DS.Spacing.m)
         }
         .padding(.bottom, bottomPadding)
         .frame(maxHeight: .infinity, alignment: .top)
@@ -130,8 +151,6 @@ struct IncomeView: View {
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
-        // MARK: Toolbar (+ button) → Present Add Income sheet
-        .toolbar { incomeToolbarContent }
     }
 
     // MARK: - Calendar Section
@@ -427,22 +446,6 @@ struct IncomeView: View {
            let next = cal.date(byAdding: .month, value: 1, to: startOfCurrent) {
             navigate(to: next)
         }
-    }
-
-    @ToolbarContentBuilder
-    private var incomeToolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            toolbarAddIncomeButton
-        }
-    }
-
-    private var toolbarAddIncomeButton: some View {
-        Button {
-            beginAddingIncome()
-        } label: {
-            Label("Add Income", systemImage: "plus")
-        }
-        .accessibilityIdentifier("add_income_button")
     }
 
     // MARK: - Edit Flow Helpers

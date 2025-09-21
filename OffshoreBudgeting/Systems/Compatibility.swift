@@ -327,16 +327,17 @@ private struct UBRootTabNavigationTitleModifier: ViewModifier {
     let title: String
 
     func body(content: Content) -> some View {
-        let titled = content.navigationTitle(title)
-
-        #if os(iOS)
-        if #available(iOS 17.0, *) {
-            titled.toolbarTitleDisplayMode(.inline)
+        #if os(iOS) || os(tvOS)
+        let titled = content.navigationTitle("")
+        if #available(iOS 17.0, tvOS 17.0, *) {
+            return titled.toolbarTitleDisplayMode(.inline)
         } else {
-            titled.navigationBarTitleDisplayMode(.inline)
+            return titled.navigationBarTitleDisplayMode(.inline)
         }
+        #elseif os(macOS)
+        return content.navigationTitle("")
         #else
-        titled
+        return content.navigationTitle(title)
         #endif
     }
 }
