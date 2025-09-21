@@ -116,9 +116,10 @@ struct SettingsCard<Content: View>: View {
     let subtitle: String
     @ViewBuilder var content: Content
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: headerSpacing) {
             HStack(alignment: .center, spacing: 12) {
                 SettingsIcon(systemName: iconSystemName)
                 VStack(alignment: .leading, spacing: 2) {
@@ -141,16 +142,28 @@ struct SettingsCard<Content: View>: View {
                     .fill(themeManager.selectedTheme.secondaryBackground)
             )
         }
-        .padding(16)
+        .padding(cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: outerCornerRadius, style: .continuous)
                 .fill(themeManager.selectedTheme.tertiaryBackground)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: outerCornerRadius, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06))
         )
     }
+
+    private var isCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    private var cardPadding: CGFloat { isCompact ? 12 : 16 }
+    private var headerSpacing: CGFloat { isCompact ? 8 : 12 }
+    private var outerCornerRadius: CGFloat { isCompact ? 16 : 20 }
 }
 
 // MARK: - SettingsRow
@@ -163,13 +176,16 @@ struct SettingsCard<Content: View>: View {
 struct SettingsRow<Trailing: View>: View {
     let title: String
     var detail: String? = nil
+    var showsTopDivider: Bool = true
     @ViewBuilder var trailing: Trailing
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    init(title: String, detail: String? = nil, @ViewBuilder trailing: () -> Trailing) {
+    init(title: String, detail: String? = nil, showsTopDivider: Bool = true, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.detail = detail
+        self.showsTopDivider = showsTopDivider
         self.trailing = trailing()
     }
 
@@ -185,15 +201,27 @@ struct SettingsRow<Trailing: View>: View {
             }
             trailing
         }
-        .padding(.horizontal, 14)
-        .frame(maxWidth: .infinity, minHeight: 48)
+        .padding(.horizontal, rowHorizontalPadding)
+        .frame(maxWidth: .infinity, minHeight: rowMinHeight)
         .contentShape(Rectangle())
-        .overlay(
-            Rectangle()
-                .fill(Color.primary.opacity(0.06))
-                .frame(height: 0.5)
-                .offset(y: -0.25),
-            alignment: .top
-        )
+        .overlay(alignment: .top) {
+            if showsTopDivider {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.06))
+                    .frame(height: 0.5)
+                    .offset(y: -0.25)
+            }
+        }
     }
+
+    private var isCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    private var rowHorizontalPadding: CGFloat { isCompact ? 12 : 14 }
+    private var rowMinHeight: CGFloat { isCompact ? 44 : 48 }
 }

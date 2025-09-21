@@ -26,7 +26,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
 
-            VStack(spacing: 16) {
+            VStack(spacing: cardStackSpacing) {
 #if os(macOS) || targetEnvironment(macCatalyst)
                 Text("Settings")
                     .font(.largeTitle.bold())
@@ -42,7 +42,7 @@ struct SettingsView: View {
                     subtitle: "Manage default behaviors."
                 ) {
                     VStack(spacing: 0) {
-                        SettingsRow(title: "Confirm Before Deleting") {
+                        SettingsRow(title: "Confirm Before Deleting", showsTopDivider: false) {
                             Toggle("", isOn: $viewModel.confirmBeforeDelete)
                                 .labelsHidden()
                         }
@@ -65,7 +65,7 @@ struct SettingsView: View {
                     subtitle: "Select a theme for the app.",
                 ) {
                     VStack(spacing: 0) {
-                        SettingsRow(title: "Theme") {
+                        SettingsRow(title: "Theme", showsTopDivider: false) {
                             Picker("", selection: $themeManager.selectedTheme) {
                                 ForEach(AppTheme.allCases) { theme in
                                     Text(theme.displayName).tag(theme)
@@ -85,7 +85,7 @@ struct SettingsView: View {
                     subtitle: "Sync your data and settings across your devices signed into the same iCloud account.",
                 ) {
                     VStack(spacing: 0) {
-                        SettingsRow(title: "Enable iCloud Sync") {
+                        SettingsRow(title: "Enable iCloud Sync", showsTopDivider: false) {
                             Toggle("", isOn: $viewModel.enableCloudSync)
                                 .labelsHidden()
                         }
@@ -134,7 +134,7 @@ struct SettingsView: View {
                     subtitle: "Planned Expenses default to being created as a Preset Planned Expense."
                 ) {
                     VStack(spacing: 0) {
-                        SettingsRow(title: "Use in Future Budgets by Default") {
+                        SettingsRow(title: "Use in Future Budgets by Default", showsTopDivider: false) {
                             Toggle("", isOn: $viewModel.presetsDefaultUseInFutureBudgets)
                                 .labelsHidden()
                         }
@@ -153,7 +153,7 @@ struct SettingsView: View {
                             ExpenseCategoryManagerView()
                                 .environment(\.managedObjectContext, viewContext)
                         } label: {
-                            SettingsRow(title: "Manage Categories", detail: "Open") {
+                            SettingsRow(title: "Manage Categories", detail: "Open", showsTopDivider: false) {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(.secondary)
@@ -174,7 +174,7 @@ struct SettingsView: View {
                         NavigationLink {
                             HelpView()
                         } label: {
-                            SettingsRow(title: "View Help", detail: "Open") {
+                            SettingsRow(title: "View Help", detail: "Open", showsTopDivider: false) {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(.secondary)
@@ -195,7 +195,7 @@ struct SettingsView: View {
                         Button {
                             didCompleteOnboarding = false
                         } label: {
-                            SettingsRow(title: "Repeat Onboarding Process") { EmptyView() }
+                            SettingsRow(title: "Repeat Onboarding Process", showsTopDivider: false) { EmptyView() }
                         }
                         .buttonStyle(.plain)
                     }
@@ -212,7 +212,7 @@ struct SettingsView: View {
                         Button(role: .destructive) {
                             showResetAlert = true
                         } label: {
-                            SettingsRow(title: "Erase All Data") { EmptyView() }
+                            SettingsRow(title: "Erase All Data", showsTopDivider: false) { EmptyView() }
                         }
                         .buttonStyle(.plain)
                     }
@@ -222,7 +222,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, 20)
+            .padding(.vertical, scrollViewVerticalPadding)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -252,6 +252,22 @@ struct SettingsView: View {
         return 24
         #else
         return horizontalSizeClass == .regular ? 24 : 16
+        #endif
+    }
+
+    private var cardStackSpacing: CGFloat {
+        #if os(iOS)
+        return horizontalSizeClass == .compact ? 12 : 16
+        #else
+        return 16
+        #endif
+    }
+
+    private var scrollViewVerticalPadding: CGFloat {
+        #if os(iOS)
+        return horizontalSizeClass == .compact ? 12 : 20
+        #else
+        return 20
         #endif
     }
 
