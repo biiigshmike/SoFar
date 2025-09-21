@@ -34,7 +34,6 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             OnboardingBackgroundSurface(
-                tint: themeManager.selectedTheme.resolvedTint,
                 baseColor: themeManager.selectedTheme.background,
                 capabilities: capabilities
             )
@@ -836,7 +835,6 @@ private struct CloudOptionToggle: View {
 
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .toggleStyle(.switch)
                 .disabled(!isEnabled)
 #if os(iOS) || os(macOS)
                 .controlSize(.large)
@@ -849,48 +847,21 @@ private struct CloudOptionToggle: View {
 }
 
 private struct OnboardingBackgroundSurface: View {
-    let tint: Color
     let baseColor: Color
     let capabilities: PlatformCapabilities
 
-    var body: some View {
-        ZStack {
-            baseColor
+    @Environment(\.colorScheme) private var colorScheme
 
-            if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                Rectangle()
-                    .fill(tint.opacity(0.08))
-                    .background(.ultraThinMaterial)
-                    .overlay(glowOverlay)
-                    .compositingGroup()
-            } else {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.94),
-                                Color.white.opacity(0.86)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(glowOverlay)
-            }
-        }
+    var body: some View {
+        baseColor
+            .overlay(subtleOverlay)
     }
 
-    private var glowOverlay: some View {
-        RadialGradient(
-            gradient: Gradient(colors: [
-                Color.white.opacity(0.35),
-                tint.opacity(0.05),
-                .clear
-            ]),
-            center: .topLeading,
-            startRadius: 40,
-            endRadius: 600
-        )
-        .blendMode(.screen)
+    private var subtleOverlay: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(capabilities.supportsOS26Translucency ? 0.05 : 0.08)
+        } else {
+            return Color.black.opacity(capabilities.supportsOS26Translucency ? 0.04 : 0.06)
+        }
     }
 }

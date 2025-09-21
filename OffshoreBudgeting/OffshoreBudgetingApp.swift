@@ -60,15 +60,7 @@ struct OffshoreBudgetingApp: App {
             // (e.g., checkboxes, date pickers) to respect the theme.
             .accentColor(themeManager.selectedTheme.resolvedTint)
             .tint(themeManager.selectedTheme.resolvedTint)
-#if os(macOS)
-            // On macOS, mimic iOS's green toggle while keeping link tint blue
-            // when using the System theme.
-            .toggleStyle(
-                themeManager.selectedTheme == .system
-                    ? SwitchToggleStyle(tint: Color(nsColor: .systemGreen))
-                    : SwitchToggleStyle()
-            )
-#endif
+            .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
             .onAppear {
                 themeManager.refreshSystemAppearance(systemColorScheme)
             }
@@ -124,3 +116,23 @@ private struct ColorSchemeChangeHandler: ViewModifier {
         }
     }
 }
+
+#if os(iOS) || os(macOS)
+private struct ThemedToggleTint: ViewModifier {
+    let color: Color
+
+    func body(content: Content) -> some View {
+        if #available(iOS 15.0, macOS 12.0, *) {
+            content.toggleStyle(SwitchToggleStyle(tint: color))
+        } else {
+            content
+        }
+    }
+}
+#else
+private struct ThemedToggleTint: ViewModifier {
+    let color: Color
+
+    func body(content: Content) -> some View { content }
+}
+#endif
