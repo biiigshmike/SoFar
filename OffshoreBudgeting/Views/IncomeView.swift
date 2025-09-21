@@ -81,42 +81,40 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                RootTabHeader(title: "Income") {
-                    Button { beginAddingIncome() } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
-                            .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
-                            .foregroundStyle(Color.white)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.selectedTheme.resolvedTint)
-                            )
-                            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Add Income")
-                    .accessibilityIdentifier("add_income_button")
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            RootTabHeader(title: "Income") {
+                Button { beginAddingIncome() } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: HeaderAddButtonMetrics.iconSize, weight: .semibold))
+                        .frame(width: HeaderAddButtonMetrics.dimension, height: HeaderAddButtonMetrics.dimension)
+                        .foregroundStyle(Color.white)
+                        .background(
+                            Circle()
+                                .fill(themeManager.selectedTheme.resolvedTint)
+                        )
+                        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
                 }
-
-                VStack(spacing: 12) {
-                    // Calendar section in a padded card
-                    calendarSection
-
-                    // Weekly summary bar
-                    weeklySummaryBar
-
-                    // Selected day entries
-                    selectedDaySection
-                }
-                .padding(.horizontal, DS.Spacing.l)
-                .padding(.bottom, DS.Spacing.m)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add Income")
+                .accessibilityIdentifier("add_income_button")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, bottomPadding)
+
+            VStack(spacing: 12) {
+                // Calendar section in a padded card
+                calendarSection
+
+                // Weekly summary bar
+                weeklySummaryBar
+
+                // Selected day entries
+                selectedDaySection
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, DS.Spacing.m)
         }
         .ub_captureSafeAreaInsets()
+        .padding(.bottom, bottomPadding)
+        .frame(maxHeight: .infinity, alignment: .top)
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
