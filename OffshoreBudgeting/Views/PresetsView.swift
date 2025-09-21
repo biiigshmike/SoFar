@@ -152,10 +152,6 @@ struct PresetsView: View {
                 }
             }
         }
-        .ub_navigationBackground(
-            theme: themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration
-        )
     }
 
     // MARK: - Actions
