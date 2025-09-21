@@ -62,10 +62,8 @@ struct CardsView: View {
 
     private var baseView: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                RootViewTopPlanes(title: "Cards")
-                cardsActionPlane
-                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            RootViewTopPlanes(title: "Cards") {
+                addCardButton
             }
             contentView
         }
@@ -125,13 +123,6 @@ struct CardsView: View {
                 )
             }
             .tint(themeManager.selectedTheme.resolvedTint)
-    }
-
-    private var cardsActionPlane: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            addCardButton
-        }
     }
 
     private var addCardButton: some View {

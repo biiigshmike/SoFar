@@ -54,10 +54,8 @@ struct PresetsView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                RootViewTopPlanes(title: "Presets")
-                presetsActionPlane
-                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            RootViewTopPlanes(title: "Presets") {
+                addPresetButton
             }
             Group {
                 // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
@@ -149,13 +147,6 @@ struct PresetsView: View {
             .environment(\.managedObjectContext, viewContext)
         }
         .ub_tabNavigationTitle("Presets")
-    }
-
-    private var presetsActionPlane: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            addPresetButton
-        }
     }
 
     private var addPresetButton: some View {

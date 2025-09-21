@@ -107,7 +107,7 @@ struct HomeView: View {
             }
         }
 #else
-        ToolbarItem(placement: .navigationBarLeading) {
+        ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
                 ForEach(BudgetPeriod.selectableCases) { period in
                     Button(period.displayName) { budgetPeriodRawValue = period.rawValue }

@@ -66,13 +66,6 @@ struct IncomeView: View {
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
     }
 
-    private var addIncomeActionPlane: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            addIncomeButton
-        }
-    }
-
     private var addIncomeButton: some View {
         Button { beginAddingIncome() } label: {
             Image(systemName: "plus")
@@ -95,10 +88,8 @@ struct IncomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    RootViewTopPlanes(title: "Income")
-                    addIncomeActionPlane
-                        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+                RootViewTopPlanes(title: "Income") {
+                    addIncomeButton
                 }
 
                 VStack(spacing: 12) {
