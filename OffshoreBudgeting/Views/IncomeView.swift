@@ -110,8 +110,8 @@ struct IncomeView: View {
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
         }
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )

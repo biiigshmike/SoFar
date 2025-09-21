@@ -339,8 +339,8 @@ private struct CardsStep: View {
                 )
             }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
     }
@@ -537,8 +537,8 @@ private struct CategoriesStep: View {
                 )
             }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
     }

@@ -474,6 +474,18 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         )
         #endif
     }
+
+    /// Indicates whether the theme opts into the custom glass materials used
+    /// throughout the interface. The System theme intentionally relies on the
+    /// platform default backgrounds to closely mirror Apple's native apps.
+    var usesGlassMaterials: Bool {
+        switch self {
+        case .system:
+            return false
+        default:
+            return true
+        }
+    }
 }
 
 #if canImport(UIKit)

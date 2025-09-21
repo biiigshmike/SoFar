@@ -61,8 +61,8 @@ struct HomeView: View {
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
         .sheet(item: $editingBudget, content: makeEditBudgetView)
         .alert(item: $vm.alert, content: alert(for:))
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )

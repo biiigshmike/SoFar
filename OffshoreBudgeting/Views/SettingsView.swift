@@ -219,8 +219,8 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )

@@ -85,8 +85,8 @@ struct PresetBudgetAssignmentSheet: View {
             }
             .onAppear { reload() }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
     }

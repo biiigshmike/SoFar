@@ -109,14 +109,14 @@ struct EditSheetScaffold<Content: View>: View {
                     }
                 }
         }
-        .ub_navigationGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
+        .ub_navigationBackground(
+            theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         .accentColor(themeManager.selectedTheme.resolvedTint)
         .tint(themeManager.selectedTheme.resolvedTint)
-        .ub_glassBackground(
-            themeManager.selectedTheme.glassBaseColor,
+        .ub_surfaceBackground(
+            themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         // MARK: Standard sheet behavior (platform-aware)
@@ -146,8 +146,8 @@ struct EditSheetScaffold<Content: View>: View {
             Form { content }
                 .scrollContentBackground(.hidden)
                 .listRowBackground(rowBackground)
-                .ub_glassBackground(
-                    themeManager.selectedTheme.glassBaseColor,
+                .ub_surfaceBackground(
+                    themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .ub_formStyleGrouped()
@@ -156,8 +156,8 @@ struct EditSheetScaffold<Content: View>: View {
         } else {
             Form { content }
                 .listRowBackground(rowBackground)
-                .ub_glassBackground(
-                    themeManager.selectedTheme.glassBaseColor,
+                .ub_surfaceBackground(
+                    themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
                 )
                 .ub_formStyleGrouped()
