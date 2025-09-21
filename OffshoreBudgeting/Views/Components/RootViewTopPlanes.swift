@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Provides a consistent two-plane layout for root tab screens.
-/// - Plane 1: the large title rendered by ``RootTabHeader``.
-/// - Plane 2: optional trailing actions/buttons aligned to the same horizontal padding.
+/// Provides a consistent header for root tab screens, keeping the large title and
+/// optional trailing actions aligned on the same horizontal plane.
 struct RootViewTopPlanes<ActionContent: View>: View {
     private let title: String
     private let horizontalPadding: CGFloat
@@ -24,19 +23,14 @@ struct RootViewTopPlanes<ActionContent: View>: View {
         self.actionContent = actions()
     }
 
+    @ViewBuilder
     var body: some View {
-        VStack(alignment: .leading, spacing: actionPlaneSpacing) {
-            RootTabHeader(title: title, horizontalPadding: horizontalPadding)
-
-            if let actionContent {
+        if let actionContent {
+            RootTabHeader(title: title, horizontalPadding: horizontalPadding) {
                 actionContent
-                    .padding(.horizontal, horizontalPadding)
             }
+        } else {
+            RootTabHeader(title: title, horizontalPadding: horizontalPadding)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var actionPlaneSpacing: CGFloat {
-        actionContent == nil ? 0 : DS.Spacing.s
     }
 }
