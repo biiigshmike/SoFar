@@ -296,18 +296,11 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            if let iconOverride {
-                return iconOverride.ub_resolved(for: colorScheme)
-            }
-            return resolvedTint.ub_contrastingForegroundColor
+            iconOverride ?? tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
-            resolvedTint.opacity(colorScheme == .dark ? 0.45 : 0.25)
-        }
-
-        private var resolvedTint: Color {
-            tint.ub_resolved(for: colorScheme)
+            tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
         }
     }
 
@@ -378,17 +371,6 @@ private extension View {
 
 // MARK: - Color Helpers
 private extension Color {
-    func ub_resolved(for colorScheme: ColorScheme) -> Color {
-        #if canImport(UIKit)
-        let baseColor = UIColor(self).ub_resolvedColor(for: colorScheme)
-        return Color(uiColor: baseColor)
-        #elseif canImport(AppKit)
-        return self
-        #else
-        return self
-        #endif
-    }
-
     /// Returns either black or white depending on which provides the best
     /// contrast for the supplied color. Used to ensure OS 26 style swipe
     /// buttons remain legible regardless of tint.
@@ -421,14 +403,3 @@ private extension Color {
         return brightness < 0.6 ? .white : .black
     }
 }
-
-#if canImport(UIKit)
-private extension UIColor {
-    func ub_resolvedColor(for colorScheme: ColorScheme) -> UIColor {
-        guard #available(iOS 13.0, *) else { return self }
-        let style: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
-        let traits = UITraitCollection(userInterfaceStyle: style)
-        return resolvedColor(with: traits)
-    }
-}
-#endif
