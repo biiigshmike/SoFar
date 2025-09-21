@@ -302,16 +302,12 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         }
 
         private var iconColor: Color {
-            if #available(iOS 18.0, macOS 15.0, *) {
-                return iconOverride ?? (colorScheme == .dark ? .black : .white)
-            } else {
-                return iconOverride ?? tint.ub_contrastingForegroundColor
-            }
+            iconOverride ?? tint.ub_contrastingForegroundColor
         }
 
         private var backgroundCircleColor: Color {
             if #available(iOS 18.0, macOS 15.0, *) {
-                return colorScheme == .dark ? .white : .black
+                return resolvedTint(opacity: colorScheme == .dark ? 0.85 : 0.65)
             }
             #if canImport(UIKit) || canImport(AppKit)
             if let components = tint.ub_resolvedRGBA(for: colorScheme) {
@@ -338,6 +334,20 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             #endif
 
             return tint.opacity(colorScheme == .dark ? 0.35 : 0.25)
+        }
+
+        private func resolvedTint(opacity: Double) -> Color {
+            #if canImport(UIKit) || canImport(AppKit)
+            if let components = tint.ub_resolvedRGBA(for: colorScheme) {
+                return Color(
+                    red: Double(components.red),
+                    green: Double(components.green),
+                    blue: Double(components.blue),
+                    opacity: Double(components.alpha)
+                ).opacity(opacity)
+            }
+            #endif
+            return tint.opacity(opacity)
         }
     }
 
