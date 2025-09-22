@@ -52,7 +52,7 @@ struct SettingsView: View {
     private func content(using proxy: RootTabPageProxy) -> some View {
         let tabBarGutter = proxy.compactAwareTabBarGutter
 
-        return VStack(spacing: cardStackSpacing) {
+        VStack(spacing: cardStackSpacing) {
             // MARK: General Hero Card
             SettingsCard(
                 iconSystemName: "gearshape",
