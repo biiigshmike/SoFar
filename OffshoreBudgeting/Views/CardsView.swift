@@ -127,6 +127,8 @@ struct CardsView: View {
     /// Breaks out the conditional UI so the compiler can infer a single `some View`.
     @ViewBuilder
     private func contentView(using proxy: RootTabPageProxy) -> some View {
+        let tabBarGutter = proxy.compactAwareTabBarGutter
+
         Group {
             if case .initial = viewModel.state {
                 Color.clear
@@ -139,7 +141,11 @@ struct CardsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .rootTabContentPadding(proxy, horizontal: 0)
+        .rootTabContentPadding(
+            proxy,
+            horizontal: 0,
+            tabBarGutter: tabBarGutter
+        )
     }
 
     // MARK: Loading View
