@@ -110,7 +110,7 @@ struct UBEmptyState: View {
         let tint = isOnboardingPresentation ? onboardingTint : primaryButtonTint
 
         #if os(iOS)
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
             Button(action: action) {
                 primaryButtonLabel(title: title)
                     .font(.system(size: 17, weight: .semibold, design: .rounded))

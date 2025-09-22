@@ -344,7 +344,7 @@ struct IncomeView: View {
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
                 #if os(macOS)
-                if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
+                if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .buttonStyle(.glass)
@@ -386,7 +386,7 @@ struct IncomeView: View {
                         .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
                 }
                 #else
-                if #available(iOS 26.0, tvOS 26.0, *), capabilities.supportsOS26Translucency {
+                if #available(iOS 18.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .buttonStyle(.glass)
