@@ -40,5 +40,6 @@ struct PeriodNavigationControl: View {
             }
             .buttonStyle(.plain)
         }
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
