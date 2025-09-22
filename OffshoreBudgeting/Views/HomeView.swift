@@ -63,6 +63,23 @@ struct HomeView: View {
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
         .sheet(item: $editingBudget, content: makeEditBudgetView)
         .alert(item: $vm.alert, content: alert(for:))
+        .confirmationDialog(
+            "Add",
+            isPresented: $isShowingAddExpenseMenu,
+            titleVisibility: .visible
+        ) {
+            Button("Add Planned Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddPlannedExpense)
+            }
+            Button("Add Variable Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddVariableExpense)
+            }
+        }
+        .onChange(of: isShowingAddExpenseMenu) { _, newValue in
+            if !newValue {
+                addMenuTargetBudgetID = nil
+            }
+        }
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
