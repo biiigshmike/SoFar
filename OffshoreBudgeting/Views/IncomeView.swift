@@ -70,8 +70,11 @@ struct IncomeView: View {
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        let inset = safeAreaInsets.bottom
-        return inset > 0 ? inset : DS.Spacing.s
+        // When embedded inside the tab view, the system safe area already
+        // positions our content above the tab bar/home indicator. Only keep a
+        // tiny visual gutter so the cards feel anchored without the exaggerated
+        // gap that made the layout look clipped.
+        return safeAreaInsets.bottom > 0 ? DS.Spacing.xs : DS.Spacing.s
 #else
         return DS.Spacing.m
 #endif
