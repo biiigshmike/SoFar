@@ -131,7 +131,18 @@ struct UBEmptyState: View {
             legacyPrimaryButton(title: title, action: action)
         }
         #else
-        if #available(macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macOS 15.0, tvOS 18.0, *) {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .tint(tint)
+            .buttonStyle(.glass)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .frame(maxWidth: 320)
+        } else if #available(macOS 13.0, tvOS 15.0, *) {
             Button(action: action) {
                 primaryButtonLabel(title: title)
                     .frame(maxWidth: .infinity)
