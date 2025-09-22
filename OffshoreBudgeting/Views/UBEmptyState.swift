@@ -117,7 +117,7 @@ struct UBEmptyState: View {
                     .frame(maxWidth: .infinity)
             }
             .tint(tint)
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.glass)
             .controlSize(.large)
             .frame(maxWidth: 320)
         } else if #available(iOS 15.0, *) {
