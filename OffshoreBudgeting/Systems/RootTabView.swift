@@ -24,6 +24,10 @@ struct RootTabView: View {
     }
 
     @State private var selectedTab: Tab = .home
+#if canImport(UIKit)
+    @State private var lastTabBarAppearanceSignature: TabBarAppearanceSignature?
+    @State private var isUpdatingTabBarAppearance = false
+#endif
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -99,43 +103,84 @@ struct RootTabView: View {
     /// Ensures the tab bar matches the current theme and hides the default top border.
     private func updateTabBarAppearance() {
         #if canImport(UIKit)
-        DispatchQueue.main.async {
-            let appearance = UITabBarAppearance()
-            let theme = themeManager.selectedTheme
-            let palette = theme.tabBarPalette
+        let theme = themeManager.selectedTheme
+        let palette = theme.tabBarPalette
+        let configuration = themeManager.glassConfiguration
+        let capabilities = platformCapabilities
+        let currentColorScheme = colorScheme
 
-            if theme.usesGlassMaterials && platformCapabilities.supportsOS26Translucency {
+        let newSignature = TabBarAppearanceSignature.make(
+            theme: theme,
+            colorScheme: currentColorScheme,
+            capabilities: capabilities,
+            configuration: configuration,
+            palette: palette,
+            resolveColor: { color, scheme in
+                resolveUIColor(color, for: scheme)
+            }
+        )
+
+        if newSignature == lastTabBarAppearanceSignature {
+            return
+        }
+
+        DispatchQueue.main.async {
+            if lastTabBarAppearanceSignature == newSignature {
+                return
+            }
+
+            guard !isUpdatingTabBarAppearance else {
+                return
+            }
+
+            isUpdatingTabBarAppearance = true
+            defer {
+                lastTabBarAppearanceSignature = newSignature
+                isUpdatingTabBarAppearance = false
+            }
+
+            let appearance = UITabBarAppearance()
+
+            if theme.usesGlassMaterials && capabilities.supportsOS26Translucency {
                 appearance.configureWithTransparentBackground()
-                let configuration = themeManager.glassConfiguration
                 let blurStyle = configuration.glass.material.uiBlurEffectStyle
                 appearance.backgroundEffect = UIBlurEffect(style: blurStyle)
 
-                let baseColor = theme.glassBaseColor
+                let baseColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
                 let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
-                appearance.backgroundColor = UIColor(baseColor).withAlphaComponent(opacity)
+                appearance.backgroundColor = baseColor.withAlphaComponent(opacity)
             } else if theme.usesGlassMaterials {
                 appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(theme.glassBaseColor)
+                appearance.backgroundColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
             } else {
                 appearance.configureWithOpaqueBackground()
                 appearance.backgroundEffect = nil
-                appearance.backgroundColor = UIColor(theme.background)
+                appearance.backgroundColor = resolveUIColor(theme.background, for: currentColorScheme)
             }
+
             applyTabItemAppearance(
                 to: appearance,
-                palette: palette
+                palette: palette,
+                colorScheme: currentColorScheme
             )
-            UITabBar.appearance().unselectedItemTintColor = UIColor(palette.inactive)
+
+            let inactiveTint = resolveUIColor(palette.inactive, for: currentColorScheme)
+            let activeTint = resolveUIColor(palette.active, for: currentColorScheme)
+
             appearance.shadowColor = .clear
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
-            UITabBar.appearance().tintColor = UIColor(palette.active)
-            UITabBar.appearance().isTranslucent = theme.usesGlassMaterials
+
+            let globalAppearance = UITabBar.appearance()
+            globalAppearance.unselectedItemTintColor = inactiveTint
+            globalAppearance.standardAppearance = copyAppearance(appearance)
+            globalAppearance.scrollEdgeAppearance = copyAppearance(appearance)
+            globalAppearance.tintColor = activeTint
+            globalAppearance.isTranslucent = theme.usesGlassMaterials
 
             applyAppearanceToVisibleTabBars(
                 appearance: appearance,
                 palette: palette,
-                isTranslucent: theme.usesGlassMaterials
+                isTranslucent: theme.usesGlassMaterials,
+                colorScheme: currentColorScheme
             )
         }
         #endif
@@ -146,34 +191,39 @@ struct RootTabView: View {
 private extension RootTabView {
     func applyTabItemAppearance(
         to appearance: UITabBarAppearance,
-        palette: AppTheme.TabBarPalette
+        palette: AppTheme.TabBarPalette,
+        colorScheme: ColorScheme
     ) {
         appearance.stackedLayoutAppearance = makeTabItemAppearance(
             style: .stacked,
-            palette: palette
+            palette: palette,
+            colorScheme: colorScheme
         )
         appearance.inlineLayoutAppearance = makeTabItemAppearance(
             style: .inline,
-            palette: palette
+            palette: palette,
+            colorScheme: colorScheme
         )
         appearance.compactInlineLayoutAppearance = makeTabItemAppearance(
             style: .compactInline,
-            palette: palette
+            palette: palette,
+            colorScheme: colorScheme
         )
     }
 
     func makeTabItemAppearance(
         style: UITabBarItemAppearance.Style,
-        palette: AppTheme.TabBarPalette
+        palette: AppTheme.TabBarPalette,
+        colorScheme: ColorScheme
     ) -> UITabBarItemAppearance {
         let itemAppearance = UITabBarItemAppearance(style: style)
         itemAppearance.configureWithDefault(for: style)
 
-        let activeColor = UIColor(palette.active)
-        let inactiveColor = UIColor(palette.inactive)
-        let disabledColor = UIColor(palette.disabled)
-        let badgeBackground = UIColor(palette.badgeBackground)
-        let badgeForeground = UIColor(palette.badgeForeground)
+        let activeColor = resolveUIColor(palette.active, for: colorScheme)
+        let inactiveColor = resolveUIColor(palette.inactive, for: colorScheme)
+        let disabledColor = resolveUIColor(palette.disabled, for: colorScheme)
+        let badgeBackground = resolveUIColor(palette.badgeBackground, for: colorScheme)
+        let badgeForeground = resolveUIColor(palette.badgeForeground, for: colorScheme)
 
         configure(
             state: itemAppearance.normal,
@@ -235,7 +285,8 @@ private extension RootTabView {
     func applyAppearanceToVisibleTabBars(
         appearance: UITabBarAppearance,
         palette: AppTheme.TabBarPalette,
-        isTranslucent: Bool
+        isTranslucent: Bool,
+        colorScheme: ColorScheme
     ) {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
@@ -243,13 +294,40 @@ private extension RootTabView {
             .forEach { window in
                 tabBarControllers(in: window.rootViewController).forEach { controller in
                     let tabBar = controller.tabBar
-                    tabBar.standardAppearance = appearance
-                    tabBar.scrollEdgeAppearance = appearance
-                    tabBar.tintColor = UIColor(palette.active)
-                    tabBar.unselectedItemTintColor = UIColor(palette.inactive)
+                    let standardAppearance = copyAppearance(appearance)
+                    let scrollEdgeAppearance = copyAppearance(appearance)
+                    tabBar.standardAppearance = standardAppearance
+                    tabBar.scrollEdgeAppearance = scrollEdgeAppearance
+                    tabBar.tintColor = resolveUIColor(palette.active, for: colorScheme)
+                    tabBar.unselectedItemTintColor = resolveUIColor(palette.inactive, for: colorScheme)
                     tabBar.isTranslucent = isTranslucent
                 }
             }
+    }
+
+    func resolveUIColor(_ color: Color, for colorScheme: ColorScheme) -> UIColor {
+        let uiColor = UIColor(color)
+
+        let style: UIUserInterfaceStyle
+        switch colorScheme {
+        case .dark:
+            style = .dark
+        case .light:
+            style = .light
+        @unknown default:
+            style = .unspecified
+        }
+
+        let traitCollection = UITraitCollection(userInterfaceStyle: style)
+        return uiColor.resolvedColor(with: traitCollection)
+    }
+
+    func copyAppearance(_ appearance: UITabBarAppearance) -> UITabBarAppearance {
+        guard let copiedAppearance = appearance.copy() as? UITabBarAppearance else {
+            return appearance
+        }
+
+        return copiedAppearance
     }
 
     func tabBarControllers(in root: UIViewController?) -> [UITabBarController] {
@@ -270,6 +348,142 @@ private extension RootTabView {
         }
 
         return controllers
+    }
+}
+
+private struct ColorComponents: Equatable {
+    let red: Double
+    let green: Double
+    let blue: Double
+    let alpha: Double
+
+    init(uiColor: UIColor) {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        if uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            self.red = Double(red)
+            self.green = Double(green)
+            self.blue = Double(blue)
+            self.alpha = Double(alpha)
+            return
+        }
+
+        if let components = uiColor.cgColor.components {
+            switch components.count {
+            case 4:
+                red = components[0]
+                green = components[1]
+                blue = components[2]
+                alpha = components[3]
+            case 3:
+                red = components[0]
+                green = components[1]
+                blue = components[2]
+                alpha = uiColor.cgColor.alpha
+            case 2:
+                red = components[0]
+                green = components[0]
+                blue = components[0]
+                alpha = components[1]
+            case 1:
+                red = components[0]
+                green = components[0]
+                blue = components[0]
+                alpha = uiColor.cgColor.alpha
+            default:
+                red = 0
+                green = 0
+                blue = 0
+                alpha = 0
+            }
+        }
+
+        self.red = Double(red)
+        self.green = Double(green)
+        self.blue = Double(blue)
+        self.alpha = Double(alpha)
+    }
+}
+
+private struct TabBarAppearanceSignature: Equatable {
+    struct PaletteSignature: Equatable {
+        let active: ColorComponents
+        let inactive: ColorComponents
+        let disabled: ColorComponents
+        let badgeBackground: ColorComponents
+        let badgeForeground: ColorComponents
+    }
+
+    struct BackgroundSignature: Equatable {
+        let isTranslucent: Bool
+        let supportsTranslucency: Bool
+        let blurStyleRawValue: Int?
+        let backgroundColor: ColorComponents
+    }
+
+    let themeID: String
+    let colorScheme: ColorScheme
+    let capabilities: PlatformCapabilities
+    let background: BackgroundSignature
+    let palette: PaletteSignature
+
+    static func make(
+        theme: AppTheme,
+        colorScheme: ColorScheme,
+        capabilities: PlatformCapabilities,
+        configuration: AppTheme.GlassConfiguration,
+        palette: AppTheme.TabBarPalette,
+        resolveColor: (Color, ColorScheme) -> UIColor
+    ) -> TabBarAppearanceSignature {
+        let activeColor = ColorComponents(uiColor: resolveColor(palette.active, colorScheme))
+        let inactiveColor = ColorComponents(uiColor: resolveColor(palette.inactive, colorScheme))
+        let disabledColor = ColorComponents(uiColor: resolveColor(palette.disabled, colorScheme))
+        let badgeBackground = ColorComponents(uiColor: resolveColor(palette.badgeBackground, colorScheme))
+        let badgeForeground = ColorComponents(uiColor: resolveColor(palette.badgeForeground, colorScheme))
+
+        let usesGlassMaterials = theme.usesGlassMaterials
+        let supportsTranslucency = capabilities.supportsOS26Translucency
+        let blurStyleRawValue: Int?
+
+        let backgroundUIColor: UIColor
+        if usesGlassMaterials && supportsTranslucency {
+            blurStyleRawValue = configuration.glass.material.uiBlurEffectStyle.rawValue
+            let baseColor = resolveColor(theme.glassBaseColor, colorScheme)
+            let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
+            backgroundUIColor = baseColor.withAlphaComponent(opacity)
+        } else if usesGlassMaterials {
+            blurStyleRawValue = nil
+            backgroundUIColor = resolveColor(theme.glassBaseColor, colorScheme)
+        } else {
+            blurStyleRawValue = nil
+            backgroundUIColor = resolveColor(theme.background, colorScheme)
+        }
+
+        let paletteSignature = PaletteSignature(
+            active: activeColor,
+            inactive: inactiveColor,
+            disabled: disabledColor,
+            badgeBackground: badgeBackground,
+            badgeForeground: badgeForeground
+        )
+
+        let backgroundSignature = BackgroundSignature(
+            isTranslucent: usesGlassMaterials,
+            supportsTranslucency: supportsTranslucency,
+            blurStyleRawValue: blurStyleRawValue,
+            backgroundColor: ColorComponents(uiColor: backgroundUIColor)
+        )
+
+        return TabBarAppearanceSignature(
+            themeID: theme.id,
+            colorScheme: colorScheme,
+            capabilities: capabilities,
+            background: backgroundSignature,
+            palette: paletteSignature
+        )
     }
 }
 #endif
