@@ -64,8 +64,8 @@ extension View {
     }
 }
 
-// MARK: - Header Glass Controls (iOS)
-#if os(iOS)
+// MARK: - Header Glass Controls (iOS + macOS)
+#if os(iOS) || os(macOS)
 struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
@@ -117,7 +117,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         }
         .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 content
                     .glassEffect(in: Capsule(style: .continuous))
@@ -150,7 +150,7 @@ struct RootHeaderGlassControl<Content: View>: View {
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
             .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 control
                     .glassEffect(in: Capsule(style: .continuous))
@@ -162,7 +162,7 @@ struct RootHeaderGlassControl<Content: View>: View {
     }
 }
 
-private enum RootHeaderLegacyGlass {
+enum RootHeaderLegacyGlass {
     static func fillColor(for theme: AppTheme) -> Color {
         theme == .system ? Color.white.opacity(0.30) : theme.resolvedTint.opacity(0.32)
     }
@@ -216,7 +216,7 @@ private enum RootHeaderLegacyGlass {
     }
 }
 
-private extension View {
+extension View {
     func rootHeaderLegacyGlassDecorated(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
         let shape = Capsule(style: .continuous)
         return self

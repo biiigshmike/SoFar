@@ -18,6 +18,12 @@ struct BudgetDetailsView: View {
 
     // MARK: Inputs
     let budgetObjectID: NSManagedObjectID
+    struct PeriodNavigationConfiguration {
+        let title: String
+        let onAdjust: (Int) -> Void
+    }
+    private let periodNavigation: PeriodNavigationConfiguration?
+    private let displaysBudgetTitle: Bool
 
     // MARK: View Model
     @StateObject private var vm: BudgetDetailsViewModel
@@ -30,8 +36,14 @@ struct BudgetDetailsView: View {
     @State private var isPresentingAddUnplannedSheet = false
 
     // MARK: Init
-    init(budgetObjectID: NSManagedObjectID) {
+    init(
+        budgetObjectID: NSManagedObjectID,
+        periodNavigation: PeriodNavigationConfiguration? = nil,
+        displaysBudgetTitle: Bool = true
+    ) {
         self.budgetObjectID = budgetObjectID
+        self.periodNavigation = periodNavigation
+        self.displaysBudgetTitle = displaysBudgetTitle
         _vm = StateObject(wrappedValue: BudgetDetailsViewModel(budgetObjectID: budgetObjectID))
     }
 
@@ -44,13 +56,20 @@ struct BudgetDetailsView: View {
 
                 // MARK: Title + Date Range
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(vm.budget?.name ?? "Budget")
-                        .font(.largeTitle.bold())
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
+                    if displaysBudgetTitle {
+                        Text(vm.budget?.name ?? "Budget")
+                            .font(.largeTitle.bold())
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
                     if let s = vm.budget?.startDate, let e = vm.budget?.endDate {
                         Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
                             .foregroundStyle(.secondary)
+
+                        if let navigation = periodNavigation {
+                            PeriodNavigationView(configuration: navigation)
+                                .padding(.top, DS.Spacing.xs)
+                        }
                     }
                 }
 
@@ -62,11 +81,16 @@ struct BudgetDetailsView: View {
                 }
 
                 // MARK: Segment Picker
-                Picker("", selection: $vm.selectedSegment) {
-                    Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
-                    Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                    Picker("", selection: $vm.selectedSegment) {
+                        Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
+                        Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
+                    }
+                    .pickerStyle(.segmented)
+#if os(macOS)
+                    .controlSize(.large)
+#endif
                 }
-                .pickerStyle(.segmented)
 
                 // MARK: Filters
                 FilterBar(
@@ -119,18 +143,6 @@ struct BudgetDetailsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
         }
-#if !os(iOS)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
-                    Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
-                } label: {
-                    Label("Add Expense", systemImage: "plus")
-                }
-            }
-        }
-#endif
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
@@ -192,6 +204,30 @@ struct BudgetDetailsView: View {
         let f = DateFormatter()
         f.dateStyle = .medium
         return f.string(from: d)
+    }
+}
+
+// MARK: - Period Navigation View
+private struct PeriodNavigationView: View {
+    let configuration: BudgetDetailsView.PeriodNavigationConfiguration
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.s) {
+            Button { configuration.onAdjust(-1) } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.plain)
+
+            Text(configuration.title)
+                .font(.title2.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            Button { configuration.onAdjust(+1) } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
@@ -344,28 +380,7 @@ private struct FilterBar: View {
     let onResetDate: () -> Void
 
     var body: some View {
-        VStack(spacing: DS.Spacing.m) {
-//            HStack(spacing: DS.Spacing.m) {
-//                VStack(alignment: .leading, spacing: 4) {
-//                    Text("Start Date").font(.caption).foregroundStyle(.secondary)
-//                    DatePicker("", selection: $startDate, displayedComponents: [.date])
-//                        .labelsHidden().ub_compactDatePickerStyle()
-//                }
-//                .frame(maxWidth: .infinity)
-//
-//                VStack(alignment: .leading, spacing: 4) {
-//                    Text("End Date").font(.caption).foregroundStyle(.secondary)
-//                    DatePicker("", selection: $endDate, in: startDate..., displayedComponents: [.date])
-//                        .labelsHidden().ub_compactDatePickerStyle()
-//                }
-//                .frame(maxWidth: .infinity)
-//
-//                Spacer().frame(maxWidth: .infinity)
-//
-//                Button("Reset") { onResetDate() }
-//                    .frame(maxWidth: .infinity, alignment: .trailing)
-//            }
-
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓").tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
@@ -374,10 +389,54 @@ private struct FilterBar: View {
                 Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
+#if os(macOS)
+            .controlSize(.large)
+#endif
         }
         .ub_onChange(of: startDate) { onChanged() }
         .ub_onChange(of: endDate) { onChanged() }
         .ub_onChange(of: sort) { onChanged() }
+    }
+}
+
+// MARK: - Shared Glass Capsule Container
+private struct GlassCapsuleContainer<Content: View>: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
+
+    private let content: Content
+    private let horizontalPadding: CGFloat
+    private let verticalPadding: CGFloat
+
+    init(
+        horizontalPadding: CGFloat = DS.Spacing.l,
+        verticalPadding: CGFloat = DS.Spacing.m,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+        self.horizontalPadding = horizontalPadding
+        self.verticalPadding = verticalPadding
+    }
+
+    var body: some View {
+        let theme = themeManager.selectedTheme
+        let capsule = Capsule(style: .continuous)
+
+        let decorated = content
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .contentShape(capsule)
+
+        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
+            GlassEffectContainer {
+                decorated
+                    .glassEffect(in: capsule)
+            }
+        } else {
+            decorated
+                .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+        }
     }
 }
 

@@ -38,6 +38,12 @@ struct HomeView: View {
     // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
 
+    private static let headerDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
+
     // MARK: Body
     var body: some View {
         mainLayout
@@ -119,14 +125,6 @@ struct HomeView: View {
     @ViewBuilder
     private var headerActions: some View {
         let trailing = trailingActionControl
-#if os(macOS)
-        HStack(spacing: DS.Spacing.s) {
-            periodPickerControl
-            if let trailing {
-                trailing
-            }
-        }
-#else
         RootHeaderGlassPill(showsDivider: trailing != nil) {
             periodPickerControl
         } trailing: {
@@ -136,7 +134,6 @@ struct HomeView: View {
                 trailingPlaceholder
             }
         }
-#endif
     }
 
     @ViewBuilder
@@ -146,13 +143,12 @@ struct HomeView: View {
                 Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
             }
         } label: {
-#if os(macOS)
-            Label(budgetPeriod.displayName, systemImage: "calendar")
-#else
             RootHeaderControlIcon(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
-#endif
         }
+#if os(macOS)
+        .menuStyle(.borderlessButton)
+#endif
 #if os(iOS)
         .modifier(HideMenuIndicatorIfPossible())
 #endif
@@ -348,7 +344,18 @@ struct HomeView: View {
                 
             case .loaded(let summaries):
                 if let first = summaries.first {
+#if os(macOS)
+                    BudgetDetailsView(
+                        budgetObjectID: first.id,
+                        periodNavigation: .init(
+                            title: title(for: vm.selectedDate),
+                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
+                        ),
+                        displaysBudgetTitle: false
+                    )
+#else
                     BudgetDetailsView(budgetObjectID: first.id)
+#endif
                         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                         .id(first.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -372,6 +379,46 @@ struct HomeView: View {
 
     // MARK: Header
     private var header: some View {
+#if os(macOS)
+        macHeader
+#else
+        iosHeader
+#endif
+    }
+
+    private var iosHeader: some View {
+        periodNavigationControl
+    }
+
+    private var macHeader: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            if let summary = primarySummary {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(summary.budgetName)
+                        .font(.largeTitle.bold())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+
+                    Text(summary.periodString)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title(for: vm.selectedDate))
+                        .font(.title2.bold())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+
+                    Text(defaultPeriodRange(for: vm.selectedDate))
+                        .foregroundStyle(.secondary)
+                }
+
+                periodNavigationControl
+            }
+        }
+    }
+
+    private var periodNavigationControl: some View {
         HStack(spacing: DS.Spacing.s) {
             Button { vm.adjustSelectedPeriod(by: -1) } label: {
                 Image(systemName: "chevron.left")
@@ -393,6 +440,19 @@ struct HomeView: View {
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
+    }
+
+    private func defaultPeriodRange(for date: Date) -> String {
+        let (start, end) = budgetPeriod.range(containing: date)
+        let formatter = Self.headerDateFormatter
+        return "\(formatter.string(from: start)) through \(formatter.string(from: end))"
+    }
+
+    private var primarySummary: BudgetSummary? {
+        if case .loaded(let summaries) = vm.state {
+            return summaries.first
+        }
+        return nil
     }
 
     private var glassDividerColor: Color {
