@@ -125,6 +125,8 @@ struct HomeView: View {
             }
 
             periodNavigationControl
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .layoutPriority(1)
         }
     }
 
