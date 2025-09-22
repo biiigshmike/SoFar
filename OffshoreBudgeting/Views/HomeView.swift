@@ -36,8 +36,6 @@ struct HomeView: View {
     @State private var addMenuTargetBudgetID: NSManagedObjectID?
 
     // MARK: Environment
-    @Environment(\.colorScheme) private var colorScheme
-
     private static let headerDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
@@ -149,9 +147,7 @@ struct HomeView: View {
 #if os(macOS)
         .menuStyle(.borderlessButton)
 #endif
-#if os(iOS)
         .modifier(HideMenuIndicatorIfPossible())
-#endif
     }
 
     private var trailingActionControl: AnyView? {
@@ -180,7 +176,7 @@ struct HomeView: View {
         return HStack(spacing: 0) {
             addExpenseButton(for: summary.id)
             Rectangle()
-                .fill(glassDividerColor)
+                .fill(RootHeaderLegacyGlass.dividerColor(for: themeManager.selectedTheme))
                 .frame(width: 1, height: dimension)
                 .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
                 .allowsHitTesting(false)
@@ -211,6 +207,7 @@ struct HomeView: View {
             } label: {
                 RootHeaderControlIcon(systemImage: "plus")
             }
+            .modifier(HideMenuIndicatorIfPossible())
             .menuStyle(.borderlessButton)
 #endif
         }
@@ -249,8 +246,9 @@ struct HomeView: View {
             RootHeaderControlIcon(systemImage: "ellipsis")
                 .accessibilityLabel("Budget Actions")
         }
-#if os(iOS)
         .modifier(HideMenuIndicatorIfPossible())
+#if os(macOS)
+        .menuStyle(.borderlessButton)
 #endif
         .frame(width: RootHeaderActionMetrics.dimension, height: RootHeaderActionMetrics.dimension)
     }
@@ -458,17 +456,6 @@ struct HomeView: View {
         return nil
     }
 
-    private var glassDividerColor: Color {
-        let theme = themeManager.selectedTheme
-        if theme == .system {
-            return colorScheme == .dark ? Color.white.opacity(0.55) : Color.black.opacity(0.18)
-        } else {
-            let darkOpacity: Double = 0.55
-            let lightOpacity: Double = 0.35
-            return theme.resolvedTint.opacity(colorScheme == .dark ? darkOpacity : lightOpacity)
-        }
-    }
-
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
     }
@@ -494,11 +481,11 @@ struct HomeView: View {
 }
 
 // MARK: - Header Action Helpers
-#if os(iOS)
+#if os(iOS) || os(macOS)
 private struct HideMenuIndicatorIfPossible: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, macOS 13.0, *) {
             content.menuIndicator(.hidden)
         } else {
             content
