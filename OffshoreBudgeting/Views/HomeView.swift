@@ -100,25 +100,31 @@ struct HomeView: View {
                 headerActions
             }
 
-            header
+#if os(macOS)
+            macHeader
                 .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+#endif
         }
     }
 
     @ViewBuilder
     private var headerActions: some View {
         let trailing = trailingActionControl
-        RootHeaderGlassPill(
-            showsDivider: trailing != nil,
-            hasTrailing: trailing != nil
-        ) {
-            periodPickerControl
-        } trailing: {
-            if let trailing {
-                trailing
-            } else {
-                EmptyView()
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            RootHeaderGlassPill(
+                showsDivider: trailing != nil,
+                hasTrailing: trailing != nil
+            ) {
+                periodPickerControl
+            } trailing: {
+                if let trailing {
+                    trailing
+                } else {
+                    EmptyView()
+                }
             }
+
+            periodNavigationControl
         }
     }
 
@@ -359,18 +365,6 @@ struct HomeView: View {
     }
 
     // MARK: Header
-    private var header: some View {
-#if os(macOS)
-        macHeader
-#else
-        iosHeader
-#endif
-    }
-
-    private var iosHeader: some View {
-        periodNavigationControl
-    }
-
     private var macHeader: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.s) {
             if let summary = primarySummary {
@@ -400,22 +394,11 @@ struct HomeView: View {
     }
 
     private var periodNavigationControl: some View {
-        HStack(spacing: DS.Spacing.s) {
-            Button { vm.adjustSelectedPeriod(by: -1) } label: {
-                Image(systemName: "chevron.left")
-            }
-            .buttonStyle(.plain)
-
-            Text(title(for: vm.selectedDate))
-                .font(.title2).bold()
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-
-            Button { vm.adjustSelectedPeriod(by: +1) } label: {
-                Image(systemName: "chevron.right")
-            }
-            .buttonStyle(.plain)
-        }
+        PeriodNavigationControl(
+            title: title(for: vm.selectedDate),
+            onPrevious: { vm.adjustSelectedPeriod(by: -1) },
+            onNext: { vm.adjustSelectedPeriod(by: +1) }
+        )
     }
 
     // MARK: Helpers
