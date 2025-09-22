@@ -72,6 +72,18 @@ struct IncomeView: View {
 #endif
     }
 
+    /// Minimum padding applied directly to the scroll view content so that the
+    /// cards never butt up against the edge while we wait for safe area values
+    /// to resolve.
+    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.m }
+
+    /// Additional spacing inserted via a safe-area inset once we know the
+    /// device's actual bottom inset.  This keeps the initial layout stable so
+    /// the user doesn't need to scroll after the safe area updates.
+    private var bottomInsetCompensation: CGFloat {
+        max(bottomPadding - scrollViewContentBottomPadding, 0)
+    }
+
     private var summaryFallbackHeight: CGFloat {
 #if os(iOS)
         if horizontalSizeClass == .regular { return 280 }
@@ -144,9 +156,14 @@ struct IncomeView: View {
                 .padding(.horizontal, DS.Spacing.l)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, bottomPadding)
+            .padding(.bottom, scrollViewContentBottomPadding)
         }
         .ub_captureSafeAreaInsets()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear
+                .frame(height: bottomInsetCompensation)
+                .allowsHitTesting(false)
+        }
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
