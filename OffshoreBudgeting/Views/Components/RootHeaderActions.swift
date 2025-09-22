@@ -295,11 +295,18 @@ struct RootHeaderIconActionButton: View {
     var body: some View {
         #if os(iOS)
         RootHeaderGlassControl {
-            configuredButton()
+            baseButton
+                .buttonStyle(RootHeaderActionButtonStyle())
         }
         #else
-        configuredButton()
-            .frame(width: RootHeaderActionMetrics.dimension, height: RootHeaderActionMetrics.dimension)
+        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
+            macOSGlassButton
+        } else {
+            RootHeaderGlassControl {
+                baseButton
+                    .buttonStyle(RootHeaderActionButtonStyle())
+            }
+        }
         #endif
     }
 
@@ -311,19 +318,19 @@ struct RootHeaderIconActionButton: View {
         .optionalAccessibilityIdentifier(accessibilityIdentifier)
     }
 
-    @ViewBuilder
-    private func configuredButton() -> some View {
-        #if os(iOS)
-        baseButton
-            .buttonStyle(RootHeaderActionButtonStyle())
-        #else
-        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
-            baseButton
-                .buttonStyle(.glass)
-        } else {
-            baseButton
-                .buttonStyle(.plain)
-        }
-        #endif
+#if os(macOS)
+    private var macOSGlassButton: some View {
+        let dimension = RootHeaderActionMetrics.dimension
+        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
+        let verticalPadding = RootHeaderGlassMetrics.verticalPadding
+
+        return baseButton
+            .frame(width: dimension, height: dimension)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .contentShape(Circle())
+            .buttonBorderShape(.circle)
+            .buttonStyle(.glass)
     }
+#endif
 }
