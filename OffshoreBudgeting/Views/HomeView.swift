@@ -156,12 +156,12 @@ struct HomeView: View {
     private var trailingActionControl: AnyView? {
         switch vm.state {
         case .empty:
-            return AnyView(addBudgetButton)
+            return AnyView(emptyStateTrailingControls)
         case .loaded(let summaries):
             if let first = summaries.first {
                 return AnyView(trailingControls(for: first))
             } else {
-                return nil
+                return AnyView(emptyStateTrailingControls)
             }
         default:
             return nil
@@ -177,7 +177,7 @@ struct HomeView: View {
                 .frame(width: 1, height: dimension)
                 .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
                 .allowsHitTesting(false)
-            budgetActionMenu(for: summary)
+            budgetActionMenu(summary: summary)
         }
         .contentShape(Rectangle())
     }
@@ -213,35 +213,33 @@ struct HomeView: View {
         .accessibilityLabel("Add Expense")
     }
 
-    private var addBudgetButton: some View {
-        Button {
-            isPresentingAddBudget = true
-        } label: {
-            RootHeaderControlIcon(systemImage: "plus")
-        }
-#if os(iOS)
-        .buttonStyle(RootHeaderActionButtonStyle())
-#else
-        .buttonStyle(.plain)
-#endif
-        .accessibilityLabel("Add Budget")
+    private var emptyStateTrailingControls: some View {
+        budgetActionMenu(summary: nil)
     }
 
-    private func budgetActionMenu(for summary: BudgetSummary) -> some View {
+    private func budgetActionMenu(summary: BudgetSummary?) -> some View {
         Menu {
-            Button {
-                editingBudget = summary
-            } label: {
-                Label("Edit Budget", systemImage: "pencil")
-            }
-            Button(role: .destructive) {
-                vm.requestDelete(budgetID: summary.id)
-            } label: {
-                Label("Delete Budget", systemImage: "trash")
+            if let summary {
+                Button {
+                    editingBudget = summary
+                } label: {
+                    Label("Edit Budget", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    vm.requestDelete(budgetID: summary.id)
+                } label: {
+                    Label("Delete Budget", systemImage: "trash")
+                }
+            } else {
+                Button {
+                    isPresentingAddBudget = true
+                } label: {
+                    Label("Create Budget", systemImage: "plus")
+                }
             }
         } label: {
             RootHeaderControlIcon(systemImage: "ellipsis")
-                .accessibilityLabel("Budget Actions")
+                .accessibilityLabel(summary == nil ? "Budget Options" : "Budget Actions")
         }
         .modifier(HideMenuIndicatorIfPossible())
 #if os(macOS)
@@ -329,7 +327,7 @@ struct HomeView: View {
                 UBEmptyState(
                     iconSystemName: "rectangle.on.rectangle.slash",
                     title: "Budgets",
-                    message: "No budget found for \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
+                    message: emptyStateMessage,
                     primaryButtonTitle: "Create a budget",
                     onPrimaryTap: { isPresentingAddBudget = true }
                 )
@@ -361,7 +359,7 @@ struct HomeView: View {
                     UBEmptyState(
                         iconSystemName: "rectangle.on.rectangle.slash",
                         title: "Budgets",
-                        message: "No budget found for \(title(for: vm.selectedDate)). Tap + to create a new budget for this period.",
+                        message: emptyStateMessage,
                         primaryButtonTitle: "Create a budget",
                         onPrimaryTap: { isPresentingAddBudget = true }
                     )
@@ -451,6 +449,10 @@ struct HomeView: View {
             return summaries.first
         }
         return nil
+    }
+
+    private var emptyStateMessage: String {
+        "No budget found for \(title(for: vm.selectedDate)). Use Create a budget to set one up for this period."
     }
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
