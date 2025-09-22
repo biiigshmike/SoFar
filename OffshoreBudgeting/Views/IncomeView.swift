@@ -52,12 +52,19 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 300
+    private let selectedDayCardMinimumHeight: CGFloat = 240
+    private let weeklySummaryCardMinimumHeight: CGFloat = 140
+    private let headerBaselineHeight: CGFloat = 92
     private var calendarContentHeight: CGFloat {
         if horizontalSizeClass == .regular { return 440 }
         if verticalSizeClass == .compact { return 300 }
         return 320
     }
 #else
+    private let calendarCardMinimumHeight: CGFloat = 320
+    private let selectedDayCardMinimumHeight: CGFloat = 260
+    private let weeklySummaryCardMinimumHeight: CGFloat = 160
+    private let headerBaselineHeight: CGFloat = 84
     private let calendarContentHeight: CGFloat = 340
 #endif
 
@@ -70,16 +77,20 @@ struct IncomeView: View {
 #endif
     }
 
-    /// Minimum padding applied directly to the scroll view content so that the
-    /// cards never butt up against the edge while we wait for safe area values
-    /// to resolve.
-    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.xs }
+    private var estimatedHeaderHeight: CGFloat {
+        headerBaselineHeight + safeAreaInsets.top
+    }
 
-    /// Additional spacing inserted via a safe-area inset once we know the
-    /// device's actual bottom inset.  This keeps the initial layout stable so
-    /// the user doesn't need to scroll after the safe area updates.
-    private var bottomInsetCompensation: CGFloat {
-        max(bottomPadding - scrollViewContentBottomPadding, 0)
+    private var minimumNonScrollingHeight: CGFloat {
+        let baseCards = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
+        let verticalSpacing = DS.Spacing.l + (DS.Spacing.m * 2)
+        return estimatedHeaderHeight + verticalSpacing + baseCards + bottomPadding
+    }
+
+    private struct IncomeCardHeights {
+        let calendar: CGFloat
+        let selected: CGFloat
+        let summary: CGFloat
     }
 
     private func beginAddingIncome(for date: Date? = nil) {
@@ -108,33 +119,10 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                    RootViewTopPlanes(title: "Income") {
-                        addIncomeButton
-                    }
-
-                    VStack(spacing: DS.Spacing.m) {
-                        // Calendar section in a padded card
-                        calendarSection
-
-                        selectedDaySection
-
-                        weeklySummaryBar
-                    }
-                    .padding(.horizontal, DS.Spacing.l)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(minHeight: proxy.size.height, alignment: .top)
-                .padding(.bottom, scrollViewContentBottomPadding)
-            }
-            .ub_captureSafeAreaInsets()
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear
-                    .frame(height: bottomInsetCompensation)
-                    .allowsHitTesting(false)
-            }
+            layout(for: proxy.size)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .ub_captureSafeAreaInsets()
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
@@ -174,11 +162,88 @@ struct IncomeView: View {
         )
     }
 
+    @ViewBuilder
+    private func layout(for size: CGSize) -> some View {
+        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+            ViewThatFits(in: .vertical) {
+                nonScrollingLayout(for: size)
+                    .frame(minHeight: minimumNonScrollingHeight, alignment: .top)
+                scrollingLayout(for: size)
+            }
+        } else {
+            scrollingLayout(for: size)
+        }
+    }
+
+    private func nonScrollingLayout(for size: CGSize) -> some View {
+        let heights = adaptiveCardHeights(for: size)
+
+        return VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            RootViewTopPlanes(title: "Income") {
+                addIncomeButton
+            }
+
+            VStack(spacing: DS.Spacing.m) {
+                calendarSection(cardHeight: heights.calendar)
+
+                selectedDaySection
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
+
+                weeklySummaryBar
+                    .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
+            }
+            .padding(.horizontal, DS.Spacing.l)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.bottom, bottomPadding)
+    }
+
+    private func scrollingLayout(for size: CGSize) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                RootViewTopPlanes(title: "Income") {
+                    addIncomeButton
+                }
+
+                VStack(spacing: DS.Spacing.m) {
+                    calendarSection()
+
+                    selectedDaySection
+
+                    weeklySummaryBar
+                }
+                .padding(.horizontal, DS.Spacing.l)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: size.height, alignment: .top)
+            .padding(.bottom, bottomPadding)
+        }
+    }
+
+    private func adaptiveCardHeights(for size: CGSize) -> IncomeCardHeights {
+        let cardSpacing = DS.Spacing.m * 2
+        let baseTotal = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
+        let availableHeight = max(size.height - estimatedHeaderHeight - bottomPadding - DS.Spacing.l, baseTotal + cardSpacing)
+        let extra = max(availableHeight - baseTotal - cardSpacing, 0)
+
+        let calendar = calendarCardMinimumHeight + (extra * 0.28)
+        let summary = weeklySummaryCardMinimumHeight + (extra * 0.12)
+        let selected = availableHeight - calendar - summary - cardSpacing
+
+        return IncomeCardHeights(
+            calendar: max(calendar, calendarCardMinimumHeight),
+            selected: max(selected, selectedDayCardMinimumHeight),
+            summary: max(summary, weeklySummaryCardMinimumHeight)
+        )
+    }
+
     // MARK: - Calendar Section
     /// Wraps the `MCalendarView` in a card and applies a stark black & white appearance.
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
     @ViewBuilder
-    private var calendarSection: some View {
+    private func calendarSection(cardHeight: CGFloat? = nil) -> some View {
+        let resolvedHeight = max(cardHeight ?? calendarContentHeight, calendarCardMinimumHeight)
         let today = Date()
         let cal = sundayFirstCalendar
         let start = cal.date(byAdding: .year, value: -5, to: today)!
@@ -236,7 +301,7 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
-            .frame(height: calendarContentHeight, alignment: .top)
+            .frame(height: resolvedHeight, alignment: .top)
             // MARK: Double-click calendar to add income (macOS)
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
@@ -273,13 +338,10 @@ struct IncomeView: View {
             .animation(nil, value: viewModel.selectedDate)
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
-            .frame(height: calendarContentHeight, alignment: .top)
+            .frame(height: resolvedHeight, alignment: .top)
 #endif
         }
         .frame(maxWidth: .infinity)
-#if os(iOS)
-        .frame(minHeight: calendarCardMinimumHeight, alignment: .top)
-#endif
         .layoutPriority(1)
         .padding(10)
         .background(
