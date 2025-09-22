@@ -253,25 +253,47 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
-                Button("<<") { goToPreviousMonth() }
-                    .accessibilityLabel("Previous Month")
-                    .buttonStyle(.glass)
+                if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+                    Button("<<") { goToPreviousMonth() }
+                        .accessibilityLabel("Previous Month")
+                        .buttonStyle(.glass)
 
-                Button("<") { goToPreviousDay() }
-                    .accessibilityLabel("Previous Day")
-                    .buttonStyle(.glass)
+                    Button("<") { goToPreviousDay() }
+                        .accessibilityLabel("Previous Day")
+                        .buttonStyle(.glass)
 
-                Button("Today") { goToToday() }
-                    .accessibilityLabel("Jump to Today")
-                    .buttonStyle(.glass)
+                    Button("Today") { goToToday() }
+                        .accessibilityLabel("Jump to Today")
+                        .buttonStyle(.glass)
 
-                Button(">") { goToNextDay() }
-                    .accessibilityLabel("Next Day")
-                    .buttonStyle(.glass)
+                    Button(">") { goToNextDay() }
+                        .accessibilityLabel("Next Day")
+                        .buttonStyle(.glass)
 
-                Button(">>") { goToNextMonth() }
-                    .accessibilityLabel("Next Month")
-                    .buttonStyle(.glass)
+                    Button(">>") { goToNextMonth() }
+                        .accessibilityLabel("Next Month")
+                        .buttonStyle(.glass)
+                } else {
+                    Button("<<") { goToPreviousMonth() }
+                        .accessibilityLabel("Previous Month")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button("<") { goToPreviousDay() }
+                        .accessibilityLabel("Previous Day")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button("Today") { goToToday() }
+                        .accessibilityLabel("Jump to Today")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+
+                    Button(">") { goToNextDay() }
+                        .accessibilityLabel("Next Day")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button(">>") { goToNextMonth() }
+                        .accessibilityLabel("Next Month")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                }
             }
             .controlSize(.small)
             #if os(macOS)
