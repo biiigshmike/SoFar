@@ -408,6 +408,7 @@ struct IncomeView: View {
         }
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: selectedDayCardMinimumHeight, alignment: .top)
         .background(
             themeManager.selectedTheme.secondaryBackground,
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
@@ -442,20 +443,12 @@ struct IncomeView: View {
     }
 
     private func selectedDayHeader(for date: Date) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Selected Day Income")
-                    .font(.headline)
-                Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            incomeTotalsStack(
-                planned: viewModel.plannedTotalForSelectedDate,
-                actual: viewModel.actualTotalForSelectedDate,
-                leadingAlignment: false
-            )
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Selected Day Income")
+                .font(.headline)
+            Text(DateFormatter.localizedString(from: date, dateStyle: .full, timeStyle: .none))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -527,6 +520,9 @@ struct IncomeView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .layoutPriority(1)
 
             if leadingAlignment {
                 Spacer(minLength: 0)
