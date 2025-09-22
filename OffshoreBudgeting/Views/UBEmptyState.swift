@@ -133,7 +133,7 @@ struct UBEmptyState: View {
 #if os(iOS)
     @ViewBuilder
     private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 18.0, *) {
             glassStyledPrimaryButton(title: title, tint: tint, action: action)
         } else if #available(iOS 15.0, *) {
             Button(action: action) {
@@ -147,7 +147,7 @@ struct UBEmptyState: View {
         }
     }
 
-    @available(iOS 26.0, *)
+    @available(iOS 26.0, macCatalyst 18.0, *)
     @ViewBuilder
     private func glassStyledPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
