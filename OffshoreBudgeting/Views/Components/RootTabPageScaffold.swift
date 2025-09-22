@@ -255,9 +255,37 @@ struct RootTabPageProxy {
     let availableHeight: CGFloat
     let isScrollEnabled: Bool
 
+    /// Controls the amount of vertical spacing inserted between tab content and the tab bar.
+    enum TabBarGutter {
+        case standard
+        case none
+        case custom(CGFloat)
+
+        fileprivate func resolvedSpacing(defaultSpacing: CGFloat) -> CGFloat {
+            switch self {
+            case .standard:
+                return defaultSpacing
+            case .none:
+                return 0
+            case .custom(let value):
+                return max(value, 0)
+            }
+        }
+    }
+
     var availableHeightBelowHeader: CGFloat {
         let spacingContribution = (headerHeight > 0 && contentHeight > 0) ? spacing : 0
         return max(availableHeight - headerHeight - spacingContribution, 0)
+    }
+
+    /// Convenience check for compact width environments so callers can adjust layout affordances.
+    var isCompactWidth: Bool {
+        layoutContext.horizontalSizeClass == .compact
+    }
+
+    /// Recommended gutter spacing that removes the tab-to-content gap on compact layouts.
+    var compactAwareTabBarGutter: TabBarGutter {
+        isCompactWidth ? .none : .standard
     }
 
     var contentExceedsAvailableHeight: Bool {
@@ -285,30 +313,38 @@ struct RootTabPageProxy {
         #endif
     }
 
+    func tabBarGutterSpacing(_ gutter: TabBarGutter) -> CGFloat {
+        gutter.resolvedSpacing(defaultSpacing: tabBarGutterSpacing)
+    }
+
     var standardTabContentBottomPadding: CGFloat {
         safeAreaBottomInset + tabBarGutterSpacing
     }
 
     func tabContentBottomPadding(
         includeSafeArea: Bool = true,
-        extraBottom: CGFloat = 0
+        extraBottom: CGFloat = 0,
+        tabBarGutter: TabBarGutter = .standard
     ) -> CGFloat {
         let safeAreaContribution = includeSafeArea ? safeAreaBottomInset : 0
-        return tabBarGutterSpacing + safeAreaContribution + extraBottom
+        let gutterSpacing = tabBarGutterSpacing(tabBarGutter)
+        return gutterSpacing + safeAreaContribution + extraBottom
     }
 
     func standardContentInsets(
         horizontal: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         extraTop: CGFloat = 0,
         extraBottom: CGFloat = 0,
-        includeSafeArea: Bool = true
+        includeSafeArea: Bool = true,
+        tabBarGutter: TabBarGutter = .standard
     ) -> EdgeInsets {
         EdgeInsets(
             top: extraTop,
             leading: horizontal,
             bottom: tabContentBottomPadding(
                 includeSafeArea: includeSafeArea,
-                extraBottom: extraBottom
+                extraBottom: extraBottom,
+                tabBarGutter: tabBarGutter
             ),
             trailing: horizontal
         )
@@ -342,7 +378,8 @@ extension View {
         horizontal: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         extraTop: CGFloat = 0,
         extraBottom: CGFloat = 0,
-        includeSafeArea: Bool = true
+        includeSafeArea: Bool = true,
+        tabBarGutter: RootTabPageProxy.TabBarGutter = .standard
     ) -> some View {
         self
             .padding(.horizontal, horizontal)
@@ -351,7 +388,8 @@ extension View {
                 .bottom,
                 proxy.tabContentBottomPadding(
                     includeSafeArea: includeSafeArea,
-                    extraBottom: extraBottom
+                    extraBottom: extraBottom,
+                    tabBarGutter: tabBarGutter
                 )
             )
     }

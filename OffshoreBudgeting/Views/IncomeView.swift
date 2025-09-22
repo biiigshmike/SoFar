@@ -191,7 +191,13 @@ struct IncomeView: View {
 
     private func landscapeLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
         let minimums = minimumCardHeights(using: proxy)
-        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight, minimums: minimums)
+        let gutter = proxy.compactAwareTabBarGutter
+        let heights = adaptiveCardHeights(
+            using: proxy,
+            availableHeight: availableHeight,
+            tabBarGutter: gutter,
+            minimums: minimums
+        )
         let selectedHeight = max(heights.selected, minimums.selected)
         let summaryHeight = max(heights.summary, minimums.summary)
         let rightColumnHeight = selectedHeight + DS.Spacing.m + summaryHeight
@@ -218,13 +224,27 @@ struct IncomeView: View {
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
-        .frame(minHeight: minimumNonScrollingHeight(using: proxy), alignment: .top)
+        .rootTabContentPadding(
+            proxy,
+            horizontal: DS.Spacing.l,
+            includeSafeArea: false,
+            tabBarGutter: gutter
+        )
+        .frame(
+            minHeight: minimumNonScrollingHeight(using: proxy, tabBarGutter: gutter),
+            alignment: .top
+        )
     }
 
     private func nonScrollingLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
         let minimums = minimumCardHeights(using: proxy)
-        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight, minimums: minimums)
+        let gutter = proxy.compactAwareTabBarGutter
+        let heights = adaptiveCardHeights(
+            using: proxy,
+            availableHeight: availableHeight,
+            tabBarGutter: gutter,
+            minimums: minimums
+        )
 
         return VStack(spacing: DS.Spacing.m) {
             calendarSection(using: proxy, cardHeight: heights.calendar)
@@ -237,12 +257,21 @@ struct IncomeView: View {
                 .frame(height: max(heights.summary, minimums.summary), alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
-        .frame(minHeight: minimumNonScrollingHeight(using: proxy), alignment: .top)
+        .rootTabContentPadding(
+            proxy,
+            horizontal: DS.Spacing.l,
+            includeSafeArea: false,
+            tabBarGutter: gutter
+        )
+        .frame(
+            minHeight: minimumNonScrollingHeight(using: proxy, tabBarGutter: gutter),
+            alignment: .top
+        )
     }
 
     private func scrollingLayout(using proxy: RootTabPageProxy) -> some View {
         let minimums = minimumCardHeights(using: proxy)
+        let gutter = proxy.compactAwareTabBarGutter
 
         return ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.m) {
@@ -254,19 +283,25 @@ struct IncomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
-            .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
+            .rootTabContentPadding(
+                proxy,
+                horizontal: DS.Spacing.l,
+                includeSafeArea: false,
+                tabBarGutter: gutter
+            )
         }
     }
 
     private func adaptiveCardHeights(
         using proxy: RootTabPageProxy,
         availableHeight: CGFloat,
+        tabBarGutter: RootTabPageProxy.TabBarGutter,
         minimums providedMinimums: IncomeCardHeights? = nil
     ) -> IncomeCardHeights {
         let cardSpacing = DS.Spacing.m * 2
         let minimums = providedMinimums ?? minimumCardHeights(using: proxy)
         let baseTotal = minimums.calendar + minimums.selected + minimums.summary
-        let bottomPadding = proxy.tabBarGutterSpacing
+        let bottomPadding = proxy.tabBarGutterSpacing(tabBarGutter)
         let adjustedHeight = max(availableHeight - bottomPadding, baseTotal + cardSpacing)
         let extra = max(adjustedHeight - baseTotal - cardSpacing, 0)
 
@@ -281,13 +316,16 @@ struct IncomeView: View {
         )
     }
 
-    private func minimumNonScrollingHeight(using proxy: RootTabPageProxy) -> CGFloat {
+    private func minimumNonScrollingHeight(
+        using proxy: RootTabPageProxy,
+        tabBarGutter: RootTabPageProxy.TabBarGutter
+    ) -> CGFloat {
         let minimums = minimumCardHeights(using: proxy)
         let baseCards = minimums.calendar + minimums.selected + minimums.summary
         let verticalSpacing = proxy.spacing + (DS.Spacing.m * 2)
         let fallbackHeader = headerBaselineHeight + proxy.effectiveSafeAreaInsets.top
         let headerHeight = proxy.headerHeight > 0 ? proxy.headerHeight : fallbackHeader
-        return headerHeight + verticalSpacing + baseCards + proxy.tabBarGutterSpacing
+        return headerHeight + verticalSpacing + baseCards + proxy.tabBarGutterSpacing(tabBarGutter)
     }
 
     // MARK: - Calendar Section

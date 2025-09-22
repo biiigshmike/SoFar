@@ -97,7 +97,11 @@ struct PresetsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .rootTabContentPadding(proxy, horizontal: 0)
+        .rootTabContentPadding(
+            proxy,
+            horizontal: 0,
+            tabBarGutter: proxy.compactAwareTabBarGutter
+        )
         // MARK: Data lifecycle
         .onAppear { viewModel.loadTemplates(using: viewContext) }
         .onReceive(

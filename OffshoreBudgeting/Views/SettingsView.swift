@@ -50,7 +50,9 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func content(using proxy: RootTabPageProxy) -> some View {
-        VStack(spacing: cardStackSpacing) {
+        let tabBarGutter = proxy.compactAwareTabBarGutter
+
+        return VStack(spacing: cardStackSpacing) {
             // MARK: General Hero Card
             SettingsCard(
                 iconSystemName: "gearshape",
@@ -239,8 +241,12 @@ struct SettingsView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: horizontalPadding,
-            extraBottom: extraBottomPadding(using: proxy),
-            includeSafeArea: false
+            extraBottom: extraBottomPadding(
+                using: proxy,
+                tabBarGutter: tabBarGutter
+            ),
+            includeSafeArea: false,
+            tabBarGutter: tabBarGutter
         )
     }
 
@@ -269,14 +275,17 @@ struct SettingsView: View {
         #endif
     }
 
-    private func extraBottomPadding(using proxy: RootTabPageProxy) -> CGFloat {
+    private func extraBottomPadding(
+        using proxy: RootTabPageProxy,
+        tabBarGutter: RootTabPageProxy.TabBarGutter
+    ) -> CGFloat {
         #if os(iOS)
         let base = horizontalSizeClass == .compact ? 0 : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
         let overflow = max(proxy.safeAreaBottomInset - tabChromeHeight, 0)
-        return max(base + overflow - proxy.tabBarGutterSpacing, 0)
+        return max(base + overflow - proxy.tabBarGutterSpacing(tabBarGutter), 0)
         #else
-        return max(DS.Spacing.l - proxy.tabBarGutterSpacing, 0)
+        return max(DS.Spacing.l - proxy.tabBarGutterSpacing(tabBarGutter), 0)
         #endif
     }
 
