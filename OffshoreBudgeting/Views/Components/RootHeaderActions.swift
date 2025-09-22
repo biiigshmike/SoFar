@@ -66,6 +66,47 @@ extension View {
 
 // MARK: - Header Glass Controls (iOS + macOS)
 #if os(iOS) || os(macOS)
+
+#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+@available(iOS 18.0, macOS 15.0, tvOS 18.0, macCatalyst 18.0, *)
+private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        GlassEffectContainer {
+            content
+                .glassEffect(in: Capsule(style: .continuous))
+        }
+    }
+}
+#endif
+
+private extension View {
+    @ViewBuilder
+    func rootHeaderGlassDecorated(
+        theme: AppTheme,
+        capabilities: PlatformCapabilities
+    ) -> some View {
+#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+        if capabilities.supportsOS26Translucency {
+            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, macCatalyst 18.0, *) {
+                RootHeaderGlassCapsuleContainer { self }
+            } else {
+                rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+            }
+        } else {
+            rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+        }
+#else
+        rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+#endif
+    }
+}
+
 struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
@@ -122,20 +163,8 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         }
         .contentShape(Capsule(style: .continuous))
 
-        #if os(iOS) || targetEnvironment(macCatalyst)
-        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
-            GlassEffectContainer {
-                content
-                    .glassEffect(in: Capsule(style: .continuous))
-            }
-        } else {
-            content
-                .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
-        }
-        #else
         content
-            .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
-        #endif
+            .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
     }
 }
 
@@ -160,20 +189,8 @@ struct RootHeaderGlassControl<Content: View>: View {
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
             .contentShape(Capsule(style: .continuous))
 
-        #if os(iOS) || targetEnvironment(macCatalyst)
-        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
-            GlassEffectContainer {
-                control
-                    .glassEffect(in: Capsule(style: .continuous))
-            }
-        } else {
-            control
-                .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
-        }
-        #else
         control
-            .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
-        #endif
+            .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
     }
 }
 
@@ -304,13 +321,24 @@ struct RootHeaderIconActionButton: View {
                 .buttonStyle(RootHeaderActionButtonStyle())
         }
         #else
-        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
-            macOSGlassButton
-        } else {
-            RootHeaderGlassControl {
-                baseButton
-                    .buttonStyle(RootHeaderActionButtonStyle())
+        let fallback = RootHeaderGlassControl {
+            baseButton
+                .buttonStyle(RootHeaderActionButtonStyle())
+        }
+
+        if capabilities.supportsOS26Translucency {
+            if #available(macOS 15.0, *) {
+                makeMacGlassButton(
+                    baseButton: baseButton,
+                    dimension: RootHeaderActionMetrics.dimension,
+                    horizontalPadding: RootHeaderGlassMetrics.horizontalPadding,
+                    verticalPadding: RootHeaderGlassMetrics.verticalPadding
+                )
+            } else {
+                fallback
             }
+        } else {
+            fallback
         }
         #endif
     }
@@ -324,31 +352,20 @@ struct RootHeaderIconActionButton: View {
     }
 
 #if os(macOS)
-    private var macOSGlassButton: some View {
-        let dimension = RootHeaderActionMetrics.dimension
-        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
-        let verticalPadding = RootHeaderGlassMetrics.verticalPadding
-
-        // Guard the .glass symbol itself inside availability so it is never
-        // referenced on older macOS SDKs.
-        if #available(macOS 15.0, *) {
-            return AnyView(
-                baseButton
-                    .frame(width: dimension, height: dimension)
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.vertical, verticalPadding)
-                    .contentShape(Circle())
-                    .buttonBorderShape(.circle)
-                    .buttonStyle(.glass)
-            )
-        } else {
-            return AnyView(
-                RootHeaderGlassControl {
-                    baseButton
-                        .buttonStyle(RootHeaderActionButtonStyle())
-                }
-            )
-        }
+    @available(macOS 15.0, *)
+    private func makeMacGlassButton<Content: View>(
+        baseButton: Content,
+        dimension: CGFloat,
+        horizontalPadding: CGFloat,
+        verticalPadding: CGFloat
+    ) -> some View {
+        baseButton
+            .frame(width: dimension, height: dimension)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .contentShape(Circle())
+            .buttonBorderShape(.circle)
+            .buttonStyle(.glass)
     }
 #endif
 }
