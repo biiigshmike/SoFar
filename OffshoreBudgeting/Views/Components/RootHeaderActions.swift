@@ -117,7 +117,8 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         }
         .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 content
                     .glassEffect(in: Capsule(style: .continuous))
@@ -126,6 +127,10 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
             content
                 .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
         }
+        #else
+        content
+            .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+        #endif
     }
 }
 
@@ -150,7 +155,8 @@ struct RootHeaderGlassControl<Content: View>: View {
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
             .contentShape(Capsule(style: .continuous))
 
-        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 control
                     .glassEffect(in: Capsule(style: .continuous))
@@ -159,6 +165,10 @@ struct RootHeaderGlassControl<Content: View>: View {
             control
                 .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
         }
+        #else
+        control
+            .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+        #endif
     }
 }
 
