@@ -72,12 +72,6 @@ struct RootTabView: View {
             theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
-        // Keep the page background as well.
-        .ub_surfaceBackground(
-            themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration,
-            ignoringSafeArea: .all
-        )
         .onAppear(perform: updateTabBarAppearance)
         .ub_onChange(of: themeManager.selectedTheme) {
             updateTabBarAppearance()

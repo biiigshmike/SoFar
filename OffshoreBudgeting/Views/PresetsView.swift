@@ -16,8 +16,6 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
-    @Environment(\.platformCapabilities) private var capabilities
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -29,17 +27,12 @@ struct PresetsView: View {
 
     // MARK: Body
     var body: some View {
-        Group {
-            if isOnboardingPresentation {
-                content
-            } else {
-                content
-                    .ub_surfaceBackground(
-                        themeManager.selectedTheme,
-                        configuration: themeManager.glassConfiguration,
-                        ignoringSafeArea: .all
-                    )
+        RootTabPageScaffold {
+            RootViewTopPlanes(title: "Presets") {
+                addPresetButton
             }
+        } content: { proxy in
+            content(using: proxy)
         }
         .alert(item: $templateToDelete) { template in
             Alert(
@@ -53,61 +46,58 @@ struct PresetsView: View {
         }
     }
 
-    private var content: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Presets") {
-                addPresetButton
-            }
-            Group {
-                // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
-                if viewModel.items.isEmpty {
-                    UBEmptyState(
-                        iconSystemName: "list.bullet.rectangle",
-                        title: "Presets",
-                        message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
-                        primaryButtonTitle: "Add Preset",
-                        onPrimaryTap: { isPresentingAddSheet = true }
-                    )
-                    .padding(.horizontal, DS.Spacing.l)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                } else {
-                    // MARK: Non-empty List
-                    List {
-                        ForEach(viewModel.items) { item in
-                            PresetRowView(
-                                item: item,
-                                onAssignTapped: { template in
-                                    sheetTemplateToAssign = template
-                                }
-                            )
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                            .unifiedSwipeActions(
-                                onEdit: { editingTemplate = item.template },
-                                onDelete: {
-                                    if confirmBeforeDelete {
-                                        templateToDelete = item.template
-                                    } else {
-                                        delete(template: item.template)
-                                    }
-                                }
-                            )
-                        }
-                        .onDelete { indexSet in
-                            let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
-                            if confirmBeforeDelete, let first = targets.first {
-                                templateToDelete = first
-                            } else {
-                                targets.forEach(delete(template:))
+    @ViewBuilder
+    private func content(using proxy: RootTabPageProxy) -> some View {
+        Group {
+            // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
+            if viewModel.items.isEmpty {
+                UBEmptyState(
+                    iconSystemName: "list.bullet.rectangle",
+                    title: "Presets",
+                    message: "Presets are recurring expenses you have every month. Add them here so budgets are faster to create.",
+                    primaryButtonTitle: "Add Preset",
+                    onPrimaryTap: { isPresentingAddSheet = true }
+                )
+                .padding(.horizontal, DS.Spacing.l)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                // MARK: Non-empty List
+                List {
+                    ForEach(viewModel.items) { item in
+                        PresetRowView(
+                            item: item,
+                            onAssignTapped: { template in
+                                sheetTemplateToAssign = template
                             }
+                        )
+                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .unifiedSwipeActions(
+                            onEdit: { editingTemplate = item.template },
+                            onDelete: {
+                                if confirmBeforeDelete {
+                                    templateToDelete = item.template
+                                } else {
+                                    delete(template: item.template)
+                                }
+                            }
+                        )
+                    }
+                    .onDelete { indexSet in
+                        let targets = indexSet.compactMap { viewModel.items[safe: $0]?.template }
+                        if confirmBeforeDelete, let first = targets.first {
+                            templateToDelete = first
+                        } else {
+                            targets.forEach(delete(template:))
                         }
                     }
-                    .listStyle(.plain)
-                    .applyIfAvailableScrollContentBackgroundHidden()
                 }
+                .listStyle(.plain)
+                .applyIfAvailableScrollContentBackgroundHidden()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .rootTabContentPadding(proxy, horizontal: 0)
         // MARK: Data lifecycle
         .onAppear { viewModel.loadTemplates(using: viewContext) }
         .onReceive(
