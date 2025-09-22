@@ -27,7 +27,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         var ideal: CGFloat?
         var maximum: CGFloat?
 
-        static let unconstrained = WidthLimits()
+        static var unconstrained: WidthLimits { WidthLimits() }
     }
 
     // MARK: Inputs
