@@ -921,6 +921,7 @@ private extension View {
 // MARK: - Calendar Navigation Styling
 private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     private let cornerRadius: CGFloat = 17
+    @EnvironmentObject private var themeManager: ThemeManager
 
     func body(content: Content) -> some View {
         Group {
@@ -929,11 +930,21 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
             if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, macCatalyst 18.0, *) {
                 content.buttonStyle(.glass)
             } else {
-                content.buttonStyle(.bordered)
+                content.buttonStyle(
+                    TranslucentButtonStyle(
+                        tint: themeManager.selectedTheme.resolvedTint,
+                        metrics: .calendarNavigation
+                    )
+                )
             }
             #else
             // Older toolchains/SDKs: fall back to a safe style.
-            content.buttonStyle(.bordered)
+            content.buttonStyle(
+                TranslucentButtonStyle(
+                    tint: themeManager.selectedTheme.resolvedTint,
+                    metrics: .calendarNavigation
+                )
+            )
             #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))

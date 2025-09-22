@@ -43,6 +43,17 @@ struct TranslucentButtonStyle: ButtonStyle {
             pressedScale: 0.94,
             font: .system(size: 17, weight: .semibold, design: .rounded)
         )
+
+        static let calendarNavigation = Metrics(
+            layout: .hugging,
+            width: 44,
+            height: 34,
+            cornerRadius: 17,
+            horizontalPadding: 0,
+            verticalPadding: 0,
+            pressedScale: 0.96,
+            font: .system(size: 16, weight: .semibold, design: .rounded)
+        )
     }
 
     @Environment(\.platformCapabilities) private var capabilities
