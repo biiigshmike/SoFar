@@ -341,7 +341,10 @@ struct HomeView: View {
                     .id(first.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #else
-                    BudgetDetailsView(budgetObjectID: first.id)
+                    BudgetDetailsView(
+                        budgetObjectID: first.id,
+                        headerTopPadding: DS.Spacing.xs
+                    )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .id(first.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
