@@ -18,21 +18,23 @@ extension PlatformCapabilities {
     /// Snapshot the current process' capabilities using the most specific
     /// availability information we have at launch.
     static var current: PlatformCapabilities {
+        let supportsModernTranslucency: Bool
+        if #available(iOS 26.0, tvOS 26.0, macOS 26.0, macCatalyst 18.0, *) {
+            supportsModernTranslucency = true
+        } else {
+            supportsModernTranslucency = false
+        }
+
         #if os(iOS) || os(tvOS)
-        if #available(iOS 18.0, tvOS 18.0, *) {
-            return PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: true)
-        } else {
-            return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
-        }
-        #elseif os(macOS)
-        if #available(macOS 15.0, *) {
-            return PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: false)
-        } else {
-            return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
-        }
+        let supportsAdaptiveKeypad = supportsModernTranslucency
         #else
-        return PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
+        let supportsAdaptiveKeypad = false
         #endif
+
+        return PlatformCapabilities(
+            supportsOS26Translucency: supportsModernTranslucency,
+            supportsAdaptiveKeypad: supportsAdaptiveKeypad
+        )
     }
 
     /// Baseline set of capabilities used as a default value in the environment.
