@@ -67,42 +67,51 @@ extension View {
 // MARK: - Header Glass Controls (iOS)
 #if os(iOS)
 struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
-    private enum Metrics {
-        static var dividerInset: CGFloat { 4 }
-    }
-
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
 
     private let leading: Leading
     private let trailing: Trailing
+    private let showsDivider: Bool
 
-    init(@ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+    init(
+        showsDivider: Bool = true,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
         self.leading = leading()
         self.trailing = trailing()
+        self.showsDivider = showsDivider
     }
 
     var body: some View {
         let dimension = RootHeaderActionMetrics.dimension
-        let dividerHeight = dimension - (Metrics.dividerInset * 2)
+        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
+        let verticalPadding = RootHeaderGlassMetrics.verticalPadding
         let theme = themeManager.selectedTheme
 
         let content = HStack(spacing: 0) {
             leading
                 .frame(width: dimension, height: dimension)
                 .contentShape(Rectangle())
+                .padding(.leading, horizontalPadding)
+                .padding(.trailing, horizontalPadding)
+                .padding(.vertical, verticalPadding)
 
-            Rectangle()
-                .fill(RootHeaderLegacyGlass.dividerColor(for: theme))
-                .frame(width: 1, height: dividerHeight)
-                .padding(.vertical, Metrics.dividerInset)
+            if showsDivider {
+                Rectangle()
+                    .fill(RootHeaderLegacyGlass.dividerColor(for: theme))
+                    .frame(width: 1, height: dimension)
+                    .padding(.vertical, verticalPadding)
+            }
 
             trailing
                 .frame(width: dimension, height: dimension)
                 .contentShape(Rectangle())
+                .padding(.leading, horizontalPadding)
+                .padding(.trailing, horizontalPadding)
+                .padding(.vertical, verticalPadding)
         }
-        .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
-        .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
         .contentShape(Capsule(style: .continuous))
 
         if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
@@ -164,7 +173,7 @@ private enum RootHeaderLegacyGlass {
     }
 
     static func dividerColor(for theme: AppTheme) -> Color {
-        theme == .system ? Color.white.opacity(0.32) : theme.resolvedTint.opacity(0.40)
+        theme == .system ? Color.white.opacity(0.50) : theme.resolvedTint.opacity(0.55)
     }
 
     static func glowColor(for theme: AppTheme) -> Color {
