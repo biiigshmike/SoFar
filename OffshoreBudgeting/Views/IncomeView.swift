@@ -52,7 +52,7 @@ struct IncomeView: View {
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
     private let calendarCardMinimumHeight: CGFloat = 300
-    private let selectedDayCardMinimumHeight: CGFloat = 240
+    private let selectedDayCardMinimumHeight: CGFloat = 320
     private let weeklySummaryCardMinimumHeight: CGFloat = 140
     private let headerBaselineHeight: CGFloat = 92
     private var calendarContentHeight: CGFloat {
@@ -62,7 +62,7 @@ struct IncomeView: View {
     }
 #else
     private let calendarCardMinimumHeight: CGFloat = 320
-    private let selectedDayCardMinimumHeight: CGFloat = 260
+    private let selectedDayCardMinimumHeight: CGFloat = 320
     private let weeklySummaryCardMinimumHeight: CGFloat = 160
     private let headerBaselineHeight: CGFloat = 84
     private let calendarContentHeight: CGFloat = 340
@@ -227,8 +227,8 @@ struct IncomeView: View {
         let availableHeight = max(size.height - estimatedHeaderHeight - bottomPadding - DS.Spacing.l, baseTotal + cardSpacing)
         let extra = max(availableHeight - baseTotal - cardSpacing, 0)
 
-        let calendar = calendarCardMinimumHeight + (extra * 0.28)
-        let summary = weeklySummaryCardMinimumHeight + (extra * 0.12)
+        let calendar = calendarCardMinimumHeight + (extra * 0.22)
+        let summary = weeklySummaryCardMinimumHeight + (extra * 0.08)
         let selected = availableHeight - calendar - summary - cardSpacing
 
         return IncomeCardHeights(
@@ -363,12 +363,15 @@ struct IncomeView: View {
                 Image(systemName: "calendar")
                     .imageScale(.large)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DS.Spacing.s) {
                     Text("Week Total Income")
                         .font(.headline)
-                    Text(currencyString(for: viewModel.totalForSelectedWeek))
-                        .font(.title3)
-                        .fontWeight(.semibold)
+
+                    incomeTotalsStack(
+                        planned: viewModel.plannedTotalForSelectedWeek,
+                        actual: viewModel.actualTotalForSelectedWeek,
+                        leadingAlignment: true
+                    )
                 }
 
                 Spacer(minLength: 0)
@@ -412,6 +415,7 @@ struct IncomeView: View {
         .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .shadow(radius: 1, y: 1)
+        .layoutPriority(2)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
                 viewModel.delete(income: income, scope: .all)
@@ -447,9 +451,11 @@ struct IncomeView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text(currencyString(for: viewModel.totalForSelectedDate))
-                .font(.title3)
-                .fontWeight(.semibold)
+            incomeTotalsStack(
+                planned: viewModel.plannedTotalForSelectedDate,
+                actual: viewModel.actualTotalForSelectedDate,
+                leadingAlignment: false
+            )
         }
     }
 
@@ -459,6 +465,7 @@ struct IncomeView: View {
             selectedDayEmptyState(for: date)
         } else {
             incomeList(for: entries)
+                .frame(maxHeight: .infinity)
         }
     }
 
@@ -486,6 +493,45 @@ struct IncomeView: View {
         .listStyle(.plain)
         .ub_hideScrollIndicators()
         .applyIfAvailableScrollContentBackgroundHidden()
+    }
+
+    @ViewBuilder
+    private func incomeTotalsStack(planned: Double, actual: Double, leadingAlignment: Bool) -> some View {
+        VStack(alignment: leadingAlignment ? .leading : .trailing, spacing: DS.Spacing.xs) {
+            incomeTotalsRow(
+                label: "Planned",
+                amount: planned,
+                tint: DS.Colors.plannedIncome,
+                leadingAlignment: leadingAlignment
+            )
+            incomeTotalsRow(
+                label: "Actual",
+                amount: actual,
+                tint: DS.Colors.actualIncome,
+                leadingAlignment: leadingAlignment
+            )
+        }
+    }
+
+    private func incomeTotalsRow(label: String, amount: Double, tint: Color, leadingAlignment: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.s) {
+            if !leadingAlignment {
+                Spacer(minLength: 0)
+            }
+
+            Text("\(label):")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text(currencyString(for: amount))
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundStyle(tint)
+
+            if leadingAlignment {
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     // MARK: - Calendar Navigation Helpers

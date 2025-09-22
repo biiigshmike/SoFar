@@ -14,7 +14,11 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Public, @Published
     @Published var selectedDate: Date? = Date()
     @Published private(set) var incomesForDay: [Income] = []
+    @Published private(set) var plannedTotalForSelectedDate: Double = 0
+    @Published private(set) var actualTotalForSelectedDate: Double = 0
     @Published private(set) var totalForSelectedDate: Double = 0
+    @Published private(set) var plannedTotalForSelectedWeek: Double = 0
+    @Published private(set) var actualTotalForSelectedWeek: Double = 0
     @Published private(set) var totalForSelectedWeek: Double = 0
     @Published private(set) var eventsByDay: [Date: [IncomeService.IncomeEvent]] = [:]
     
@@ -55,15 +59,27 @@ final class IncomeScreenViewModel: ObservableObject {
     func load(day: Date, forceMonthReload: Bool = false) {
         do {
             incomesForDay = try incomeService.fetchIncomes(on: day)
-            totalForSelectedDate = incomesForDay.reduce(0) { $0 + $1.amount }
-            totalForSelectedWeek = try weekTotal(containing: day)
+
+            let dayTotals = totals(from: incomesForDay)
+            plannedTotalForSelectedDate = dayTotals.planned
+            actualTotalForSelectedDate = dayTotals.actual
+            totalForSelectedDate = dayTotals.planned + dayTotals.actual
+
+            let weekTotals = try totalsForWeek(containing: day)
+            plannedTotalForSelectedWeek = weekTotals.planned
+            actualTotalForSelectedWeek = weekTotals.actual
+            totalForSelectedWeek = weekTotals.planned + weekTotals.actual
             refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
             #if DEBUG
             print("Income fetch error:", error)
             #endif
             incomesForDay = []
+            plannedTotalForSelectedDate = 0
+            actualTotalForSelectedDate = 0
             totalForSelectedDate = 0
+            plannedTotalForSelectedWeek = 0
+            actualTotalForSelectedWeek = 0
             totalForSelectedWeek = 0
             eventsByDay = [:]
             cachedMonthlyEvents.removeAll()
@@ -179,11 +195,22 @@ final class IncomeScreenViewModel: ObservableObject {
         ?? calendar.startOfDay(for: date)
     }
 
-    /// Calculates the sum of incomes for the week containing the provided date.
-    private func weekTotal(containing date: Date) throws -> Double {
-        guard let interval = weekInterval(containing: date) else { return 0 }
+    /// Calculates the totals for the provided incomes, broken out by planned vs actual.
+    private func totals(from incomes: [Income]) -> (planned: Double, actual: Double) {
+        incomes.reduce(into: (planned: 0.0, actual: 0.0)) { partial, income in
+            if income.isPlanned {
+                partial.planned += income.amount
+            } else {
+                partial.actual += income.amount
+            }
+        }
+    }
+
+    /// Calculates the sum of incomes for the week containing the provided date, separated by planned/actual.
+    private func totalsForWeek(containing date: Date) throws -> (planned: Double, actual: Double) {
+        guard let interval = weekInterval(containing: date) else { return (0, 0) }
         let incomes = try incomeService.fetchIncomes(in: interval)
-        return incomes.reduce(0) { $0 + $1.amount }
+        return totals(from: incomes)
     }
 
     /// Returns the closed date interval for the week containing `date` using a Sunday-based calendar.
