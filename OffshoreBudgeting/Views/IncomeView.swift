@@ -238,7 +238,7 @@ struct IncomeView: View {
     private func scrollingLayout(using proxy: RootTabPageProxy) -> some View {
         let minimums = minimumCardHeights(using: proxy)
 
-        ScrollView(showsIndicators: false) {
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.m) {
                 calendarSection(using: proxy)
 
