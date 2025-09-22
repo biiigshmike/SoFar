@@ -123,13 +123,16 @@ struct HomeView: View {
     @ViewBuilder
     private var headerActions: some View {
         let trailing = trailingActionControl
-        RootHeaderGlassPill(showsDivider: trailing != nil) {
+        RootHeaderGlassPill(
+            showsDivider: trailing != nil,
+            hasTrailing: trailing != nil
+        ) {
             periodPickerControl
         } trailing: {
             if let trailing {
                 trailing
             } else {
-                trailingPlaceholder
+                EmptyView()
             }
         }
     }
@@ -163,12 +166,6 @@ struct HomeView: View {
         default:
             return nil
         }
-    }
-
-    private var trailingPlaceholder: some View {
-        Color.clear
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
     }
 
     private func trailingControls(for summary: BudgetSummary) -> some View {
