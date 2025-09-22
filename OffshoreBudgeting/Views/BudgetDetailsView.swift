@@ -52,7 +52,7 @@ struct BudgetDetailsView: View {
         VStack(spacing: 0) {
 
             // MARK: Header (name + summary + controls)
-            VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
 
                 // MARK: Title + Date Range
                 VStack(alignment: .leading, spacing: 4) {
@@ -86,17 +86,16 @@ struct BudgetDetailsView: View {
                 GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
                     Picker("", selection: $vm.selectedSegment) {
                         Text("Planned Expenses")
-                            .segmentedFill()
+                            .macSegmentedFill()
                             .tag(BudgetDetailsViewModel.Segment.planned)
                         Text("Variable Expenses")
-                            .segmentedFill()
+                            .macSegmentedFill()
                             .tag(BudgetDetailsViewModel.Segment.variable)
                     }
                     .pickerStyle(.segmented)
 #if os(macOS)
                     .controlSize(.large)
 #endif
-                    .frame(maxWidth: .infinity)
                 }
 
                 // MARK: Filters
@@ -109,7 +108,7 @@ struct BudgetDetailsView: View {
                 )
             }
             .padding(.horizontal, DS.Spacing.l)
-            .padding(.top, DS.Spacing.s)
+            .padding(.top, DS.Spacing.m)
             .padding(.bottom, DS.Spacing.m)
 
             // MARK: Lists
@@ -390,26 +389,25 @@ private struct FilterBar: View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z")
-                    .segmentedFill()
+                    .macSegmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓")
-                    .segmentedFill()
+                    .macSegmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
                 Text("$↑")
-                    .segmentedFill()
+                    .macSegmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.amountHighLow)
                 Text("Date ↑")
-                    .segmentedFill()
+                    .macSegmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.dateOldNew)
                 Text("Date ↓")
-                    .segmentedFill()
+                    .macSegmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
 #if os(macOS)
             .controlSize(.large)
 #endif
-            .frame(maxWidth: .infinity)
         }
         .ub_onChange(of: startDate) { onChanged() }
         .ub_onChange(of: endDate) { onChanged() }
@@ -460,9 +458,12 @@ private struct GlassCapsuleContainer<Content: View>: View {
 
 private extension View {
     @ViewBuilder
-    func segmentedFill() -> some View {
+    func macSegmentedFill() -> some View {
+#if os(macOS)
+        self.frame(maxWidth: .infinity)
+#else
         self
-            .frame(maxWidth: .infinity)
+#endif
     }
 }
 
