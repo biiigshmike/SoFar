@@ -96,23 +96,22 @@ struct HomeView: View {
 
     @ViewBuilder
     private var headerActions: some View {
+        let trailing = trailingActionControl
 #if os(macOS)
         HStack(spacing: DS.Spacing.s) {
             periodPickerControl
-            if let trailing = trailingActionControl {
+            if let trailing {
                 trailing
             }
         }
 #else
-        if let trailing = trailingActionControl {
-            RootHeaderGlassPill {
-                periodPickerControl
-            } trailing: {
+        RootHeaderGlassPill(showsDivider: trailing != nil) {
+            periodPickerControl
+        } trailing: {
+            if let trailing {
                 trailing
-            }
-        } else {
-            RootHeaderGlassControl {
-                periodPickerControl
+            } else {
+                trailingPlaceholder
             }
         }
 #endif
@@ -150,6 +149,12 @@ struct HomeView: View {
         default:
             return nil
         }
+    }
+
+    private var trailingPlaceholder: some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private var addBudgetButton: some View {
