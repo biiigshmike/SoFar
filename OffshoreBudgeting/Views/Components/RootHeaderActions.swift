@@ -317,7 +317,7 @@ struct RootHeaderIconActionButton: View {
         baseButton
             .buttonStyle(RootHeaderActionButtonStyle())
         #else
-        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
             baseButton
                 .buttonStyle(.glass)
         } else {
@@ -327,4 +327,3 @@ struct RootHeaderIconActionButton: View {
         #endif
     }
 }
-
