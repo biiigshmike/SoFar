@@ -69,6 +69,7 @@ extension View {
 struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
     private enum Metrics {
         static var dividerInset: CGFloat { 4 }
+        static var segmentInnerPadding: CGFloat { RootHeaderGlassMetrics.horizontalPadding }
     }
 
     @EnvironmentObject private var themeManager: ThemeManager
@@ -90,6 +91,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         let content = HStack(spacing: 0) {
             leading
                 .frame(width: dimension, height: dimension)
+                .padding(.trailing, Metrics.segmentInnerPadding)
                 .contentShape(Rectangle())
 
             Rectangle()
@@ -99,6 +101,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
 
             trailing
                 .frame(width: dimension, height: dimension)
+                .padding(.leading, Metrics.segmentInnerPadding)
                 .contentShape(Rectangle())
         }
         .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
@@ -164,7 +167,7 @@ private enum RootHeaderLegacyGlass {
     }
 
     static func dividerColor(for theme: AppTheme) -> Color {
-        theme == .system ? Color.white.opacity(0.32) : theme.resolvedTint.opacity(0.40)
+        theme == .system ? Color.white.opacity(0.48) : theme.resolvedTint.opacity(0.52)
     }
 
     static func glowColor(for theme: AppTheme) -> Color {

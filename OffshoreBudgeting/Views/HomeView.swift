@@ -99,21 +99,13 @@ struct HomeView: View {
 #if os(macOS)
         HStack(spacing: DS.Spacing.s) {
             periodPickerControl
-            if let trailing = trailingActionControl {
-                trailing
-            }
+            trailingActionView
         }
 #else
-        if let trailing = trailingActionControl {
-            RootHeaderGlassPill {
-                periodPickerControl
-            } trailing: {
-                trailing
-            }
-        } else {
-            RootHeaderGlassControl {
-                periodPickerControl
-            }
+        RootHeaderGlassPill {
+            periodPickerControl
+        } trailing: {
+            trailingActionView
         }
 #endif
     }
@@ -137,18 +129,17 @@ struct HomeView: View {
 #endif
     }
 
-    private var trailingActionControl: AnyView? {
+    @ViewBuilder
+    private var trailingActionView: some View {
         switch vm.state {
-        case .empty:
-            return AnyView(addBudgetButton)
         case .loaded(let summaries):
             if let first = summaries.first {
-                return AnyView(budgetActionMenu(for: first))
+                budgetActionMenu(for: first)
             } else {
-                return nil
+                addBudgetButton
             }
         default:
-            return nil
+            addBudgetButton
         }
     }
 
