@@ -53,40 +53,41 @@ struct IncomeView: View {
 
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
-    private let calendarCardMinimumHeight: CGFloat = 380
+    private let calendarCardMinimumHeight: CGFloat = 340
     private var calendarContentHeight: CGFloat {
-        if horizontalSizeClass == .regular { return 520 }
-        if verticalSizeClass == .compact { return 360 }
-        return 420
+        if horizontalSizeClass == .regular { return 480 }
+        if verticalSizeClass == .compact { return 340 }
+        return 360
     }
 #else
-    private let calendarContentHeight: CGFloat = 420
+    private let calendarContentHeight: CGFloat = 360
 #endif
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        return safeAreaInsets.bottom + DS.Spacing.l
+        let inset = safeAreaInsets.bottom
+        return inset > 0 ? inset : DS.Spacing.m
 #else
-        return DS.Spacing.l
+        return DS.Spacing.m
 #endif
     }
 
     private var summaryFallbackHeight: CGFloat {
 #if os(iOS)
-        if horizontalSizeClass == .regular { return 420 }
-        if verticalSizeClass == .compact { return 300 }
-        return 360
+        if horizontalSizeClass == .regular { return 280 }
+        if verticalSizeClass == .compact { return 220 }
+        return 240
 #else
-        return 360
+        return 240
 #endif
     }
 
     private var minimumSelectedDayContentHeight: CGFloat {
 #if os(iOS)
-        if verticalSizeClass == .compact { return 120 }
-        return 180
+        if verticalSizeClass == .compact { return 90 }
+        return 120
 #else
-        return 200
+        return 140
 #endif
     }
 
@@ -128,12 +129,12 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
                 RootViewTopPlanes(title: "Income") {
                     addIncomeButton
                 }
 
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     // Calendar section in a padded card
                     calendarSection
 
@@ -141,7 +142,6 @@ struct IncomeView: View {
                     summarySplit
                 }
                 .padding(.horizontal, DS.Spacing.l)
-                .padding(.bottom, DS.Spacing.m)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, bottomPadding)
@@ -293,7 +293,7 @@ struct IncomeView: View {
         .frame(minHeight: calendarCardMinimumHeight, alignment: .top)
 #endif
         .layoutPriority(1)
-        .padding(12)
+        .padding(10)
         .background(
             themeManager.selectedTheme.secondaryBackground,
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
@@ -310,11 +310,11 @@ struct IncomeView: View {
         HStack(alignment: .top, spacing: DS.Spacing.m) {
             weeklySummaryBar
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(height: cardHeight, alignment: .top)
+                .frame(minHeight: cardHeight, alignment: .top)
 
             selectedDaySection
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(height: cardHeight, alignment: .top)
+                .frame(minHeight: cardHeight, alignment: .top)
         }
         .onPreferenceChange(WeeklySummaryHeightPreferenceKey.self) { height in
             guard height > 0 else { return }
