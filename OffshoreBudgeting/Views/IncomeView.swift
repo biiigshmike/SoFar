@@ -44,8 +44,6 @@ struct IncomeView: View {
     @State private var incomeToDelete: Income? = nil
     @State private var showDeleteAlert: Bool = false
     @State private var showDeleteOptions: Bool = false
-    @State private var weeklySummaryIntrinsicHeight: CGFloat = 0
-    @State private var selectedDayHeaderHeight: CGFloat = 0
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -66,7 +64,7 @@ struct IncomeView: View {
     private var bottomPadding: CGFloat {
 #if os(iOS)
         let inset = safeAreaInsets.bottom
-        return inset > 0 ? inset : DS.Spacing.m
+        return inset > 0 ? inset : DS.Spacing.s
 #else
         return DS.Spacing.m
 #endif
@@ -75,44 +73,13 @@ struct IncomeView: View {
     /// Minimum padding applied directly to the scroll view content so that the
     /// cards never butt up against the edge while we wait for safe area values
     /// to resolve.
-    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.s }
+    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.xs }
 
     /// Additional spacing inserted via a safe-area inset once we know the
     /// device's actual bottom inset.  This keeps the initial layout stable so
     /// the user doesn't need to scroll after the safe area updates.
     private var bottomInsetCompensation: CGFloat {
         max(bottomPadding - scrollViewContentBottomPadding, 0)
-    }
-
-    private var summaryFallbackHeight: CGFloat {
-#if os(iOS)
-        if horizontalSizeClass == .regular { return 120 }
-        if verticalSizeClass == .compact { return 85 }
-        return 90
-#else
-        return 95
-#endif
-    }
-
-    private var minimumSelectedDayContentHeight: CGFloat {
-#if os(iOS)
-        if verticalSizeClass == .compact { return 44 }
-        return 56
-#else
-        return 60
-#endif
-    }
-
-    private var targetSummaryCardHeight: CGFloat {
-        let fallback = summaryFallbackHeight
-        let weeklyHeight = weeklySummaryIntrinsicHeight
-        let headerAllowance: CGFloat = selectedDayHeaderHeight > 0
-            ? selectedDayHeaderHeight + minimumSelectedDayContentHeight
-            : 0
-
-        let intrinsic = max(weeklyHeight, headerAllowance)
-        if intrinsic <= 0 { return fallback }
-        return max(fallback, intrinsic)
     }
 
     private func beginAddingIncome(for date: Date? = nil) {
@@ -147,12 +114,13 @@ struct IncomeView: View {
                         addIncomeButton
                     }
 
-                    VStack(spacing: 8) {
+                    VStack(spacing: DS.Spacing.m) {
                         // Calendar section in a padded card
                         calendarSection
 
-                        // Weekly summary and selected day entries displayed side-by-side
-                        summarySplit
+                        selectedDaySection
+
+                        weeklySummaryBar
                     }
                     .padding(.horizontal, DS.Spacing.l)
                 }
@@ -322,44 +290,13 @@ struct IncomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 
-    // MARK: - Summary Layout
-    @ViewBuilder
-    private var summarySplit: some View {
-        GeometryReader { proxy in
-            let cardHeight = max(targetSummaryCardHeight, proxy.size.height)
-
-            HStack(alignment: .top, spacing: DS.Spacing.m) {
-                weeklySummaryBar
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: cardHeight, alignment: .top)
-
-                selectedDaySection
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: cardHeight, alignment: .top)
-            }
-        }
-        .frame(minHeight: targetSummaryCardHeight)
-        .onPreferenceChange(WeeklySummaryHeightPreferenceKey.self) { height in
-            guard height > 0 else { return }
-            if weeklySummaryIntrinsicHeight != height {
-                weeklySummaryIntrinsicHeight = height
-            }
-        }
-        .onPreferenceChange(SelectedDayHeaderHeightPreferenceKey.self) { height in
-            guard height > 0 else { return }
-            if selectedDayHeaderHeight != height {
-                selectedDayHeaderHeight = height
-            }
-        }
-    }
-
     // MARK: - Weekly Summary Bar
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
     private var weeklySummaryBar: some View {
         let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
 
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: "calendar")
                     .imageScale(.large)
@@ -378,46 +315,8 @@ struct IncomeView: View {
             Text("\(formattedDate(start)) – \(formattedDate(end))")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer(minLength: 0)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            themeManager.selectedTheme.secondaryBackground,
-            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-        )
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-        .shadow(radius: 1, y: 1)
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(
-                        key: WeeklySummaryHeightPreferenceKey.self,
-                        value: proxy.size.height
-                    )
-            }
-        )
-    }
-
-    // MARK: - Selected Day Section (WITH swipe to delete & edit)
-    /// Displays the selected date and a list of income entries for that day.
-    /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
-    @ViewBuilder
-    private var selectedDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            let date = viewModel.selectedDate ?? Date()
-            let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
-
-            // MARK: Section Title — Selected Day
-            selectedDayHeader(for: date)
-
-            selectedDayContent(for: entries, date: date)
-        }
-        .frame(maxHeight: .infinity, alignment: .topLeading)
-        .padding()
+        .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             themeManager.selectedTheme.secondaryBackground,
@@ -426,7 +325,31 @@ struct IncomeView: View {
         .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .shadow(radius: 1, y: 1)
-        .layoutPriority(2)
+    }
+
+    // MARK: - Selected Day Section (WITH swipe to delete & edit)
+    /// Displays the selected date and a list of income entries for that day.
+    /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
+    @ViewBuilder
+    private var selectedDaySection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            let date = viewModel.selectedDate ?? Date()
+            let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
+
+            // MARK: Section Title — Selected Day
+            selectedDayHeader(for: date)
+
+            selectedDayContent(for: entries, date: date)
+        }
+        .padding(DS.Spacing.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            themeManager.selectedTheme.secondaryBackground,
+            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+        )
+        .compositingGroup()
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .shadow(radius: 1, y: 1)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
                 viewModel.delete(income: income, scope: .all)
@@ -466,22 +389,12 @@ struct IncomeView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(
-                        key: SelectedDayHeaderHeightPreferenceKey.self,
-                        value: proxy.size.height + DS.Spacing.m
-                    )
-            }
-        )
     }
 
     @ViewBuilder
     private func selectedDayContent(for entries: [Income], date: Date) -> some View {
         if entries.isEmpty {
             selectedDayEmptyState(for: date)
-            Spacer(minLength: 0)
         } else {
             incomeList(for: entries)
         }
@@ -511,7 +424,6 @@ struct IncomeView: View {
         .listStyle(.plain)
         .ub_hideScrollIndicators()
         .applyIfAvailableScrollContentBackgroundHidden()
-        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     // MARK: - Calendar Navigation Helpers
@@ -689,23 +601,6 @@ private extension View {
         } else {
             self
         }
-    }
-}
-
-// MARK: - Height Preference Keys
-private struct WeeklySummaryHeightPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private struct SelectedDayHeaderHeightPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
     }
 }
 
