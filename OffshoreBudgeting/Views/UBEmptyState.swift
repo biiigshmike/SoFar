@@ -111,15 +111,7 @@ struct UBEmptyState: View {
 
         #if os(iOS)
         if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-            }
-            .tint(tint)
-            .buttonStyle(.glass)
-            .controlSize(.large)
-            .frame(maxWidth: 320)
+            glassPrimaryButton(title: title, tint: tint, action: action)
         } else if #available(iOS 15.0, *) {
             Button(action: action) {
                 primaryButtonLabel(title: title)
@@ -132,16 +124,7 @@ struct UBEmptyState: View {
         }
         #else
         if capabilities.supportsOS26Translucency, #available(macOS 15.0, tvOS 18.0, *) {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-            }
-            .tint(tint)
-            .buttonStyle(.glass)
-            .buttonBorderShape(.capsule)
-            .controlSize(.large)
-            .frame(maxWidth: 320)
+            glassPrimaryButton(title: title, tint: tint, action: action)
         } else if #available(macOS 13.0, tvOS 15.0, *) {
             Button(action: action) {
                 primaryButtonLabel(title: title)
@@ -172,6 +155,37 @@ struct UBEmptyState: View {
         Label(title, systemImage: "plus")
             .labelStyle(.titleAndIcon)
     }
+
+#if os(iOS)
+    @available(iOS 18.0, *)
+    @ViewBuilder
+    private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            primaryButtonLabel(title: title)
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .frame(maxWidth: .infinity)
+        }
+        .tint(tint)
+        .buttonStyle(.glass)
+        .controlSize(.large)
+        .frame(maxWidth: 320)
+    }
+#else
+    @available(macOS 15.0, tvOS 18.0, *)
+    @ViewBuilder
+    private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            primaryButtonLabel(title: title)
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .frame(maxWidth: .infinity)
+        }
+        .tint(tint)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .frame(maxWidth: 320)
+    }
+#endif
 
     private var primaryButtonTint: Color {
         themeManager.selectedTheme.resolvedTint
