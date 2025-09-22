@@ -88,6 +88,8 @@ struct IncomeView: View {
     private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat { 340 }
 #endif
 
+    private let calendarSectionContentPadding: CGFloat = 10
+
     private func minimumCardHeights(using proxy: RootTabPageProxy?) -> IncomeCardHeights {
         IncomeCardHeights(
             calendar: calendarCardMinimumHeight(using: proxy),
@@ -190,6 +192,10 @@ struct IncomeView: View {
     private func landscapeLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
         let minimums = minimumCardHeights(using: proxy)
         let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight, minimums: minimums)
+        let selectedHeight = max(heights.selected, minimums.selected)
+        let summaryHeight = max(heights.summary, minimums.summary)
+        let rightColumnHeight = selectedHeight + DS.Spacing.m + summaryHeight
+        let calendarCardHeight = max(rightColumnHeight - (calendarSectionContentPadding * 2), minimums.calendar)
         let horizontalPadding = DS.Spacing.l * 2
         let columnSpacing = DS.Spacing.l
         let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
@@ -197,17 +203,17 @@ struct IncomeView: View {
         let calendarWidth = max(availableWidth * calendarFraction, 0)
 
         return HStack(alignment: .top, spacing: columnSpacing) {
-            calendarSection(using: proxy, cardHeight: heights.calendar)
+            calendarSection(using: proxy, cardHeight: calendarCardHeight)
                 .frame(width: calendarWidth, alignment: .top)
 
             VStack(spacing: DS.Spacing.m) {
                 selectedDaySection(minHeight: minimums.selected)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: max(heights.selected, minimums.selected), alignment: .top)
+                    .frame(height: selectedHeight, alignment: .top)
 
                 weeklySummaryBar(minHeight: minimums.summary)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: max(heights.summary, minimums.summary), alignment: .top)
+                    .frame(height: summaryHeight, alignment: .top)
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
@@ -459,7 +465,7 @@ struct IncomeView: View {
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
-        .padding(10)
+        .padding(calendarSectionContentPadding)
         .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
     }
 
