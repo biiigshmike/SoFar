@@ -107,9 +107,20 @@ struct UBEmptyState: View {
     // MARK: Primary Button Helpers
     @ViewBuilder
     private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
-        if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-            let tint = isOnboardingPresentation ? onboardingTint : primaryButtonTint
+        let tint = isOnboardingPresentation ? onboardingTint : primaryButtonTint
 
+        #if os(iOS)
+        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .tint(tint)
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .frame(maxWidth: 320)
+        } else if #available(iOS 15.0, *) {
             Button(action: action) {
                 primaryButtonLabel(title: title)
                     .frame(maxWidth: .infinity)
@@ -119,6 +130,18 @@ struct UBEmptyState: View {
         } else {
             legacyPrimaryButton(title: title, action: action)
         }
+        #else
+        if #available(macOS 13.0, tvOS 15.0, *) {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(TranslucentButtonStyle(tint: tint))
+            .frame(maxWidth: 320)
+        } else {
+            legacyPrimaryButton(title: title, action: action)
+        }
+        #endif
     }
 
     @ViewBuilder
