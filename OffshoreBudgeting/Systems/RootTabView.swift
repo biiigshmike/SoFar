@@ -325,7 +325,7 @@ private extension RootTabView {
     }
 
     func copyAppearance(_ appearance: UITabBarAppearance) -> UITabBarAppearance {
-        appearance.copy() as? UITabBarAppearance ?? appearance
+        appearance.copy() as! UITabBarAppearance
     }
 
     func tabBarControllers(in root: UIViewController?) -> [UITabBarController] {
