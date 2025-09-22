@@ -923,10 +923,15 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     private let cornerRadius: CGFloat = 17
 
     func body(content: Content) -> some View {
-        content
-            .buttonStyle(.glass)
-            .buttonBorderShape(.roundedRectangle(radius: cornerRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        Group {
+            if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *) {
+                content.buttonStyle(.glass)
+            } else {
+                // Fallback for earlier OS versions
+                content.buttonStyle(.bordered)
+            }
+        }
+        .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
-
