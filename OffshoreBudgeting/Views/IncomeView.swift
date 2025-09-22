@@ -67,6 +67,8 @@ struct IncomeView: View {
     private let calendarContentHeight: CGFloat = 340
 #endif
 
+    private let landscapeLayoutMinimumWidth: CGFloat = 780
+
     private struct IncomeCardHeights {
         let calendar: CGFloat
         let selected: CGFloat
@@ -143,7 +145,10 @@ struct IncomeView: View {
     private func content(using proxy: RootTabPageProxy) -> some View {
         let availableHeight = max(proxy.availableHeightBelowHeader, 0)
 
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+        if proxy.layoutContext.isLandscape,
+           proxy.layoutContext.containerSize.width >= landscapeLayoutMinimumWidth {
+            landscapeLayout(using: proxy, availableHeight: availableHeight)
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
             ViewThatFits(in: .vertical) {
                 nonScrollingLayout(using: proxy, availableHeight: availableHeight)
                 scrollingLayout(using: proxy)
@@ -151,6 +156,34 @@ struct IncomeView: View {
         } else {
             scrollingLayout(using: proxy)
         }
+    }
+
+    private func landscapeLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
+        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight)
+        let horizontalPadding = DS.Spacing.l * 2
+        let columnSpacing = DS.Spacing.l
+        let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
+        let calendarFraction: CGFloat = 0.58
+        let calendarWidth = max(availableWidth * calendarFraction, 0)
+
+        return HStack(alignment: .top, spacing: columnSpacing) {
+            calendarSection(cardHeight: heights.calendar)
+                .frame(width: calendarWidth, alignment: .top)
+
+            VStack(spacing: DS.Spacing.m) {
+                selectedDaySection
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
+
+                weeklySummaryBar
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
+        .frame(minHeight: minimumNonScrollingHeight(using: proxy), alignment: .top)
     }
 
     private func nonScrollingLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
