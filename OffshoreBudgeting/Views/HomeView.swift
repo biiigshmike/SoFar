@@ -353,12 +353,15 @@ struct HomeView: View {
                         ),
                         displaysBudgetTitle: false
                     )
+                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+                    .id(first.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #else
                     BudgetDetailsView(budgetObjectID: first.id)
+                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+                    .id(first.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #endif
-                        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                        .id(first.id)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 } else {
                     UBEmptyState(
                         iconSystemName: "rectangle.on.rectangle.slash",
