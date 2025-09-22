@@ -70,8 +70,22 @@ struct IncomeView: View {
 
     private var bottomPadding: CGFloat {
 #if os(iOS)
-        let inset = safeAreaInsets.bottom
-        return inset > 0 ? inset : DS.Spacing.s
+        let bottomInset = safeAreaInsets.bottom
+        let tabChromeHeight: CGFloat
+
+        if let horizontalSizeClass {
+            tabChromeHeight = horizontalSizeClass == .compact ? 49 : 50
+        } else {
+            tabChromeHeight = 49
+        }
+
+        let safeAreaOverflow = max(0, bottomInset - tabChromeHeight)
+
+        if bottomInset > 0 {
+            return safeAreaOverflow
+        } else {
+            return DS.Spacing.s
+        }
 #else
         return DS.Spacing.m
 #endif
