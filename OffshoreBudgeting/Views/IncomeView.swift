@@ -53,14 +53,14 @@ struct IncomeView: View {
 
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
-    private let calendarCardMinimumHeight: CGFloat = 340
+    private let calendarCardMinimumHeight: CGFloat = 300
     private var calendarContentHeight: CGFloat {
-        if horizontalSizeClass == .regular { return 480 }
-        if verticalSizeClass == .compact { return 340 }
-        return 360
+        if horizontalSizeClass == .regular { return 440 }
+        if verticalSizeClass == .compact { return 300 }
+        return 320
     }
 #else
-    private let calendarContentHeight: CGFloat = 360
+    private let calendarContentHeight: CGFloat = 340
 #endif
 
     private var bottomPadding: CGFloat {
@@ -75,7 +75,7 @@ struct IncomeView: View {
     /// Minimum padding applied directly to the scroll view content so that the
     /// cards never butt up against the edge while we wait for safe area values
     /// to resolve.
-    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.m }
+    private var scrollViewContentBottomPadding: CGFloat { DS.Spacing.s }
 
     /// Additional spacing inserted via a safe-area inset once we know the
     /// device's actual bottom inset.  This keeps the initial layout stable so
@@ -86,20 +86,20 @@ struct IncomeView: View {
 
     private var summaryFallbackHeight: CGFloat {
 #if os(iOS)
-        if horizontalSizeClass == .regular { return 280 }
-        if verticalSizeClass == .compact { return 220 }
-        return 240
+        if horizontalSizeClass == .regular { return 230 }
+        if verticalSizeClass == .compact { return 170 }
+        return 180
 #else
-        return 240
+        return 190
 #endif
     }
 
     private var minimumSelectedDayContentHeight: CGFloat {
 #if os(iOS)
-        if verticalSizeClass == .compact { return 90 }
-        return 120
+        if verticalSizeClass == .compact { return 64 }
+        return 88
 #else
-        return 140
+        return 100
 #endif
     }
 
