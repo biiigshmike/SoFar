@@ -81,7 +81,7 @@ struct HomeView: View {
                 triggerAddExpenseFromMenu(.budgetDetailsRequestAddVariableExpense)
             }
         }
-        .onChange(of: isShowingAddExpenseMenu) { _, newValue in
+        .ub_onChange(of: isShowingAddExpenseMenu) { newValue in
             if !newValue {
                 addMenuTargetBudgetID = nil
             }
