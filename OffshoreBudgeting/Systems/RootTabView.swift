@@ -359,7 +359,7 @@ private final class TabBarAppearanceSignatureBox: NSObject {
 
 private extension UITabBar {
     private enum AssociatedKeys {
-        static var appearanceSignature = "ub_appearanceSignature"
+        static var appearanceSignature: UInt8 = 0
     }
 
     var ub_cachedAppearanceSignature: TabBarAppearanceSignature? {
