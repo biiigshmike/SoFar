@@ -255,24 +255,25 @@ struct IncomeView: View {
             HStack(spacing: DS.Spacing.s) {
                 Button("<<") { goToPreviousMonth() }
                     .accessibilityLabel("Previous Month")
-                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                    .buttonStyle(.glass)
 
                 Button("<") { goToPreviousDay() }
                     .accessibilityLabel("Previous Day")
-                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                    .buttonStyle(.glass)
 
                 Button("Today") { goToToday() }
                     .accessibilityLabel("Jump to Today")
-                    .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+                    .buttonStyle(.glass)
 
                 Button(">") { goToNextDay() }
                     .accessibilityLabel("Next Day")
-                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                    .buttonStyle(.glass)
 
                 Button(">>") { goToNextMonth() }
                     .accessibilityLabel("Next Month")
-                    .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                    .buttonStyle(.glass)
             }
+            .controlSize(.small)
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call
             MCalendarView(
@@ -363,9 +364,6 @@ struct IncomeView: View {
 
         VStack(alignment: .leading, spacing: DS.Spacing.m) {
             HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "calendar")
-                    .imageScale(.large)
-
                 VStack(alignment: .leading, spacing: DS.Spacing.s) {
                     Text("Week Total Income")
                         .font(.headline)
