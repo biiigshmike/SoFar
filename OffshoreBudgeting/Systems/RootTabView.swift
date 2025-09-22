@@ -8,6 +8,7 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+import ObjectiveC
 #endif
 
 struct RootTabView: View {
@@ -101,7 +102,7 @@ struct RootTabView: View {
     }
 
     /// Ensures the tab bar matches the current theme and hides the default top border.
-    private func updateTabBarAppearance() {
+    @MainActor private func updateTabBarAppearance() {
         #if canImport(UIKit)
         let theme = themeManager.selectedTheme
         let palette = theme.tabBarPalette
@@ -124,65 +125,60 @@ struct RootTabView: View {
             return
         }
 
-        DispatchQueue.main.async {
-            if lastTabBarAppearanceSignature == newSignature {
-                return
-            }
-
-            guard !isUpdatingTabBarAppearance else {
-                return
-            }
-
-            isUpdatingTabBarAppearance = true
-            defer {
-                lastTabBarAppearanceSignature = newSignature
-                isUpdatingTabBarAppearance = false
-            }
-
-            let appearance = UITabBarAppearance()
-
-            if theme.usesGlassMaterials && capabilities.supportsOS26Translucency {
-                appearance.configureWithTransparentBackground()
-                let blurStyle = configuration.glass.material.uiBlurEffectStyle
-                appearance.backgroundEffect = UIBlurEffect(style: blurStyle)
-
-                let baseColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
-                let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
-                appearance.backgroundColor = baseColor.withAlphaComponent(opacity)
-            } else if theme.usesGlassMaterials {
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
-            } else {
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundEffect = nil
-                appearance.backgroundColor = resolveUIColor(theme.background, for: currentColorScheme)
-            }
-
-            applyTabItemAppearance(
-                to: appearance,
-                palette: palette,
-                colorScheme: currentColorScheme
-            )
-
-            let inactiveTint = resolveUIColor(palette.inactive, for: currentColorScheme)
-            let activeTint = resolveUIColor(palette.active, for: currentColorScheme)
-
-            appearance.shadowColor = .clear
-
-            let globalAppearance = UITabBar.appearance()
-            globalAppearance.unselectedItemTintColor = inactiveTint
-            globalAppearance.standardAppearance = copyAppearance(appearance)
-            globalAppearance.scrollEdgeAppearance = copyAppearance(appearance)
-            globalAppearance.tintColor = activeTint
-            globalAppearance.isTranslucent = theme.usesGlassMaterials
-
-            applyAppearanceToVisibleTabBars(
-                appearance: appearance,
-                palette: palette,
-                isTranslucent: theme.usesGlassMaterials,
-                colorScheme: currentColorScheme
-            )
+        guard !isUpdatingTabBarAppearance else {
+            return
         }
+
+        isUpdatingTabBarAppearance = true
+        defer {
+            lastTabBarAppearanceSignature = newSignature
+            isUpdatingTabBarAppearance = false
+        }
+
+        let appearance = UITabBarAppearance()
+
+        if theme.usesGlassMaterials && capabilities.supportsOS26Translucency {
+            appearance.configureWithTransparentBackground()
+            let blurStyle = configuration.glass.material.uiBlurEffectStyle
+            appearance.backgroundEffect = UIBlurEffect(style: blurStyle)
+
+            let baseColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
+            let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
+            appearance.backgroundColor = baseColor.withAlphaComponent(opacity)
+        } else if theme.usesGlassMaterials {
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
+        } else {
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundEffect = nil
+            appearance.backgroundColor = resolveUIColor(theme.background, for: currentColorScheme)
+        }
+
+        applyTabItemAppearance(
+            to: appearance,
+            palette: palette,
+            colorScheme: currentColorScheme
+        )
+
+        let inactiveTint = resolveUIColor(palette.inactive, for: currentColorScheme)
+        let activeTint = resolveUIColor(palette.active, for: currentColorScheme)
+
+        appearance.shadowColor = .clear
+
+        let globalAppearance = UITabBar.appearance()
+        globalAppearance.unselectedItemTintColor = inactiveTint
+        globalAppearance.standardAppearance = copyAppearance(appearance)
+        globalAppearance.scrollEdgeAppearance = copyAppearance(appearance)
+        globalAppearance.tintColor = activeTint
+        globalAppearance.isTranslucent = theme.usesGlassMaterials
+
+        applyAppearanceToVisibleTabBars(
+            appearance: appearance,
+            palette: palette,
+            isTranslucent: theme.usesGlassMaterials,
+            colorScheme: currentColorScheme,
+            signature: newSignature
+        )
         #endif
     }
 }
@@ -282,11 +278,12 @@ private extension RootTabView {
         ]
     }
 
-    func applyAppearanceToVisibleTabBars(
+    @MainActor func applyAppearanceToVisibleTabBars(
         appearance: UITabBarAppearance,
         palette: AppTheme.TabBarPalette,
         isTranslucent: Bool,
-        colorScheme: ColorScheme
+        colorScheme: ColorScheme,
+        signature: TabBarAppearanceSignature
     ) {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
@@ -294,6 +291,10 @@ private extension RootTabView {
             .forEach { window in
                 tabBarControllers(in: window.rootViewController).forEach { controller in
                     let tabBar = controller.tabBar
+                    guard tabBar.ub_cachedAppearanceSignature != signature else {
+                        return
+                    }
+
                     let standardAppearance = copyAppearance(appearance)
                     let scrollEdgeAppearance = copyAppearance(appearance)
                     tabBar.standardAppearance = standardAppearance
@@ -301,6 +302,7 @@ private extension RootTabView {
                     tabBar.tintColor = resolveUIColor(palette.active, for: colorScheme)
                     tabBar.unselectedItemTintColor = resolveUIColor(palette.inactive, for: colorScheme)
                     tabBar.isTranslucent = isTranslucent
+                    tabBar.ub_cachedAppearanceSignature = signature
                 }
             }
     }
@@ -348,6 +350,48 @@ private extension RootTabView {
         }
 
         return controllers
+    }
+}
+
+private final class TabBarAppearanceSignatureBox: NSObject {
+    let signature: TabBarAppearanceSignature
+
+    init(signature: TabBarAppearanceSignature) {
+        self.signature = signature
+    }
+}
+
+private extension UITabBar {
+    private enum AssociatedKeys {
+        static var appearanceSignature = "ub_appearanceSignature"
+    }
+
+    var ub_cachedAppearanceSignature: TabBarAppearanceSignature? {
+        get {
+            guard let box = objc_getAssociatedObject(self, &AssociatedKeys.appearanceSignature) as? TabBarAppearanceSignatureBox else {
+                return nil
+            }
+
+            return box.signature
+        }
+        set {
+            if let signature = newValue {
+                let box = TabBarAppearanceSignatureBox(signature: signature)
+                objc_setAssociatedObject(
+                    self,
+                    &AssociatedKeys.appearanceSignature,
+                    box,
+                    .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                )
+            } else {
+                objc_setAssociatedObject(
+                    self,
+                    &AssociatedKeys.appearanceSignature,
+                    nil,
+                    .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                )
+            }
+        }
     }
 }
 
