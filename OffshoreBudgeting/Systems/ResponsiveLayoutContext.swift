@@ -22,7 +22,9 @@ struct ResponsiveLayoutContext: Equatable {
         case unspecified
 
         static var current: Idiom {
-            #if canImport(UIKit)
+            #if os(watchOS)
+            return .watch
+            #elseif canImport(UIKit)
             switch UIDevice.current.userInterfaceIdiom {
             case .phone:
                 return .phone
@@ -34,8 +36,6 @@ struct ResponsiveLayoutContext: Equatable {
                 return .tv
             case .carPlay:
                 return .car
-            case .watch:
-                return .watch
             default:
                 if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                     if UIDevice.current.userInterfaceIdiom == .vision {
