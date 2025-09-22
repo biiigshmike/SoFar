@@ -44,9 +44,12 @@ struct HomeView: View {
 
     // MARK: Body
     var body: some View {
-        mainLayout
-        // Make the whole screen participate so the ZStack gets the full height.
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        RootTabPageScaffold {
+            headerSection
+        } content: { proxy in
+            contentContainer
+                .rootTabContentPadding(proxy, horizontal: 0)
+        }
         .ub_tabNavigationTitle("Home")
         .refreshable { await vm.refresh() }
         .task {
@@ -85,24 +88,6 @@ struct HomeView: View {
             if !newValue {
                 addMenuTargetBudgetID = nil
             }
-        }
-        .ub_surfaceBackground(
-            themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration,
-            ignoringSafeArea: .all
-        )
-    }
-
-    // MARK: Root Layout
-    private var mainLayout: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            headerSection
-
-            // MARK: Content Container
-            // ZStack gives us a stable area below the header.
-            // - When empty: we show UBEmptyState centered here.
-            // - When non-empty: we show the budget details here.
-            contentContainer
         }
     }
 

@@ -34,7 +34,6 @@ struct IncomeView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
     @Environment(\.platformCapabilities) private var capabilities
     // MARK: View Model
     /// External owner should initialize and provide the view model; it manages selection and CRUD.
@@ -68,28 +67,6 @@ struct IncomeView: View {
     private let calendarContentHeight: CGFloat = 340
 #endif
 
-    private var bottomPadding: CGFloat {
-#if os(iOS)
-        // When embedded inside the tab view, the system safe area already
-        // positions our content above the tab bar/home indicator. Only keep a
-        // tiny visual gutter so the cards feel anchored without the exaggerated
-        // gap that made the layout look clipped.
-        return safeAreaInsets.bottom > 0 ? DS.Spacing.xs : DS.Spacing.s
-#else
-        return DS.Spacing.m
-#endif
-    }
-
-    private var estimatedHeaderHeight: CGFloat {
-        headerBaselineHeight + safeAreaInsets.top
-    }
-
-    private var minimumNonScrollingHeight: CGFloat {
-        let baseCards = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
-        let verticalSpacing = DS.Spacing.l + (DS.Spacing.m * 2)
-        return estimatedHeaderHeight + verticalSpacing + baseCards + bottomPadding
-    }
-
     private struct IncomeCardHeights {
         let calendar: CGFloat
         let selected: CGFloat
@@ -121,11 +98,13 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        GeometryReader { proxy in
-            layout(for: proxy.size)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        RootTabPageScaffold {
+            RootViewTopPlanes(title: "Income") {
+                addIncomeButton
+            }
+        } content: { proxy in
+            content(using: proxy)
         }
-        .ub_captureSafeAreaInsets()
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
             viewModel.reloadForSelectedDay(forceMonthReload: false)
@@ -158,87 +137,79 @@ struct IncomeView: View {
             navigate(to: initial)
         }
         .ub_tabNavigationTitle("Income")
-        .ub_surfaceBackground(
-            themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration,
-            ignoringSafeArea: .all
-        )
     }
 
     @ViewBuilder
-    private func layout(for size: CGSize) -> some View {
+    private func content(using proxy: RootTabPageProxy) -> some View {
+        let availableHeight = max(proxy.availableHeightBelowHeader, 0)
+
         if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
             ViewThatFits(in: .vertical) {
-                nonScrollingLayout(for: size)
-                    .frame(minHeight: minimumNonScrollingHeight, alignment: .top)
-                scrollingLayout(for: size)
+                nonScrollingLayout(using: proxy, availableHeight: availableHeight)
+                scrollingLayout(using: proxy)
             }
         } else {
-            scrollingLayout(for: size)
+            scrollingLayout(using: proxy)
         }
     }
 
-    private func nonScrollingLayout(for size: CGSize) -> some View {
-        let heights = adaptiveCardHeights(for: size)
+    private func nonScrollingLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
+        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight)
 
-        return VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            RootViewTopPlanes(title: "Income") {
-                addIncomeButton
-            }
+        return VStack(spacing: DS.Spacing.m) {
+            calendarSection(cardHeight: heights.calendar)
 
+            selectedDaySection
+                .frame(maxHeight: .infinity, alignment: .top)
+                .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
+
+            weeklySummaryBar
+                .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
+        .frame(minHeight: minimumNonScrollingHeight(using: proxy), alignment: .top)
+    }
+
+    private func scrollingLayout(using proxy: RootTabPageProxy) -> some View {
+        ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.m) {
-                calendarSection(cardHeight: heights.calendar)
+                calendarSection()
 
                 selectedDaySection
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
 
                 weeklySummaryBar
-                    .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
-            }
-            .padding(.horizontal, DS.Spacing.l)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.bottom, bottomPadding)
-    }
-
-    private func scrollingLayout(for size: CGSize) -> some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                RootViewTopPlanes(title: "Income") {
-                    addIncomeButton
-                }
-
-                VStack(spacing: DS.Spacing.m) {
-                    calendarSection()
-
-                    selectedDaySection
-
-                    weeklySummaryBar
-                }
-                .padding(.horizontal, DS.Spacing.l)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: size.height, alignment: .top)
-            .padding(.bottom, bottomPadding)
+            .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
+            .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
         }
     }
 
-    private func adaptiveCardHeights(for size: CGSize) -> IncomeCardHeights {
+    private func adaptiveCardHeights(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> IncomeCardHeights {
         let cardSpacing = DS.Spacing.m * 2
         let baseTotal = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
-        let availableHeight = max(size.height - estimatedHeaderHeight - bottomPadding - DS.Spacing.l, baseTotal + cardSpacing)
-        let extra = max(availableHeight - baseTotal - cardSpacing, 0)
+        let bottomPadding = proxy.tabBarGutterSpacing
+        let adjustedHeight = max(availableHeight - bottomPadding, baseTotal + cardSpacing)
+        let extra = max(adjustedHeight - baseTotal - cardSpacing, 0)
 
         let calendar = calendarCardMinimumHeight + (extra * 0.22)
         let summary = weeklySummaryCardMinimumHeight + (extra * 0.08)
-        let selected = availableHeight - calendar - summary - cardSpacing
+        let selected = adjustedHeight - calendar - summary - cardSpacing
 
         return IncomeCardHeights(
             calendar: max(calendar, calendarCardMinimumHeight),
             selected: max(selected, selectedDayCardMinimumHeight),
             summary: max(summary, weeklySummaryCardMinimumHeight)
         )
+    }
+
+    private func minimumNonScrollingHeight(using proxy: RootTabPageProxy) -> CGFloat {
+        let baseCards = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
+        let verticalSpacing = proxy.spacing + (DS.Spacing.m * 2)
+        let fallbackHeader = headerBaselineHeight + proxy.effectiveSafeAreaInsets.top
+        let headerHeight = proxy.headerHeight > 0 ? proxy.headerHeight : fallbackHeader
+        return headerHeight + verticalSpacing + baseCards + proxy.tabBarGutterSpacing
     }
 
     // MARK: - Calendar Section
