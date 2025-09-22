@@ -50,22 +50,51 @@ struct IncomeView: View {
 
 #if os(iOS)
     /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
-    private let calendarCardMinimumHeight: CGFloat = 300
-    private let selectedDayCardMinimumHeight: CGFloat = 320
-    private let weeklySummaryCardMinimumHeight: CGFloat = 140
     private let headerBaselineHeight: CGFloat = 92
-    private var calendarContentHeight: CGFloat {
+
+    private func isCompactHeightScenario(using proxy: RootTabPageProxy?) -> Bool {
+        if verticalSizeClass == .compact { return true }
+        if let proxy, proxy.layoutContext.isLandscape { return true }
+        return false
+    }
+
+    private func calendarCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat {
+        isCompactHeightScenario(using: proxy) ? 260 : 300
+    }
+
+    private func selectedDayCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat {
+        isCompactHeightScenario(using: proxy) ? 280 : 320
+    }
+
+    private func weeklySummaryCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat {
+        isCompactHeightScenario(using: proxy) ? 120 : 140
+    }
+
+    private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat {
         if horizontalSizeClass == .regular { return 440 }
+        if proxy?.layoutContext.isLandscape == true { return 280 }
         if verticalSizeClass == .compact { return 300 }
         return 320
     }
 #else
-    private let calendarCardMinimumHeight: CGFloat = 320
-    private let selectedDayCardMinimumHeight: CGFloat = 260
-    private let weeklySummaryCardMinimumHeight: CGFloat = 160
     private let headerBaselineHeight: CGFloat = 84
-    private let calendarContentHeight: CGFloat = 340
+
+    private func calendarCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 320 }
+
+    private func selectedDayCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 260 }
+
+    private func weeklySummaryCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 160 }
+
+    private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat { 340 }
 #endif
+
+    private func minimumCardHeights(using proxy: RootTabPageProxy?) -> IncomeCardHeights {
+        IncomeCardHeights(
+            calendar: calendarCardMinimumHeight(using: proxy),
+            selected: selectedDayCardMinimumHeight(using: proxy),
+            summary: weeklySummaryCardMinimumHeight(using: proxy)
+        )
+    }
 
     private let landscapeLayoutMinimumWidth: CGFloat = 780
 
@@ -159,7 +188,8 @@ struct IncomeView: View {
     }
 
     private func landscapeLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
-        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight)
+        let minimums = minimumCardHeights(using: proxy)
+        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight, minimums: minimums)
         let horizontalPadding = DS.Spacing.l * 2
         let columnSpacing = DS.Spacing.l
         let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
@@ -167,17 +197,17 @@ struct IncomeView: View {
         let calendarWidth = max(availableWidth * calendarFraction, 0)
 
         return HStack(alignment: .top, spacing: columnSpacing) {
-            calendarSection(cardHeight: heights.calendar)
+            calendarSection(using: proxy, cardHeight: heights.calendar)
                 .frame(width: calendarWidth, alignment: .top)
 
             VStack(spacing: DS.Spacing.m) {
-                selectedDaySection
+                selectedDaySection(minHeight: minimums.selected)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
+                    .frame(height: max(heights.selected, minimums.selected), alignment: .top)
 
-                weeklySummaryBar
+                weeklySummaryBar(minHeight: minimums.summary)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
+                    .frame(height: max(heights.summary, minimums.summary), alignment: .top)
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
@@ -187,17 +217,18 @@ struct IncomeView: View {
     }
 
     private func nonScrollingLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
-        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight)
+        let minimums = minimumCardHeights(using: proxy)
+        let heights = adaptiveCardHeights(using: proxy, availableHeight: availableHeight, minimums: minimums)
 
         return VStack(spacing: DS.Spacing.m) {
-            calendarSection(cardHeight: heights.calendar)
+            calendarSection(using: proxy, cardHeight: heights.calendar)
 
-            selectedDaySection
+            selectedDaySection(minHeight: minimums.selected)
                 .frame(maxHeight: .infinity, alignment: .top)
-                .frame(height: max(heights.selected, selectedDayCardMinimumHeight), alignment: .top)
+                .frame(height: max(heights.selected, minimums.selected), alignment: .top)
 
-            weeklySummaryBar
-                .frame(height: max(heights.summary, weeklySummaryCardMinimumHeight), alignment: .top)
+            weeklySummaryBar(minHeight: minimums.summary)
+                .frame(height: max(heights.summary, minimums.summary), alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .rootTabContentPadding(proxy, horizontal: DS.Spacing.l, includeSafeArea: false)
@@ -205,13 +236,15 @@ struct IncomeView: View {
     }
 
     private func scrollingLayout(using proxy: RootTabPageProxy) -> some View {
+        let minimums = minimumCardHeights(using: proxy)
+
         ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.m) {
-                calendarSection()
+                calendarSection(using: proxy)
 
-                selectedDaySection
+                selectedDaySection(minHeight: minimums.selected)
 
-                weeklySummaryBar
+                weeklySummaryBar(minHeight: minimums.summary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
@@ -219,26 +252,32 @@ struct IncomeView: View {
         }
     }
 
-    private func adaptiveCardHeights(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> IncomeCardHeights {
+    private func adaptiveCardHeights(
+        using proxy: RootTabPageProxy,
+        availableHeight: CGFloat,
+        minimums providedMinimums: IncomeCardHeights? = nil
+    ) -> IncomeCardHeights {
         let cardSpacing = DS.Spacing.m * 2
-        let baseTotal = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
+        let minimums = providedMinimums ?? minimumCardHeights(using: proxy)
+        let baseTotal = minimums.calendar + minimums.selected + minimums.summary
         let bottomPadding = proxy.tabBarGutterSpacing
         let adjustedHeight = max(availableHeight - bottomPadding, baseTotal + cardSpacing)
         let extra = max(adjustedHeight - baseTotal - cardSpacing, 0)
 
-        let calendar = calendarCardMinimumHeight + (extra * 0.22)
-        let summary = weeklySummaryCardMinimumHeight + (extra * 0.08)
+        let calendar = minimums.calendar + (extra * 0.22)
+        let summary = minimums.summary + (extra * 0.08)
         let selected = adjustedHeight - calendar - summary - cardSpacing
 
         return IncomeCardHeights(
-            calendar: max(calendar, calendarCardMinimumHeight),
-            selected: max(selected, selectedDayCardMinimumHeight),
-            summary: max(summary, weeklySummaryCardMinimumHeight)
+            calendar: max(calendar, minimums.calendar),
+            selected: max(selected, minimums.selected),
+            summary: max(summary, minimums.summary)
         )
     }
 
     private func minimumNonScrollingHeight(using proxy: RootTabPageProxy) -> CGFloat {
-        let baseCards = calendarCardMinimumHeight + selectedDayCardMinimumHeight + weeklySummaryCardMinimumHeight
+        let minimums = minimumCardHeights(using: proxy)
+        let baseCards = minimums.calendar + minimums.selected + minimums.summary
         let verticalSpacing = proxy.spacing + (DS.Spacing.m * 2)
         let fallbackHeader = headerBaselineHeight + proxy.effectiveSafeAreaInsets.top
         let headerHeight = proxy.headerHeight > 0 ? proxy.headerHeight : fallbackHeader
@@ -249,8 +288,11 @@ struct IncomeView: View {
     /// Wraps the `MCalendarView` in a card and applies a stark black & white appearance.
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
     @ViewBuilder
-    private func calendarSection(cardHeight: CGFloat? = nil) -> some View {
-        let resolvedHeight = max(cardHeight ?? calendarContentHeight, calendarCardMinimumHeight)
+    private func calendarSection(using proxy: RootTabPageProxy, cardHeight: CGFloat? = nil) -> some View {
+        let resolvedHeight = max(
+            cardHeight ?? calendarContentHeight(using: proxy),
+            calendarCardMinimumHeight(using: proxy)
+        )
         let today = Date()
         let cal = sundayFirstCalendar
         let start = cal.date(byAdding: .year, value: -5, to: today)!
@@ -424,7 +466,7 @@ struct IncomeView: View {
     // MARK: - Weekly Summary Bar
     /// Small bar that totals the week containing the selected date.
     @ViewBuilder
-    private var weeklySummaryBar: some View {
+    private func weeklySummaryBar(minHeight: CGFloat) -> some View {
         let (start, end) = weekBounds(for: viewModel.selectedDate ?? Date())
 
         VStack(alignment: .leading, spacing: DS.Spacing.m) {
@@ -449,6 +491,7 @@ struct IncomeView: View {
         }
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: minHeight, alignment: .top)
         .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
     }
 
@@ -456,7 +499,7 @@ struct IncomeView: View {
     /// Displays the selected date and a list of income entries for that day.
     /// The list supports native swipe actions; it also scrolls when tall; pill styling preserved.
     @ViewBuilder
-    private var selectedDaySection: some View {
+    private func selectedDaySection(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.m) {
             let date = viewModel.selectedDate ?? Date()
             let entries: [Income] = viewModel.incomesForDay   // Explicit type trims solver work
@@ -468,7 +511,7 @@ struct IncomeView: View {
         }
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: selectedDayCardMinimumHeight, alignment: .top)
+        .frame(minHeight: minHeight, alignment: .top)
         .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
         .layoutPriority(2)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
