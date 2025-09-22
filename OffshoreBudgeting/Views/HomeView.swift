@@ -32,6 +32,8 @@ struct HomeView: View {
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
     @State private var editingBudget: BudgetSummary?
+    @State private var isShowingAddExpenseMenu: Bool = false
+    @State private var addMenuTargetBudgetID: NSManagedObjectID?
 
     // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
@@ -69,10 +71,10 @@ struct HomeView: View {
             titleVisibility: .visible
         ) {
             Button("Add Planned Expense") {
-                triggerAddExpense(.budgetDetailsRequestAddPlannedExpense)
+                triggerAddExpenseFromMenu(.budgetDetailsRequestAddPlannedExpense)
             }
             Button("Add Variable Expense") {
-                triggerAddExpense(.budgetDetailsRequestAddVariableExpense)
+                triggerAddExpenseFromMenu(.budgetDetailsRequestAddVariableExpense)
             }
         }
         .onChange(of: isShowingAddExpenseMenu) { _, newValue in
@@ -194,6 +196,14 @@ struct HomeView: View {
     @ViewBuilder
     private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
         let dimension = RootHeaderActionMetrics.dimension
+#if os(iOS)
+        Button {
+            presentAddExpenseMenu(for: budgetID)
+        } label: {
+            RootHeaderControlIcon(systemImage: "plus")
+        }
+        .buttonStyle(RootHeaderActionButtonStyle())
+#else
         Menu {
             Button("Add Planned Expense") {
                 triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
@@ -204,9 +214,6 @@ struct HomeView: View {
         } label: {
             RootHeaderControlIcon(systemImage: "plus")
         }
-#if os(iOS)
-        .modifier(HideMenuIndicatorIfPossible())
-#else
         .menuStyle(.borderlessButton)
 #endif
         .frame(width: dimension, height: dimension)
@@ -399,6 +406,25 @@ struct HomeView: View {
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
+    }
+
+    private func triggerAddExpenseFromMenu(_ notificationName: Notification.Name) {
+        guard let budgetID = activeAddExpenseTarget else { return }
+        isShowingAddExpenseMenu = false
+        triggerAddExpense(notificationName, budgetID: budgetID)
+    }
+
+    private func presentAddExpenseMenu(for budgetID: NSManagedObjectID) {
+        addMenuTargetBudgetID = budgetID
+        isShowingAddExpenseMenu = true
+    }
+
+    private var activeAddExpenseTarget: NSManagedObjectID? {
+        if let explicitTarget = addMenuTargetBudgetID {
+            return explicitTarget
+        }
+        guard case let .loaded(summaries) = vm.state else { return nil }
+        return summaries.first?.id
     }
 }
 
