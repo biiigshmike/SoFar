@@ -30,4 +30,15 @@ extension Notification.Name {
     /// NotificationCenter.default.post(name: .dataStoreDidChangeRemotely, object: nil)
     /// NotificationCenter.default.addObserver(forName: .dataStoreDidChangeRemotely, object: nil, queue: .main) { _ in ... }
     static let dataStoreDidChangeRemotely = Notification.Name("dataStoreDidChangeRemotely")
+
+    // MARK: - BudgetDetails Add Requests
+    /// Posted by HomeView (or other containers) to instruct the embedded
+    /// `BudgetDetailsView` to present the add planned expense flow for the
+    /// specified budget identifier.
+    static let budgetDetailsRequestAddPlannedExpense = Notification.Name("budgetDetailsRequestAddPlannedExpense")
+
+    /// Posted by HomeView (or other containers) to instruct the embedded
+    /// `BudgetDetailsView` to present the add variable expense flow for the
+    /// specified budget identifier.
+    static let budgetDetailsRequestAddVariableExpense = Notification.Name("budgetDetailsRequestAddVariableExpense")
 }

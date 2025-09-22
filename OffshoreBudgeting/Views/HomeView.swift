@@ -33,6 +33,10 @@ struct HomeView: View {
     @State private var isPresentingAddBudget: Bool = false
     @State private var editingBudget: BudgetSummary?
 
+    // MARK: Add Expense Controls
+    @State private var addMenuTargetBudgetID: NSManagedObjectID?
+    @State private var isShowingAddExpenseMenu: Bool = false
+
     // MARK: Body
     var body: some View {
         mainLayout
@@ -60,6 +64,23 @@ struct HomeView: View {
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
         .sheet(item: $editingBudget, content: makeEditBudgetView)
         .alert(item: $vm.alert, content: alert(for:))
+        .confirmationDialog(
+            "Add",
+            isPresented: $isShowingAddExpenseMenu,
+            titleVisibility: .visible
+        ) {
+            Button("Add Planned Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddPlannedExpense)
+            }
+            Button("Add Variable Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddVariableExpense)
+            }
+        }
+        .onChange(of: isShowingAddExpenseMenu) { isPresented in
+            if !isPresented {
+                addMenuTargetBudgetID = nil
+            }
+        }
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
@@ -142,7 +163,7 @@ struct HomeView: View {
             return AnyView(addBudgetButton)
         case .loaded(let summaries):
             if let first = summaries.first {
-                return AnyView(budgetActionMenu(for: first))
+                return AnyView(trailingControls(for: first))
             } else {
                 return nil
             }
@@ -155,6 +176,38 @@ struct HomeView: View {
         Color.clear
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+
+    private func trailingControls(for summary: BudgetSummary) -> some View {
+        let dimension = RootHeaderActionMetrics.dimension
+        return HStack(spacing: 0) {
+            addExpenseButton(for: summary.id)
+            Rectangle()
+                .fill(glassDividerColor)
+                .frame(width: 1, height: dimension)
+                .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+                .allowsHitTesting(false)
+            budgetActionMenu(for: summary)
+        }
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
+        let dimension = RootHeaderActionMetrics.dimension
+        Button {
+            addMenuTargetBudgetID = budgetID
+            isShowingAddExpenseMenu = true
+        } label: {
+            RootHeaderControlIcon(systemImage: "plus")
+        }
+        .frame(width: dimension, height: dimension)
+        .accessibilityLabel("Add Expense")
+#if os(iOS)
+        .buttonStyle(RootHeaderActionButtonStyle())
+#else
+        .buttonStyle(.plain)
+#endif
     }
 
     private var addBudgetButton: some View {
@@ -190,6 +243,7 @@ struct HomeView: View {
 #if os(iOS)
         .modifier(HideMenuIndicatorIfPossible())
 #endif
+        .frame(width: RootHeaderActionMetrics.dimension, height: RootHeaderActionMetrics.dimension)
     }
 
     // MARK: Sheets & Alerts
@@ -326,6 +380,18 @@ struct HomeView: View {
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
+    }
+
+    private var glassDividerColor: Color {
+        let theme = themeManager.selectedTheme
+        return theme == .system ? Color.white.opacity(0.50) : theme.resolvedTint.opacity(0.55)
+    }
+
+    private func triggerAddExpense(_ notificationName: Notification.Name) {
+        guard let target = addMenuTargetBudgetID else { return }
+        NotificationCenter.default.post(name: notificationName, object: target)
+        addMenuTargetBudgetID = nil
+        isShowingAddExpenseMenu = false
     }
 }
 

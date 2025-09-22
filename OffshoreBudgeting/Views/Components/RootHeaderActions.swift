@@ -106,7 +106,10 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
             }
 
             trailing
-                .frame(width: dimension, height: dimension)
+                .frame(minWidth: dimension,
+                       idealWidth: dimension,
+                       maxHeight: dimension,
+                       alignment: .center)
                 .contentShape(Rectangle())
                 .padding(.leading, horizontalPadding)
                 .padding(.trailing, horizontalPadding)

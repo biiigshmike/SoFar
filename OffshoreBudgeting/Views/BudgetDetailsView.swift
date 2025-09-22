@@ -10,10 +10,6 @@
 import SwiftUI
 import CoreData
 import Combine
-#if os(iOS)
-import UIKit
-#endif
-
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
 /// Planned and Variable (Unplanned) expenses. Rows live in real Lists so swipe
@@ -30,8 +26,6 @@ struct BudgetDetailsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: UI State
-    /// Controls the presentation of the “Add…” menu + sheets.
-    @State private var isShowingAddMenu = false
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
 
@@ -125,45 +119,18 @@ struct BudgetDetailsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
         }
+#if !os(iOS)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-#if os(iOS)
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    Button {
-                        isShowingAddMenu = true
-                    } label: {
-                        Label("Add Expense", systemImage: "plus")
-                    }
-                    .popover(isPresented: $isShowingAddMenu,
-                             attachmentAnchor: .rect(.bounds),
-                             arrowEdge: .top) {
-                        addMenuPopover
-                    }
-                } else {
-                    Button {
-                        isShowingAddMenu = true
-                    } label: {
-                        Label("Add Expense", systemImage: "plus")
-                    }
-                    .confirmationDialog("Add",
-                                        isPresented: $isShowingAddMenu,
-                                        titleVisibility: .visible) {
-                        Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
-                            .buttonStyle(.plain)
-                        Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
-                            .buttonStyle(.plain)
-                    }
-                }
-#else
                 Menu {
                     Button("Add Planned Expense") { isPresentingAddPlannedSheet = true }
                     Button("Add Variable Expense") { isPresentingAddUnplannedSheet = true }
                 } label: {
                     Label("Add Expense", systemImage: "plus")
                 }
-#endif
             }
         }
+#endif
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
@@ -181,6 +148,24 @@ struct BudgetDetailsView: View {
                 .receive(on: RunLoop.main)
         ) { _ in
             Task { await vm.load() }
+        }
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .budgetDetailsRequestAddPlannedExpense)
+                .receive(on: RunLoop.main)
+        ) { notification in
+            guard let target = notification.object as? NSManagedObjectID,
+                  target == budgetObjectID else { return }
+            isPresentingAddPlannedSheet = true
+        }
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .budgetDetailsRequestAddVariableExpense)
+                .receive(on: RunLoop.main)
+        ) { notification in
+            guard let target = notification.object as? NSManagedObjectID,
+                  target == budgetObjectID else { return }
+            isPresentingAddUnplannedSheet = true
         }
         //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
         // MARK: Add Sheets
@@ -200,23 +185,6 @@ struct BudgetDetailsView: View {
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
-    }
-
-    @ViewBuilder
-    private var addMenuPopover: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            Button("Add Planned Expense") {
-                isShowingAddMenu = false
-                isPresentingAddPlannedSheet = true
-            }
-            Button("Add Variable Expense") {
-                isShowingAddMenu = false
-                isPresentingAddUnplannedSheet = true
-            }
-        }
-        .buttonStyle(.plain)
-        .padding(DS.Spacing.m)
-        .frame(minWidth: 200, alignment: .leading)
     }
 
     // MARK: Helpers
