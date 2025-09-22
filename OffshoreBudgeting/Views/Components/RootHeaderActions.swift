@@ -73,15 +73,18 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
     private let leading: Leading
     private let trailing: Trailing
     private let showsDivider: Bool
+    private let hasTrailing: Bool
 
     init(
         showsDivider: Bool = true,
+        hasTrailing: Bool = true,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
     ) {
         self.leading = leading()
         self.trailing = trailing()
         self.showsDivider = showsDivider
+        self.hasTrailing = hasTrailing
     }
 
     var body: some View {
@@ -105,15 +108,17 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
                     .padding(.vertical, verticalPadding)
             }
 
-            trailing
-                .frame(minWidth: dimension,
-                       idealWidth: dimension,
-                       maxHeight: dimension,
-                       alignment: .center)
-                .contentShape(Rectangle())
-                .padding(.leading, horizontalPadding)
-                .padding(.trailing, horizontalPadding)
-                .padding(.vertical, verticalPadding)
+            if hasTrailing {
+                trailing
+                    .frame(minWidth: dimension,
+                           idealWidth: dimension,
+                           maxHeight: dimension,
+                           alignment: .center)
+                    .contentShape(Rectangle())
+                    .padding(.leading, horizontalPadding)
+                    .padding(.trailing, horizontalPadding)
+                    .padding(.vertical, verticalPadding)
+            }
         }
         .contentShape(Capsule(style: .continuous))
 
