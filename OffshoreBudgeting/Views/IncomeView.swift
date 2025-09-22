@@ -86,20 +86,20 @@ struct IncomeView: View {
 
     private var summaryFallbackHeight: CGFloat {
 #if os(iOS)
-        if horizontalSizeClass == .regular { return 115 }
-        if verticalSizeClass == .compact { return 85 }
-        return 90
+        if horizontalSizeClass == .regular { return 230 }
+        if verticalSizeClass == .compact { return 170 }
+        return 180
 #else
-        return 95
+        return 190
 #endif
     }
 
     private var minimumSelectedDayContentHeight: CGFloat {
 #if os(iOS)
-        if verticalSizeClass == .compact { return 40 }
-        return 48
+        if verticalSizeClass == .compact { return 64 }
+        return 88
 #else
-        return 54
+        return 100
 #endif
     }
 
@@ -140,26 +140,23 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                    RootViewTopPlanes(title: "Income") {
-                        addIncomeButton
-                    }
-
-                    VStack(spacing: 8) {
-                        // Calendar section in a padded card
-                        calendarSection
-
-                        // Weekly summary and selected day entries displayed side-by-side
-                        summarySplit
-                    }
-                    .padding(.horizontal, DS.Spacing.l)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                RootViewTopPlanes(title: "Income") {
+                    addIncomeButton
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, scrollViewContentBottomPadding)
-                .frame(minHeight: proxy.size.height, alignment: .top)
+
+                VStack(spacing: 8) {
+                    // Calendar section in a padded card
+                    calendarSection
+
+                    // Weekly summary and selected day entries displayed side-by-side
+                    summarySplit
+                }
+                .padding(.horizontal, DS.Spacing.l)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, scrollViewContentBottomPadding)
         }
         .ub_captureSafeAreaInsets()
         .safeAreaInset(edge: .bottom, spacing: 0) {
