@@ -450,7 +450,7 @@ private struct GlassCapsuleContainer<Content: View>: View {
             .padding(.vertical, verticalPadding)
             .contentShape(capsule)
 
-        if #available(iOS 26.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, macOS 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
                     .glassEffect(in: capsule)
@@ -985,3 +985,4 @@ private enum CurrencyFormatterHelper {
         return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
     }
 }
+

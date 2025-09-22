@@ -164,7 +164,7 @@ struct UBEmptyState: View {
 #else
     @ViewBuilder
     private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
-        if capabilities.supportsOS26Translucency, #available(macOS 15.0, tvOS 18.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macOS 26.0, tvOS 26.0, *) {
             glassStyledPrimaryButton(title: title, tint: tint, action: action)
         } else if #available(macOS 13.0, tvOS 15.0, *) {
             Button(action: action) {
@@ -178,7 +178,7 @@ struct UBEmptyState: View {
         }
     }
 
-    @available(macOS 15.0, tvOS 18.0, *)
+    @available(macOS 26.0, tvOS 26.0, *)
     @ViewBuilder
     private func glassStyledPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -198,3 +198,4 @@ struct UBEmptyState: View {
         themeManager.selectedTheme.resolvedTint
     }
 }
+

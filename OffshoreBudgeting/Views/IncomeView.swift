@@ -832,7 +832,7 @@ private struct IncomeRow: View {
         let nf = NumberFormatter()
         nf.numberStyle = .currency
         nf.locale = .current
-        return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+        return nf.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
     }
 }
 
@@ -924,12 +924,17 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         Group {
-            if #available(iOS 26.0, macOS 15.0, tvOS 18.0, *) {
+            // Only reference `.glass` when compiling with a toolchain/SDK that provides it.
+            #if swift(>=6.0)
+            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, macCatalyst 18.0, *) {
                 content.buttonStyle(.glass)
             } else {
-                // Fallback for earlier OS versions
                 content.buttonStyle(.bordered)
             }
+            #else
+            // Older toolchains/SDKs: fall back to a safe style.
+            content.buttonStyle(.bordered)
+            #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
