@@ -298,9 +298,6 @@ struct RootHeaderIconActionButton: View {
     var accessibilityLabel: String
     var accessibilityIdentifier: String?
     var action: () -> Void
-#if os(macOS)
-    @Environment(\.platformCapabilities) private var capabilities
-#endif
 
     init(
         systemImage: String,
@@ -315,32 +312,10 @@ struct RootHeaderIconActionButton: View {
     }
 
     var body: some View {
-        #if os(iOS)
         RootHeaderGlassControl {
             baseButton
                 .buttonStyle(RootHeaderActionButtonStyle())
         }
-        #else
-        let fallback = RootHeaderGlassControl {
-            baseButton
-                .buttonStyle(RootHeaderActionButtonStyle())
-        }
-
-        if capabilities.supportsOS26Translucency {
-            if #available(macOS 26.0, *) {
-                makeMacGlassButton(
-                    baseButton: baseButton,
-                    dimension: RootHeaderActionMetrics.dimension,
-                    horizontalPadding: RootHeaderGlassMetrics.horizontalPadding,
-                    verticalPadding: RootHeaderGlassMetrics.verticalPadding
-                )
-            } else {
-                fallback
-            }
-        } else {
-            fallback
-        }
-        #endif
     }
 
     private var baseButton: some View {
@@ -349,23 +324,9 @@ struct RootHeaderIconActionButton: View {
         }
         .accessibilityLabel(accessibilityLabel)
         .optionalAccessibilityIdentifier(accessibilityIdentifier)
-    }
-
 #if os(macOS)
-    @available(macOS 26.0, *)
-    private func makeMacGlassButton<Content: View>(
-        baseButton: Content,
-        dimension: CGFloat,
-        horizontalPadding: CGFloat,
-        verticalPadding: CGFloat
-    ) -> some View {
-        baseButton
-            .frame(width: dimension, height: dimension)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .contentShape(Circle())
-            .buttonBorderShape(.circle)
-            .buttonStyle(.glass)
-    }
+        .buttonBorderShape(.circle)
+        .contentShape(Circle())
 #endif
+    }
 }
