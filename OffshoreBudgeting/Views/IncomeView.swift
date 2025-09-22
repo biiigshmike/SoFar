@@ -347,23 +347,23 @@ struct IncomeView: View {
                 if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
                 } else {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
@@ -389,23 +389,23 @@ struct IncomeView: View {
                 if #available(iOS 18.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .buttonStyle(.glass)
+                        .incomeCalendarGlassButtonStyle()
                 } else {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
@@ -838,6 +838,10 @@ private struct IncomeRow: View {
 
 // MARK: - Section Styling Helpers
 private extension View {
+    func incomeCalendarGlassButtonStyle() -> some View {
+        modifier(IncomeCalendarGlassButtonModifier())
+    }
+
     @ViewBuilder
     func incomeSectionContainerStyle(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
         #if os(macOS)
@@ -911,6 +915,18 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+// MARK: - Calendar Navigation Styling
+private struct IncomeCalendarGlassButtonModifier: ViewModifier {
+    private let cornerRadius: CGFloat = 17
+
+    func body(content: Content) -> some View {
+        content
+            .buttonStyle(.glass)
+            .buttonBorderShape(.roundedRectangle(radius: cornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 
