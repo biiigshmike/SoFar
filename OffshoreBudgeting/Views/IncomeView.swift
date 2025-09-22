@@ -253,7 +253,7 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
-                if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+                if #available(iOS 26.0, macOS 26.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .buttonStyle(.glass)
