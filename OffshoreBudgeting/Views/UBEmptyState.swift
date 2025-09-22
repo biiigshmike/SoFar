@@ -109,33 +109,7 @@ struct UBEmptyState: View {
     private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
         let tint = isOnboardingPresentation ? onboardingTint : primaryButtonTint
 
-        #if os(iOS)
-        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
-            glassPrimaryButton(title: title, tint: tint, action: action)
-        } else if #available(iOS 15.0, *) {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(TranslucentButtonStyle(tint: tint))
-            .frame(maxWidth: 320)
-        } else {
-            legacyPrimaryButton(title: title, action: action)
-        }
-        #else
-        if capabilities.supportsOS26Translucency, #available(macOS 15.0, tvOS 18.0, *) {
-            glassPrimaryButton(title: title, tint: tint, action: action)
-        } else if #available(macOS 13.0, tvOS 15.0, *) {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(TranslucentButtonStyle(tint: tint))
-            .frame(maxWidth: 320)
-        } else {
-            legacyPrimaryButton(title: title, action: action)
-        }
-        #endif
+        glassPrimaryButton(title: title, tint: tint, action: action)
     }
 
     @ViewBuilder
@@ -157,9 +131,25 @@ struct UBEmptyState: View {
     }
 
 #if os(iOS)
-    @available(iOS 18.0, *)
     @ViewBuilder
     private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
+        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
+            glassStyledPrimaryButton(title: title, tint: tint, action: action)
+        } else if #available(iOS 15.0, *) {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(TranslucentButtonStyle(tint: tint))
+            .frame(maxWidth: 320)
+        } else {
+            legacyPrimaryButton(title: title, action: action)
+        }
+    }
+
+    @available(iOS 18.0, *)
+    @ViewBuilder
+    private func glassStyledPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             primaryButtonLabel(title: title)
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
@@ -167,13 +157,30 @@ struct UBEmptyState: View {
         }
         .tint(tint)
         .buttonStyle(.glass)
+        .buttonBorderShape(.capsule)
         .controlSize(.large)
         .frame(maxWidth: 320)
     }
 #else
-    @available(macOS 15.0, tvOS 18.0, *)
     @ViewBuilder
     private func glassPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
+        if capabilities.supportsOS26Translucency, #available(macOS 15.0, tvOS 18.0, *) {
+            glassStyledPrimaryButton(title: title, tint: tint, action: action)
+        } else if #available(macOS 13.0, tvOS 15.0, *) {
+            Button(action: action) {
+                primaryButtonLabel(title: title)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(TranslucentButtonStyle(tint: tint))
+            .frame(maxWidth: 320)
+        } else {
+            legacyPrimaryButton(title: title, action: action)
+        }
+    }
+
+    @available(macOS 15.0, tvOS 18.0, *)
+    @ViewBuilder
+    private func glassStyledPrimaryButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             primaryButtonLabel(title: title)
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
