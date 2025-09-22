@@ -27,6 +27,7 @@ struct BudgetDetailsView: View {
     }
     private let periodNavigation: PeriodNavigationConfiguration?
     private let displaysBudgetTitle: Bool
+    private let headerTopPadding: CGFloat
 
     // MARK: View Model
     @StateObject private var vm: BudgetDetailsViewModel
@@ -42,11 +43,13 @@ struct BudgetDetailsView: View {
     init(
         budgetObjectID: NSManagedObjectID,
         periodNavigation: PeriodNavigationConfiguration? = nil,
-        displaysBudgetTitle: Bool = true
+        displaysBudgetTitle: Bool = true,
+        headerTopPadding: CGFloat = DS.Spacing.s
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
+        self.headerTopPadding = headerTopPadding
         _vm = StateObject(wrappedValue: BudgetDetailsViewModel(budgetObjectID: budgetObjectID))
     }
 
@@ -58,23 +61,32 @@ struct BudgetDetailsView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.m) {
 
                 // MARK: Title + Date Range
-                VStack(alignment: .leading, spacing: 4) {
-                    if displaysBudgetTitle {
-                        Text(vm.budget?.name ?? "Budget")
-                            .font(.largeTitle.bold())
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                    }
-                    if let s = vm.budget?.startDate, let e = vm.budget?.endDate {
+                HStack(alignment: .top, spacing: DS.Spacing.m) {
+                    VStack(alignment: .leading, spacing: 4) {
                         if displaysBudgetTitle {
-                            Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
+                            Text(vm.budget?.name ?? "Budget")
+                                .font(.largeTitle.bold())
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                        }
+                        if let startDate = vm.budget?.startDate,
+                           let endDate = vm.budget?.endDate,
+                           displaysBudgetTitle {
+                            Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
                                 .foregroundStyle(.secondary)
                         }
+                    }
 
-                        if let navigation = periodNavigation {
-                            PeriodNavigationView(configuration: navigation)
-                                .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
-                        }
+                    if let navigation = periodNavigation,
+                       vm.budget?.startDate != nil,
+                       vm.budget?.endDate != nil {
+                        Spacer()
+                        PeriodNavigationControl(
+                            title: navigation.title,
+                            onPrevious: { navigation.onAdjust(-1) },
+                            onNext: { navigation.onAdjust(+1) }
+                        )
+                        .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
                     }
                 }
 
@@ -113,7 +125,7 @@ struct BudgetDetailsView: View {
                 )
             }
             .padding(.horizontal, DS.Spacing.l)
-            .padding(.top, DS.Spacing.s)
+            .padding(.top, headerTopPadding)
             .padding(.bottom, DS.Spacing.m)
 
             // MARK: Lists
@@ -215,30 +227,6 @@ struct BudgetDetailsView: View {
         let f = DateFormatter()
         f.dateStyle = .medium
         return f.string(from: d)
-    }
-}
-
-// MARK: - Period Navigation View
-private struct PeriodNavigationView: View {
-    let configuration: BudgetDetailsView.PeriodNavigationConfiguration
-
-    var body: some View {
-        HStack(spacing: DS.Spacing.s) {
-            Button { configuration.onAdjust(-1) } label: {
-                Image(systemName: "chevron.left")
-            }
-            .buttonStyle(.plain)
-
-            Text(configuration.title)
-                .font(.title2.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-
-            Button { configuration.onAdjust(+1) } label: {
-                Image(systemName: "chevron.right")
-            }
-            .buttonStyle(.plain)
-        }
     }
 }
 
