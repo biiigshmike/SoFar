@@ -347,85 +347,85 @@ struct IncomeView: View {
                 if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .label)
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
                 } else {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+                        .incomeCalendarGlassButtonStyle(role: .label)
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
                 }
                 #else
                 if #available(iOS 18.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .label)
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .incomeCalendarGlassButtonStyle()
+                        .incomeCalendarGlassButtonStyle(role: .icon)
                 } else {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("<") { goToPreviousDay() }
                         .accessibilityLabel("Previous Day")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button("Today") { goToToday() }
                         .accessibilityLabel("Jump to Today")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+                        .incomeCalendarGlassButtonStyle(role: .label)
 
                     Button(">") { goToNextDay() }
                         .accessibilityLabel("Next Day")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
 
                     Button(">>") { goToNextMonth() }
                         .accessibilityLabel("Next Month")
-                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                        .incomeCalendarGlassButtonStyle(role: .icon)
                 }
                 #endif
             }
@@ -838,8 +838,8 @@ private struct IncomeRow: View {
 
 // MARK: - Section Styling Helpers
 private extension View {
-    func incomeCalendarGlassButtonStyle() -> some View {
-        modifier(IncomeCalendarGlassButtonModifier())
+    func incomeCalendarGlassButtonStyle(role: CalendarNavigationButtonStyle.Role) -> some View {
+        modifier(IncomeCalendarGlassButtonModifier(role: role))
     }
 
     @ViewBuilder
@@ -921,7 +921,12 @@ private extension View {
 // MARK: - Calendar Navigation Styling
 private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     private let cornerRadius: CGFloat = 17
+    private let role: CalendarNavigationButtonStyle.Role
     @EnvironmentObject private var themeManager: ThemeManager
+
+    init(role: CalendarNavigationButtonStyle.Role) {
+        self.role = role
+    }
 
     func body(content: Content) -> some View {
         Group {
@@ -933,7 +938,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
                 content.buttonStyle(
                     TranslucentButtonStyle(
                         tint: themeManager.selectedTheme.resolvedTint,
-                        metrics: .calendarNavigation
+                        metrics: metrics(for: role)
                     )
                 )
             }
@@ -942,12 +947,21 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
             content.buttonStyle(
                 TranslucentButtonStyle(
                     tint: themeManager.selectedTheme.resolvedTint,
-                    metrics: .calendarNavigation
+                    metrics: metrics(for: role)
                 )
             )
             #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+
+    private func metrics(for role: CalendarNavigationButtonStyle.Role) -> TranslucentButtonStyle.Metrics {
+        switch role {
+        case .icon:
+            return .calendarNavigationIcon
+        case .label:
+            return .calendarNavigationLabel
+        }
     }
 }

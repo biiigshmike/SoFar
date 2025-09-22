@@ -44,12 +44,23 @@ struct TranslucentButtonStyle: ButtonStyle {
             font: .system(size: 17, weight: .semibold, design: .rounded)
         )
 
-        static let calendarNavigation = Metrics(
+        static let calendarNavigationIcon = Metrics(
             layout: .hugging,
-            width: 44,
+            width: 34,
             height: 34,
             cornerRadius: 17,
             horizontalPadding: 0,
+            verticalPadding: 0,
+            pressedScale: 0.96,
+            font: .system(size: 16, weight: .semibold, design: .rounded)
+        )
+
+        static let calendarNavigationLabel = Metrics(
+            layout: .hugging,
+            width: nil,
+            height: 34,
+            cornerRadius: 17,
+            horizontalPadding: DS.Spacing.m,
             verticalPadding: 0,
             pressedScale: 0.96,
             font: .system(size: 16, weight: .semibold, design: .rounded)
