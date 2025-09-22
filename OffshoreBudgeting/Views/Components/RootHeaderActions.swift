@@ -266,6 +266,9 @@ struct RootHeaderIconActionButton: View {
     var accessibilityLabel: String
     var accessibilityIdentifier: String?
     var action: () -> Void
+#if os(macOS)
+    @Environment(\.platformCapabilities) private var capabilities
+#endif
 
     init(
         systemImage: String,
@@ -290,18 +293,28 @@ struct RootHeaderIconActionButton: View {
         #endif
     }
 
-    @ViewBuilder
-    private func configuredButton() -> some View {
+    private var baseButton: some View {
         Button(action: action) {
             RootHeaderControlIcon(systemImage: systemImage)
         }
-        #if os(iOS)
-        .buttonStyle(RootHeaderActionButtonStyle())
-        #else
-        .buttonStyle(.plain)
-        #endif
         .accessibilityLabel(accessibilityLabel)
         .optionalAccessibilityIdentifier(accessibilityIdentifier)
+    }
+
+    @ViewBuilder
+    private func configuredButton() -> some View {
+        #if os(iOS)
+        baseButton
+            .buttonStyle(RootHeaderActionButtonStyle())
+        #else
+        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
+            baseButton
+                .buttonStyle(.glass)
+        } else {
+            baseButton
+                .buttonStyle(.plain)
+        }
+        #endif
     }
 }
 

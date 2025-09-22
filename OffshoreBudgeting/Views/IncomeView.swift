@@ -62,7 +62,7 @@ struct IncomeView: View {
     }
 #else
     private let calendarCardMinimumHeight: CGFloat = 320
-    private let selectedDayCardMinimumHeight: CGFloat = 320
+    private let selectedDayCardMinimumHeight: CGFloat = 260
     private let weeklySummaryCardMinimumHeight: CGFloat = 160
     private let headerBaselineHeight: CGFloat = 84
     private let calendarContentHeight: CGFloat = 340
@@ -253,7 +253,8 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: 8) {
             HStack(spacing: DS.Spacing.s) {
-                if #available(iOS 26.0, macOS 26.0, *), capabilities.supportsOS26Translucency {
+                #if os(macOS)
+                if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .buttonStyle(.glass)
@@ -294,6 +295,49 @@ struct IncomeView: View {
                         .accessibilityLabel("Next Month")
                         .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
                 }
+                #else
+                if #available(iOS 26.0, tvOS 26.0, *), capabilities.supportsOS26Translucency {
+                    Button("<<") { goToPreviousMonth() }
+                        .accessibilityLabel("Previous Month")
+                        .buttonStyle(.glass)
+
+                    Button("<") { goToPreviousDay() }
+                        .accessibilityLabel("Previous Day")
+                        .buttonStyle(.glass)
+
+                    Button("Today") { goToToday() }
+                        .accessibilityLabel("Jump to Today")
+                        .buttonStyle(.glass)
+
+                    Button(">") { goToNextDay() }
+                        .accessibilityLabel("Next Day")
+                        .buttonStyle(.glass)
+
+                    Button(">>") { goToNextMonth() }
+                        .accessibilityLabel("Next Month")
+                        .buttonStyle(.glass)
+                } else {
+                    Button("<<") { goToPreviousMonth() }
+                        .accessibilityLabel("Previous Month")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button("<") { goToPreviousDay() }
+                        .accessibilityLabel("Previous Day")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button("Today") { goToToday() }
+                        .accessibilityLabel("Jump to Today")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .label))
+
+                    Button(">") { goToNextDay() }
+                        .accessibilityLabel("Next Day")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+
+                    Button(">>") { goToNextMonth() }
+                        .accessibilityLabel("Next Month")
+                        .buttonStyle(CalendarNavigationButtonStyle(role: .icon))
+                }
+                #endif
             }
             .controlSize(.small)
             #if os(macOS)
@@ -370,12 +414,7 @@ struct IncomeView: View {
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
         .padding(10)
-        .background(
-            themeManager.selectedTheme.secondaryBackground,
-            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-        )
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
     }
 
     // MARK: - Weekly Summary Bar
@@ -406,13 +445,7 @@ struct IncomeView: View {
         }
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            themeManager.selectedTheme.secondaryBackground,
-            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-        )
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-        .shadow(radius: 1, y: 1)
+        .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
     }
 
     // MARK: - Selected Day Section (WITH swipe to delete & edit)
@@ -432,13 +465,7 @@ struct IncomeView: View {
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: selectedDayCardMinimumHeight, alignment: .top)
-        .background(
-            themeManager.selectedTheme.secondaryBackground,
-            in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-        )
-        .compositingGroup()
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-        .shadow(radius: 1, y: 1)
+        .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
         .layoutPriority(2)
         .alert("Delete Income?", isPresented: $showDeleteAlert, presenting: incomeToDelete) { income in
             Button("Delete", role: .destructive) {
@@ -715,6 +742,71 @@ private struct IncomeRow: View {
         nf.numberStyle = .currency
         nf.locale = .current
         return nf.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+    }
+}
+
+// MARK: - Section Styling Helpers
+private extension View {
+    @ViewBuilder
+    func incomeSectionContainerStyle(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
+        #if os(macOS)
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+
+        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
+            self
+                .background(
+                    shape
+                        .fill(theme.secondaryBackground.opacity(0.10))
+                        .background(.thinMaterial, in: shape)
+                )
+                .overlay(
+                    shape
+                        .stroke(Color.white.opacity(0.20), lineWidth: 0.9)
+                        .blendMode(.screen)
+                )
+                .overlay(
+                    shape
+                        .stroke(theme.tertiaryBackground.opacity(0.28), lineWidth: 0.7)
+                )
+                .compositingGroup()
+                .clipShape(shape)
+                .shadow(color: Color.black.opacity(0.12), radius: 18, x: 0, y: 8)
+        } else {
+            self
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            theme.secondaryBackground.opacity(0.96),
+                            theme.secondaryBackground.opacity(0.90)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: shape
+                )
+                .overlay(
+                    shape
+                        .stroke(theme.tertiaryBackground.opacity(0.32), lineWidth: 0.8)
+                )
+                .overlay(
+                    shape
+                        .stroke(Color.white.opacity(0.16), lineWidth: 0.9)
+                        .blendMode(.screen)
+                )
+                .compositingGroup()
+                .clipShape(shape)
+                .shadow(color: Color.black.opacity(0.16), radius: 20, x: 0, y: 10)
+        }
+        #else
+        self
+            .background(
+                theme.secondaryBackground,
+                in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+            )
+            .compositingGroup()
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .shadow(radius: 1, y: 1)
+        #endif
     }
 }
 
