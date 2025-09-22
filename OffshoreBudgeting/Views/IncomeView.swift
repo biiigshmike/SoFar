@@ -86,20 +86,20 @@ struct IncomeView: View {
 
     private var summaryFallbackHeight: CGFloat {
 #if os(iOS)
-        if horizontalSizeClass == .regular { return 230 }
-        if verticalSizeClass == .compact { return 170 }
-        return 180
+        if horizontalSizeClass == .regular { return 120 }
+        if verticalSizeClass == .compact { return 85 }
+        return 90
 #else
-        return 190
+        return 95
 #endif
     }
 
     private var minimumSelectedDayContentHeight: CGFloat {
 #if os(iOS)
-        if verticalSizeClass == .compact { return 64 }
-        return 88
+        if verticalSizeClass == .compact { return 44 }
+        return 56
 #else
-        return 100
+        return 60
 #endif
     }
 
@@ -140,29 +140,32 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
-                RootViewTopPlanes(title: "Income") {
-                    addIncomeButton
-                }
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: DS.Spacing.l) {
+                    RootViewTopPlanes(title: "Income") {
+                        addIncomeButton
+                    }
 
-                VStack(spacing: 8) {
-                    // Calendar section in a padded card
-                    calendarSection
+                    VStack(spacing: 8) {
+                        // Calendar section in a padded card
+                        calendarSection
 
-                    // Weekly summary and selected day entries displayed side-by-side
-                    summarySplit
+                        // Weekly summary and selected day entries displayed side-by-side
+                        summarySplit
+                    }
+                    .padding(.horizontal, DS.Spacing.l)
                 }
-                .padding(.horizontal, DS.Spacing.l)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .padding(.bottom, scrollViewContentBottomPadding)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, scrollViewContentBottomPadding)
-        }
-        .ub_captureSafeAreaInsets()
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear
-                .frame(height: bottomInsetCompensation)
-                .allowsHitTesting(false)
+            .ub_captureSafeAreaInsets()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: bottomInsetCompensation)
+                    .allowsHitTesting(false)
+            }
         }
         // Keep list in sync without deprecated APIs
         .ub_onChange(of: viewModel.selectedDate) {
@@ -322,17 +325,20 @@ struct IncomeView: View {
     // MARK: - Summary Layout
     @ViewBuilder
     private var summarySplit: some View {
-        let cardHeight = targetSummaryCardHeight
+        GeometryReader { proxy in
+            let cardHeight = max(targetSummaryCardHeight, proxy.size.height)
 
-        HStack(alignment: .top, spacing: DS.Spacing.m) {
-            weeklySummaryBar
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(minHeight: cardHeight, alignment: .top)
+            HStack(alignment: .top, spacing: DS.Spacing.m) {
+                weeklySummaryBar
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .frame(minHeight: cardHeight, alignment: .top)
 
-            selectedDaySection
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(minHeight: cardHeight, alignment: .top)
+                selectedDaySection
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .frame(minHeight: cardHeight, alignment: .top)
+            }
         }
+        .frame(minHeight: targetSummaryCardHeight)
         .onPreferenceChange(WeeklySummaryHeightPreferenceKey.self) { height in
             guard height > 0 else { return }
             if weeklySummaryIntrinsicHeight != height {
