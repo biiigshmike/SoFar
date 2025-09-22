@@ -52,7 +52,7 @@ struct BudgetDetailsView: View {
         VStack(spacing: 0) {
 
             // MARK: Header (name + summary + controls)
-            VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            VStack(alignment: .leading, spacing: DS.Spacing.m) {
 
                 // MARK: Title + Date Range
                 VStack(alignment: .leading, spacing: 4) {
@@ -86,10 +86,10 @@ struct BudgetDetailsView: View {
                 GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
                     Picker("", selection: $vm.selectedSegment) {
                         Text("Planned Expenses")
-                            .macSegmentedFill()
+                            .segmentedFill()
                             .tag(BudgetDetailsViewModel.Segment.planned)
                         Text("Variable Expenses")
-                            .macSegmentedFill()
+                            .segmentedFill()
                             .tag(BudgetDetailsViewModel.Segment.variable)
                     }
                     .pickerStyle(.segmented)
@@ -108,7 +108,7 @@ struct BudgetDetailsView: View {
                 )
             }
             .padding(.horizontal, DS.Spacing.l)
-            .padding(.top, DS.Spacing.m)
+            .padding(.top, DS.Spacing.s)
             .padding(.bottom, DS.Spacing.m)
 
             // MARK: Lists
@@ -389,19 +389,19 @@ private struct FilterBar: View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z")
-                    .macSegmentedFill()
+                    .segmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓")
-                    .macSegmentedFill()
+                    .segmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
                 Text("$↑")
-                    .macSegmentedFill()
+                    .segmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.amountHighLow)
                 Text("Date ↑")
-                    .macSegmentedFill()
+                    .segmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.dateOldNew)
                 Text("Date ↓")
-                    .macSegmentedFill()
+                    .segmentedFill()
                     .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
@@ -457,13 +457,8 @@ private struct GlassCapsuleContainer<Content: View>: View {
 }
 
 private extension View {
-    @ViewBuilder
-    func macSegmentedFill() -> some View {
-#if os(macOS)
-        self.frame(maxWidth: .infinity)
-#else
-        self
-#endif
+    func segmentedFill() -> some View {
+        frame(maxWidth: .infinity)
     }
 }
 
