@@ -196,26 +196,28 @@ struct HomeView: View {
     @ViewBuilder
     private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
         let dimension = RootHeaderActionMetrics.dimension
+        Group {
 #if os(iOS)
-        Button {
-            presentAddExpenseMenu(for: budgetID)
-        } label: {
-            RootHeaderControlIcon(systemImage: "plus")
-        }
-        .buttonStyle(RootHeaderActionButtonStyle())
+            Button {
+                presentAddExpenseMenu(for: budgetID)
+            } label: {
+                RootHeaderControlIcon(systemImage: "plus")
+            }
+            .buttonStyle(RootHeaderActionButtonStyle())
 #else
-        Menu {
-            Button("Add Planned Expense") {
-                triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
+            Menu {
+                Button("Add Planned Expense") {
+                    triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
+                }
+                Button("Add Variable Expense") {
+                    triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
+                }
+            } label: {
+                RootHeaderControlIcon(systemImage: "plus")
             }
-            Button("Add Variable Expense") {
-                triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
-            }
-        } label: {
-            RootHeaderControlIcon(systemImage: "plus")
-        }
-        .menuStyle(.borderlessButton)
+            .menuStyle(.borderlessButton)
 #endif
+        }
         .frame(width: dimension, height: dimension)
         .contentShape(Rectangle())
         .accessibilityLabel("Add Expense")
