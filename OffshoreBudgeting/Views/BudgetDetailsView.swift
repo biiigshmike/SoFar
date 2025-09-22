@@ -63,12 +63,14 @@ struct BudgetDetailsView: View {
                             .minimumScaleFactor(0.5)
                     }
                     if let s = vm.budget?.startDate, let e = vm.budget?.endDate {
-                        Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
-                            .foregroundStyle(.secondary)
+                        if displaysBudgetTitle {
+                            Text("\(Self.mediumDate(s)) through \(Self.mediumDate(e))")
+                                .foregroundStyle(.secondary)
+                        }
 
                         if let navigation = periodNavigation {
                             PeriodNavigationView(configuration: navigation)
-                                .padding(.top, DS.Spacing.xs)
+                                .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
                         }
                     }
                 }
@@ -83,8 +85,12 @@ struct BudgetDetailsView: View {
                 // MARK: Segment Picker
                 GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
                     Picker("", selection: $vm.selectedSegment) {
-                        Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
-                        Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
+                        Text("Planned Expenses")
+                            .macSegmentedFill()
+                            .tag(BudgetDetailsViewModel.Segment.planned)
+                        Text("Variable Expenses")
+                            .macSegmentedFill()
+                            .tag(BudgetDetailsViewModel.Segment.variable)
                     }
                     .pickerStyle(.segmented)
 #if os(macOS)
@@ -382,11 +388,21 @@ private struct FilterBar: View {
     var body: some View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
             Picker("Sort", selection: $sort) {
-                Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                Text("$↓").tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                Text("$↑").tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                Text("Date ↑").tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+                Text("A–Z")
+                    .macSegmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                Text("$↓")
+                    .macSegmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                Text("$↑")
+                    .macSegmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                Text("Date ↑")
+                    .macSegmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                Text("Date ↓")
+                    .macSegmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
 #if os(macOS)
@@ -437,6 +453,17 @@ private struct GlassCapsuleContainer<Content: View>: View {
             decorated
                 .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func macSegmentedFill() -> some View {
+#if os(macOS)
+        self.frame(maxWidth: .infinity)
+#else
+        self
+#endif
     }
 }
 
