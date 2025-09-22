@@ -123,7 +123,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         .contentShape(Capsule(style: .continuous))
 
         #if os(iOS) || targetEnvironment(macCatalyst)
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 content
                     .glassEffect(in: Capsule(style: .continuous))
@@ -161,7 +161,7 @@ struct RootHeaderGlassControl<Content: View>: View {
             .contentShape(Capsule(style: .continuous))
 
         #if os(iOS) || targetEnvironment(macCatalyst)
-        if #available(iOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 18.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 control
                     .glassEffect(in: Capsule(style: .continuous))
@@ -304,7 +304,7 @@ struct RootHeaderIconActionButton: View {
                 .buttonStyle(RootHeaderActionButtonStyle())
         }
         #else
-        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
             macOSGlassButton
         } else {
             RootHeaderGlassControl {
@@ -331,7 +331,7 @@ struct RootHeaderIconActionButton: View {
 
         // Guard the .glass symbol itself inside availability so it is never
         // referenced on older macOS SDKs.
-        if #available(macOS 26.0, *) {
+        if #available(macOS 15.0, *) {
             return AnyView(
                 baseButton
                     .frame(width: dimension, height: dimension)
