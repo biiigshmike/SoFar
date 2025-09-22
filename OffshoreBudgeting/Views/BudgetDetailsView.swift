@@ -10,6 +10,9 @@
 import SwiftUI
 import CoreData
 import Combine
+#if os(macOS)
+import AppKit
+#endif
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
 /// Planned and Variable (Unplanned) expenses. Rows live in real Lists so swipe
@@ -77,6 +80,7 @@ struct BudgetDetailsView: View {
 
                 if let summary = vm.summary {
                     SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
+                        .padding(.top, -DS.Spacing.s)
                     if !summary.categoryBreakdown.isEmpty {
                         CategoryTotalsRow(categories: summary.categoryBreakdown)
                     }
@@ -93,6 +97,7 @@ struct BudgetDetailsView: View {
                             .tag(BudgetDetailsViewModel.Segment.variable)
                     }
                     .pickerStyle(.segmented)
+                    .equalWidthSegments()
 #if os(macOS)
                     .controlSize(.large)
 #endif
@@ -405,6 +410,7 @@ private struct FilterBar: View {
                     .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
+            .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
 #endif
@@ -460,7 +466,108 @@ private extension View {
     func segmentedFill() -> some View {
         frame(maxWidth: .infinity)
     }
+
+    func equalWidthSegments() -> some View {
+        modifier(EqualWidthSegmentsModifier())
+    }
 }
+
+private struct EqualWidthSegmentsModifier: ViewModifier {
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content.background(EqualWidthSegmentApplier())
+#elseif os(macOS)
+        content.background(EqualWidthSegmentApplier())
+#else
+        content
+#endif
+    }
+}
+
+#if os(iOS)
+private struct EqualWidthSegmentApplier: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: view)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: uiView)
+        }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: UIView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        segmented.apportionsSegmentWidthsByContent = false
+        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        segmented.invalidateIntrinsicContentSize()
+    }
+
+    private func findSegmentedControl(from view: UIView) -> UISegmentedControl? {
+        var current: UIView? = view
+        while let candidate = current {
+            if let segmented = candidate as? UISegmentedControl {
+                return segmented
+            }
+            current = candidate.superview
+        }
+        return nil
+    }
+}
+#elseif os(macOS)
+private struct EqualWidthSegmentApplier: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.isHidden = true
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: nsView)
+        }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: NSView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        if #available(macOS 13.0, *) {
+            segmented.segmentDistribution = .fillEqually
+        } else {
+            let count = segmented.segmentCount
+            guard count > 0 else { return }
+            let totalWidth = segmented.bounds.width
+            guard totalWidth > 0 else { return }
+            let equalWidth = totalWidth / CGFloat(count)
+            for index in 0..<count {
+                segmented.setWidth(equalWidth, forSegment: index)
+            }
+        }
+        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        segmented.invalidateIntrinsicContentSize()
+    }
+
+    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
+        var current: NSView? = view
+        while let candidate = current {
+            if let segmented = candidate as? NSSegmentedControl {
+                return segmented
+            }
+            current = candidate.superview
+        }
+        return nil
+    }
+}
+#endif
 
 // MARK: - PlannedListFR (List-backed; swipe enabled)
 private struct PlannedListFR: View {
