@@ -324,13 +324,26 @@ struct RootHeaderIconActionButton: View {
         let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
         let verticalPadding = RootHeaderGlassMetrics.verticalPadding
 
-        return baseButton
-            .frame(width: dimension, height: dimension)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .contentShape(Circle())
-            .buttonBorderShape(.circle)
-            .buttonStyle(.glass)
+        // Guard the .glass symbol itself inside availability so it is never
+        // referenced on older macOS SDKs.
+        if #available(macOS 26.0, *) {
+            return AnyView(
+                baseButton
+                    .frame(width: dimension, height: dimension)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.vertical, verticalPadding)
+                    .contentShape(Circle())
+                    .buttonBorderShape(.circle)
+                    .buttonStyle(.glass)
+            )
+        } else {
+            return AnyView(
+                RootHeaderGlassControl {
+                    baseButton
+                        .buttonStyle(RootHeaderActionButtonStyle())
+                }
+            )
+        }
     }
 #endif
 }
