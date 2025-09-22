@@ -325,7 +325,8 @@ private extension RootTabView {
     }
 
     func copyAppearance(_ appearance: UITabBarAppearance) -> UITabBarAppearance {
-        appearance.copy() as! UITabBarAppearance
+        // copy() from NSCopying returns the same dynamic type.
+        return appearance.copy()
     }
 
     func tabBarControllers(in root: UIViewController?) -> [UITabBarController] {
@@ -527,4 +528,3 @@ private struct TabBarAppearanceSignature: Equatable {
     }
 }
 #endif
-
