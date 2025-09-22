@@ -19,6 +19,7 @@ struct SettingsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
+    @Environment(\.responsiveLayoutContext) private var responsiveLayoutContext
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showResetAlert: Bool = false
@@ -271,13 +272,26 @@ struct SettingsView: View {
         #if os(iOS)
         let base = horizontalSizeClass == .compact ? 0 : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
-        let bottomInset = safeAreaInsets.bottom
+        let bottomInset = effectiveSafeAreaInsets.bottom
         let safeAreaOverflow = max(0, bottomInset - tabChromeHeight)
 
         return base + safeAreaOverflow
         #else
         return DS.Spacing.l
         #endif
+    }
+
+    private var effectiveSafeAreaInsets: EdgeInsets {
+        if safeAreaInsets.hasNonZeroInsets {
+            return safeAreaInsets
+        }
+
+        let contextInsets = responsiveLayoutContext.safeArea
+        if contextInsets.hasNonZeroInsets {
+            return contextInsets
+        }
+
+        return safeAreaInsets
     }
 
 }

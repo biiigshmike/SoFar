@@ -42,30 +42,32 @@ struct OffshoreBudgetingApp: App {
     
     var body: some Scene {
         WindowGroup {
-            Group {
-                if didCompleteOnboarding {
-                    RootTabView()
-                    //OnboardingView()
-                } else {
-                    OnboardingView()
-                    //RootTabView()
+            ResponsiveLayoutReader { _ in
+                Group {
+                    if didCompleteOnboarding {
+                        RootTabView()
+                        //OnboardingView()
+                    } else {
+                        OnboardingView()
+                        //RootTabView()
+                    }
                 }
-            }
-            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-            .environmentObject(themeManager)
-            .environment(\.platformCapabilities, platformCapabilities)
-            // Apply the selected theme's accent color to all controls.
-            // `tint` covers most modern SwiftUI controls, while `accentColor`
-            // is still required for some AppKit-backed macOS components
-            // (e.g., checkboxes, date pickers) to respect the theme.
-            .accentColor(themeManager.selectedTheme.resolvedTint)
-            .tint(themeManager.selectedTheme.resolvedTint)
-            .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
-            .onAppear {
-                themeManager.refreshSystemAppearance(systemColorScheme)
-            }
-            .ub_onChange(of: systemColorScheme) { newScheme in
-                themeManager.refreshSystemAppearance(newScheme)
+                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+                .environmentObject(themeManager)
+                .environment(\.platformCapabilities, platformCapabilities)
+                // Apply the selected theme's accent color to all controls.
+                // `tint` covers most modern SwiftUI controls, while `accentColor`
+                // is still required for some AppKit-backed macOS components
+                // (e.g., checkboxes, date pickers) to respect the theme.
+                .accentColor(themeManager.selectedTheme.resolvedTint)
+                .tint(themeManager.selectedTheme.resolvedTint)
+                .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
+                .onAppear {
+                    themeManager.refreshSystemAppearance(systemColorScheme)
+                }
+                .ub_onChange(of: systemColorScheme) { newScheme in
+                    themeManager.refreshSystemAppearance(newScheme)
+                }
             }
 #if os(macOS)
             // Ensure macOS text fields default to leading alignment without

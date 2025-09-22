@@ -15,6 +15,7 @@ enum RootTabHeaderLayout {
 struct RootTabHeader<Trailing: View>: View {
     // MARK: Properties
     @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
+    @Environment(\.responsiveLayoutContext) private var responsiveLayoutContext
     private let title: String
     private let horizontalPadding: CGFloat
     private let topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle
@@ -75,7 +76,7 @@ struct RootTabHeader<Trailing: View>: View {
         return DS.Spacing.l
         #else
         let basePadding = DS.Spacing.xxl
-        let adjusted = safeAreaInsets.top + DS.Spacing.m
+        let adjusted = effectiveSafeAreaInsets.top + DS.Spacing.m
         return max(basePadding, adjusted)
         #endif
     }
@@ -84,8 +85,21 @@ struct RootTabHeader<Trailing: View>: View {
         #if os(macOS) || targetEnvironment(macCatalyst)
         return DS.Spacing.l
         #else
-        let adjusted = safeAreaInsets.top + DS.Spacing.xs
+        let adjusted = effectiveSafeAreaInsets.top + DS.Spacing.xs
         return max(DS.Spacing.l, adjusted)
         #endif
+    }
+
+    private var effectiveSafeAreaInsets: EdgeInsets {
+        if safeAreaInsets.hasNonZeroInsets {
+            return safeAreaInsets
+        }
+
+        let contextInsets = responsiveLayoutContext.safeArea
+        if contextInsets.hasNonZeroInsets {
+            return contextInsets
+        }
+
+        return safeAreaInsets
     }
 }
