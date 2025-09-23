@@ -461,7 +461,7 @@ private struct CategoryTotalsRow: View {
             .padding(.horizontal, DS.Spacing.l)
         }
         .ub_hideScrollIndicators()
-        .frame(height:22)
+        .frame(minHeight: 22)
     }
 }
 
