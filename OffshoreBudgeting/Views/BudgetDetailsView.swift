@@ -475,7 +475,11 @@ private struct FilterBar: View {
     let onResetDate: () -> Void
 
     var body: some View {
-        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+        GlassCapsuleContainer(
+            horizontalPadding: DS.Spacing.l,
+            verticalPadding: DS.Spacing.s,
+            alignment: .center
+        ) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z")
                     .segmentedFill()
@@ -498,7 +502,9 @@ private struct FilterBar: View {
 #if os(macOS)
             .controlSize(.large)
 #endif
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
         .ub_onChange(of: startDate) { onChanged() }
         .ub_onChange(of: endDate) { onChanged() }
         .ub_onChange(of: sort) { onChanged() }
@@ -513,15 +519,18 @@ private struct GlassCapsuleContainer<Content: View>: View {
     private let content: Content
     private let horizontalPadding: CGFloat
     private let verticalPadding: CGFloat
+    private let contentAlignment: Alignment
 
     init(
         horizontalPadding: CGFloat = DS.Spacing.l,
         verticalPadding: CGFloat = DS.Spacing.m,
+        alignment: Alignment = .leading,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
         self.horizontalPadding = horizontalPadding
         self.verticalPadding = verticalPadding
+        self.contentAlignment = alignment
     }
 
     var body: some View {
@@ -529,7 +538,7 @@ private struct GlassCapsuleContainer<Content: View>: View {
         let capsule = Capsule(style: .continuous)
 
         let decorated = content
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: contentAlignment)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .contentShape(capsule)
