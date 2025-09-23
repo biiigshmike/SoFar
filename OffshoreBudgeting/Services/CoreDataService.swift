@@ -29,7 +29,6 @@ final class CoreDataService: ObservableObject {
         UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
     }
 
-    private let cloudAccountProvider = CloudAccountStatusProvider.shared
     private var loadingTask: Task<Void, Never>?
     
     // MARK: Load State
@@ -190,9 +189,10 @@ final class CoreDataService: ObservableObject {
 
         disableCloudSyncPreferences()
 
-        Task { @MainActor in
-            cloudAccountProvider.invalidateCache()
-            cloudAccountProvider.refreshStatus(force: true)
+        Task {
+            let provider = await cloudAccountStatusProvider()
+            await provider.invalidateCache()
+            await provider.refreshStatus(force: true)
         }
 
         #if DEBUG
@@ -270,7 +270,7 @@ private extension CoreDataService {
 
         do {
             let shouldEnableCloudSync = await shouldEnableCloudKitSync()
-            configureCloudKitOptions(isEnabled: shouldEnableCloudSync)
+            await configureCloudKitOptions(isEnabled: shouldEnableCloudSync)
 
             try await loadPersistentStores()
 
@@ -287,12 +287,13 @@ private extension CoreDataService {
         }
     }
 
-    func configureCloudKitOptions(isEnabled: Bool) {
+    func configureCloudKitOptions(isEnabled: Bool) async {
         guard let description = container.persistentStoreDescriptions.first else { return }
 
         if isEnabled {
+            let containerIdentifier = await mainActorCloudAccountContainerIdentifier()
             description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: CloudAccountStatusProvider.containerIdentifier
+                containerIdentifier: containerIdentifier
             )
         } else {
             description.cloudKitContainerOptions = nil
@@ -317,7 +318,8 @@ private extension CoreDataService {
             return false
         }
 
-        let accountAvailable = await cloudAccountProvider.resolveAvailability()
+        let provider = await cloudAccountStatusProvider()
+        let accountAvailable = await provider.resolveAvailability()
         if !accountAvailable {
             disableCloudSyncPreferences()
         }
@@ -330,5 +332,13 @@ private extension CoreDataService {
         defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+    }
+
+    private func cloudAccountStatusProvider() async -> CloudAccountStatusProvider {
+        await MainActor.run { CloudAccountStatusProvider.shared }
+    }
+
+    private func mainActorCloudAccountContainerIdentifier() async -> String {
+        await MainActor.run { CloudAccountStatusProvider.containerIdentifier }
     }
 }
