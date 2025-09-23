@@ -348,10 +348,6 @@ struct HomeView: View {
 #if os(macOS)
                     BudgetDetailsView(
                         budgetObjectID: first.id,
-                        periodNavigation: .init(
-                            title: title(for: vm.selectedDate),
-                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
-                        ),
                         displaysBudgetTitle: false
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
@@ -407,8 +403,6 @@ struct HomeView: View {
                     Text(defaultPeriodRange(for: vm.selectedDate))
                         .foregroundStyle(.secondary)
                 }
-
-                periodNavigationControl
             }
         }
     }
