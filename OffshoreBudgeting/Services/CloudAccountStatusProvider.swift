@@ -6,6 +6,7 @@
 //
 
 import CloudKit
+import Combine
 import Foundation
 
 /// Centralized helper that reports whether the user currently has access to the
@@ -136,5 +137,23 @@ final class CloudAccountStatusProvider: ObservableObject {
             availability = .unavailable
             return false
         }
+    }
+}
+
+// MARK: - CloudAvailabilityProviding
+
+protocol CloudAvailabilityProviding: AnyObject {
+    var isCloudAccountAvailable: Bool? { get }
+    var availabilityPublisher: AnyPublisher<CloudAccountStatusProvider.Availability, Never> { get }
+    func refreshAccountStatus(force: Bool)
+}
+
+extension CloudAccountStatusProvider: CloudAvailabilityProviding {
+    var availabilityPublisher: AnyPublisher<Availability, Never> {
+        $availability.eraseToAnyPublisher()
+    }
+
+    func refreshAccountStatus(force: Bool) {
+        refreshStatus(force: force)
     }
 }
