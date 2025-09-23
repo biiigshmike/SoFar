@@ -20,7 +20,7 @@ final class CoreDataService: ObservableObject {
 
     private let notificationCenter: NotificationCentering
 
-    private init(notificationCenter: NotificationCentering = NotificationCenter.default) {
+    private init(notificationCenter: NotificationCentering = NotificationCenterAdapter.shared) {
         self.notificationCenter = notificationCenter
     }
     
