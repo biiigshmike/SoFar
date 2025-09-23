@@ -344,7 +344,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
                     .padding(.horizontal, horizontalPadding)
 
                 secondary
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, horizontalPadding)
                     .padding(.vertical, verticalPadding)
             }
