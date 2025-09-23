@@ -6,40 +6,87 @@ import SwiftUI
 /// mirrors the layout previously embedded within ``HomeView`` so both platforms
 /// share a consistent period navigation experience.
 struct PeriodNavigationControl: View {
+    enum Style {
+        case plain
+        case glass
+    }
+
     // MARK: - Properties
     private let title: String
+    private let style: Style
     private let onPrevious: () -> Void
     private let onNext: () -> Void
 
     // MARK: - Init
     init(
         title: String,
+        style: Style = .plain,
         onPrevious: @escaping () -> Void,
         onNext: @escaping () -> Void
     ) {
         self.title = title
+        self.style = style
         self.onPrevious = onPrevious
         self.onNext = onNext
     }
 
     // MARK: - Body
+    @ViewBuilder
     var body: some View {
+        switch style {
+        case .plain:
+            plainContent
+
+        case .glass:
+#if os(iOS) || os(macOS)
+            RootHeaderGlassControl(width: nil) {
+                navigationContent
+            }
+#else
+            plainContent
+#endif
+        }
+    }
+
+    private var plainContent: some View {
+        navigationContent
+            .fixedSize(horizontal: true, vertical: false)
+    }
+
+    @ViewBuilder
+    private var navigationContent: some View {
+        let buttonDimension = RootHeaderActionMetrics.dimension
+
         HStack(spacing: DS.Spacing.s) {
             Button(action: onPrevious) {
                 Image(systemName: "chevron.left")
             }
+            .frame(width: buttonDimension, height: buttonDimension)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
 
             Text(title)
                 .font(.title2.bold())
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
+                .frame(minWidth: buttonDimension, alignment: .center)
 
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
             }
+            .frame(width: buttonDimension, height: buttonDimension)
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
         }
-        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+extension PeriodNavigationControl.Style {
+    static var glassIfAvailable: Self {
+#if os(iOS) || os(macOS)
+        return .glass
+#else
+        return .plain
+#endif
     }
 }

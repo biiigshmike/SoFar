@@ -125,7 +125,6 @@ struct HomeView: View {
             }
 
             periodNavigationControl
-                .frame(maxWidth: .infinity, alignment: .trailing)
                 .layoutPriority(1)
         }
     }
@@ -401,6 +400,7 @@ struct HomeView: View {
     private var periodNavigationControl: some View {
         PeriodNavigationControl(
             title: title(for: vm.selectedDate),
+            style: .glassIfAvailable,
             onPrevious: { vm.adjustSelectedPeriod(by: -1) },
             onNext: { vm.adjustSelectedPeriod(by: +1) }
         )

@@ -83,6 +83,7 @@ struct BudgetDetailsView: View {
                         Spacer()
                         PeriodNavigationControl(
                             title: navigation.title,
+                            style: .glassIfAvailable,
                             onPrevious: { navigation.onAdjust(-1) },
                             onNext: { navigation.onAdjust(+1) }
                         )
