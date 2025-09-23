@@ -68,6 +68,7 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
     /// Primary tint used for the button background and glow treatments.
@@ -93,8 +94,16 @@ struct TranslucentButtonStyle: ButtonStyle {
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .background(background(for: theme, isPressed: configuration.isPressed, radius: radius))
             .overlay(border(for: theme, isPressed: configuration.isPressed, radius: radius))
-            .overlay(highlight(radius: radius))
-            .overlay(glow(for: theme, radius: radius, isPressed: configuration.isPressed))
+            .overlay {
+                if capabilities.supportsOS26Translucency {
+                    highlight(radius: radius)
+                }
+            }
+            .overlay {
+                if capabilities.supportsOS26Translucency {
+                    glow(for: theme, radius: radius, isPressed: configuration.isPressed)
+                }
+            }
             .scaleEffect(configuration.isPressed ? metrics.pressedScale : 1.0)
             .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
     }
@@ -107,7 +116,8 @@ struct TranslucentButtonStyle: ButtonStyle {
     private func background(for theme: AppTheme, isPressed: Bool, radius: CGFloat) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
-        if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency,
+           #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
             shape
                 .fill(.ultraThinMaterial)
                 .overlay(shape.fill(fillColor(for: theme, isPressed: isPressed)))
@@ -120,9 +130,9 @@ struct TranslucentButtonStyle: ButtonStyle {
                 .compositingGroup()
         } else {
             shape
-                .fill(fillColor(for: theme, isPressed: isPressed))
+                .fill(flatFillColor(for: theme, isPressed: isPressed))
                 .shadow(
-                    color: shadowColor(for: theme, isPressed: isPressed),
+                    color: flatShadowColor(for: theme, isPressed: isPressed),
                     radius: legacyShadowRadius(isPressed: isPressed),
                     x: 0,
                     y: legacyShadowY(isPressed: isPressed)
@@ -198,11 +208,39 @@ struct TranslucentButtonStyle: ButtonStyle {
         return isPressed ? base * 0.6 : base
     }
 
-    private func borderColor(for theme: AppTheme, isPressed: Bool) -> Color {
-        if theme == .system {
-            return Color.white.opacity(isPressed ? 0.60 : 0.50)
+    private func flatFillColor(for theme: AppTheme, isPressed: Bool) -> Color {
+        let base = theme.secondaryBackground
+        let scheme = theme.colorScheme ?? colorScheme
+        if scheme == .dark {
+            return base.opacity(isPressed ? 0.88 : 0.94)
         } else {
-            return tint.opacity(isPressed ? 0.70 : 0.58)
+            return base.opacity(isPressed ? 0.92 : 0.98)
+        }
+    }
+
+    private func flatShadowColor(for theme: AppTheme, isPressed: Bool) -> Color {
+        let scheme = theme.colorScheme ?? colorScheme
+        if scheme == .dark {
+            return Color.black.opacity(isPressed ? 0.42 : 0.50)
+        } else {
+            return Color.black.opacity(isPressed ? 0.12 : 0.18)
+        }
+    }
+
+    private func borderColor(for theme: AppTheme, isPressed: Bool) -> Color {
+        if capabilities.supportsOS26Translucency {
+            if theme == .system {
+                return Color.white.opacity(isPressed ? 0.60 : 0.50)
+            } else {
+                return tint.opacity(isPressed ? 0.70 : 0.58)
+            }
+        } else {
+            let scheme = theme.colorScheme ?? colorScheme
+            if scheme == .dark {
+                return Color.white.opacity(isPressed ? 0.24 : 0.20)
+            } else {
+                return Color.black.opacity(isPressed ? 0.16 : 0.12)
+            }
         }
     }
 }
