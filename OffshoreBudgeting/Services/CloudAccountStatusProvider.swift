@@ -49,7 +49,7 @@ final class CloudAccountStatusProvider: ObservableObject {
 
     // MARK: Private Properties
 
-    private typealias AccountStatusFetcher = @Sendable () async throws -> CKAccountStatus
+    typealias AccountStatusFetcher = @Sendable () async throws -> CKAccountStatus
 
     private let notificationCenter: NotificationCentering
     private let accountStatusFetcher: AccountStatusFetcher
