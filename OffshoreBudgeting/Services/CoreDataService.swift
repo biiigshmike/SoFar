@@ -191,7 +191,18 @@ final class CoreDataService: ObservableObject {
         guard isSetupFailure || isAccountChange else { return }
 
         guard let error = event.error as NSError? else { return }
-        let isAccountMissing = error.domain == NSCocoaErrorDomain && (error.code == 134405 || error.code == 134400)
+        let isAccountMissing: Bool
+        if error.domain == NSCocoaErrorDomain {
+            isAccountMissing = error.code == 134405 || error.code == 134400
+        } else if error.domain == "SyncedDefaults" {
+            // When the user is signed out of iCloud, CloudKit can surface the
+            // "SyncedDefaults" 8888 error instead of the traditional Core Data
+            // codes. Treat it the same way so we silence repeated sync attempts
+            // and disable the CloudKit toggle automatically.
+            isAccountMissing = error.code == 8888
+        } else {
+            isAccountMissing = false
+        }
         guard isAccountMissing else { return }
 
         stopObservingCloudKitEvents()
