@@ -40,6 +40,7 @@ struct HomeView: View {
 
     // MARK: Header Layout
     @State private var matchedHeaderControlWidth: CGFloat?
+    @State private var cachedHeaderControlWidth: CGFloat?
     @State private var headerActionPillIntrinsicWidth: CGFloat?
     @State private var periodNavigationIntrinsicWidth: CGFloat?
 
@@ -115,6 +116,9 @@ struct HomeView: View {
         let hasBudget = hasActiveBudget
         let showsContextSummary = hasBudget && headerSummary != nil && showsHeaderSummary
         let showsStandalonePeriodNavigation = hasBudget && headerSummary != nil && !showsHeaderSummary
+        let matchedControlWidth = hasBudget
+            ? matchedHeaderControlWidth
+            : (cachedHeaderControlWidth ?? headerControlMinimumWidth)
 
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Group {
@@ -159,12 +163,10 @@ struct HomeView: View {
                     }
                 }
             }
-            .applyIf(hasBudget) {
-                $0.homeHeaderMatchedControlWidth(
-                    intrinsicWidth: $headerActionPillIntrinsicWidth,
-                    matchedWidth: matchedHeaderControlWidth
-                )
-            }
+            .homeHeaderMatchedControlWidth(
+                intrinsicWidth: $headerActionPillIntrinsicWidth,
+                matchedWidth: matchedControlWidth
+            )
 
             if showsContextSummary || showsStandalonePeriodNavigation {
                 HStack(spacing: DS.Spacing.s) {
@@ -178,18 +180,24 @@ struct HomeView: View {
                     if showsStandalonePeriodNavigation {
                         periodNavigationControl(style: .glassIfAvailable)
                             .layoutPriority(1)
-                            .applyIf(hasBudget) {
-                                $0.homeHeaderMatchedControlWidth(
-                                    intrinsicWidth: $periodNavigationIntrinsicWidth,
-                                    matchedWidth: matchedHeaderControlWidth
-                                )
-                            }
+                            .homeHeaderMatchedControlWidth(
+                                intrinsicWidth: $periodNavigationIntrinsicWidth,
+                                matchedWidth: matchedControlWidth
+                            )
                     }
                 }
             }
         }
         .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
-            matchedHeaderControlWidth = width > 0 ? width : nil
+            let resolvedWidth = width > 0 ? width : nil
+
+            if hasBudget {
+                matchedHeaderControlWidth = resolvedWidth
+            }
+
+            if let resolvedWidth {
+                cachedHeaderControlWidth = resolvedWidth
+            }
         }
         .ub_onChange(of: hasBudget) { newValue in
             guard !newValue else { return }
@@ -454,6 +462,10 @@ struct HomeView: View {
 #endif
     }
 
+    private var headerControlMinimumWidth: CGFloat {
+        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    }
+
     private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
         PeriodNavigationControl(
             title: title(for: vm.selectedDate),
@@ -601,11 +613,21 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
     }
 
     private var resolvedWidth: CGFloat? {
-        if let matchedWidth {
-            return matchedWidth
-        } else {
-            return intrinsicWidth.wrappedValue
+        let minimum = Self.minimumWidth
+
+        if let matchedWidth, matchedWidth > 0 {
+            return max(matchedWidth, minimum)
         }
+
+        if let intrinsic = intrinsicWidth.wrappedValue, intrinsic > 0 {
+            return max(intrinsic, minimum)
+        }
+
+        return nil
+    }
+
+    private static var minimumWidth: CGFloat {
+        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
     }
 }
 
