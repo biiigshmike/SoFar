@@ -604,7 +604,7 @@ private struct HomeHeaderControlWidthReporter: View {
             Color.clear
                 .preference(key: HomeHeaderControlWidthKey.self, value: proxy.size.width)
                 .onAppear { updateIntrinsicWidth(proxy.size.width) }
-                .onChange(of: proxy.size.width) { _, newWidth in
+                .onChange(of: proxy.size.width) { newWidth in
                     updateIntrinsicWidth(newWidth)
                 }
         }
