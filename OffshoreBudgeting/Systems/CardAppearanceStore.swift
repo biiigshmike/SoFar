@@ -43,12 +43,13 @@ final class CardAppearanceStore {
     init(
         userDefaults: UserDefaults = .standard,
         ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
-        cloudStatusProvider: CloudAvailabilityProviding = CloudAccountStatusProvider.shared,
+        cloudStatusProvider: CloudAvailabilityProviding? = nil,
         notificationCenter: NotificationCentering = NotificationCenter.default
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
-        self.cloudStatusProvider = cloudStatusProvider
+        let resolvedCloudStatusProvider = cloudStatusProvider ?? CloudAccountStatusProvider.shared
+        self.cloudStatusProvider = resolvedCloudStatusProvider
         self.notificationCenter = notificationCenter
 
         load()
@@ -57,12 +58,12 @@ final class CardAppearanceStore {
             startObservingUbiquitousStoreIfNeeded()
         }
 
-        availabilityCancellable = cloudStatusProvider.availabilityPublisher
+        availabilityCancellable = resolvedCloudStatusProvider.availabilityPublisher
             .sink { [weak self] availability in
                 self?.handleCloudAvailabilityChange(availability)
             }
 
-        cloudStatusProvider.refreshAccountStatus(force: false)
+        resolvedCloudStatusProvider.refreshAccountStatus(force: false)
     }
 
     @MainActor
