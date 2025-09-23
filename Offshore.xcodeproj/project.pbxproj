@@ -52,16 +52,16 @@
 			path = OffshoreBudgeting;
 			sourceTree = "<group>";
 		};
-		4CF220482E4A33BC00AD5F29 /* SoFarTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SoFarTests;
-			sourceTree = "<group>";
-		};
-		4CF220522E4A33BC00AD5F29 /* SoFarUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SoFarUITests;
-			sourceTree = "<group>";
-		};
+               4CF220482E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
+                       isa = PBXFileSystemSynchronizedRootGroup;
+                       path = OffshoreBudgetingTests;
+                       sourceTree = "<group>";
+               };
+               4CF220522E4A33BC00AD5F29 /* OffshoreBudgetingUITests */ = {
+                       isa = PBXFileSystemSynchronizedRootGroup;
+                       path = OffshoreBudgetingUITests;
+                       sourceTree = "<group>";
+               };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,12 +92,12 @@
 /* Begin PBXGroup section */
 		4CF2202E2E4A33B900AD5F29 = {
 			isa = PBXGroup;
-			children = (
-				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
-				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
-				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
-				4CF220382E4A33BA00AD5F29 /* Products */,
-			);
+                       children = (
+                               4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
+                               4CF220482E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
+                               4CF220522E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
+                               4CF220382E4A33BA00AD5F29 /* Products */,
+                       );
 			sourceTree = "<group>";
 		};
 		4CF220382E4A33BA00AD5F29 /* Products */ = {
@@ -149,9 +149,9 @@
 			dependencies = (
 				4CF220472E4A33BC00AD5F29 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4CF220482E4A33BC00AD5F29 /* SoFarTests */,
-			);
+                       fileSystemSynchronizedGroups = (
+                               4CF220482E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
+                       );
 			name = OffshoreBudgetingTests;
 			packageProductDependencies = (
 			);
@@ -172,9 +172,9 @@
 			dependencies = (
 				4CF220512E4A33BC00AD5F29 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4CF220522E4A33BC00AD5F29 /* SoFarUITests */,
-			);
+                       fileSystemSynchronizedGroups = (
+                               4CF220522E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
+                       );
 			name = OffshoreBudgetingUITests;
 			packageProductDependencies = (
 			);
