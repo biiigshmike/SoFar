@@ -31,6 +31,7 @@ struct HomeView: View {
 #endif
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
+    @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -421,7 +422,10 @@ struct HomeView: View {
 #if os(macOS)
                     BudgetDetailsView(
                         budgetObjectID: first.id,
-                        displaysBudgetTitle: false
+                        displaysBudgetTitle: false,
+                        onSegmentChange: { newSegment in
+                            self.selectedSegment = newSegment
+                        }
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .id(first.id)
@@ -430,7 +434,10 @@ struct HomeView: View {
                     BudgetDetailsView(
                         budgetObjectID: first.id,
                         displaysBudgetTitle: false,
-                        headerTopPadding: DS.Spacing.xs
+                        headerTopPadding: DS.Spacing.xs,
+                        onSegmentChange: { newSegment in
+                            self.selectedSegment = newSegment
+                        }
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .id(first.id)
@@ -457,9 +464,9 @@ struct HomeView: View {
     private var headerSectionSpacing: CGFloat {
         let hasPrimarySummary = primarySummary != nil
 #if os(macOS)
-        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.xs
+        return hasPrimarySummary ? 0 : DS.Spacing.xs
 #else
-        return hasPrimarySummary ? DS.Spacing.xs : DS.Spacing.s
+        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.s
 #endif
     }
 
@@ -535,28 +542,45 @@ struct HomeView: View {
 
 // MARK: - Home Header Primary Summary
 private struct HomeHeaderPrimarySummaryView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let summary: BudgetSummary
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.l) {
-            VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
-                Text(summary.budgetName)
-                    .font(HomeHeaderPrimarySummaryStyle.titleFont)
-                    .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
-                    .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
-
-                Text(summary.periodString)
-                    .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
-                    .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+        Group {
+            if sizeClass == .compact {
+                VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                    budgetTitleView
+                    incomeSummaryView
+                }
+            } else {
+                HStack(alignment: .top, spacing: DS.Spacing.l) {
+                    budgetTitleView
+                    incomeSummaryView
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityElement(children: .combine)
-
-            BudgetIncomeSavingsSummaryView(summary: summary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private var budgetTitleView: some View {
+        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
+            Text(summary.budgetName)
+                .font(HomeHeaderPrimarySummaryStyle.titleFont)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
+
+            Text(summary.periodString)
+                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
+                .foregroundStyle(.secondary)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var incomeSummaryView: some View {
+        BudgetIncomeSavingsSummaryView(summary: summary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -703,4 +727,3 @@ private struct HideMenuIndicatorIfPossible: ViewModifier {
     }
 }
 #endif
-

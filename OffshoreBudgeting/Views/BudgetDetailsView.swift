@@ -28,6 +28,7 @@ struct BudgetDetailsView: View {
     private let periodNavigation: PeriodNavigationConfiguration?
     private let displaysBudgetTitle: Bool
     private let headerTopPadding: CGFloat
+    let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
 
     // MARK: View Model
     @StateObject private var vm: BudgetDetailsViewModel
@@ -101,12 +102,14 @@ struct BudgetDetailsView: View {
         budgetObjectID: NSManagedObjectID,
         periodNavigation: PeriodNavigationConfiguration? = nil,
         displaysBudgetTitle: Bool = true,
-        headerTopPadding: CGFloat = DS.Spacing.s
+        headerTopPadding: CGFloat = DS.Spacing.s,
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
+        self.onSegmentChange = onSegmentChange
         _vm = StateObject(wrappedValue: BudgetDetailsViewModel(budgetObjectID: budgetObjectID))
     }
 
@@ -168,9 +171,13 @@ struct BudgetDetailsView: View {
                     }
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
+                    .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
 #endif
+                }
+                .ub_onChange(of: vm.selectedSegment) { newValue in
+                    onSegmentChange?(newValue)
                 }
 
                 // MARK: Filters
@@ -307,28 +314,21 @@ struct BudgetDetailsView: View {
 private struct SummarySection: View {
     let summary: BudgetSummary
     let selectedSegment: BudgetDetailsViewModel.Segment
-
+    
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.l) {
-            // MARK: Sum of Expenses
-            VStack(alignment: .leading, spacing: 4) {
-                Text(selectedSegment == .planned ? "Planned Expenses" : "Variable Expenses")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                Text(CurrencyFormatterHelper.string(for: selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal))
-                    .font(.title3.weight(.semibold))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(1)
-
-            BudgetIncomeSavingsSummaryView(summary: summary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(selectedSegment == .planned ? "Planned Expenses" : "Variable Expenses")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Text(CurrencyFormatterHelper.string(for: selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal))
+                .font(.title3.weight(.semibold))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .layoutPriority(1)
     }
 }
 
-// MARK: - BudgetIncomeSavingsSummaryView
 struct BudgetIncomeSavingsSummaryView: View {
     let summary: BudgetSummary
 
@@ -351,83 +351,84 @@ struct BudgetIncomeSavingsSummaryView: View {
                         secondColor: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
                     )
                 }
+                .frame(maxWidth: .infinity)
             } else {
                 HStack(alignment: .top, spacing: DS.Spacing.m) {
-                    legacyColumn(
-                        primaryTitle: "POTENTIAL INCOME",
-                        primaryValue: summary.potentialIncomeTotal,
-                        primaryColor: DS.Colors.plannedIncome,
-                        secondaryTitle: "ACTUAL INCOME",
-                        secondaryValue: summary.actualIncomeTotal,
-                        secondaryColor: DS.Colors.actualIncome
-                    )
+                    VStack(alignment: .leading, spacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
+                        VStack(alignment: .leading) {
+                            header(title: "POTENTIAL INCOME")
+                            value(amount: summary.potentialIncomeTotal, color: DS.Colors.plannedIncome)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    legacyColumn(
-                        primaryTitle: "POTENTIAL SAVINGS",
-                        primaryValue: summary.potentialSavingsTotal,
-                        primaryColor: DS.Colors.savingsGood,
-                        secondaryTitle: "ACTUAL SAVINGS",
-                        secondaryValue: summary.actualSavingsTotal,
-                        secondaryColor: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
-                    )
+                        VStack(alignment: .leading) {
+                            header(title: "ACTUAL INCOME")
+                            value(amount: summary.actualIncomeTotal, color: DS.Colors.actualIncome)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    VStack(alignment: .leading, spacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
+                        VStack(alignment: .leading) {
+                            header(title: "POTENTIAL SAVINGS")
+                            value(amount: summary.potentialSavingsTotal, color: DS.Colors.savingsGood)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        VStack(alignment: .leading) {
+                            header(title: "ACTUAL SAVINGS")
+                            value(amount: summary.actualSavingsTotal, color: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .frame(maxWidth: .infinity)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
     }
-
+    
+    @available(iOS 16.0, macOS 13.0, *)
     @ViewBuilder
     private func headerRow(title: String, title2: String) -> some View {
-        GridRow {
-            headerLabel(title)
-            headerLabel(title2)
+        GridRow(alignment: .lastTextBaseline) {
+            header(title: title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            header(title: title2)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-
+    
+    @available(iOS 16.0, macOS 13.0, *)
     @ViewBuilder
     private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
-        GridRow {
-            valueLabel(firstValue, color: firstColor)
-            valueLabel(secondValue, color: secondColor)
+        GridRow(alignment: .lastTextBaseline) {
+            value(amount: firstValue, color: firstColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            value(amount: secondValue, color: secondColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-
-    private func headerLabel(_ title: String) -> some View {
+    
+    @ViewBuilder
+    private func header(title: String) -> some View {
         Text(title)
-            .font(BudgetIncomeSavingsSummaryMetrics.headerFont)
+            .font(BudgetIncomeSavingsSummaryMetrics.labelFont)
             .foregroundStyle(.secondary)
             .lineLimit(1)
-            .minimumScaleFactor(BudgetIncomeSavingsSummaryMetrics.minimumScaleFactor)
     }
-
-    private func valueLabel(_ value: Double, color: Color) -> some View {
-        Text(CurrencyFormatterHelper.string(for: value))
+    
+    @ViewBuilder
+    private func value(amount: Double, color: Color) -> some View {
+        Text(CurrencyFormatterHelper.string(for: amount))
             .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
             .foregroundStyle(color)
-    }
-
-    private func legacyColumn(
-        primaryTitle: String,
-        primaryValue: Double,
-        primaryColor: Color,
-        secondaryTitle: String,
-        secondaryValue: Double,
-        secondaryColor: Color
-    ) -> some View {
-        VStack(alignment: .leading, spacing: BudgetIncomeSavingsSummaryMetrics.legacyColumnSpacing) {
-            headerLabel(primaryTitle)
-            valueLabel(primaryValue, color: primaryColor)
-            headerLabel(secondaryTitle)
-            valueLabel(secondaryValue, color: secondaryColor)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+            .lineLimit(1)
     }
 }
 
 private enum BudgetIncomeSavingsSummaryMetrics {
-    static let headerFont: Font = .caption.weight(.semibold)
-    static let valueFont: Font = .callout.weight(.semibold)
+    static let labelFont: Font = .caption.weight(.semibold)
+    static let valueFont: Font = .body.weight(.semibold)
     static let minimumScaleFactor: CGFloat = 0.5
     static let rowSpacing: CGFloat = 5
     static let legacyColumnSpacing: CGFloat = 5
@@ -617,7 +618,7 @@ private struct EqualWidthSegmentApplier: UIViewRepresentable {
 private struct EqualWidthSegmentApplier: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
-        view.isHidden = true
+        view.alphaValue = 0.0
         DispatchQueue.main.async {
             applyEqualWidthIfNeeded(from: view)
         }
@@ -1078,4 +1079,3 @@ private enum CurrencyFormatterHelper {
         return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
     }
 }
-
