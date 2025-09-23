@@ -525,19 +525,25 @@ private struct HomeHeaderPrimarySummaryView: View {
     let summary: BudgetSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
-            Text(summary.budgetName)
-                .font(HomeHeaderPrimarySummaryStyle.titleFont)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
+        HStack(alignment: .top, spacing: DS.Spacing.l) {
+            VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
+                Text(summary.budgetName)
+                    .font(HomeHeaderPrimarySummaryStyle.titleFont)
+                    .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
+                    .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
 
-            Text(summary.periodString)
-                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
-                .foregroundStyle(.secondary)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+                Text(summary.periodString)
+                    .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
+                    .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+
+            BudgetIncomeSavingsSummaryView(summary: summary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityElement(children: .combine)
     }
 }
 

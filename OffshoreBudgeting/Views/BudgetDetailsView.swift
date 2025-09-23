@@ -309,7 +309,7 @@ private struct SummarySection: View {
     let selectedSegment: BudgetDetailsViewModel.Segment
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: DS.Spacing.l) {
+        HStack(alignment: .top, spacing: DS.Spacing.l) {
             // MARK: Sum of Expenses
             VStack(alignment: .leading, spacing: 4) {
                 Text(selectedSegment == .planned ? "Planned Expenses" : "Variable Expenses")
@@ -319,98 +319,118 @@ private struct SummarySection: View {
                 Text(CurrencyFormatterHelper.string(for: selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal))
                     .font(.title3.weight(.semibold))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
 
-            Spacer(minLength: 0)
+            BudgetIncomeSavingsSummaryView(summary: summary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
 
-            // MARK: Income/Savings Grid
-            VStack(alignment: .leading, spacing: 0) {
-                Spacer(minLength: 0)
-                if #available(iOS 16.0, macOS 13.0, *) {
-                    Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
-                        GridRow {
-                            Text("POTENTIAL INCOME")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text("POTENTIAL SAVINGS")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                        }
-                        GridRow {
-                            Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.plannedIncome)
-                            Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.savingsGood)
-                        }
-                        GridRow {
-                            Text("ACTUAL INCOME")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text("ACTUAL SAVINGS")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                        }
-                        GridRow {
-                            Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.actualIncome)
-                            Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
-                        }
-                    }
-                } else {
-                    HStack(alignment: .top, spacing: DS.Spacing.m) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("POTENTIAL INCOME")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.plannedIncome)
-                            Text("ACTUAL INCOME")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.actualIncome)
-                        }
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("POTENTIAL SAVINGS")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(DS.Colors.savingsGood)
-                            Text("ACTUAL SAVINGS")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
-                        }
-                    }
+// MARK: - BudgetIncomeSavingsSummaryView
+struct BudgetIncomeSavingsSummaryView: View {
+    let summary: BudgetSummary
+
+    var body: some View {
+        Group {
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
+                    headerRow(title: "POTENTIAL INCOME", title2: "POTENTIAL SAVINGS")
+                    valuesRow(
+                        firstValue: summary.potentialIncomeTotal,
+                        firstColor: DS.Colors.plannedIncome,
+                        secondValue: summary.potentialSavingsTotal,
+                        secondColor: DS.Colors.savingsGood
+                    )
+                    headerRow(title: "ACTUAL INCOME", title2: "ACTUAL SAVINGS")
+                    valuesRow(
+                        firstValue: summary.actualIncomeTotal,
+                        firstColor: DS.Colors.actualIncome,
+                        secondValue: summary.actualSavingsTotal,
+                        secondColor: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
+                    )
+                }
+            } else {
+                HStack(alignment: .top, spacing: DS.Spacing.m) {
+                    legacyColumn(
+                        primaryTitle: "POTENTIAL INCOME",
+                        primaryValue: summary.potentialIncomeTotal,
+                        primaryColor: DS.Colors.plannedIncome,
+                        secondaryTitle: "ACTUAL INCOME",
+                        secondaryValue: summary.actualIncomeTotal,
+                        secondaryColor: DS.Colors.actualIncome
+                    )
+
+                    legacyColumn(
+                        primaryTitle: "POTENTIAL SAVINGS",
+                        primaryValue: summary.potentialSavingsTotal,
+                        primaryColor: DS.Colors.savingsGood,
+                        secondaryTitle: "ACTUAL SAVINGS",
+                        secondaryValue: summary.actualSavingsTotal,
+                        secondaryColor: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
+                    )
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
     }
+
+    @ViewBuilder
+    private func headerRow(title: String, title2: String) -> some View {
+        GridRow {
+            headerLabel(title)
+            headerLabel(title2)
+        }
+    }
+
+    @ViewBuilder
+    private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
+        GridRow {
+            valueLabel(firstValue, color: firstColor)
+            valueLabel(secondValue, color: secondColor)
+        }
+    }
+
+    private func headerLabel(_ title: String) -> some View {
+        Text(title)
+            .font(BudgetIncomeSavingsSummaryMetrics.headerFont)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(BudgetIncomeSavingsSummaryMetrics.minimumScaleFactor)
+    }
+
+    private func valueLabel(_ value: Double, color: Color) -> some View {
+        Text(CurrencyFormatterHelper.string(for: value))
+            .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
+            .foregroundStyle(color)
+    }
+
+    private func legacyColumn(
+        primaryTitle: String,
+        primaryValue: Double,
+        primaryColor: Color,
+        secondaryTitle: String,
+        secondaryValue: Double,
+        secondaryColor: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: BudgetIncomeSavingsSummaryMetrics.legacyColumnSpacing) {
+            headerLabel(primaryTitle)
+            valueLabel(primaryValue, color: primaryColor)
+            headerLabel(secondaryTitle)
+            valueLabel(secondaryValue, color: secondaryColor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private enum BudgetIncomeSavingsSummaryMetrics {
+    static let headerFont: Font = .caption.weight(.semibold)
+    static let valueFont: Font = .callout.weight(.semibold)
+    static let minimumScaleFactor: CGFloat = 0.5
+    static let rowSpacing: CGFloat = 5
+    static let legacyColumnSpacing: CGFloat = 5
 }
 
 // MARK: - CategoryTotalsRow
