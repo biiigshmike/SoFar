@@ -1139,16 +1139,17 @@ final class ThemeManager: ObservableObject {
     init(
         userDefaults: UserDefaults = .standard,
         ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
-        cloudStatusProvider: CloudAvailabilityProviding = CloudAccountStatusProvider.shared,
+        cloudStatusProvider: CloudAvailabilityProviding? = nil,
         notificationCenter: NotificationCentering = NotificationCenter.default
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
-        self.cloudStatusProvider = cloudStatusProvider
+        let resolvedCloudStatusProvider = cloudStatusProvider ?? CloudAccountStatusProvider.shared
+        self.cloudStatusProvider = resolvedCloudStatusProvider
         self.notificationCenter = notificationCenter
 
         let initialTheme: AppTheme
-        if Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: cloudStatusProvider) {
+        if Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: resolvedCloudStatusProvider) {
             _ = ubiquitousStore.synchronize()
             let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
             initialTheme = Self.resolveTheme(from: raw)
@@ -1158,7 +1159,7 @@ final class ThemeManager: ObservableObject {
         }
         selectedTheme = initialTheme
 
-        availabilityCancellable = cloudStatusProvider.availabilityPublisher
+        availabilityCancellable = resolvedCloudStatusProvider.availabilityPublisher
             .sink { [weak self] availability in
                 self?.handleCloudAvailabilityChange(availability)
             }
@@ -1167,7 +1168,7 @@ final class ThemeManager: ObservableObject {
             startObservingUbiquitousStoreIfNeeded()
         }
 
-        cloudStatusProvider.refreshAccountStatus(force: false)
+        resolvedCloudStatusProvider.refreshAccountStatus(force: false)
         applyAppearance()
     }
 
