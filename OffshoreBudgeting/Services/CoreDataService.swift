@@ -301,7 +301,7 @@ private extension CoreDataService {
     }
 
     func loadPersistentStores() async throws {
-        try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             container.loadPersistentStores { _, error in
                 if let error = error {
                     continuation.resume(throwing: error)
