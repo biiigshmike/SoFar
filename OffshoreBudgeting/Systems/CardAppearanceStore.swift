@@ -4,12 +4,17 @@
 //
 //  Persists per-card theme choices without changing the Core Data schema.
 //  Uses UserDefaults under the hood.
+//  Requires the iCloud Key-Value storage entitlement when syncing via iCloud.
 //
 
 import Foundation
 import Combine
 
 // MARK: - CardAppearanceStore
+/// Persists per-card theme choices locally and, when available, via iCloud.
+///
+/// - Important: Enabling the iCloud sync path requires the target to include
+///   the iCloud Key-Value storage entitlement.
 @MainActor
 final class CardAppearanceStore {
 
