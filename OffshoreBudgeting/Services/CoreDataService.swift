@@ -337,6 +337,15 @@ private extension CoreDataService {
         }
     }
 
+    /// Determines whether the persistent store should be configured for
+    /// CloudKit mirroring before `loadPersistentStores()` runs.
+    ///
+    /// This is invoked ahead of `configureCloudKitOptions(isEnabled:)` so we
+    /// can disable CloudKit and clear the related user defaults up front when
+    /// the user's iCloud account is unavailable. Returning `false` here keeps
+    /// `configureCloudKitOptions` from attaching CloudKit options to the store
+    /// description, meaning the subsequent `loadPersistentStores()` call never
+    /// attempts to talk to CloudKit for that launch.
     func shouldEnableCloudKitSync() async -> Bool {
         guard enableCloudKitSync else {
             disableCloudSyncPreferences()
