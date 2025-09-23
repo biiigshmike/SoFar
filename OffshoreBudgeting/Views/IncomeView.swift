@@ -88,6 +88,14 @@ struct IncomeView: View {
     private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat { 340 }
 #endif
 
+    private enum CalendarSectionMetrics {
+        static let navigationRowHeight: CGFloat = max(
+            TranslucentButtonStyle.Metrics.calendarNavigationIcon.height ?? 0,
+            TranslucentButtonStyle.Metrics.calendarNavigationLabel.height ?? 0
+        )
+        static let headerSpacing: CGFloat = 8
+    }
+
     private let calendarSectionContentPadding: CGFloat = 10
 
     private func minimumCardHeights(using proxy: RootTabPageProxy?) -> IncomeCardHeights {
@@ -201,7 +209,11 @@ struct IncomeView: View {
         let selectedHeight = max(heights.selected, minimums.selected)
         let summaryHeight = max(heights.summary, minimums.summary)
         let rightColumnHeight = selectedHeight + DS.Spacing.m + summaryHeight
-        let calendarCardHeight = max(rightColumnHeight - (calendarSectionContentPadding * 2), minimums.calendar)
+        let navigationHeaderHeight = CalendarSectionMetrics.navigationRowHeight + CalendarSectionMetrics.headerSpacing
+        let calendarCardHeight = max(
+            rightColumnHeight - (calendarSectionContentPadding * 2) - navigationHeaderHeight,
+            minimums.calendar
+        )
         let horizontalPadding = DS.Spacing.l * 2
         let columnSpacing = DS.Spacing.l
         let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
@@ -341,7 +353,7 @@ struct IncomeView: View {
         let cal = sundayFirstCalendar
         let start = cal.date(byAdding: .year, value: -5, to: today)!
         let end = cal.date(byAdding: .year, value: 5, to: today)!
-        VStack(spacing: 8) {
+        VStack(spacing: CalendarSectionMetrics.headerSpacing) {
             HStack(spacing: DS.Spacing.s) {
                 #if os(macOS)
                 if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
@@ -430,6 +442,7 @@ struct IncomeView: View {
                 #endif
             }
             .controlSize(.small)
+            .frame(height: CalendarSectionMetrics.navigationRowHeight)
             #if os(macOS)
             // macOS: attach the configuration closure directly to the call
             MCalendarView(
