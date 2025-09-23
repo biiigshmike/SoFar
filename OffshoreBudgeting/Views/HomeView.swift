@@ -208,6 +208,11 @@ struct HomeView: View {
         } label: {
             RootHeaderControlIcon(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
+                .frame(
+                    width: RootHeaderActionMetrics.dimension,
+                    height: RootHeaderActionMetrics.dimension,
+                    alignment: .center
+                )
         }
 #if os(macOS)
         .menuStyle(.borderlessButton)
