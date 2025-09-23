@@ -101,10 +101,10 @@ struct HomeView: View {
                 headerActions
             }
 
-#if os(macOS)
-            macHeader
-                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-#endif
+            if let summary = primarySummary {
+                HomeHeaderPrimarySummaryView(summary: summary)
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            }
         }
     }
 
@@ -421,6 +421,7 @@ struct HomeView: View {
 #else
                     BudgetDetailsView(
                         budgetObjectID: first.id,
+                        displaysBudgetTitle: false,
                         headerTopPadding: DS.Spacing.xs
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
@@ -445,58 +446,12 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    // MARK: Header
-    @ViewBuilder
-    private var macHeader: some View {
-        if let display = macHeaderDisplay {
-            VStack(alignment: .leading, spacing: macHeaderStackSpacing) {
-                VStack(alignment: .leading, spacing: macHeaderTitleSpacing) {
-                    Text(display.title)
-                        .font(display.titleFont)
-                        .lineLimit(display.titleLineLimit)
-                        .minimumScaleFactor(display.titleMinimumScaleFactor)
-
-                    Text(display.subtitle)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var macHeaderDisplay: MacHeaderDisplay? {
-        guard let summary = primarySummary else { return nil }
-
-        return MacHeaderDisplay(
-            title: summary.budgetName,
-            subtitle: summary.periodString,
-            titleFont: .largeTitle.bold(),
-            titleLineLimit: 2,
-            titleMinimumScaleFactor: 0.75
-        )
-    }
-
-    private struct MacHeaderDisplay {
-        let title: String
-        let subtitle: String
-        let titleFont: Font
-        let titleLineLimit: Int
-        let titleMinimumScaleFactor: CGFloat
-    }
-
     private var headerSectionSpacing: CGFloat {
 #if os(macOS)
         return DS.Spacing.xs
 #else
         return DS.Spacing.s
 #endif
-    }
-
-    private var macHeaderStackSpacing: CGFloat {
-        DS.Spacing.xs
-    }
-
-    private var macHeaderTitleSpacing: CGFloat {
-        DS.Spacing.xs / 2
     }
 
     private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
@@ -563,6 +518,37 @@ struct HomeView: View {
         guard case let .loaded(summaries) = vm.state else { return nil }
         return summaries.first?.id
     }
+}
+
+// MARK: - Home Header Primary Summary
+private struct HomeHeaderPrimarySummaryView: View {
+    let summary: BudgetSummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
+            Text(summary.budgetName)
+                .font(HomeHeaderPrimarySummaryStyle.titleFont)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
+
+            Text(summary.periodString)
+                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
+                .foregroundStyle(.secondary)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private enum HomeHeaderPrimarySummaryStyle {
+    static let verticalSpacing: CGFloat = DS.Spacing.xs / 2
+    static let titleFont: Font = .largeTitle.bold()
+    static let titleLineLimit: Int = 2
+    static let titleMinimumScaleFactor: CGFloat = 0.75
+    static let subtitleFont: Font = .callout
+    static let subtitleLineLimit: Int = 1
+    static let subtitleMinimumScaleFactor: CGFloat = 0.85
 }
 
 // MARK: - Home Header Summary

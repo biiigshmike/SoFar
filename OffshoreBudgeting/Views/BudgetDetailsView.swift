@@ -62,6 +62,9 @@ struct BudgetDetailsView: View {
     }
 
     private var summaryTopPadding: CGFloat {
+        if !displaysBudgetTitle {
+            return 0
+        }
 #if os(macOS)
         return -DS.Spacing.m
 #else
@@ -87,6 +90,12 @@ struct BudgetDetailsView: View {
     }
 #endif
 
+    private var shouldShowPeriodNavigation: Bool {
+        guard periodNavigation != nil else { return false }
+        guard vm.budget?.startDate != nil, vm.budget?.endDate != nil else { return false }
+        return true
+    }
+
     // MARK: Init
     init(
         budgetObjectID: NSManagedObjectID,
@@ -109,33 +118,33 @@ struct BudgetDetailsView: View {
             VStack(alignment: .leading, spacing: headerSpacing) {
 
                 // MARK: Title + Date Range
-                HStack(alignment: .top, spacing: DS.Spacing.m) {
-                    VStack(alignment: .leading, spacing: 4) {
+                if displaysBudgetTitle || shouldShowPeriodNavigation {
+                    HStack(alignment: .top, spacing: DS.Spacing.m) {
                         if displaysBudgetTitle {
-                            Text(vm.budget?.name ?? "Budget")
-                                .font(.largeTitle.bold())
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                        }
-                        if let startDate = vm.budget?.startDate,
-                           let endDate = vm.budget?.endDate,
-                           displaysBudgetTitle {
-                            Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(vm.budget?.name ?? "Budget")
+                                    .font(.largeTitle.bold())
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
 
-                    if let navigation = periodNavigation,
-                       vm.budget?.startDate != nil,
-                       vm.budget?.endDate != nil {
-                        Spacer()
-                        PeriodNavigationControl(
-                            title: navigation.title,
-                            style: .glassIfAvailable,
-                            onPrevious: { navigation.onAdjust(-1) },
-                            onNext: { navigation.onAdjust(+1) }
-                        )
-                        .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
+                                if let startDate = vm.budget?.startDate,
+                                   let endDate = vm.budget?.endDate {
+                                    Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                        if shouldShowPeriodNavigation, let navigation = periodNavigation {
+                            Spacer()
+                            PeriodNavigationControl(
+                                title: navigation.title,
+                                style: .glassIfAvailable,
+                                onPrevious: { navigation.onAdjust(-1) },
+                                onNext: { navigation.onAdjust(+1) }
+                            )
+                            .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
+                        }
                     }
                 }
 
