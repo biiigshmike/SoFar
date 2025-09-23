@@ -118,17 +118,36 @@ struct HomeView: View {
     @ViewBuilder
     private var headerActions: some View {
         let trailing = trailingActionControl
+        let hasBudget = primarySummary != nil
+        let showsStandalonePeriodNavigation = !hasBudget
+
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-            RootHeaderGlassPill(
-                showsDivider: trailing != nil,
-                hasTrailing: trailing != nil
-            ) {
-                periodPickerControl
-            } trailing: {
-                if let trailing {
-                    trailing
+            Group {
+                if hasBudget {
+                    RootHeaderGlassPill(
+                        showsDivider: trailing != nil,
+                        hasTrailing: trailing != nil
+                    ) {
+                        periodPickerControl
+                    } trailing: {
+                        if let trailing {
+                            trailing
+                        }
+                    } secondaryContent: {
+                        periodNavigationControl(style: .plain)
+                            .frame(maxWidth: .infinity)
+                    }
                 } else {
-                    EmptyView()
+                    RootHeaderGlassPill(
+                        showsDivider: trailing != nil,
+                        hasTrailing: trailing != nil
+                    ) {
+                        periodPickerControl
+                    } trailing: {
+                        if let trailing {
+                            trailing
+                        }
+                    }
                 }
             }
             .homeHeaderMatchedControlWidth(
@@ -136,24 +155,28 @@ struct HomeView: View {
                 matchedWidth: matchedHeaderControlWidth
             )
 
-            HStack(spacing: DS.Spacing.s) {
-                if showsHeaderSummary {
-                    HomeHeaderContextSummary(
-                        summary: primarySummary,
-                        fallbackTitle: title(for: vm.selectedDate),
-                        fallbackPeriodRange: defaultPeriodRange(for: vm.selectedDate)
-                    )
-                    .layoutPriority(0)
+            if showsHeaderSummary || showsStandalonePeriodNavigation {
+                HStack(spacing: DS.Spacing.s) {
+                    if showsHeaderSummary {
+                        HomeHeaderContextSummary(
+                            summary: primarySummary,
+                            fallbackTitle: title(for: vm.selectedDate),
+                            fallbackPeriodRange: defaultPeriodRange(for: vm.selectedDate)
+                        )
+                        .layoutPriority(0)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if showsStandalonePeriodNavigation {
+                        periodNavigationControl(style: .glassIfAvailable)
+                            .layoutPriority(1)
+                            .homeHeaderMatchedControlWidth(
+                                intrinsicWidth: $periodNavigationIntrinsicWidth,
+                                matchedWidth: matchedHeaderControlWidth
+                            )
+                    }
                 }
-
-                Spacer(minLength: 0)
-
-                periodNavigationControl
-                    .layoutPriority(1)
-                    .homeHeaderMatchedControlWidth(
-                        intrinsicWidth: $periodNavigationIntrinsicWidth,
-                        matchedWidth: matchedHeaderControlWidth
-                    )
             }
         }
         .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
@@ -440,10 +463,10 @@ struct HomeView: View {
         let titleMinimumScaleFactor: CGFloat
     }
 
-    private var periodNavigationControl: some View {
+    private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
         PeriodNavigationControl(
             title: title(for: vm.selectedDate),
-            style: .glassIfAvailable,
+            style: style,
             onPrevious: { vm.adjustSelectedPeriod(by: -1) },
             onNext: { vm.adjustSelectedPeriod(by: +1) }
         )
