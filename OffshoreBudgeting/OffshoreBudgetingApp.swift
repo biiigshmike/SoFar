@@ -29,6 +29,7 @@ struct OffshoreBudgetingApp: App {
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
+        UITestDataSeeder.applyIfNeeded()
         // No macOS-specific setup required at the moment.
 #if os(iOS)
         // Reduce the chance of text truncation across the app by allowing

@@ -382,29 +382,46 @@ struct HomeView: View {
 
     // MARK: Header
     private var macHeader: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.s) {
-            if let summary = primarySummary {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(summary.budgetName)
-                        .font(.largeTitle.bold())
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.75)
+        let display = macHeaderDisplay
+        return VStack(alignment: .leading, spacing: DS.Spacing.s) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(display.title)
+                    .font(display.titleFont)
+                    .lineLimit(display.titleLineLimit)
+                    .minimumScaleFactor(display.titleMinimumScaleFactor)
 
-                    Text(summary.periodString)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title(for: vm.selectedDate))
-                        .font(.title2.bold())
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-
-                    Text(defaultPeriodRange(for: vm.selectedDate))
-                        .foregroundStyle(.secondary)
-                }
+                Text(display.subtitle)
+                    .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private var macHeaderDisplay: MacHeaderDisplay {
+        if let summary = primarySummary {
+            return MacHeaderDisplay(
+                title: summary.budgetName,
+                subtitle: summary.periodString,
+                titleFont: .largeTitle.bold(),
+                titleLineLimit: 2,
+                titleMinimumScaleFactor: 0.75
+            )
+        } else {
+            return MacHeaderDisplay(
+                title: title(for: vm.selectedDate),
+                subtitle: defaultPeriodRange(for: vm.selectedDate),
+                titleFont: .title2.bold(),
+                titleLineLimit: 1,
+                titleMinimumScaleFactor: 0.5
+            )
+        }
+    }
+
+    private struct MacHeaderDisplay {
+        let title: String
+        let subtitle: String
+        let titleFont: Font
+        let titleLineLimit: Int
+        let titleMinimumScaleFactor: CGFloat
     }
 
     private var periodNavigationControl: some View {
@@ -418,7 +435,7 @@ struct HomeView: View {
 
     private var showsHeaderSummary: Bool {
 #if os(macOS)
-        return true
+        return false
 #elseif os(iOS)
         return horizontalSizeClass == .regular
 #else

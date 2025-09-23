@@ -11,6 +11,7 @@
 //
 
 import XCTest
+import Foundation
 import CoreGraphics
 
 final class SoFarUITests: XCTestCase {
@@ -28,10 +29,14 @@ final class SoFarUITests: XCTestCase {
     /// standardized environment.
     @MainActor
     @discardableResult
-    private func launchAppSkippingOnboarding() -> XCUIApplication {
+    private func launchAppSkippingOnboarding(extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         if !app.launchArguments.contains("-didCompleteOnboarding") {
             app.launchArguments.append(contentsOf: ["-didCompleteOnboarding", "YES"])
+        }
+
+        for argument in extraArguments where !app.launchArguments.contains(argument) {
+            app.launchArguments.append(argument)
         }
 
         app.launch()
@@ -46,6 +51,46 @@ final class SoFarUITests: XCTestCase {
         waitForTabBar(in: app)
         return app
     }
+
+#if os(macOS)
+    @MainActor
+    func testMacHomeShowsSinglePeriodDescriptionWhenEmpty() throws {
+        let app = launchAppSkippingOnboarding(extraArguments: ["-uiTestResetData"])
+        openTab(.home, in: app)
+
+        let expectedLabel = expectedMonthlyRangeString(for: Date())
+        let predicate = NSPredicate(format: "label == %@", expectedLabel)
+        let matches = app.staticTexts.matching(predicate)
+
+        XCTAssertTrue(matches.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(matches.count, UInt(1), "Only one period description should be visible on macOS when no budget exists.")
+    }
+
+    @MainActor
+    func testMacHomeShowsSinglePeriodDescriptionWithBudget() throws {
+        let app = launchAppSkippingOnboarding(extraArguments: ["-uiTestResetData", "-uiTestSeedHomeBudget"])
+        openTab(.home, in: app)
+
+        let expectedLabel = expectedMonthlyRangeString(for: Date())
+        let predicate = NSPredicate(format: "label == %@", expectedLabel)
+        let matches = app.staticTexts.matching(predicate)
+
+        XCTAssertTrue(matches.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(matches.count, UInt(1), "Only one period description should be visible on macOS when a budget is loaded.")
+    }
+
+    private func expectedMonthlyRangeString(for date: Date, calendar: Calendar = .current) -> String {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        guard let start = calendar.date(from: components) else { return "" }
+        let endOfMonthBase = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start) ?? start
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = calendar.locale
+        formatter.timeZone = calendar.timeZone
+        formatter.dateFormat = "MMM d, yyyy"
+        return "\(formatter.string(from: start)) through \(formatter.string(from: endOfMonthBase))"
+    }
+#endif
 
     @MainActor
     private func waitForTabBar(in app: XCUIApplication, timeout: TimeInterval = 5) {
