@@ -20,6 +20,7 @@ struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
+    @StateObject private var cloudStatusProvider = CloudAccountStatusProvider.shared
     @State private var showResetAlert: Bool = false
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
 
@@ -43,6 +44,13 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will remove all budgets, cards, incomes, and expenses. This action cannot be undone.")
+        }
+        .task {
+            _ = await cloudStatusProvider.resolveAvailability()
+        }
+        .onChange(of: cloudStatusProvider.availability) { availability in
+            guard availability == .unavailable else { return }
+            viewModel.enableCloudSync = false
         }
     }
 
@@ -106,26 +114,40 @@ struct SettingsView: View {
                     SettingsRow(title: "Enable iCloud Sync", showsTopDivider: false) {
                         Toggle("", isOn: $viewModel.enableCloudSync)
                             .labelsHidden()
+                            .disabled(!canUseCloudSync)
                     }
+                    .opacity(canUseCloudSync ? 1 : 0.5)
                     SettingsRow(title: "Sync Card Themes Across Devices") {
                         Toggle("", isOn: $viewModel.syncCardThemes)
                             .labelsHidden()
                     }
-                    .disabled(!viewModel.enableCloudSync)
-                    .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                    .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
+                    .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
 
                     SettingsRow(title: "Sync App Theme Across Devices") {
                         Toggle("", isOn: $viewModel.syncAppTheme)
                             .labelsHidden()
                     }
-                    .disabled(!viewModel.enableCloudSync)
-                    .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                    .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
+                    .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
                     SettingsRow(title: "Sync Budget Period Across Devices") {
                         Toggle("", isOn: $viewModel.syncBudgetPeriod)
                             .labelsHidden()
                     }
-                    .disabled(!viewModel.enableCloudSync)
-                    .opacity(viewModel.enableCloudSync ? 1 : 0.5)
+                    .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
+                    .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
+                    if isCloudUnavailable {
+                        Divider()
+                            .padding(.vertical, 8)
+                            .opacity(0.2)
+
+                        Text("iCloud is currently unavailable. Sync options will unlock when an iCloud account is signed in and reachable.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                    }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -248,6 +270,14 @@ struct SettingsView: View {
             includeSafeArea: false,
             tabBarGutter: tabBarGutter
         )
+    }
+
+    private var canUseCloudSync: Bool {
+        cloudStatusProvider.availability == .available
+    }
+
+    private var isCloudUnavailable: Bool {
+        cloudStatusProvider.availability == .unavailable
     }
 
     /// Balanced padding across platforms; a little more breathing room on larger screens.

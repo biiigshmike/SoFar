@@ -28,6 +28,9 @@ final class CoreDataService: ObservableObject {
     private var enableCloudKitSync: Bool {
         UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
     }
+
+    private let cloudAccountProvider = CloudAccountStatusProvider.shared
+    private var loadingTask: Task<Void, Never>?
     
     // MARK: Load State
     /// Tracks whether persistent stores have been loaded at least once.
@@ -60,9 +63,6 @@ final class CoreDataService: ObservableObject {
         // CloudKit (deferred). When you’re ready, we’ll set:
         // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.offshore)
         // and ensure entitlements are set up. For now, leave it nil.
-        if enableCloudKitSync {
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.offshore")
-        }
         
         container.persistentStoreDescriptions = [description]
         return container
@@ -86,17 +86,12 @@ final class CoreDataService: ObservableObject {
     /// Preferred: call this once during app launch. Safe to call multiple times.
     func ensureLoaded(file: StaticString = #file, line: UInt = #line) {
         guard !storesLoaded else { return }
-        container.loadPersistentStores { [weak self] _, error in
-            if let error = error as NSError? {
-                fatalError("❌ Core Data failed to load at \(file):\(line): \(error), \(error.userInfo)")
-            } else {
-                self?.postLoadConfiguration()
-                self?.storesLoaded = true
-                #if DEBUG
-                let urls = self?.container.persistentStoreCoordinator.persistentStores.compactMap { $0.url } ?? []
-                print("✅ Core Data stores loaded (\(urls.count)):", urls)
-                #endif
-            }
+
+        if loadingTask != nil { return }
+
+        loadingTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.loadStores(file: file, line: line)
         }
     }
     
@@ -193,11 +188,12 @@ final class CoreDataService: ObservableObject {
 
         stopObservingCloudKitEvents()
 
-        let defaults = UserDefaults.standard
-        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
-        defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-        defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+        disableCloudSyncPreferences()
+
+        Task { @MainActor in
+            cloudAccountProvider.invalidateCache()
+            cloudAccountProvider.refreshStatus(force: true)
+        }
 
         #if DEBUG
         print("⚠️ Cloud sync disabled after detecting an iCloud account change. Error: \(error)")
@@ -262,5 +258,77 @@ final class CoreDataService: ObservableObject {
             }
             try context.save()
         }
+    }
+}
+
+// MARK: - Private Helpers
+
+private extension CoreDataService {
+    @MainActor
+    func loadStores(file: StaticString, line: UInt) async {
+        defer { loadingTask = nil }
+
+        do {
+            let shouldEnableCloudSync = await shouldEnableCloudKitSync()
+            configureCloudKitOptions(isEnabled: shouldEnableCloudSync)
+
+            try await loadPersistentStores()
+
+            postLoadConfiguration()
+            storesLoaded = true
+
+            #if DEBUG
+            let urls = container.persistentStoreCoordinator.persistentStores.compactMap { $0.url }
+            print("✅ Core Data stores loaded (\(urls.count)):", urls)
+            #endif
+        } catch {
+            let nsError = error as NSError
+            fatalError("❌ Core Data failed to load at \(file):\(line): \(nsError), \(nsError.userInfo)")
+        }
+    }
+
+    func configureCloudKitOptions(isEnabled: Bool) {
+        guard let description = container.persistentStoreDescriptions.first else { return }
+
+        if isEnabled {
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: CloudAccountStatusProvider.containerIdentifier
+            )
+        } else {
+            description.cloudKitContainerOptions = nil
+        }
+    }
+
+    func loadPersistentStores() async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            container.loadPersistentStores { _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
+
+    func shouldEnableCloudKitSync() async -> Bool {
+        guard enableCloudKitSync else {
+            disableCloudSyncPreferences()
+            return false
+        }
+
+        let accountAvailable = await cloudAccountProvider.resolveAvailability()
+        if !accountAvailable {
+            disableCloudSyncPreferences()
+        }
+        return accountAvailable
+    }
+
+    func disableCloudSyncPreferences() {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
     }
 }
