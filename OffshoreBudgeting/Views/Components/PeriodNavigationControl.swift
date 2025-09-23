@@ -55,7 +55,6 @@ struct PeriodNavigationControl: View {
 
     private var plainContent: some View {
         navigationContent
-            .fixedSize(horizontal: true, vertical: false)
     }
 
     @ViewBuilder
@@ -74,7 +73,8 @@ struct PeriodNavigationControl: View {
                 .font(.title2.bold())
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .frame(minWidth: buttonDimension, alignment: .center)
+                .frame(minWidth: buttonDimension, maxWidth: .infinity, alignment: .center)
+                .layoutPriority(1)
 
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
