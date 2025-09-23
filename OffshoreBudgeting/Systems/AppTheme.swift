@@ -1203,8 +1203,18 @@ final class ThemeManager: ObservableObject {
     private func save() {
         userDefaults.set(selectedTheme.rawValue, forKey: storageKey)
         guard shouldUseICloud else { return }
+
+        guard ubiquitousStore.synchronize() else {
+            handleICloudSynchronizationFailure()
+            return
+        }
+
         ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
-        _ = ubiquitousStore.synchronize()
+
+        guard ubiquitousStore.synchronize() else {
+            handleICloudSynchronizationFailure()
+            return
+        }
     }
 
     func refreshSystemAppearance(_ colorScheme: ColorScheme) {
@@ -1273,15 +1283,29 @@ final class ThemeManager: ObservableObject {
 
     private func loadThemeFromCloud() {
         guard shouldUseICloud else { return }
-        _ = ubiquitousStore.synchronize()
+
+        guard ubiquitousStore.synchronize() else {
+            handleICloudSynchronizationFailure()
+            applyThemeFromUserDefaultsIfNeeded()
+            return
+        }
+
         let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+        applyThemeIfNeeded(from: raw)
+    }
+
+    private func applyThemeFromUserDefaultsIfNeeded() {
+        let raw = userDefaults.string(forKey: storageKey)
+        applyThemeIfNeeded(from: raw)
+    }
+
+    private func applyThemeIfNeeded(from raw: String?) {
         let newTheme = Self.resolveTheme(from: raw)
-        if newTheme != selectedTheme {
-            DispatchQueue.main.async {
-                self.isApplyingRemoteChange = true
-                self.selectedTheme = newTheme
-                self.isApplyingRemoteChange = false
-            }
+        guard newTheme != selectedTheme else { return }
+        DispatchQueue.main.async {
+            self.isApplyingRemoteChange = true
+            self.selectedTheme = newTheme
+            self.isApplyingRemoteChange = false
         }
     }
 
@@ -1308,5 +1332,14 @@ final class ThemeManager: ObservableObject {
     private func handleUbiquitousStoreChange(_ note: Notification) {
         guard shouldUseICloud else { return }
         loadThemeFromCloud()
+    }
+
+    private func handleICloudSynchronizationFailure() {
+        stopObservingUbiquitousStore()
+        CloudSyncPreferences.disableAppThemeSync(in: userDefaults)
+        cloudStatusProvider.refreshAccountStatus(force: true)
+        #if DEBUG
+        print("⚠️ ThemeManager: Falling back to UserDefaults after iCloud synchronize() failed.")
+        #endif
     }
 }

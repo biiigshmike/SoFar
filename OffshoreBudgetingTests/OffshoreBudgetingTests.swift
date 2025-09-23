@@ -105,6 +105,86 @@ struct OffshoreBudgetingTests {
         _ = manager // keep alive for test duration
     }
 
+    @Test
+    @MainActor
+    func themeManager_disablesSyncWhenCloudSaveFails() async throws {
+        let suiteName = "ThemeManagerSaveFailure"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(AppTheme.classic.rawValue, forKey: "selectedTheme")
+
+        let ubiquitousStore = MockUbiquitousKeyValueStore()
+        ubiquitousStore.synchronizeResults = [true, true, true, false]
+        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let notificationCenter = MockNotificationCenter()
+
+        let manager = ThemeManager(
+            userDefaults: defaults,
+            ubiquitousStore: ubiquitousStore,
+            cloudStatusProvider: cloudProvider,
+            notificationCenter: notificationCenter
+        )
+
+        let initialSetCallCount = ubiquitousStore.setCallCount
+
+        manager.selectedTheme = .sunrise
+
+        #expect(ubiquitousStore.setCallCount == initialSetCallCount)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
+        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+
+        _ = manager
+    }
+
+    @Test
+    @MainActor
+    func themeManager_fallsBackToLocalDefaultsWhenCloudLoadFails() async throws {
+        let suiteName = "ThemeManagerLoadFailure"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(AppTheme.classic.rawValue, forKey: "selectedTheme")
+
+        let ubiquitousStore = MockUbiquitousKeyValueStore()
+        ubiquitousStore.synchronizeResults = [true, true, true, false]
+        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let notificationCenter = MockNotificationCenter()
+
+        let manager = ThemeManager(
+            userDefaults: defaults,
+            ubiquitousStore: ubiquitousStore,
+            cloudStatusProvider: cloudProvider,
+            notificationCenter: notificationCenter
+        )
+
+        let initialStringCalls = ubiquitousStore.stringCallCount
+
+        defaults.set(AppTheme.forest.rawValue, forKey: "selectedTheme")
+
+        notificationCenter.post(
+            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: ubiquitousStore
+        )
+
+        await Task.yield()
+        await Task.yield()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(ubiquitousStore.stringCallCount == initialStringCalls)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
+        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(manager.selectedTheme == .forest)
+
+        _ = manager
+    }
+
     // MARK: - CardAppearanceStore
 
     @Test
@@ -138,6 +218,77 @@ struct OffshoreBudgetingTests {
 
         _ = store // keep alive for test duration
     }
+
+    @Test
+    @MainActor
+    func cardAppearanceStore_fallsBackToLocalDefaultsWhenCloudLoadFails() throws {
+        let suiteName = "CardAppearanceStoreLoadFailure"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+
+        let cardID = UUID()
+        let payload = [cardID.uuidString: CardTheme.midnight]
+        let data = try JSONEncoder().encode(payload)
+        defaults.set(data, forKey: "card.appearance.v1")
+
+        let ubiquitousStore = MockUbiquitousKeyValueStore()
+        ubiquitousStore.synchronizeResults = [false]
+        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let notificationCenter = MockNotificationCenter()
+
+        let store = CardAppearanceStore(
+            userDefaults: defaults,
+            ubiquitousStore: ubiquitousStore,
+            cloudStatusProvider: cloudProvider,
+            notificationCenter: notificationCenter
+        )
+
+        #expect(ubiquitousStore.dataCallCount == 0)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
+        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(store.theme(for: cardID) == .midnight)
+
+        _ = store
+    }
+
+    @Test
+    @MainActor
+    func cardAppearanceStore_disablesSyncWhenCloudSaveFails() throws {
+        let suiteName = "CardAppearanceStoreSaveFailure"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+
+        let ubiquitousStore = MockUbiquitousKeyValueStore()
+        ubiquitousStore.synchronizeResults = [true, false]
+        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let notificationCenter = MockNotificationCenter()
+
+        let store = CardAppearanceStore(
+            userDefaults: defaults,
+            ubiquitousStore: ubiquitousStore,
+            cloudStatusProvider: cloudProvider,
+            notificationCenter: notificationCenter
+        )
+
+        let cardID = UUID()
+
+        store.setTheme(.midnight, for: cardID)
+
+        #expect(ubiquitousStore.setCallCount == 0)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
+        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(store.theme(for: cardID) == .midnight)
+
+        _ = store
+    }
 }
 
 // MARK: - Test Doubles
@@ -145,6 +296,7 @@ struct OffshoreBudgetingTests {
 @MainActor
 private final class MockCloudAvailabilityProvider: CloudAvailabilityProviding {
     private let subject: CurrentValueSubject<CloudAccountStatusProvider.Availability, Never>
+    private(set) var refreshAccountStatusCalls: [Bool] = []
 
     init(initialAvailability: CloudAccountStatusProvider.Availability) {
         subject = .init(initialAvailability)
@@ -166,7 +318,7 @@ private final class MockCloudAvailabilityProvider: CloudAvailabilityProviding {
     }
 
     func refreshAccountStatus(force: Bool) {
-        // No-op for tests.
+        refreshAccountStatusCalls.append(force)
     }
 
     func send(_ availability: CloudAccountStatusProvider.Availability) {
@@ -178,19 +330,28 @@ private final class MockUbiquitousKeyValueStore: UbiquitousKeyValueStoring {
     private var storage: [String: Any] = [:]
     private(set) var synchronizeCallCount = 0
     private(set) var setCallCount = 0
+    private(set) var stringCallCount = 0
+    private(set) var dataCallCount = 0
+    var synchronizeResults: [Bool] = []
+    var defaultSynchronizeResult: Bool = true
 
     @discardableResult
     func synchronize() -> Bool {
         synchronizeCallCount += 1
-        return true
+        if !synchronizeResults.isEmpty {
+            return synchronizeResults.removeFirst()
+        }
+        return defaultSynchronizeResult
     }
 
     func string(forKey defaultName: String) -> String? {
-        storage[defaultName] as? String
+        stringCallCount += 1
+        return storage[defaultName] as? String
     }
 
     func data(forKey defaultName: String) -> Data? {
-        storage[defaultName] as? Data
+        dataCallCount += 1
+        return storage[defaultName] as? Data
     }
 
     func set(_ value: Any?, forKey defaultName: String) {
