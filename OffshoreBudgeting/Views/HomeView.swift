@@ -455,10 +455,11 @@ struct HomeView: View {
     }
 
     private var headerSectionSpacing: CGFloat {
+        let hasPrimarySummary = primarySummary != nil
 #if os(macOS)
-        return DS.Spacing.xs
+        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.xs
 #else
-        return DS.Spacing.s
+        return hasPrimarySummary ? DS.Spacing.xs : DS.Spacing.s
 #endif
     }
 
