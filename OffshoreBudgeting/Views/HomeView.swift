@@ -112,8 +112,9 @@ struct HomeView: View {
     private var headerActions: some View {
         let trailing = trailingActionControl
         let headerSummary = primarySummary
-        let showsContextSummary = headerSummary != nil && showsHeaderSummary
-        let showsStandalonePeriodNavigation = headerSummary != nil && !showsHeaderSummary
+        let hasBudget = hasActiveBudget
+        let showsContextSummary = hasBudget && headerSummary != nil && showsHeaderSummary
+        let showsStandalonePeriodNavigation = hasBudget && headerSummary != nil && !showsHeaderSummary
 
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Group {
@@ -158,10 +159,12 @@ struct HomeView: View {
                     }
                 }
             }
-            .homeHeaderMatchedControlWidth(
-                intrinsicWidth: $headerActionPillIntrinsicWidth,
-                matchedWidth: matchedHeaderControlWidth
-            )
+            .applyIf(hasBudget) {
+                $0.homeHeaderMatchedControlWidth(
+                    intrinsicWidth: $headerActionPillIntrinsicWidth,
+                    matchedWidth: matchedHeaderControlWidth
+                )
+            }
 
             if showsContextSummary || showsStandalonePeriodNavigation {
                 HStack(spacing: DS.Spacing.s) {
@@ -175,16 +178,24 @@ struct HomeView: View {
                     if showsStandalonePeriodNavigation {
                         periodNavigationControl(style: .glassIfAvailable)
                             .layoutPriority(1)
-                            .homeHeaderMatchedControlWidth(
-                                intrinsicWidth: $periodNavigationIntrinsicWidth,
-                                matchedWidth: matchedHeaderControlWidth
-                            )
+                            .applyIf(hasBudget) {
+                                $0.homeHeaderMatchedControlWidth(
+                                    intrinsicWidth: $periodNavigationIntrinsicWidth,
+                                    matchedWidth: matchedHeaderControlWidth
+                                )
+                            }
                     }
                 }
             }
         }
         .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
             matchedHeaderControlWidth = width > 0 ? width : nil
+        }
+        .ub_onChange(of: hasBudget) { newValue in
+            guard !newValue else { return }
+            matchedHeaderControlWidth = nil
+            headerActionPillIntrinsicWidth = nil
+            periodNavigationIntrinsicWidth = nil
         }
     }
 
@@ -498,6 +509,13 @@ struct HomeView: View {
         return nil
     }
 
+    private var hasActiveBudget: Bool {
+        if case .loaded(let summaries) = vm.state {
+            return !summaries.isEmpty
+        }
+        return false
+    }
+
     private var emptyStateMessage: String {
         "No budget found for \(title(for: vm.selectedDate)). Use Create a budget to set one up for this period."
     }
@@ -621,6 +639,18 @@ private extension View {
                 matchedWidth: matchedWidth
             )
         )
+    }
+
+    @ViewBuilder
+    func applyIf<Content: View>(
+        _ condition: Bool,
+        transform: (Self) -> Content
+    ) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 
