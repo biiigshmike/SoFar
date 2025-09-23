@@ -209,7 +209,7 @@ final class CoreDataService: ObservableObject {
 
         disableCloudSyncPreferences()
 
-        Task { [weak self] @MainActor in
+        Task { [weak self] in
             guard let self else { return }
             await self.reconfigurePersistentStoresForLocalMode()
         }
