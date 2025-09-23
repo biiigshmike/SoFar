@@ -1148,9 +1148,12 @@ final class ThemeManager: ObservableObject {
     private static let legacyLiquidGlassIdentifier = "tahoe"
     private let ubiquitousStore: UbiquitousKeyValueStoring
     private let userDefaults: UserDefaults
-    private let cloudStatusProvider: CloudAvailabilityProviding
+    private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
+    private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
+    private var cloudStatusProvider: CloudAvailabilityProviding?
     private let notificationCenter: NotificationCentering
     private var availabilityCancellable: AnyCancellable?
+    private var hasRequestedCloudAvailabilityCheck = false
     private var ubiquitousObserver: NSObjectProtocol?
     private var isApplyingRemoteChange = false
 
@@ -1162,31 +1165,30 @@ final class ThemeManager: ObservableObject {
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
-        let resolvedCloudStatusProvider = cloudStatusProvider ?? CloudAccountStatusProvider.shared
-        self.cloudStatusProvider = resolvedCloudStatusProvider
+        self.pendingInjectedCloudStatusProvider = cloudStatusProvider
+        self.defaultCloudStatusProviderFactory = { CloudAccountStatusProvider.shared }
         self.notificationCenter = notificationCenter
 
         let initialTheme: AppTheme
-        if Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: resolvedCloudStatusProvider) {
-            _ = ubiquitousStore.synchronize()
-            let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
-            initialTheme = Self.resolveTheme(from: raw)
+        if Self.isThemeSyncEnabled(in: userDefaults) {
+            let provider = resolveCloudStatusProvider()
+            if Self.isCloudAvailable(from: provider) {
+                _ = ubiquitousStore.synchronize()
+                let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+                initialTheme = Self.resolveTheme(from: raw)
+            } else {
+                let raw = userDefaults.string(forKey: storageKey)
+                initialTheme = Self.resolveTheme(from: raw)
+            }
         } else {
             let raw = userDefaults.string(forKey: storageKey)
             initialTheme = Self.resolveTheme(from: raw)
         }
         selectedTheme = initialTheme
 
-        availabilityCancellable = resolvedCloudStatusProvider.availabilityPublisher
-            .sink { [weak self] availability in
-                self?.handleCloudAvailabilityChange(availability)
-            }
-
         if shouldUseICloud {
             startObservingUbiquitousStoreIfNeeded()
         }
-
-        resolvedCloudStatusProvider.refreshAccountStatus(force: false)
         applyAppearance()
     }
 
@@ -1263,8 +1265,38 @@ final class ThemeManager: ObservableObject {
         return available
     }
 
+    private func resolveCloudStatusProvider() -> CloudAvailabilityProviding {
+        if let provider = cloudStatusProvider {
+            scheduleAvailabilityCheckIfNeeded(for: provider)
+            return provider
+        }
+
+        let provider = pendingInjectedCloudStatusProvider ?? defaultCloudStatusProviderFactory()
+        pendingInjectedCloudStatusProvider = nil
+        cloudStatusProvider = provider
+
+        availabilityCancellable?.cancel()
+        availabilityCancellable = provider.availabilityPublisher
+            .sink { [weak self] availability in
+                self?.handleCloudAvailabilityChange(availability)
+            }
+
+        scheduleAvailabilityCheckIfNeeded(for: provider)
+        return provider
+    }
+
+    private func scheduleAvailabilityCheckIfNeeded(for provider: CloudAvailabilityProviding) {
+        guard !hasRequestedCloudAvailabilityCheck else { return }
+        hasRequestedCloudAvailabilityCheck = true
+        Task { @MainActor in
+            _ = await provider.resolveAvailability(forceRefresh: false)
+        }
+    }
+
     private var shouldUseICloud: Bool {
-        Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: cloudStatusProvider)
+        guard Self.isThemeSyncEnabled(in: userDefaults) else { return false }
+        let provider = resolveCloudStatusProvider()
+        return Self.isCloudAvailable(from: provider)
     }
 
     private func handleCloudAvailabilityChange(_ availability: CloudAccountStatusProvider.Availability) {
@@ -1337,7 +1369,8 @@ final class ThemeManager: ObservableObject {
     private func handleICloudSynchronizationFailure() {
         stopObservingUbiquitousStore()
         CloudSyncPreferences.disableAppThemeSync(in: userDefaults)
-        cloudStatusProvider.refreshAccountStatus(force: true)
+        let provider = resolveCloudStatusProvider()
+        provider.requestAccountStatusCheck(force: true)
         #if DEBUG
         print("⚠️ ThemeManager: Falling back to UserDefaults after iCloud synchronize() failed.")
         #endif

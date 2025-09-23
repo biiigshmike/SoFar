@@ -217,7 +217,7 @@ final class CoreDataService: ObservableObject {
         Task {
             let provider = await cloudAccountStatusProvider()
             await provider.invalidateCache()
-            await provider.refreshStatus(force: true)
+            await provider.requestAccountStatusCheck(force: true)
         }
 
         #if DEBUG
@@ -337,23 +337,23 @@ private extension CoreDataService {
         }
     }
 
-    /// Determines whether the persistent store should be configured for
-    /// CloudKit mirroring before `loadPersistentStores()` runs.
-    ///
-    /// This is invoked ahead of `configureCloudKitOptions(isEnabled:)` so we
-    /// can disable CloudKit and clear the related user defaults up front when
-    /// the user's iCloud account is unavailable. Returning `false` here keeps
-    /// `configureCloudKitOptions` from attaching CloudKit options to the store
-    /// description, meaning the subsequent `loadPersistentStores()` call never
-    /// attempts to talk to CloudKit for that launch.
-    func shouldEnableCloudKitSync() async -> Bool {
+    /// Determines whether the persistent store should be configured for CloudKit mirroring.
+    /// - Parameter providerOverride: Optional cloud status provider to use instead of the shared singleton.
+    /// - Returns: `true` when CloudKit should be enabled for this launch.
+    func shouldEnableCloudKitSync(using providerOverride: CloudAvailabilityProviding? = nil) async -> Bool {
         guard enableCloudKitSync else {
             disableCloudSyncPreferences()
             return false
         }
 
-        let provider = await cloudAccountStatusProvider()
-        let accountAvailable = await provider.resolveAvailability()
+        let provider: CloudAvailabilityProviding
+        if let providerOverride {
+            provider = providerOverride
+        } else {
+            provider = await cloudAccountStatusProvider()
+        }
+
+        let accountAvailable = await provider.resolveAvailability(forceRefresh: false)
         if !accountAvailable {
             disableCloudSyncPreferences()
         }
@@ -401,7 +401,7 @@ private extension CoreDataService {
         }
     }
 
-    private func cloudAccountStatusProvider() async -> CloudAccountStatusProvider {
+    private func cloudAccountStatusProvider() async -> CloudAvailabilityProviding {
         await MainActor.run { CloudAccountStatusProvider.shared }
     }
 

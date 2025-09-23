@@ -135,7 +135,7 @@ struct OffshoreBudgetingTests {
 
         #expect(ubiquitousStore.setCallCount == initialSetCallCount)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
-        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
 
         _ = manager
     }
@@ -179,7 +179,7 @@ struct OffshoreBudgetingTests {
 
         #expect(ubiquitousStore.stringCallCount == initialStringCalls)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
-        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
         #expect(manager.selectedTheme == .forest)
 
         _ = manager
@@ -249,7 +249,7 @@ struct OffshoreBudgetingTests {
 
         #expect(ubiquitousStore.dataCallCount == 0)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
-        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
         #expect(store.theme(for: cardID) == .midnight)
 
         _ = store
@@ -284,10 +284,97 @@ struct OffshoreBudgetingTests {
 
         #expect(ubiquitousStore.setCallCount == 0)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
-        #expect(cloudProvider.refreshAccountStatusCalls.contains(true))
+        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
         #expect(store.theme(for: cardID) == .midnight)
 
         _ = store
+    }
+
+    @Test
+    func coreDataService_enablesCloudKitWhenToggleOn() async throws {
+        let defaults = UserDefaults.standard
+        let previousEnable = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        let previousCard = defaults.object(forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        let previousTheme = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        let previousBudget = defaults.object(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+        defer {
+            if let previousEnable {
+                defaults.set(previousEnable, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.enableCloudSync.rawValue)
+            }
+            if let previousCard {
+                defaults.set(previousCard, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncCardThemes.rawValue)
+            }
+            if let previousTheme {
+                defaults.set(previousTheme, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+            }
+            if let previousBudget {
+                defaults.set(previousBudget, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+            }
+        }
+
+        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+
+        let provider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let shouldEnable = await CoreDataService.shared.shouldEnableCloudKitSync(using: provider)
+
+        #expect(shouldEnable)
+        #expect(provider.resolveAvailabilityCallCount == 1)
+    }
+
+    @Test
+    func coreDataService_disablesCloudKitWhenToggleOff() async throws {
+        let defaults = UserDefaults.standard
+        let previousEnable = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        let previousCard = defaults.object(forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        let previousTheme = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        let previousBudget = defaults.object(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+        defer {
+            if let previousEnable {
+                defaults.set(previousEnable, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.enableCloudSync.rawValue)
+            }
+            if let previousCard {
+                defaults.set(previousCard, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncCardThemes.rawValue)
+            }
+            if let previousTheme {
+                defaults.set(previousTheme, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+            }
+            if let previousBudget {
+                defaults.set(previousBudget, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+            } else {
+                defaults.removeObject(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+            }
+        }
+
+        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(true, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+
+        let provider = MockCloudAvailabilityProvider(initialAvailability: .available)
+        let shouldEnable = await CoreDataService.shared.shouldEnableCloudKitSync(using: provider)
+
+        #expect(!shouldEnable)
+        #expect(provider.resolveAvailabilityCallCount == 0)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
+        #expect(defaults.bool(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue) == false)
     }
 }
 
@@ -296,7 +383,9 @@ struct OffshoreBudgetingTests {
 @MainActor
 private final class MockCloudAvailabilityProvider: CloudAvailabilityProviding {
     private let subject: CurrentValueSubject<CloudAccountStatusProvider.Availability, Never>
-    private(set) var refreshAccountStatusCalls: [Bool] = []
+    private(set) var requestAccountStatusCheckCalls: [Bool] = []
+    private(set) var resolveAvailabilityCallCount = 0
+    private(set) var invalidateCacheCallCount = 0
 
     init(initialAvailability: CloudAccountStatusProvider.Availability) {
         subject = .init(initialAvailability)
@@ -317,8 +406,22 @@ private final class MockCloudAvailabilityProvider: CloudAvailabilityProviding {
         subject.eraseToAnyPublisher()
     }
 
-    func refreshAccountStatus(force: Bool) {
-        refreshAccountStatusCalls.append(force)
+    func requestAccountStatusCheck(force: Bool) {
+        requestAccountStatusCheckCalls.append(force)
+    }
+
+    func resolveAvailability(forceRefresh: Bool) async -> Bool {
+        resolveAvailabilityCallCount += 1
+        switch subject.value {
+        case .available:
+            return true
+        case .unavailable, .unknown:
+            return false
+        }
+    }
+
+    func invalidateCache() {
+        invalidateCacheCallCount += 1
     }
 
     func send(_ availability: CloudAccountStatusProvider.Availability) {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 // MARK: - SettingsView
 /// Root settings screen with a hero-style "General" card and smaller cards below.
@@ -20,7 +21,9 @@ struct SettingsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
-    @StateObject private var cloudStatusProvider = CloudAccountStatusProvider.shared
+    @State private var cloudStatusProvider: CloudAccountStatusProvider?
+    @State private var availabilityCancellable: AnyCancellable?
+    @State private var cloudAvailability: CloudAccountStatusProvider.Availability = .unknown
     @State private var showResetAlert: Bool = false
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
 
@@ -46,9 +49,18 @@ struct SettingsView: View {
             Text("This will remove all budgets, cards, incomes, and expenses. This action cannot be undone.")
         }
         .task {
-            _ = await cloudStatusProvider.resolveAvailability()
+            if viewModel.enableCloudSync {
+                await requestCloudAvailabilityCheck(force: false)
+            }
         }
-        .onChange(of: cloudStatusProvider.availability) { availability in
+        .onChange(of: viewModel.enableCloudSync) { newValue in
+            if newValue {
+                Task { await requestCloudAvailabilityCheck(force: false) }
+            } else {
+                cloudAvailability = .unknown
+            }
+        }
+        .onChange(of: cloudAvailability) { availability in
             guard availability == .unavailable else { return }
             viewModel.enableCloudSync = false
         }
@@ -136,7 +148,18 @@ struct SettingsView: View {
                     }
                     .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
                     .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
-                    if isCloudUnavailable {
+                    if isCheckingCloudAvailability {
+                        Divider()
+                            .padding(.vertical, 8)
+                            .opacity(0.2)
+
+                        Text("Checking your iCloud status…")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                    } else if isCloudUnavailable {
                         Divider()
                             .padding(.vertical, 8)
                             .opacity(0.2)
@@ -272,12 +295,45 @@ struct SettingsView: View {
         )
     }
 
+    @MainActor
+    private func ensureCloudStatusProvider() -> CloudAccountStatusProvider {
+        if let provider = cloudStatusProvider {
+            return provider
+        }
+
+        let provider = CloudAccountStatusProvider.shared
+        cloudStatusProvider = provider
+        subscribe(to: provider)
+        return provider
+    }
+
+    @MainActor
+    private func subscribe(to provider: CloudAccountStatusProvider) {
+        availabilityCancellable?.cancel()
+        cloudAvailability = provider.availability
+        availabilityCancellable = provider.availabilityPublisher
+            .sink { availability in
+                Task { @MainActor in
+                    cloudAvailability = availability
+                }
+            }
+    }
+
+    private func requestCloudAvailabilityCheck(force: Bool) async {
+        let provider = await MainActor.run { ensureCloudStatusProvider() }
+        _ = await provider.resolveAvailability(forceRefresh: force)
+    }
+
     private var canUseCloudSync: Bool {
-        cloudStatusProvider.availability == .available
+        cloudAvailability == .available
     }
 
     private var isCloudUnavailable: Bool {
-        cloudStatusProvider.availability == .unavailable
+        cloudAvailability == .unavailable
+    }
+
+    private var isCheckingCloudAvailability: Bool {
+        viewModel.enableCloudSync && cloudAvailability == .unknown
     }
 
     /// Balanced padding across platforms; a little more breathing room on larger screens.
