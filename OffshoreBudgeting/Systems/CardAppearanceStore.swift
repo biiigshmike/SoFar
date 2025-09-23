@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Combine
 
 // MARK: - CardAppearanceStore
 final class CardAppearanceStore {
@@ -16,39 +17,64 @@ final class CardAppearanceStore {
 
     // MARK: Storage Backbone
     private let userDefaults: UserDefaults
-    private let ubiquitousStore: NSUbiquitousKeyValueStore
+    private let ubiquitousStore: UbiquitousKeyValueStoring
+    private let cloudStatusProvider: CloudAvailabilityProviding
+    private let notificationCenter: NotificationCentering
     private let storageKey = "card.appearance.v1"
 
     /// In-memory cache for quick lookups.
     private var cache: [UUID: CardTheme] = [:]
+    private var availabilityCancellable: AnyCancellable?
+    private var ubiquitousObserver: NSObjectProtocol?
 
-    /// Whether cloud syncing is enabled via settings.
-    private var isSyncEnabled: Bool {
-        let cardSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? false
-        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
+    private var isCardThemeSyncEnabled: Bool {
+        let cardSync = userDefaults.object(forKey: AppSettingsKeys.syncCardThemes.rawValue) as? Bool ?? false
+        let cloud = userDefaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
         return cardSync && cloud
     }
 
+    private var shouldUseICloud: Bool {
+        guard let available = cloudStatusProvider.isCloudAccountAvailable else { return false }
+        return available && isCardThemeSyncEnabled
+    }
+
     // MARK: Init
-    init(userDefaults: UserDefaults = .standard, ubiquitousStore: NSUbiquitousKeyValueStore = .default) {
+    init(
+        userDefaults: UserDefaults = .standard,
+        ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
+        cloudStatusProvider: CloudAvailabilityProviding = CloudAccountStatusProvider.shared,
+        notificationCenter: NotificationCentering = NotificationCenter.default
+    ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
+        self.cloudStatusProvider = cloudStatusProvider
+        self.notificationCenter = notificationCenter
+
         load()
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(storeChanged(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore
-        )
+        if shouldUseICloud {
+            startObservingUbiquitousStoreIfNeeded()
+        }
+
+        availabilityCancellable = cloudStatusProvider.availabilityPublisher
+            .sink { [weak self] availability in
+                self?.handleCloudAvailabilityChange(availability)
+            }
+
+        cloudStatusProvider.refreshAccountStatus(force: false)
+    }
+
+    deinit {
+        availabilityCancellable?.cancel()
+        stopObservingUbiquitousStore()
     }
 
     // MARK: load()
     /// Hydrates the in-memory cache from UserDefaults and optionally iCloud.
     private func load() {
-        var data: Data?
-        if isSyncEnabled {
-            ubiquitousStore.synchronize()
+        let data: Data?
+        if shouldUseICloud {
+            _ = ubiquitousStore.synchronize()
             data = ubiquitousStore.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
         } else {
             data = userDefaults.data(forKey: storageKey)
@@ -75,10 +101,9 @@ final class CardAppearanceStore {
         })
         if let data = try? JSONEncoder().encode(dict) {
             userDefaults.set(data, forKey: storageKey)
-            if isSyncEnabled {
-                ubiquitousStore.set(data, forKey: storageKey)
-                ubiquitousStore.synchronize()
-            }
+            guard shouldUseICloud else { return }
+            ubiquitousStore.set(data, forKey: storageKey)
+            _ = ubiquitousStore.synchronize()
         }
     }
 
@@ -102,14 +127,43 @@ final class CardAppearanceStore {
         save()
     }
 
-    /// Respond to external iCloud changes.
-    @objc private func storeChanged(_ note: Notification) {
-        guard isSyncEnabled else { return }
+    private func handleCloudAvailabilityChange(_ availability: CloudAccountStatusProvider.Availability) {
+        switch availability {
+        case .available:
+            guard isCardThemeSyncEnabled else { return }
+            startObservingUbiquitousStoreIfNeeded()
+            load()
+        case .unavailable:
+            stopObservingUbiquitousStore()
+            CloudSyncPreferences.disableCardThemeSync(in: userDefaults)
+        case .unknown:
+            break
+        }
+    }
+
+    private func startObservingUbiquitousStoreIfNeeded() {
+        guard ubiquitousObserver == nil else { return }
+        ubiquitousObserver = notificationCenter.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: ubiquitousStore as AnyObject,
+            queue: nil
+        ) { [weak self] note in
+            self?.handleUbiquitousStoreChange(note)
+        }
+    }
+
+    private func stopObservingUbiquitousStore() {
+        if let observer = ubiquitousObserver {
+            notificationCenter.removeObserver(observer)
+            ubiquitousObserver = nil
+        }
+    }
+
+    private func handleUbiquitousStoreChange(_ note: Notification) {
+        guard shouldUseICloud else { return }
         load()
 
-
         // Propagate the change so views can refresh themes immediately.
-
-        NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: nil)
+        notificationCenter.post(name: UserDefaults.didChangeNotification, object: nil)
     }
 }

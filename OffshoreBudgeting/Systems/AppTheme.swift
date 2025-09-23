@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import Foundation
 #if canImport(UIKit)
 import UIKit
@@ -6,6 +7,41 @@ import UIKit
 #if canImport(AppKit)
 import AppKit
 #endif
+
+// MARK: - Cloud Sync Infrastructure
+
+protocol UbiquitousKeyValueStoring: AnyObject {
+    @discardableResult
+    func synchronize() -> Bool
+    func string(forKey defaultName: String) -> String?
+    func data(forKey defaultName: String) -> Data?
+    func set(_ value: Any?, forKey defaultName: String)
+}
+
+extension NSUbiquitousKeyValueStore: UbiquitousKeyValueStoring {}
+
+protocol NotificationCentering: AnyObject {
+    @discardableResult
+    func addObserver(forName name: NSNotification.Name?, object obj: Any?, queue: OperationQueue?, using block: @escaping (Notification) -> Void) -> NSObjectProtocol
+    func removeObserver(_ observer: Any)
+    func post(name: NSNotification.Name, object obj: Any?)
+}
+
+extension NotificationCenter: NotificationCentering {
+    func post(name: NSNotification.Name, object obj: Any?) {
+        post(name: name, object: obj)
+    }
+}
+
+enum CloudSyncPreferences {
+    static func disableAppThemeSync(in defaults: UserDefaults) {
+        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+    }
+
+    static func disableCardThemeSync(in defaults: UserDefaults) {
+        defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+    }
+}
 
 // MARK: - AppTheme
 /// Centralized color palette for the application. Each case defines a
@@ -1082,42 +1118,52 @@ final class ThemeManager: ObservableObject {
 
     private let storageKey = "selectedTheme"
     private static let legacyLiquidGlassIdentifier = "tahoe"
-    private let ubiquitousStore = NSUbiquitousKeyValueStore.default
+    private let ubiquitousStore: UbiquitousKeyValueStoring
+    private let userDefaults: UserDefaults
+    private let cloudStatusProvider: CloudAvailabilityProviding
+    private let notificationCenter: NotificationCentering
+    private var availabilityCancellable: AnyCancellable?
+    private var ubiquitousObserver: NSObjectProtocol?
     private var isApplyingRemoteChange = false
 
-    private static var isSyncEnabled: Bool {
-        let themeSync = UserDefaults.standard.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? false
-        let cloud = UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
-        return themeSync && cloud
+    init(
+        userDefaults: UserDefaults = .standard,
+        ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
+        cloudStatusProvider: CloudAvailabilityProviding = CloudAccountStatusProvider.shared,
+        notificationCenter: NotificationCentering = NotificationCenter.default
+    ) {
+        self.userDefaults = userDefaults
+        self.ubiquitousStore = ubiquitousStore
+        self.cloudStatusProvider = cloudStatusProvider
+        self.notificationCenter = notificationCenter
+
+        let initialTheme: AppTheme
+        if Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: cloudStatusProvider) {
+            _ = ubiquitousStore.synchronize()
+            let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+            initialTheme = Self.resolveTheme(from: raw)
+        } else {
+            let raw = userDefaults.string(forKey: storageKey)
+            initialTheme = Self.resolveTheme(from: raw)
+        }
+        selectedTheme = initialTheme
+
+        availabilityCancellable = cloudStatusProvider.availabilityPublisher
+            .sink { [weak self] availability in
+                self?.handleCloudAvailabilityChange(availability)
+            }
+
+        if shouldUseICloud {
+            startObservingUbiquitousStoreIfNeeded()
+        }
+
+        cloudStatusProvider.refreshAccountStatus(force: false)
+        applyAppearance()
     }
 
-    init() {
-        let raw: String?
-        if Self.isSyncEnabled {
-            ubiquitousStore.synchronize()
-            raw = ubiquitousStore.string(forKey: storageKey) ??
-                UserDefaults.standard.string(forKey: storageKey)
-        } else {
-            raw = UserDefaults.standard.string(forKey: storageKey)
-        }
-
-        // Map legacy "tahoe" theme to System
-        if let raw, raw == Self.legacyLiquidGlassIdentifier {
-            selectedTheme = .system
-        } else {
-            selectedTheme = raw.flatMap { AppTheme(rawValue: $0) } ?? .system
-        }
-
-        if Self.isSyncEnabled {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(storeChanged(_:)),
-                name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-                object: ubiquitousStore
-            )
-        }
-
-        applyAppearance()
+    deinit {
+        availabilityCancellable?.cancel()
+        stopObservingUbiquitousStore()
     }
 
     var glassConfiguration: AppTheme.GlassConfiguration {
@@ -1125,10 +1171,10 @@ final class ThemeManager: ObservableObject {
     }
 
     private func save() {
-        UserDefaults.standard.set(selectedTheme.rawValue, forKey: storageKey)
-        guard Self.isSyncEnabled else { return }
+        userDefaults.set(selectedTheme.rawValue, forKey: storageKey)
+        guard shouldUseICloud else { return }
         ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
-        ubiquitousStore.synchronize()
+        _ = ubiquitousStore.synchronize()
     }
 
     func refreshSystemAppearance(_ colorScheme: ColorScheme) {
@@ -1159,10 +1205,47 @@ final class ThemeManager: ObservableObject {
         #endif
     }
 
-    @objc private func storeChanged(_ note: Notification) {
-        guard Self.isSyncEnabled else { return }
-        ubiquitousStore.synchronize()
-        let newTheme = ubiquitousStore.string(forKey: storageKey).flatMap { AppTheme(rawValue: $0) } ?? selectedTheme
+    private static func resolveTheme(from raw: String?) -> AppTheme {
+        if let raw, raw == legacyLiquidGlassIdentifier {
+            return .system
+        }
+        return raw.flatMap { AppTheme(rawValue: $0) } ?? .system
+    }
+
+    private static func isThemeSyncEnabled(in defaults: UserDefaults) -> Bool {
+        let themeSync = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? false
+        let cloud = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
+        return themeSync && cloud
+    }
+
+    private static func isCloudAvailable(from provider: CloudAvailabilityProviding) -> Bool {
+        guard let available = provider.isCloudAccountAvailable else { return false }
+        return available
+    }
+
+    private var shouldUseICloud: Bool {
+        Self.isThemeSyncEnabled(in: userDefaults) && Self.isCloudAvailable(from: cloudStatusProvider)
+    }
+
+    private func handleCloudAvailabilityChange(_ availability: CloudAccountStatusProvider.Availability) {
+        switch availability {
+        case .available:
+            guard Self.isThemeSyncEnabled(in: userDefaults) else { return }
+            startObservingUbiquitousStoreIfNeeded()
+            loadThemeFromCloud()
+        case .unavailable:
+            stopObservingUbiquitousStore()
+            CloudSyncPreferences.disableAppThemeSync(in: userDefaults)
+        case .unknown:
+            break
+        }
+    }
+
+    private func loadThemeFromCloud() {
+        guard shouldUseICloud else { return }
+        _ = ubiquitousStore.synchronize()
+        let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+        let newTheme = Self.resolveTheme(from: raw)
         if newTheme != selectedTheme {
             DispatchQueue.main.async {
                 self.isApplyingRemoteChange = true
@@ -1170,5 +1253,28 @@ final class ThemeManager: ObservableObject {
                 self.isApplyingRemoteChange = false
             }
         }
+    }
+
+    private func startObservingUbiquitousStoreIfNeeded() {
+        guard ubiquitousObserver == nil else { return }
+        ubiquitousObserver = notificationCenter.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: ubiquitousStore as AnyObject,
+            queue: nil
+        ) { [weak self] note in
+            self?.handleUbiquitousStoreChange(note)
+        }
+    }
+
+    private func stopObservingUbiquitousStore() {
+        if let observer = ubiquitousObserver {
+            notificationCenter.removeObserver(observer)
+            ubiquitousObserver = nil
+        }
+    }
+
+    private func handleUbiquitousStoreChange(_ note: Notification) {
+        guard shouldUseICloud else { return }
+        loadThemeFromCloud()
     }
 }
