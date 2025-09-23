@@ -43,13 +43,6 @@ struct HomeView: View {
     @State private var headerActionPillIntrinsicWidth: CGFloat?
     @State private var periodNavigationIntrinsicWidth: CGFloat?
 
-    // MARK: Environment
-    private static let headerDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter
-    }()
-
     // MARK: Body
     var body: some View {
         RootTabPageScaffold {
@@ -431,39 +424,33 @@ struct HomeView: View {
     }
 
     // MARK: Header
+    @ViewBuilder
     private var macHeader: some View {
-        let display = macHeaderDisplay
-        return VStack(alignment: .leading, spacing: DS.Spacing.s) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(display.title)
-                    .font(display.titleFont)
-                    .lineLimit(display.titleLineLimit)
-                    .minimumScaleFactor(display.titleMinimumScaleFactor)
+        if let display = macHeaderDisplay {
+            VStack(alignment: .leading, spacing: DS.Spacing.s) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(display.title)
+                        .font(display.titleFont)
+                        .lineLimit(display.titleLineLimit)
+                        .minimumScaleFactor(display.titleMinimumScaleFactor)
 
-                Text(display.subtitle)
-                    .foregroundStyle(.secondary)
+                    Text(display.subtitle)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
 
-    private var macHeaderDisplay: MacHeaderDisplay {
-        if let summary = primarySummary {
-            return MacHeaderDisplay(
-                title: summary.budgetName,
-                subtitle: summary.periodString,
-                titleFont: .largeTitle.bold(),
-                titleLineLimit: 2,
-                titleMinimumScaleFactor: 0.75
-            )
-        } else {
-            return MacHeaderDisplay(
-                title: title(for: vm.selectedDate),
-                subtitle: defaultPeriodRange(for: vm.selectedDate),
-                titleFont: .title2.bold(),
-                titleLineLimit: 1,
-                titleMinimumScaleFactor: 0.5
-            )
-        }
+    private var macHeaderDisplay: MacHeaderDisplay? {
+        guard let summary = primarySummary else { return nil }
+
+        return MacHeaderDisplay(
+            title: summary.budgetName,
+            subtitle: summary.periodString,
+            titleFont: .largeTitle.bold(),
+            titleLineLimit: 2,
+            titleMinimumScaleFactor: 0.75
+        )
     }
 
     private struct MacHeaderDisplay {
@@ -496,12 +483,6 @@ struct HomeView: View {
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
-    }
-
-    private func defaultPeriodRange(for date: Date) -> String {
-        let (start, end) = budgetPeriod.range(containing: date)
-        let formatter = Self.headerDateFormatter
-        return "\(formatter.string(from: start)) through \(formatter.string(from: end))"
     }
 
     private var primarySummary: BudgetSummary? {
