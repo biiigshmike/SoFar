@@ -32,6 +32,21 @@ final class BudgetDetailsViewModel: ObservableObject {
         var id: String { rawValue }
     }
 
+    struct BudgetDetailsAlert: Identifiable {
+        enum Kind {
+            case error(message: String)
+        }
+        let id = UUID()
+        let kind: Kind
+    }
+
+    enum LoadState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case failed(message: String)
+    }
+
     @Published var selectedSegment: Segment = .planned
     @Published var searchQuery: String = ""
 
@@ -46,6 +61,8 @@ final class BudgetDetailsViewModel: ObservableObject {
     // MARK: Loaded data (raw)
     @Published private(set) var plannedExpenses: [PlannedExpense] = []
     @Published private(set) var unplannedExpenses: [UnplannedExpense] = []
+    @Published private(set) var loadState: LoadState = .idle
+    @Published var alert: BudgetDetailsAlert?
 
     struct IncomeTotals: Equatable {
         var planned: Double
@@ -181,17 +198,30 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
+        loadState = .loading
         CoreDataService.shared.ensureLoaded()
+        await CoreDataService.shared.waitUntilStoresLoaded()
 
         // Resolve the Budget instance (use existingObject to avoid stale faults)
+        let resolvedBudget: Budget?
         if let b = try? context.existingObject(with: budgetObjectID) as? Budget {
-            budget = b
+            resolvedBudget = b
         } else {
-            budget = context.object(with: budgetObjectID) as? Budget
+            resolvedBudget = context.object(with: budgetObjectID) as? Budget
         }
 
-        let defaultStart = budget?.startDate ?? Month.start(of: Date())
-        let defaultEnd   = budget?.endDate ?? Month.end(of: Date())
+        guard let budget = resolvedBudget else {
+            let message = "We couldn't load this budget. It may have been deleted or moved."
+            print("⚠️ BudgetDetailsViewModel failed to resolve budget with objectID \(budgetObjectID)")
+            loadState = .failed(message: message)
+            alert = BudgetDetailsAlert(kind: .error(message: message))
+            return
+        }
+
+        self.budget = budget
+
+        let defaultStart = budget.startDate ?? Month.start(of: Date())
+        let defaultEnd   = budget.endDate ?? Month.end(of: Date())
 
         if !didInitializeDateWindow {
             startDate = defaultStart
@@ -200,6 +230,7 @@ final class BudgetDetailsViewModel: ObservableObject {
         }
 
         await refreshRows()
+        loadState = .loaded
     }
 
     /// Re-fetches rows for current filters (date window driven on fetch).
@@ -274,6 +305,17 @@ final class BudgetDetailsViewModel: ObservableObject {
         let lower = min(startDate, endDate)
         let upper = max(startDate, endDate)
         return lower...upper
+    }
+
+    var placeholderText: String {
+        switch loadState {
+        case .failed(let message):
+            return message
+        case .idle, .loading:
+            return "Loading…"
+        case .loaded:
+            return "Budget unavailable."
+        }
     }
 }
 
