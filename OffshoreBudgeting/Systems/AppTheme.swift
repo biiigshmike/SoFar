@@ -1278,7 +1278,9 @@ final class ThemeManager: ObservableObject {
             object: ubiquitousStore as AnyObject,
             queue: nil
         ) { [weak self] note in
-            self?.handleUbiquitousStoreChange(note)
+            Task { @MainActor [weak self] in
+                self?.handleUbiquitousStoreChange(note)
+            }
         }
     }
 
