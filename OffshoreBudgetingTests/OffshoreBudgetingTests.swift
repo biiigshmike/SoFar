@@ -148,7 +148,7 @@ private final class MockNotificationCenter: NotificationCentering {
         forName name: NSNotification.Name?,
         object obj: Any?,
         queue: OperationQueue?,
-        using block: @escaping (Notification) -> Void
+        using block: @escaping @Sendable (Notification) -> Void
     ) -> NSObjectProtocol {
         addObserverCallCount += 1
         let token = ObserverToken(name: name, object: obj as AnyObject?, handler: block)
@@ -173,9 +173,9 @@ private final class MockNotificationCenter: NotificationCentering {
 private final class ObserverToken: NSObject {
     let name: NSNotification.Name?
     weak var object: AnyObject?
-    let handler: (Notification) -> Void
+    let handler: @Sendable (Notification) -> Void
 
-    init(name: NSNotification.Name?, object: AnyObject?, handler: @escaping (Notification) -> Void) {
+    init(name: NSNotification.Name?, object: AnyObject?, handler: @escaping @Sendable (Notification) -> Void) {
         self.name = name
         self.object = object
         self.handler = handler
