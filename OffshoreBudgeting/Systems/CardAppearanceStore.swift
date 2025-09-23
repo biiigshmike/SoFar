@@ -64,6 +64,7 @@ final class CardAppearanceStore {
         cloudStatusProvider.refreshAccountStatus(force: false)
     }
 
+    @MainActor
     deinit {
         availabilityCancellable?.cancel()
         stopObservingUbiquitousStore()
