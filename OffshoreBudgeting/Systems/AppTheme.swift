@@ -9,7 +9,13 @@ import AppKit
 #endif
 
 // MARK: - Cloud Sync Infrastructure
+// This file's cloud-sync components require the iCloud Key-Value storage
+// entitlement so they can interact with `NSUbiquitousKeyValueStore`.
 
+/// An abstraction over `NSUbiquitousKeyValueStore`.
+///
+/// - Important: Using implementations backed by iCloud requires the iCloud
+///   Key-Value storage entitlement to be enabled for the target.
 protocol UbiquitousKeyValueStoring: AnyObject {
     @discardableResult
     func synchronize() -> Bool
