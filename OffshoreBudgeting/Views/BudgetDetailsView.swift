@@ -300,7 +300,7 @@ private struct SummarySection: View {
     let selectedSegment: BudgetDetailsViewModel.Segment
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.l) {
+        HStack(alignment: .bottom, spacing: DS.Spacing.l) {
             // MARK: Sum of Expenses
             VStack(alignment: .leading, spacing: 4) {
                 Text(selectedSegment == .planned ? "Planned Expenses" : "Variable Expenses")
@@ -314,86 +314,89 @@ private struct SummarySection: View {
             Spacer(minLength: 0)
 
             // MARK: Income/Savings Grid
-            if #available(iOS 16.0, macOS 13.0, *) {
-                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
-                    GridRow {
-                        Text("POTENTIAL INCOME")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text("POTENTIAL SAVINGS")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 0)
+                if #available(iOS 16.0, macOS 13.0, *) {
+                    Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: 5) {
+                        GridRow {
+                            Text("POTENTIAL INCOME")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text("POTENTIAL SAVINGS")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                        }
+                        GridRow {
+                            Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.plannedIncome)
+                            Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.savingsGood)
+                        }
+                        GridRow {
+                            Text("ACTUAL INCOME")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text("ACTUAL SAVINGS")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                        }
+                        GridRow {
+                            Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.actualIncome)
+                            Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                        }
                     }
-                    GridRow {
-                        Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.plannedIncome)
-                        Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.savingsGood)
-                    }
-                    GridRow {
-                        Text("ACTUAL INCOME")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text("ACTUAL SAVINGS")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                    }
-                    GridRow {
-                        Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.actualIncome)
-                        Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
-                    }
-                }
-            } else {
-                HStack(alignment: .top, spacing: DS.Spacing.m) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("POTENTIAL INCOME")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.plannedIncome)
-                        Text("ACTUAL INCOME")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.actualIncome)
-                    }
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("POTENTIAL SAVINGS")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(DS.Colors.savingsGood)
-                        Text("ACTUAL SAVINGS")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                        Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                } else {
+                    HStack(alignment: .top, spacing: DS.Spacing.m) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("POTENTIAL INCOME")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.plannedIncome)
+                            Text("ACTUAL INCOME")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.actualIncome)
+                        }
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("POTENTIAL SAVINGS")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(DS.Colors.savingsGood)
+                            Text("ACTUAL SAVINGS")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                            Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                        }
                     }
                 }
             }
