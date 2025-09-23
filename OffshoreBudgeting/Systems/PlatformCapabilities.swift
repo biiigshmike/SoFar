@@ -19,7 +19,7 @@ extension PlatformCapabilities {
     /// availability information we have at launch.
     static var current: PlatformCapabilities {
         let supportsModernTranslucency: Bool
-        if #available(iOS 26.0, tvOS 26.0, macOS 26.0, macCatalyst 18.0, *) {
+        if #available(iOS 26.0, tvOS 26.0, macOS 15.0, macCatalyst 18.0, *) {
             supportsModernTranslucency = true
         } else {
             supportsModernTranslucency = false
