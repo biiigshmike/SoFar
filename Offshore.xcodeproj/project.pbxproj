@@ -16,19 +16,19 @@
 			containerPortal = 4CF2202F2E4A33B900AD5F29 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4CF220362E4A33BA00AD5F29;
-			remoteInfo = SoFar;
+                        remoteInfo = OffshoreBudgeting;
 		};
 		4CF220502E4A33BC00AD5F29 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4CF2202F2E4A33B900AD5F29 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4CF220362E4A33BA00AD5F29;
-			remoteInfo = SoFar;
+                        remoteInfo = OffshoreBudgeting;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Offshore.app; sourceTree = BUILT_PRODUCTS_DIR; };
+                4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffshoreBudgeting.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -103,7 +103,7 @@
 		4CF220382E4A33BA00AD5F29 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4CF220372E4A33BA00AD5F29 /* Offshore.app */,
+                                4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */,
 				4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */,
 				4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */,
 			);
@@ -132,8 +132,8 @@
 			packageProductDependencies = (
 				4CF2218F2E4A42A500AD5F29 /* MijickCalendarView */,
 			);
-			productName = SoFar;
-			productReference = 4CF220372E4A33BA00AD5F29 /* Offshore.app */;
+                        productName = OffshoreBudgeting;
+                        productReference = 4CF220372E4A33BA00AD5F29 /* OffshoreBudgeting.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4CF220442E4A33BC00AD5F29 /* OffshoreBudgetingTests */ = {
@@ -532,7 +532,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
+                                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -556,7 +556,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
+                                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
