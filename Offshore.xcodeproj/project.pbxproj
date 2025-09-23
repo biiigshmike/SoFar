@@ -155,7 +155,7 @@
 			name = OffshoreBudgetingTests;
 			packageProductDependencies = (
 			);
-			productName = SoFarTests;
+			productName = OffshoreBudgetingTests;
 			productReference = 4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -178,7 +178,7 @@
 			name = OffshoreBudgetingUITests;
 			packageProductDependencies = (
 			);
-			productName = SoFarUITests;
+			productName = OffshoreBudgetingUITests;
 			productReference = 4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -525,7 +525,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreBudgetingTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -549,7 +549,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreBudgetingTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -572,14 +572,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreBudgetingUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SoFar;
+				TEST_TARGET_NAME = OffshoreBudgeting;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -595,14 +595,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.SoFarUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelbrown.ios.OffshoreBudgetingUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SoFar;
+				TEST_TARGET_NAME = OffshoreBudgeting;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
