@@ -14,10 +14,15 @@ import CoreData
 /// (no special store options added). We keep history tracking ON to enable
 /// responsive UI updates later.
 final class CoreDataService: ObservableObject {
-    
+
     // MARK: Singleton
     static let shared = CoreDataService()
-    private init() {}
+
+    private let notificationCenter: NotificationCentering
+
+    private init(notificationCenter: NotificationCentering = NotificationCenter.default) {
+        self.notificationCenter = notificationCenter
+    }
     
     // MARK: Configuration
     /// Name of the .xcdatamodeld file (without extension).
@@ -126,20 +131,22 @@ final class CoreDataService: ObservableObject {
         // Avoid duplicate observers if called more than once.
         if didSaveObserver != nil || remoteChangeObserver != nil { return }
 
-        didSaveObserver = NotificationCenter.default.addObserver(
+        let center = notificationCenter
+
+        didSaveObserver = center.addObserver(
             forName: .NSManagedObjectContextDidSave,
             object: nil,
             queue: .main
         ) { _ in
-            NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
+            center.post(name: .dataStoreDidChange, object: nil)
         }
 
-        remoteChangeObserver = NotificationCenter.default.addObserver(
+        remoteChangeObserver = center.addObserver(
             forName: NSNotification.Name.NSPersistentStoreRemoteChange,
             object: container.persistentStoreCoordinator,
             queue: .main
         ) { _ in
-            NotificationCenter.default.post(name: .dataStoreDidChange, object: nil)
+            center.post(name: .dataStoreDidChange, object: nil)
         }
     }
 
@@ -150,7 +157,9 @@ final class CoreDataService: ObservableObject {
     private func startObservingCloudKitEvents() {
         guard cloudKitEventObserver == nil else { return }
 
-        cloudKitEventObserver = NotificationCenter.default.addObserver(
+        let center = notificationCenter
+
+        cloudKitEventObserver = center.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: container,
             queue: .main
@@ -167,7 +176,7 @@ final class CoreDataService: ObservableObject {
 
     private func stopObservingCloudKitEvents() {
         if let observer = cloudKitEventObserver {
-            NotificationCenter.default.removeObserver(observer)
+            notificationCenter.removeObserver(observer)
         }
         cloudKitEventObserver = nil
     }
