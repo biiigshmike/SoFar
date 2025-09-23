@@ -125,7 +125,7 @@ private struct RootHeaderActionColumnsModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear { writer(count) }
-            .onChange(of: count) { _, newValue in writer(newValue) }
+            .ub_onChange(of: count) { newValue in writer(newValue) }
     }
 }
 
