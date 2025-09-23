@@ -34,10 +34,32 @@ struct BudgetDetailsView: View {
 
     // MARK: Theme
     @EnvironmentObject private var themeManager: ThemeManager
+#if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+#endif
 
     // MARK: UI State
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
+
+    // MARK: Layout
+    private var isWideHeaderLayout: Bool {
+#if os(iOS)
+        horizontalSizeClass == .regular
+#elseif os(macOS)
+        true
+#else
+        false
+#endif
+    }
+
+    private var headerSpacing: CGFloat {
+        isWideHeaderLayout ? DS.Spacing.s : DS.Spacing.m
+    }
+
+    private var summaryTopPadding: CGFloat {
+        isWideHeaderLayout ? -DS.Spacing.m : -DS.Spacing.s
+    }
 
     // MARK: Init
     init(
@@ -58,7 +80,7 @@ struct BudgetDetailsView: View {
         VStack(spacing: 0) {
 
             // MARK: Header (name + summary + controls)
-            VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            VStack(alignment: .leading, spacing: headerSpacing) {
 
                 // MARK: Title + Date Range
                 HStack(alignment: .top, spacing: DS.Spacing.m) {
@@ -93,7 +115,7 @@ struct BudgetDetailsView: View {
 
                 if let summary = vm.summary {
                     SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
-                        .padding(.top, -DS.Spacing.s)
+                        .padding(.top, summaryTopPadding)
                     if !summary.categoryBreakdown.isEmpty {
                         CategoryTotalsRow(categories: summary.categoryBreakdown)
                     }
