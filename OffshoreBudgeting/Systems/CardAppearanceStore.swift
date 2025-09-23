@@ -77,8 +77,12 @@ final class CardAppearanceStore {
     private func load() {
         let data: Data?
         if shouldUseICloud {
-            _ = ubiquitousStore.synchronize()
-            data = ubiquitousStore.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
+            if ubiquitousStore.synchronize() {
+                data = ubiquitousStore.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
+            } else {
+                handleUbiquitousStoreFailure()
+                data = userDefaults.data(forKey: storageKey)
+            }
         } else {
             data = userDefaults.data(forKey: storageKey)
         }
@@ -105,8 +109,18 @@ final class CardAppearanceStore {
         if let data = try? JSONEncoder().encode(dict) {
             userDefaults.set(data, forKey: storageKey)
             guard shouldUseICloud else { return }
+
+            guard ubiquitousStore.synchronize() else {
+                handleUbiquitousStoreFailure()
+                return
+            }
+
             ubiquitousStore.set(data, forKey: storageKey)
-            _ = ubiquitousStore.synchronize()
+
+            guard ubiquitousStore.synchronize() else {
+                handleUbiquitousStoreFailure()
+                return
+            }
         }
     }
 
@@ -170,5 +184,14 @@ final class CardAppearanceStore {
 
         // Propagate the change so views can refresh themes immediately.
         notificationCenter.post(name: UserDefaults.didChangeNotification, object: nil)
+    }
+
+    private func handleUbiquitousStoreFailure() {
+        stopObservingUbiquitousStore()
+        CloudSyncPreferences.disableCardThemeSync(in: userDefaults)
+        cloudStatusProvider.refreshAccountStatus(force: true)
+        #if DEBUG
+        print("⚠️ CardAppearanceStore: Falling back to UserDefaults after iCloud synchronize() failed.")
+        #endif
     }
 }
