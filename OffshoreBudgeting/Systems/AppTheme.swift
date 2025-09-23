@@ -22,12 +22,22 @@ extension NSUbiquitousKeyValueStore: UbiquitousKeyValueStoring {}
 
 protocol NotificationCentering: AnyObject {
     @discardableResult
-    func addObserver(forName name: NSNotification.Name?, object obj: Any?, queue: OperationQueue?, using block: @escaping (Notification) -> Void) -> NSObjectProtocol
+    func addObserver(forName name: NSNotification.Name?, object obj: Any?, queue: OperationQueue?, using block: @escaping @Sendable (Notification) -> Void) -> NSObjectProtocol
     func removeObserver(_ observer: Any)
     func post(name: NSNotification.Name, object obj: Any?)
 }
 
 extension NotificationCenter: NotificationCentering {
+    @discardableResult
+    func addObserver(
+        forName name: NSNotification.Name?,
+        object obj: Any?,
+        queue: OperationQueue?,
+        using block: @escaping @Sendable (Notification) -> Void
+    ) -> NSObjectProtocol {
+        addObserver(forName: name, object: obj, queue: queue, using: block)
+    }
+
     func post(name: NSNotification.Name, object obj: Any?) {
         post(name: name, object: obj)
     }
