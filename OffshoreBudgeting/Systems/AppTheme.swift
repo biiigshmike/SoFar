@@ -1172,6 +1172,7 @@ final class ThemeManager: ObservableObject {
         applyAppearance()
     }
 
+    @MainActor
     deinit {
         availabilityCancellable?.cancel()
         stopObservingUbiquitousStore()
