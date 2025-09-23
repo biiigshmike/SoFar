@@ -6,6 +6,7 @@ import SwiftUI
 /// mirrors the layout previously embedded within ``HomeView`` so both platforms
 /// share a consistent period navigation experience.
 struct PeriodNavigationControl: View {
+    @Environment(\.platformCapabilities) private var capabilities
     enum Style {
         case plain
         case glass
@@ -39,8 +40,12 @@ struct PeriodNavigationControl: View {
 
         case .glass:
 #if os(iOS) || os(macOS)
-            RootHeaderGlassControl(width: nil) {
-                navigationContent
+            if capabilities.supportsOS26Translucency {
+                RootHeaderGlassControl(width: nil) {
+                    navigationContent
+                }
+            } else {
+                plainContent
             }
 #else
             plainContent
@@ -84,7 +89,7 @@ struct PeriodNavigationControl: View {
 extension PeriodNavigationControl.Style {
     static var glassIfAvailable: Self {
 #if os(iOS) || os(macOS)
-        return .glass
+        return PlatformCapabilities.current.supportsOS26Translucency ? .glass : .plain
 #else
         return .plain
 #endif
