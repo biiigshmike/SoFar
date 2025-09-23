@@ -1148,7 +1148,7 @@ fileprivate extension Double {
 // MARK: - ThemeManager
 @MainActor
 final class ThemeManager: ObservableObject {
-    @Published var selectedTheme: AppTheme { didSet { if !isApplyingRemoteChange { save() }; applyAppearance() } }
+    @Published var selectedTheme: AppTheme = .system { didSet { if !isApplyingRemoteChange { save() }; applyAppearance() } }
 
     private let storageKey = "selectedTheme"
     private static let legacyLiquidGlassIdentifier = "tahoe"
