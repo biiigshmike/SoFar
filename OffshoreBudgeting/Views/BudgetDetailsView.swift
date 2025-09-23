@@ -164,10 +164,7 @@ struct BudgetDetailsView: View {
                             onTotalsChanged: { Task { await vm.refreshRows() } }
                         )
                     } else {
-                        Text("Loading…")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, DS.Spacing.l)
+                        placeholderView()
                     }
                 } else {
                     if let cards = (vm.budget?.cards as? Set<Card>) {
@@ -180,10 +177,7 @@ struct BudgetDetailsView: View {
                             onTotalsChanged: { Task { await vm.refreshRows() } }
                         )
                     } else {
-                        Text("Loading…")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, DS.Spacing.l)
+                        placeholderView()
                     }
                 }
             }
@@ -227,6 +221,7 @@ struct BudgetDetailsView: View {
         }
         //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
         // MARK: Add Sheets
+        .alert(item: $vm.alert, content: alert(for:))
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
                 preselectedBudgetID: vm.budget?.objectID,
@@ -246,6 +241,26 @@ struct BudgetDetailsView: View {
     }
 
     // MARK: Helpers
+    private func placeholderView() -> some View {
+        let text = vm.placeholderText.isEmpty ? "Loading…" : vm.placeholderText
+        return Text(text)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DS.Spacing.l)
+            .multilineTextAlignment(.leading)
+    }
+
+    private func alert(for alert: BudgetDetailsViewModel.BudgetDetailsAlert) -> Alert {
+        switch alert.kind {
+        case .error(let message):
+            return Alert(
+                title: Text("Budget Unavailable"),
+                message: Text(message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+
     private static func mediumDate(_ d: Date) -> String {
         let f = DateFormatter()
         f.dateStyle = .medium
