@@ -209,6 +209,11 @@ final class CoreDataService: ObservableObject {
 
         disableCloudSyncPreferences()
 
+        Task { [weak self] @MainActor in
+            guard let self else { return }
+            await self.reconfigurePersistentStoresForLocalMode()
+        }
+
         Task {
             let provider = await cloudAccountStatusProvider()
             await provider.invalidateCache()
@@ -352,6 +357,39 @@ private extension CoreDataService {
         defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
+    }
+
+    @MainActor
+    func reconfigurePersistentStoresForLocalMode() async {
+        guard let description = container.persistentStoreDescriptions.first else { return }
+
+        // Ensure CloudKit mirroring is disabled for the rebuilt stack.
+        description.cloudKitContainerOptions = nil
+
+        let coordinator = container.persistentStoreCoordinator
+
+        // Reset the main context so it releases references to the existing stores.
+        viewContext.reset()
+
+        // Remove the in-memory store attachments without deleting the underlying files.
+        for store in coordinator.persistentStores {
+            do {
+                try coordinator.remove(store)
+            } catch {
+                assertionFailure("❌ Failed to detach persistent store: \(error)")
+            }
+        }
+
+        storesLoaded = false
+
+        do {
+            try await loadPersistentStores()
+            postLoadConfiguration()
+            storesLoaded = true
+            notificationCenter.post(name: .dataStoreDidChange, object: nil)
+        } catch {
+            assertionFailure("❌ Failed to rebuild persistent stores without CloudKit: \(error)")
+        }
     }
 
     private func cloudAccountStatusProvider() async -> CloudAccountStatusProvider {
