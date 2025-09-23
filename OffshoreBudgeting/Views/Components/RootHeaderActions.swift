@@ -112,10 +112,12 @@ private extension View {
     }
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionColumnsWriterKey: EnvironmentKey {
     static let defaultValue: (Int) -> Void = { _ in }
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionColumnsModifier: ViewModifier {
     @Environment(\.rootHeaderActionColumnsWriter) private var writer
     let count: Int
@@ -127,10 +129,12 @@ private struct RootHeaderActionColumnsModifier: ViewModifier {
     }
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionColumnsKey: LayoutValueKey {
     static let defaultValue: Int = 1
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private extension EnvironmentValues {
     var rootHeaderActionColumnsWriter: (Int) -> Void {
         get { self[RootHeaderActionColumnsWriterKey.self] }
@@ -139,11 +143,17 @@ private extension EnvironmentValues {
 }
 
 extension View {
+    @ViewBuilder
     func rootHeaderActionColumns(_ count: Int) -> some View {
-        modifier(RootHeaderActionColumnsModifier(count: max(0, count)))
+        if #available(iOS 16.0, macOS 13.0, *) {
+            modifier(RootHeaderActionColumnsModifier(count: max(0, count)))
+        } else {
+            self
+        }
     }
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionSegment<Content: View>: View {
     @State private var columnCount: Int
     private let content: Content
@@ -172,6 +182,7 @@ private struct RootHeaderActionSegment<Content: View>: View {
     }
 }
 
+@available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionRowLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
@@ -319,28 +330,13 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
         let verticalPadding = RootHeaderGlassMetrics.verticalPadding
         let theme = themeManager.selectedTheme
 
-        let primaryRow = RootHeaderActionRowLayout {
-            RootHeaderActionSegment {
-                leading
-            }
-
-            if showsDivider {
-                Rectangle()
-                    .fill(RootHeaderLegacyGlass.dividerColor(for: theme))
-                    .frame(width: 1, height: dimension)
-                    .padding(.vertical, verticalPadding)
-                    .layoutValue(key: RootHeaderActionColumnsKey.self, value: 0)
-            }
-
-            if hasTrailing {
-                RootHeaderActionSegment {
-                    trailing
-                }
-            }
-        }
-
         let content = VStack(spacing: 0) {
-            primaryRow
+            buildPrimaryRow(
+                dimension: dimension,
+                horizontalPadding: horizontalPadding,
+                verticalPadding: verticalPadding,
+                theme: theme
+            )
 
             if hasSecondaryContent, let secondary {
                 Divider()
@@ -355,8 +351,97 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
         }
         .contentShape(Capsule(style: .continuous))
 
-        content
+        return content
             .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+    }
+
+    @ViewBuilder
+    private func buildPrimaryRow(
+        dimension: CGFloat,
+        horizontalPadding: CGFloat,
+        verticalPadding: CGFloat,
+        theme: AppTheme
+    ) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            RootHeaderActionRowLayout {
+                RootHeaderActionSegment {
+                    leading
+                }
+
+                if showsDivider {
+                    makeDividerView(theme: theme, dimension: dimension, verticalPadding: verticalPadding)
+                        .layoutValue(key: RootHeaderActionColumnsKey.self, value: 0)
+                }
+
+                if hasTrailing {
+                    RootHeaderActionSegment {
+                        trailing
+                    }
+                }
+            }
+        } else {
+            legacyPrimaryRow(
+                dimension: dimension,
+                horizontalPadding: horizontalPadding,
+                verticalPadding: verticalPadding,
+                theme: theme
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func legacyPrimaryRow(
+        dimension: CGFloat,
+        horizontalPadding: CGFloat,
+        verticalPadding: CGFloat,
+        theme: AppTheme
+    ) -> some View {
+        HStack(spacing: 0) {
+            legacyActionSegment(
+                leading,
+                dimension: dimension,
+                horizontalPadding: horizontalPadding,
+                verticalPadding: verticalPadding
+            )
+
+            if showsDivider {
+                makeDividerView(theme: theme, dimension: dimension, verticalPadding: verticalPadding)
+            }
+
+            if hasTrailing {
+                legacyActionSegment(
+                    trailing,
+                    dimension: dimension,
+                    horizontalPadding: horizontalPadding,
+                    verticalPadding: verticalPadding
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func legacyActionSegment<Content: View>(
+        _ content: Content,
+        dimension: CGFloat,
+        horizontalPadding: CGFloat,
+        verticalPadding: CGFloat
+    ) -> some View {
+        content
+            .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
+            .contentShape(Rectangle())
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+    }
+
+    private func makeDividerView(
+        theme: AppTheme,
+        dimension: CGFloat,
+        verticalPadding: CGFloat
+    ) -> some View {
+        Rectangle()
+            .fill(RootHeaderLegacyGlass.dividerColor(for: theme))
+            .frame(width: 1, height: dimension)
+            .padding(.vertical, verticalPadding)
     }
 }
 
