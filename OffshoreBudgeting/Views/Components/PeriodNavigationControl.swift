@@ -7,6 +7,9 @@ import SwiftUI
 /// share a consistent period navigation experience.
 struct PeriodNavigationControl: View {
     @Environment(\.platformCapabilities) private var capabilities
+#if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+#endif
     enum Style {
         case plain
         case glass
@@ -70,10 +73,10 @@ struct PeriodNavigationControl: View {
             .buttonStyle(.plain)
 
             Text(title)
-                .font(.title2.bold())
+                .font(titleTypography.font)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(titleTypography.minimumScaleFactor)
                 .allowsTightening(true)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .layoutPriority(1)
@@ -85,6 +88,24 @@ struct PeriodNavigationControl: View {
             .contentShape(Rectangle())
             .buttonStyle(.plain)
         }
+    }
+}
+
+// MARK: - Typography Helpers
+
+private extension PeriodNavigationControl {
+    struct TitleTypography {
+        let font: Font
+        let minimumScaleFactor: CGFloat
+    }
+
+    var titleTypography: TitleTypography {
+#if os(iOS)
+        if horizontalSizeClass == .compact {
+            return TitleTypography(font: .title3.bold(), minimumScaleFactor: 0.6)
+        }
+#endif
+        return TitleTypography(font: .title2.bold(), minimumScaleFactor: 0.8)
     }
 }
 
