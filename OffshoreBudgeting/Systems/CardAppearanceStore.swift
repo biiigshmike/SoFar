@@ -44,7 +44,7 @@ final class CardAppearanceStore {
         userDefaults: UserDefaults = .standard,
         ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
         cloudStatusProvider: CloudAvailabilityProviding? = nil,
-        notificationCenter: NotificationCentering = NotificationCenter.default
+        notificationCenter: NotificationCentering = NotificationCenterAdapter.shared
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore

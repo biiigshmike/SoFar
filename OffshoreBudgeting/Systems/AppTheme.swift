@@ -27,7 +27,19 @@ protocol NotificationCentering: AnyObject {
     func post(name: NSNotification.Name, object obj: Any?)
 }
 
-extension NotificationCenter: NotificationCentering {
+/// Lightweight adapter that forwards `NotificationCentering` requests to a concrete
+/// `NotificationCenter` instance. Using a dedicated type keeps the protocol usable
+/// from Swift's concurrency domain checks without forcing the Foundation type to
+/// adopt additional annotations.
+final class NotificationCenterAdapter: NotificationCentering {
+    static let shared = NotificationCenterAdapter()
+
+    private let center: NotificationCenter
+
+    init(center: NotificationCenter = .default) {
+        self.center = center
+    }
+
     @discardableResult
     func addObserver(
         forName name: NSNotification.Name?,
@@ -35,15 +47,17 @@ extension NotificationCenter: NotificationCentering {
         queue: OperationQueue?,
         using block: @escaping @Sendable (Notification) -> Void
     ) -> NSObjectProtocol {
-        let handler: (Notification) -> Void = { notification in
+        return center.addObserver(forName: name, object: obj, queue: queue) { notification in
             block(notification)
         }
+    }
 
-        return self.addObserver(forName: name, object: obj, queue: queue, using: handler)
+    func removeObserver(_ observer: Any) {
+        center.removeObserver(observer)
     }
 
     func post(name: NSNotification.Name, object obj: Any?) {
-        self.post(name: name, object: obj, userInfo: nil)
+        center.post(name: name, object: obj)
     }
 }
 
@@ -1144,7 +1158,7 @@ final class ThemeManager: ObservableObject {
         userDefaults: UserDefaults = .standard,
         ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
         cloudStatusProvider: CloudAvailabilityProviding? = nil,
-        notificationCenter: NotificationCentering = NotificationCenter.default
+        notificationCenter: NotificationCentering = NotificationCenterAdapter.shared
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore

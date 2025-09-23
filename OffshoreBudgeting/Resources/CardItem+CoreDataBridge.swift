@@ -26,14 +26,16 @@ extension CardItem {
     ///   has been saved yet, falls back to `.graphite` to guarantee a valid UI.
     @MainActor
     init(from managedCard: Card,
-         appearanceStore: CardAppearanceStore = .shared)
+         appearanceStore: CardAppearanceStore? = nil)
     {
+        let resolvedAppearanceStore = appearanceStore ?? CardAppearanceStore.shared
+
         // Pull UUID + name safely from Core Data.
         let cardUUID: UUID = managedCard.value(forKey: "id") as? UUID ?? UUID()
         let cardName: String = managedCard.value(forKey: "name") as? String ?? "Untitled"
 
         // Resolve persisted theme (fallback to graphite).
-        let theme: CardTheme = appearanceStore.theme(for: cardUUID)
+        let theme: CardTheme = resolvedAppearanceStore.theme(for: cardUUID)
 
         // Use the memberwise initializer of `CardItem`.
         self.init(

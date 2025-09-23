@@ -67,9 +67,10 @@ final class CardsViewModel: ObservableObject {
 
     // MARK: Init
     init(cardService: CardService = CardService(),
-         appearanceStore: CardAppearanceStore = .shared) {
+         appearanceStore: CardAppearanceStore? = nil) {
         self.cardService = cardService
-        self.appearanceStore = appearanceStore
+        let resolvedAppearanceStore = appearanceStore ?? CardAppearanceStore.shared
+        self.appearanceStore = resolvedAppearanceStore
 
         // Reactive Theme Refresh (no store changes required)
         // Listens for UserDefaults changes (where CardAppearanceStore persists).
