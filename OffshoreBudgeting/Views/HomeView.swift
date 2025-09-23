@@ -118,26 +118,41 @@ struct HomeView: View {
     @ViewBuilder
     private var headerActions: some View {
         let trailing = trailingActionControl
-        let hasBudget = primarySummary != nil
-        let showsStandalonePeriodNavigation = !hasBudget
+        let headerSummary = primarySummary
+        let showsContextSummary = headerSummary != nil && showsHeaderSummary
+        let showsStandalonePeriodNavigation = headerSummary != nil && !showsHeaderSummary
 
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Group {
-                if hasBudget {
-                    RootHeaderGlassPill(
-                        showsDivider: trailing != nil,
-                        hasTrailing: trailing != nil
-                    ) {
-                        periodPickerControl
-                    } trailing: {
-                        if let trailing {
-                            trailing
+                switch headerSummary {
+                case .some:
+                    if showsStandalonePeriodNavigation {
+                        RootHeaderGlassPill(
+                            showsDivider: trailing != nil,
+                            hasTrailing: trailing != nil
+                        ) {
+                            periodPickerControl
+                        } trailing: {
+                            if let trailing {
+                                trailing
+                            }
                         }
-                    } secondaryContent: {
-                        periodNavigationControl(style: .plain)
-                            .frame(maxWidth: .infinity)
+                    } else {
+                        RootHeaderGlassPill(
+                            showsDivider: trailing != nil,
+                            hasTrailing: trailing != nil
+                        ) {
+                            periodPickerControl
+                        } trailing: {
+                            if let trailing {
+                                trailing
+                            }
+                        } secondaryContent: {
+                            periodNavigationControl(style: .plain)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
-                } else {
+                case .none:
                     RootHeaderGlassPill(
                         showsDivider: trailing != nil,
                         hasTrailing: trailing != nil
@@ -155,14 +170,10 @@ struct HomeView: View {
                 matchedWidth: matchedHeaderControlWidth
             )
 
-            if showsHeaderSummary || showsStandalonePeriodNavigation {
+            if showsContextSummary || showsStandalonePeriodNavigation {
                 HStack(spacing: DS.Spacing.s) {
-                    if showsHeaderSummary {
-                        HomeHeaderContextSummary(
-                            summary: primarySummary,
-                            fallbackTitle: title(for: vm.selectedDate),
-                            fallbackPeriodRange: defaultPeriodRange(for: vm.selectedDate)
-                        )
+                    if showsContextSummary, let summary = headerSummary {
+                        HomeHeaderContextSummary(summary: summary)
                         .layoutPriority(0)
                     }
 
@@ -530,9 +541,7 @@ struct HomeView: View {
 
 // MARK: - Home Header Summary
 private struct HomeHeaderContextSummary: View {
-    let summary: BudgetSummary?
-    let fallbackTitle: String
-    let fallbackPeriodRange: String
+    let summary: BudgetSummary
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -551,19 +560,11 @@ private struct HomeHeaderContextSummary: View {
     }
 
     private var primaryTitle: String {
-        if let summary {
-            return summary.budgetName
-        } else {
-            return fallbackTitle
-        }
+        summary.budgetName
     }
 
     private var secondaryDetail: String {
-        if let summary {
-            return summary.periodString
-        } else {
-            return fallbackPeriodRange
-        }
+        summary.periodString
     }
 }
 
