@@ -151,7 +151,9 @@ final class CardAppearanceStore {
             object: ubiquitousStore as AnyObject,
             queue: nil
         ) { [weak self] note in
-            self?.handleUbiquitousStoreChange(note)
+            Task { @MainActor [weak self, note] in
+                self?.handleUbiquitousStoreChange(note)
+            }
         }
     }
 
