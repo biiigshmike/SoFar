@@ -71,9 +71,11 @@ struct PeriodNavigationControl: View {
 
             Text(title)
                 .font(.title2.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .frame(minWidth: buttonDimension, maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .allowsTightening(true)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .layoutPriority(1)
 
             Button(action: onNext) {
