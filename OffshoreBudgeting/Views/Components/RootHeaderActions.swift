@@ -2,12 +2,17 @@ import SwiftUI
 
 // MARK: - Shared Metrics
 enum RootHeaderActionMetrics {
-    static let dimension: CGFloat = 44
+    /// Base tap target for header controls. Sized using the design system so
+    /// theme updates can scale the control consistently across platforms.
+    static let dimension: CGFloat = DS.Spacing.l + DS.Spacing.m
 }
 
 enum RootHeaderGlassMetrics {
-    static let horizontalPadding: CGFloat = 6
-    static let verticalPadding: CGFloat = 6
+    /// Horizontal inset around each control segment. A fraction of system
+    /// spacing keeps the pill compact without hard-coded values.
+    static let horizontalPadding: CGFloat = DS.Spacing.s * 0.5
+    /// Vertical inset applied to the glass container.
+    static let verticalPadding: CGFloat = DS.Spacing.xs * 0.75
 }
 
 // MARK: - Icon Content
@@ -174,8 +179,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
             leading
                 .frame(width: dimension, height: dimension)
                 .contentShape(Rectangle())
-                .padding(.leading, horizontalPadding)
-                .padding(.trailing, horizontalPadding)
+                .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
 
             if showsDivider {
@@ -187,15 +191,9 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
 
             if hasTrailing {
                 trailing
-                    .frame(
-                        minWidth: dimension,
-                        idealWidth: dimension,
-                        maxHeight: dimension,
-                        alignment: .center
-                    )
+                    .frame(width: dimension, height: dimension, alignment: .center)
                     .contentShape(Rectangle())
-                    .padding(.leading, horizontalPadding)
-                    .padding(.trailing, horizontalPadding)
+                    .padding(.horizontal, horizontalPadding)
                     .padding(.vertical, verticalPadding)
             }
         }
