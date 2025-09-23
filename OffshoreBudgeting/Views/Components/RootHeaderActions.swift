@@ -173,9 +173,11 @@ struct RootHeaderGlassControl<Content: View>: View {
     @Environment(\.platformCapabilities) private var capabilities
 
     private let content: Content
+    private let width: CGFloat?
 
-    init(@ViewBuilder content: () -> Content) {
+    init(width: CGFloat? = RootHeaderActionMetrics.dimension, @ViewBuilder content: () -> Content) {
         self.content = content()
+        self.width = width
     }
 
     var body: some View {
@@ -183,7 +185,7 @@ struct RootHeaderGlassControl<Content: View>: View {
         let theme = themeManager.selectedTheme
 
         let control = content
-            .frame(width: dimension, height: dimension)
+            .frame(width: width, height: dimension)
             .contentShape(Rectangle())
             .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
