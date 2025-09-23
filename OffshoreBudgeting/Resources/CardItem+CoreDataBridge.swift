@@ -24,6 +24,7 @@ extension CardItem {
     /// - Discussion:
     ///   Uses the saved per-card theme from `CardAppearanceStore`. If no theme
     ///   has been saved yet, falls back to `.graphite` to guarantee a valid UI.
+    @MainActor
     init(from managedCard: Card,
          appearanceStore: CardAppearanceStore = .shared)
     {

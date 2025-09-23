@@ -15,6 +15,7 @@ struct OffshoreBudgetingTests {
     // MARK: - ThemeManager
 
     @Test
+    @MainActor
     func themeManager_skipsCloudOperationsWhenAccountUnavailable() async throws {
         let suiteName = "ThemeManagerUnavailable"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -48,6 +49,7 @@ struct OffshoreBudgetingTests {
     // MARK: - CardAppearanceStore
 
     @Test
+    @MainActor
     func cardAppearanceStore_skipsCloudOperationsWhenAccountUnavailable() throws {
         let suiteName = "CardAppearanceStoreUnavailable"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -81,6 +83,7 @@ struct OffshoreBudgetingTests {
 
 // MARK: - Test Doubles
 
+@MainActor
 private final class MockCloudAvailabilityProvider: CloudAvailabilityProviding {
     private let subject: CurrentValueSubject<CloudAccountStatusProvider.Availability, Never>
 

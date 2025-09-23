@@ -142,12 +142,14 @@ final class CloudAccountStatusProvider: ObservableObject {
 
 // MARK: - CloudAvailabilityProviding
 
+@MainActor
 protocol CloudAvailabilityProviding: AnyObject {
     var isCloudAccountAvailable: Bool? { get }
     var availabilityPublisher: AnyPublisher<CloudAccountStatusProvider.Availability, Never> { get }
     func refreshAccountStatus(force: Bool)
 }
 
+@MainActor
 extension CloudAccountStatusProvider: CloudAvailabilityProviding {
     var availabilityPublisher: AnyPublisher<Availability, Never> {
         $availability.eraseToAnyPublisher()

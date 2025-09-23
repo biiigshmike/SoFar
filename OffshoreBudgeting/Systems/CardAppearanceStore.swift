@@ -10,6 +10,7 @@ import Foundation
 import Combine
 
 // MARK: - CardAppearanceStore
+@MainActor
 final class CardAppearanceStore {
 
     // MARK: Singleton
