@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - OnboardingView
 /// Root container presenting a multi-step onboarding flow.
@@ -407,7 +408,9 @@ private struct CloudSyncStep: View {
     let onBack: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
-    @StateObject private var cloudStatusProvider = CloudAccountStatusProvider.shared
+    @State private var cloudStatusProvider: CloudAccountStatusProvider?
+    @State private var availabilityCancellable: AnyCancellable?
+    @State private var cloudAvailability: CloudAccountStatusProvider.Availability = .unknown
 
     var body: some View {
         GeometryReader { proxy in
@@ -424,9 +427,18 @@ private struct CloudSyncStep: View {
             if !syncBudgetPeriod { syncBudgetPeriod = true }
         }
         .task {
-            _ = await cloudStatusProvider.resolveAvailability()
+            if enableCloudSync {
+                await requestCloudAvailabilityCheck(force: false)
+            }
         }
-        .onChange(of: cloudStatusProvider.availability) { availability in
+        .onChange(of: enableCloudSync) { newValue in
+            if newValue {
+                Task { await requestCloudAvailabilityCheck(force: false) }
+            } else {
+                cloudAvailability = .unknown
+            }
+        }
+        .onChange(of: cloudAvailability) { availability in
             guard availability == .unavailable else { return }
             enableCloudSync = false
             syncCardThemes = false
@@ -514,7 +526,13 @@ private struct CloudSyncStep: View {
                 )
             }
 
-            if isCloudUnavailable {
+            if isCheckingCloudAvailability {
+                Text("Checking your iCloud status…")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, DS.Spacing.s)
+            } else if isCloudUnavailable {
                 Text("iCloud is currently unavailable. You can finish onboarding and enable sync later from Settings when iCloud is active again.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -531,12 +549,45 @@ private struct CloudSyncStep: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
+    @MainActor
+    private func ensureCloudStatusProvider() -> CloudAccountStatusProvider {
+        if let provider = cloudStatusProvider {
+            return provider
+        }
+
+        let provider = CloudAccountStatusProvider.shared
+        cloudStatusProvider = provider
+        subscribe(to: provider)
+        return provider
+    }
+
+    @MainActor
+    private func subscribe(to provider: CloudAccountStatusProvider) {
+        availabilityCancellable?.cancel()
+        cloudAvailability = provider.availability
+        availabilityCancellable = provider.availabilityPublisher
+            .sink { availability in
+                Task { @MainActor in
+                    cloudAvailability = availability
+                }
+            }
+    }
+
+    private func requestCloudAvailabilityCheck(force: Bool) async {
+        let provider = await MainActor.run { ensureCloudStatusProvider() }
+        _ = await provider.resolveAvailability(forceRefresh: force)
+    }
+
     private var canUseCloudSync: Bool {
-        cloudStatusProvider.availability == .available
+        cloudAvailability == .available
     }
 
     private var isCloudUnavailable: Bool {
-        cloudStatusProvider.availability == .unavailable
+        cloudAvailability == .unavailable
+    }
+
+    private var isCheckingCloudAvailability: Bool {
+        enableCloudSync && cloudAvailability == .unknown
     }
 }
 

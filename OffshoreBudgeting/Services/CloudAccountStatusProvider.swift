@@ -76,11 +76,6 @@ final class CloudAccountStatusProvider: ObservableObject {
         }
 
         registerForAccountChanges()
-
-        // Kick off the initial status check so the cache is primed as early as
-        // possible. Consumers can still call `refreshStatus()` to force a new
-        // fetch if needed.
-        refreshStatus()
     }
 
     deinit {
@@ -96,7 +91,7 @@ final class CloudAccountStatusProvider: ObservableObject {
     /// Starts a background task (if one is not already running) to refresh the
     /// CloudKit account status. Useful for callers that do not need the result
     /// immediately but want to make sure the cache stays fresh.
-    func refreshStatus(force: Bool = false) {
+    func requestAccountStatusCheck(force: Bool = false) {
         Task { [weak self] in
             guard let self else { return }
             _ = await self.resolveAvailability(forceRefresh: force)
@@ -177,7 +172,7 @@ final class CloudAccountStatusProvider: ObservableObject {
 
     private func handleAccountChangeNotification() {
         invalidateCache()
-        refreshStatus(force: true)
+        requestAccountStatusCheck(force: true)
     }
 
     private func resolve(task: Task<CKAccountStatus, Error>) async -> Bool {
@@ -203,16 +198,14 @@ final class CloudAccountStatusProvider: ObservableObject {
 protocol CloudAvailabilityProviding: AnyObject {
     var isCloudAccountAvailable: Bool? { get }
     var availabilityPublisher: AnyPublisher<CloudAccountStatusProvider.Availability, Never> { get }
-    func refreshAccountStatus(force: Bool)
+    func requestAccountStatusCheck(force: Bool)
+    func resolveAvailability(forceRefresh: Bool) async -> Bool
+    func invalidateCache()
 }
 
 @MainActor
 extension CloudAccountStatusProvider: CloudAvailabilityProviding {
     var availabilityPublisher: AnyPublisher<Availability, Never> {
         $availability.eraseToAnyPublisher()
-    }
-
-    func refreshAccountStatus(force: Bool) {
-        refreshStatus(force: force)
     }
 }

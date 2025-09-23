@@ -19,13 +19,16 @@ final class CardAppearanceStore {
     // MARK: Storage Backbone
     private let userDefaults: UserDefaults
     private let ubiquitousStore: UbiquitousKeyValueStoring
-    private let cloudStatusProvider: CloudAvailabilityProviding
+    private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
+    private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
+    private var cloudStatusProvider: CloudAvailabilityProviding?
     private let notificationCenter: NotificationCentering
     private let storageKey = "card.appearance.v1"
 
     /// In-memory cache for quick lookups.
     private var cache: [UUID: CardTheme] = [:]
     private var availabilityCancellable: AnyCancellable?
+    private var hasRequestedCloudAvailabilityCheck = false
     private var ubiquitousObserver: NSObjectProtocol?
 
     private var isCardThemeSyncEnabled: Bool {
@@ -35,8 +38,38 @@ final class CardAppearanceStore {
     }
 
     private var shouldUseICloud: Bool {
-        guard let available = cloudStatusProvider.isCloudAccountAvailable else { return false }
-        return available && isCardThemeSyncEnabled
+        guard isCardThemeSyncEnabled else { return false }
+        let provider = resolveCloudStatusProvider()
+        guard let available = provider.isCloudAccountAvailable else { return false }
+        return available
+    }
+
+    private func resolveCloudStatusProvider() -> CloudAvailabilityProviding {
+        if let provider = cloudStatusProvider {
+            scheduleAvailabilityCheckIfNeeded(for: provider)
+            return provider
+        }
+
+        let provider = pendingInjectedCloudStatusProvider ?? defaultCloudStatusProviderFactory()
+        pendingInjectedCloudStatusProvider = nil
+        cloudStatusProvider = provider
+
+        availabilityCancellable?.cancel()
+        availabilityCancellable = provider.availabilityPublisher
+            .sink { [weak self] availability in
+                self?.handleCloudAvailabilityChange(availability)
+            }
+
+        scheduleAvailabilityCheckIfNeeded(for: provider)
+        return provider
+    }
+
+    private func scheduleAvailabilityCheckIfNeeded(for provider: CloudAvailabilityProviding) {
+        guard !hasRequestedCloudAvailabilityCheck else { return }
+        hasRequestedCloudAvailabilityCheck = true
+        Task { @MainActor in
+            _ = await provider.resolveAvailability(forceRefresh: false)
+        }
     }
 
     // MARK: Init
@@ -48,8 +81,8 @@ final class CardAppearanceStore {
     ) {
         self.userDefaults = userDefaults
         self.ubiquitousStore = ubiquitousStore
-        let resolvedCloudStatusProvider = cloudStatusProvider ?? CloudAccountStatusProvider.shared
-        self.cloudStatusProvider = resolvedCloudStatusProvider
+        self.pendingInjectedCloudStatusProvider = cloudStatusProvider
+        self.defaultCloudStatusProviderFactory = { CloudAccountStatusProvider.shared }
         self.notificationCenter = notificationCenter
 
         load()
@@ -57,13 +90,6 @@ final class CardAppearanceStore {
         if shouldUseICloud {
             startObservingUbiquitousStoreIfNeeded()
         }
-
-        availabilityCancellable = resolvedCloudStatusProvider.availabilityPublisher
-            .sink { [weak self] availability in
-                self?.handleCloudAvailabilityChange(availability)
-            }
-
-        resolvedCloudStatusProvider.refreshAccountStatus(force: false)
     }
 
     @MainActor
@@ -189,7 +215,8 @@ final class CardAppearanceStore {
     private func handleUbiquitousStoreFailure() {
         stopObservingUbiquitousStore()
         CloudSyncPreferences.disableCardThemeSync(in: userDefaults)
-        cloudStatusProvider.refreshAccountStatus(force: true)
+        let provider = resolveCloudStatusProvider()
+        provider.requestAccountStatusCheck(force: true)
         #if DEBUG
         print("⚠️ CardAppearanceStore: Falling back to UserDefaults after iCloud synchronize() failed.")
         #endif
