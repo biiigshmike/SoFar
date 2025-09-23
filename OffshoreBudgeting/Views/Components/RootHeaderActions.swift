@@ -107,25 +107,61 @@ private extension View {
     }
 }
 
-struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
+struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
 
     private let leading: Leading
     private let trailing: Trailing
+    private let secondary: Secondary?
     private let showsDivider: Bool
     private let hasTrailing: Bool
+    private let hasSecondaryContent: Bool
 
     init(
         showsDivider: Bool = true,
         hasTrailing: Bool = true,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
+    ) where Secondary == EmptyView {
+        self.init(
+            leading: leading(),
+            trailing: trailing(),
+            secondary: nil,
+            showsDivider: showsDivider,
+            hasTrailing: hasTrailing
+        )
+    }
+
+    init(
+        showsDivider: Bool = true,
+        hasTrailing: Bool = true,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing,
+        @ViewBuilder secondaryContent: () -> Secondary
     ) {
-        self.leading = leading()
-               self.trailing = trailing()
+        self.init(
+            leading: leading(),
+            trailing: trailing(),
+            secondary: secondaryContent(),
+            showsDivider: showsDivider,
+            hasTrailing: hasTrailing
+        )
+    }
+
+    private init(
+        leading: Leading,
+        trailing: Trailing,
+        secondary: Secondary?,
+        showsDivider: Bool,
+        hasTrailing: Bool
+    ) {
+        self.leading = leading
+        self.trailing = trailing
+        self.secondary = secondary
         self.showsDivider = showsDivider
         self.hasTrailing = hasTrailing
+        self.hasSecondaryContent = secondary != nil
     }
 
     var body: some View {
@@ -134,7 +170,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
         let verticalPadding = RootHeaderGlassMetrics.verticalPadding
         let theme = themeManager.selectedTheme
 
-        let content = HStack(spacing: 0) {
+        let primaryRow = HStack(spacing: 0) {
             leading
                 .frame(width: dimension, height: dimension)
                 .contentShape(Rectangle())
@@ -151,13 +187,30 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View>: View {
 
             if hasTrailing {
                 trailing
-                    .frame(minWidth: dimension,
-                           idealWidth: dimension,
-                           maxHeight: dimension,
-                           alignment: .center)
+                    .frame(
+                        minWidth: dimension,
+                        idealWidth: dimension,
+                        maxHeight: dimension,
+                        alignment: .center
+                    )
                     .contentShape(Rectangle())
                     .padding(.leading, horizontalPadding)
                     .padding(.trailing, horizontalPadding)
+                    .padding(.vertical, verticalPadding)
+            }
+        }
+
+        let content = VStack(spacing: 0) {
+            primaryRow
+
+            if hasSecondaryContent, let secondary {
+                Divider()
+                    .overlay(RootHeaderLegacyGlass.dividerColor(for: theme))
+                    .padding(.horizontal, horizontalPadding)
+
+                secondary
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, horizontalPadding)
                     .padding(.vertical, verticalPadding)
             }
         }
