@@ -35,11 +35,15 @@ extension NotificationCenter: NotificationCentering {
         queue: OperationQueue?,
         using block: @escaping @Sendable (Notification) -> Void
     ) -> NSObjectProtocol {
-        addObserver(forName: name, object: obj, queue: queue, using: block)
+        let handler: (Notification) -> Void = { notification in
+            block(notification)
+        }
+
+        return self.addObserver(forName: name, object: obj, queue: queue, using: handler)
     }
 
     func post(name: NSNotification.Name, object obj: Any?) {
-        post(name: name, object: obj)
+        self.post(name: name, object: obj, userInfo: nil)
     }
 }
 
