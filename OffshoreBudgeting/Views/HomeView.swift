@@ -38,6 +38,11 @@ struct HomeView: View {
     @State private var isShowingAddExpenseMenu: Bool = false
     @State private var addMenuTargetBudgetID: NSManagedObjectID?
 
+    // MARK: Header Layout
+    @State private var matchedHeaderControlWidth: CGFloat?
+    @State private var headerActionPillIntrinsicWidth: CGFloat?
+    @State private var periodNavigationIntrinsicWidth: CGFloat?
+
     // MARK: Environment
     private static let headerDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -126,6 +131,10 @@ struct HomeView: View {
                     EmptyView()
                 }
             }
+            .homeHeaderMatchedControlWidth(
+                intrinsicWidth: $headerActionPillIntrinsicWidth,
+                matchedWidth: matchedHeaderControlWidth
+            )
 
             HStack(spacing: DS.Spacing.s) {
                 if showsHeaderSummary {
@@ -141,7 +150,14 @@ struct HomeView: View {
 
                 periodNavigationControl
                     .layoutPriority(1)
+                    .homeHeaderMatchedControlWidth(
+                        intrinsicWidth: $periodNavigationIntrinsicWidth,
+                        matchedWidth: matchedHeaderControlWidth
+                    )
             }
+        }
+        .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
+            matchedHeaderControlWidth = width > 0 ? width : nil
         }
     }
 
@@ -525,6 +541,73 @@ private struct HomeHeaderContextSummary: View {
         } else {
             return fallbackPeriodRange
         }
+    }
+}
+
+// MARK: - Header Control Width Matching
+
+private struct HomeHeaderMatchedWidthModifier: ViewModifier {
+    let intrinsicWidth: Binding<CGFloat?>
+    let matchedWidth: CGFloat?
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                HomeHeaderControlWidthReporter(intrinsicWidth: intrinsicWidth)
+            )
+            .frame(width: resolvedWidth)
+    }
+
+    private var resolvedWidth: CGFloat? {
+        if let matchedWidth {
+            return matchedWidth
+        } else {
+            return intrinsicWidth.wrappedValue
+        }
+    }
+}
+
+private struct HomeHeaderControlWidthReporter: View {
+    let intrinsicWidth: Binding<CGFloat?>
+
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .preference(key: HomeHeaderControlWidthKey.self, value: proxy.size.width)
+                .onAppear { updateIntrinsicWidth(proxy.size.width) }
+                .onChange(of: proxy.size.width) { updateIntrinsicWidth($0) }
+        }
+    }
+
+    private func updateIntrinsicWidth(_ width: CGFloat) {
+        let binding = intrinsicWidth
+        DispatchQueue.main.async {
+            if binding.wrappedValue != width {
+                binding.wrappedValue = width
+            }
+        }
+    }
+}
+
+private struct HomeHeaderControlWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = .zero
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private extension View {
+    func homeHeaderMatchedControlWidth(
+        intrinsicWidth: Binding<CGFloat?>,
+        matchedWidth: CGFloat?
+    ) -> some View {
+        modifier(
+            HomeHeaderMatchedWidthModifier(
+                intrinsicWidth: intrinsicWidth,
+                matchedWidth: matchedWidth
+            )
+        )
     }
 }
 
