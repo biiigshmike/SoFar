@@ -367,46 +367,79 @@ struct BudgetIncomeSavingsSummaryView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .leading, spacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
-                        VStack(alignment: .leading) {
+                    VStack(alignment: .trailing, spacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
+                        VStack(alignment: .trailing) {
                             header(title: "POTENTIAL SAVINGS")
+                                .multilineTextAlignment(.trailing)
                             value(amount: summary.potentialSavingsTotal, color: DS.Colors.savingsGood)
+                                .multilineTextAlignment(.trailing)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
 
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .trailing) {
                             header(title: "ACTUAL SAVINGS")
+                                .multilineTextAlignment(.trailing)
                             value(amount: summary.actualSavingsTotal, color: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad)
+                                .multilineTextAlignment(.trailing)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
     }
-    
+
     @available(iOS 16.0, macOS 13.0, *)
     @ViewBuilder
     private func headerRow(title: String, title2: String) -> some View {
         GridRow(alignment: .lastTextBaseline) {
-            header(title: title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            header(title: title2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            leadingGridCell {
+                header(title: title)
+            }
+
+            trailingGridCell {
+                header(title: title2)
+            }
         }
     }
-    
+
     @available(iOS 16.0, macOS 13.0, *)
     @ViewBuilder
     private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
         GridRow(alignment: .lastTextBaseline) {
-            value(amount: firstValue, color: firstColor)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            value(amount: secondValue, color: secondColor)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            leadingGridCell {
+                value(amount: firstValue, color: firstColor)
+            }
+
+            trailingGridCell {
+                value(amount: secondValue, color: secondColor)
+            }
         }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func leadingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            content()
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func trailingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            content()
+                .multilineTextAlignment(.trailing)
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
     
     @ViewBuilder
