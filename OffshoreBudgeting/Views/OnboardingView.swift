@@ -407,6 +407,7 @@ private struct CloudSyncStep: View {
     let onBack: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @StateObject private var cloudStatusProvider = CloudAccountStatusProvider.shared
 
     var body: some View {
         GeometryReader { proxy in
@@ -421,6 +422,16 @@ private struct CloudSyncStep: View {
             if !syncCardThemes { syncCardThemes = true }
             if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
+        }
+        .task {
+            _ = await cloudStatusProvider.resolveAvailability()
+        }
+        .onChange(of: cloudStatusProvider.availability) { availability in
+            guard availability == .unavailable else { return }
+            enableCloudSync = false
+            syncCardThemes = false
+            syncAppTheme = false
+            syncBudgetPeriod = false
         }
     }
 
@@ -473,7 +484,7 @@ private struct CloudSyncStep: View {
                 title: "Enable iCloud Sync",
                 subtitle: "Keep budgets, themes, and settings identical everywhere.",
                 isOn: $enableCloudSync,
-                isEnabled: true
+                isEnabled: canUseCloudSync
             )
 
             Divider()
@@ -485,22 +496,30 @@ private struct CloudSyncStep: View {
                     title: "Sync card themes",
                     subtitle: "Mirror your custom card colors across devices.",
                     isOn: $syncCardThemes,
-                    isEnabled: enableCloudSync
+                    isEnabled: enableCloudSync && canUseCloudSync
                 )
 
                 CloudOptionToggle(
                     title: "Sync app appearance",
                     subtitle: "Use the same theme everywhere automatically.",
                     isOn: $syncAppTheme,
-                    isEnabled: enableCloudSync
+                    isEnabled: enableCloudSync && canUseCloudSync
                 )
 
                 CloudOptionToggle(
                     title: "Sync budget period",
                     subtitle: "Align the start and end dates of each cycle.",
                     isOn: $syncBudgetPeriod,
-                    isEnabled: enableCloudSync
+                    isEnabled: enableCloudSync && canUseCloudSync
                 )
+            }
+
+            if isCloudUnavailable {
+                Text("iCloud is currently unavailable. You can finish onboarding and enable sync later from Settings when iCloud is active again.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, DS.Spacing.s)
             }
 
             Text("We never see your data. Everything stays encrypted with your Apple ID and can be turned off later.")
@@ -512,6 +531,13 @@ private struct CloudSyncStep: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
+    private var canUseCloudSync: Bool {
+        cloudStatusProvider.availability == .available
+    }
+
+    private var isCloudUnavailable: Bool {
+        cloudStatusProvider.availability == .unavailable
+    }
 }
 
 // MARK: - CategoriesStep
