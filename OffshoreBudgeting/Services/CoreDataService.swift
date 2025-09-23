@@ -188,7 +188,8 @@ final class CoreDataService: ObservableObject {
         guard isSetupFailure || isAccountChange else { return }
 
         guard let error = event.error as NSError? else { return }
-        guard error.domain == NSCocoaErrorDomain, error.code == 134405 else { return }
+        let isAccountMissing = error.domain == NSCocoaErrorDomain && (error.code == 134405 || error.code == 134400)
+        guard isAccountMissing else { return }
 
         stopObservingCloudKitEvents()
 
