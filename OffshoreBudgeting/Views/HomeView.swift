@@ -93,7 +93,7 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.s) {
+        VStack(alignment: .leading, spacing: headerSectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
                 topPaddingStyle: .navigationBarAligned
@@ -449,8 +449,8 @@ struct HomeView: View {
     @ViewBuilder
     private var macHeader: some View {
         if let display = macHeaderDisplay {
-            VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: macHeaderStackSpacing) {
+                VStack(alignment: .leading, spacing: macHeaderTitleSpacing) {
                     Text(display.title)
                         .font(display.titleFont)
                         .lineLimit(display.titleLineLimit)
@@ -481,6 +481,22 @@ struct HomeView: View {
         let titleFont: Font
         let titleLineLimit: Int
         let titleMinimumScaleFactor: CGFloat
+    }
+
+    private var headerSectionSpacing: CGFloat {
+#if os(macOS)
+        return DS.Spacing.xs
+#else
+        return DS.Spacing.s
+#endif
+    }
+
+    private var macHeaderStackSpacing: CGFloat {
+        DS.Spacing.xs
+    }
+
+    private var macHeaderTitleSpacing: CGFloat {
+        DS.Spacing.xs / 2
     }
 
     private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
