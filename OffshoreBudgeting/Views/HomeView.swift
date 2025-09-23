@@ -26,6 +26,9 @@ struct HomeView: View {
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+#if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+#endif
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
 
@@ -124,8 +127,21 @@ struct HomeView: View {
                 }
             }
 
-            periodNavigationControl
-                .layoutPriority(1)
+            HStack(spacing: DS.Spacing.s) {
+                if showsHeaderSummary {
+                    HomeHeaderContextSummary(
+                        summary: primarySummary,
+                        fallbackTitle: title(for: vm.selectedDate),
+                        fallbackPeriodRange: defaultPeriodRange(for: vm.selectedDate)
+                    )
+                    .layoutPriority(0)
+                }
+
+                Spacer(minLength: 0)
+
+                periodNavigationControl
+                    .layoutPriority(1)
+            }
         }
     }
 
@@ -406,6 +422,16 @@ struct HomeView: View {
         )
     }
 
+    private var showsHeaderSummary: Bool {
+#if os(macOS)
+        return true
+#elseif os(iOS)
+        return horizontalSizeClass == .regular
+#else
+        return false
+#endif
+    }
+
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
@@ -449,6 +475,45 @@ struct HomeView: View {
         }
         guard case let .loaded(summaries) = vm.state else { return nil }
         return summaries.first?.id
+    }
+}
+
+// MARK: - Home Header Summary
+private struct HomeHeaderContextSummary: View {
+    let summary: BudgetSummary?
+    let fallbackTitle: String
+    let fallbackPeriodRange: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(primaryTitle)
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+
+            Text(secondaryDetail)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var primaryTitle: String {
+        if let summary {
+            return summary.budgetName
+        } else {
+            return fallbackTitle
+        }
+    }
+
+    private var secondaryDetail: String {
+        if let summary {
+            return summary.periodString
+        } else {
+            return fallbackPeriodRange
+        }
     }
 }
 
