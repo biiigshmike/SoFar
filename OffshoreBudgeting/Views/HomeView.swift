@@ -230,7 +230,9 @@ struct HomeView: View {
                 .allowsHitTesting(false)
             budgetActionMenu(summary: summary)
         }
+        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
+        .rootHeaderActionColumns(2)
     }
 
     @ViewBuilder
@@ -259,7 +261,7 @@ struct HomeView: View {
             .menuStyle(.borderlessButton)
 #endif
         }
-        .frame(width: dimension, height: dimension)
+        .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
         .contentShape(Rectangle())
         .accessibilityLabel("Add Expense")
     }
@@ -296,7 +298,11 @@ struct HomeView: View {
 #if os(macOS)
         .menuStyle(.borderlessButton)
 #endif
-        .frame(width: RootHeaderActionMetrics.dimension, height: RootHeaderActionMetrics.dimension)
+        .frame(
+            minWidth: RootHeaderActionMetrics.dimension,
+            maxWidth: .infinity,
+            minHeight: RootHeaderActionMetrics.dimension
+        )
     }
 
     // MARK: Sheets & Alerts

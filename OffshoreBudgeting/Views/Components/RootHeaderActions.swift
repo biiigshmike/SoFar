@@ -112,6 +112,150 @@ private extension View {
     }
 }
 
+private struct RootHeaderActionColumnsWriterKey: EnvironmentKey {
+    static let defaultValue: (Int) -> Void = { _ in }
+}
+
+private struct RootHeaderActionColumnsModifier: ViewModifier {
+    @Environment(\.rootHeaderActionColumnsWriter) private var writer
+    let count: Int
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { writer(count) }
+            .onChange(of: count) { _, newValue in writer(newValue) }
+    }
+}
+
+private struct RootHeaderActionColumnsKey: LayoutValueKey {
+    static let defaultValue: Int = 1
+}
+
+private extension EnvironmentValues {
+    var rootHeaderActionColumnsWriter: (Int) -> Void {
+        get { self[RootHeaderActionColumnsWriterKey.self] }
+        set { self[RootHeaderActionColumnsWriterKey.self] = newValue }
+    }
+}
+
+extension View {
+    func rootHeaderActionColumns(_ count: Int) -> some View {
+        modifier(RootHeaderActionColumnsModifier(count: max(0, count)))
+    }
+}
+
+private struct RootHeaderActionSegment<Content: View>: View {
+    @State private var columnCount: Int
+    private let content: Content
+
+    init(defaultColumns: Int = 1, @ViewBuilder content: () -> Content) {
+        let resolved = max(1, defaultColumns)
+        _columnCount = State(initialValue: resolved)
+        self.content = content()
+    }
+
+    var body: some View {
+        let writer: (Int) -> Void = { newValue in
+            let resolved = max(1, newValue)
+            if columnCount != resolved {
+                columnCount = resolved
+            }
+        }
+
+        return content
+            .environment(\.rootHeaderActionColumnsWriter, writer)
+            .frame(minWidth: RootHeaderActionMetrics.dimension, minHeight: RootHeaderActionMetrics.dimension)
+            .contentShape(Rectangle())
+            .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
+            .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+            .layoutValue(key: RootHeaderActionColumnsKey.self, value: columnCount)
+    }
+}
+
+private struct RootHeaderActionRowLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
+        let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
+        let proposedSize = ProposedViewSize(width: nil, height: proposal.height)
+        let fixedWidth = zip(subviews, columnCounts).reduce(CGFloat.zero) { result, element in
+            let (subview, columns) = element
+            guard columns == 0 else { return result }
+            let size = subview.sizeThatFits(proposedSize)
+            return result + size.width
+        }
+
+        let actionSizes = zip(subviews, columnCounts).compactMap { subview, columns -> (Int, CGSize)? in
+            guard columns > 0 else { return nil }
+            return (columns, subview.sizeThatFits(proposedSize))
+        }
+        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+            let (columns, size) = entry
+            let widthPerColumn = size.width / CGFloat(columns)
+            return max(result, widthPerColumn)
+        }
+
+        let minimumActionWidth = perColumnMinimum * CGFloat(max(actionColumnCount, 1))
+        let minimumWidth = minimumActionWidth + fixedWidth
+        let proposedWidth = proposal.width ?? minimumWidth
+        let resolvedWidth = max(minimumWidth, proposedWidth)
+
+        let resolvedHeight = subviews.map { subview in
+            subview.sizeThatFits(proposedSize).height
+        }.max() ?? (RootHeaderActionMetrics.dimension + RootHeaderGlassMetrics.verticalPadding * 2)
+
+        return CGSize(width: resolvedWidth, height: resolvedHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
+        let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
+        let proposedSize = ProposedViewSize(width: nil, height: bounds.height)
+        let fixedWidths: [CGFloat] = zip(subviews, columnCounts).map { subview, columns in
+            guard columns == 0 else { return 0 }
+            return subview.sizeThatFits(proposedSize).width
+        }
+
+        let totalFixedWidth = fixedWidths.reduce(0, +)
+        let totalColumns = max(actionColumnCount, 1)
+        let availableForActions = max(bounds.width - totalFixedWidth, 0)
+        let actionSizes = zip(subviews, columnCounts).compactMap { subview, columns -> (Int, CGSize)? in
+            guard columns > 0 else { return nil }
+            return (columns, subview.sizeThatFits(proposedSize))
+        }
+        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+            let (columns, size) = entry
+            let widthPerColumn = size.width / CGFloat(columns)
+            return max(result, widthPerColumn)
+        }
+        let perColumnWidth = totalColumns > 0
+            ? max(availableForActions / CGFloat(totalColumns), perColumnMinimum)
+            : 0
+
+        var currentX = bounds.minX
+
+        for index in subviews.indices {
+            let subview = subviews[index]
+            let columns = columnCounts[index]
+
+            if columns == 0 {
+                let width = fixedWidths[index]
+                let proposal = ProposedViewSize(width: width, height: bounds.height)
+                let size = subview.sizeThatFits(proposal)
+                let originY = bounds.midY - size.height * 0.5
+                subview.place(at: CGPoint(x: currentX, y: originY), proposal: proposal)
+                currentX += width
+            } else {
+                let width = perColumnWidth * CGFloat(columns)
+                let proposal = ProposedViewSize(width: width, height: bounds.height)
+                let size = subview.sizeThatFits(proposal)
+                let originY = bounds.midY - size.height * 0.5
+                subview.place(at: CGPoint(x: currentX, y: originY), proposal: proposal)
+                currentX += width
+            }
+        }
+    }
+}
+
 struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
@@ -175,26 +319,23 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
         let verticalPadding = RootHeaderGlassMetrics.verticalPadding
         let theme = themeManager.selectedTheme
 
-        let primaryRow = HStack(spacing: 0) {
-            leading
-                .frame(width: dimension, height: dimension)
-                .contentShape(Rectangle())
-                .padding(.horizontal, horizontalPadding)
-                .padding(.vertical, verticalPadding)
+        let primaryRow = RootHeaderActionRowLayout {
+            RootHeaderActionSegment {
+                leading
+            }
 
             if showsDivider {
                 Rectangle()
                     .fill(RootHeaderLegacyGlass.dividerColor(for: theme))
                     .frame(width: 1, height: dimension)
                     .padding(.vertical, verticalPadding)
+                    .layoutValue(key: RootHeaderActionColumnsKey.self, value: 0)
             }
 
             if hasTrailing {
-                trailing
-                    .frame(width: dimension, height: dimension, alignment: .center)
-                    .contentShape(Rectangle())
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.vertical, verticalPadding)
+                RootHeaderActionSegment {
+                    trailing
+                }
             }
         }
 
