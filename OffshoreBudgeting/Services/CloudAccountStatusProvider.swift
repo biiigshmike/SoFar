@@ -49,23 +49,46 @@ final class CloudAccountStatusProvider: ObservableObject {
 
     // MARK: Private Properties
 
-    private let container: CKContainer
+    private typealias AccountStatusFetcher = @Sendable () async throws -> CKAccountStatus
+
+    private let notificationCenter: NotificationCentering
+    private let accountStatusFetcher: AccountStatusFetcher
+    private var accountChangeObserver: NSObjectProtocol?
     private var cachedStatus: CKAccountStatus?
     private var fetchTask: Task<CKAccountStatus, Error>?
 
     // MARK: Init
 
-    private init(container: CKContainer? = nil) {
-        if let container {
-            self.container = container
+    init(
+        container: CKContainer? = nil,
+        notificationCenter: NotificationCentering = NotificationCenterAdapter.shared,
+        accountStatusFetcher: AccountStatusFetcher? = nil
+    ) {
+        self.notificationCenter = notificationCenter
+
+        if let accountStatusFetcher {
+            self.accountStatusFetcher = accountStatusFetcher
         } else {
-            self.container = CKContainer(identifier: Self.containerIdentifier)
+            let resolvedContainer = container ?? CKContainer(identifier: Self.containerIdentifier)
+            self.accountStatusFetcher = {
+                try await resolvedContainer.accountStatus()
+            }
         }
+
+        registerForAccountChanges()
 
         // Kick off the initial status check so the cache is primed as early as
         // possible. Consumers can still call `refreshStatus()` to force a new
         // fetch if needed.
         refreshStatus()
+    }
+
+    deinit {
+        fetchTask?.cancel()
+
+        if let accountChangeObserver {
+            notificationCenter.removeObserver(accountChangeObserver)
+        }
     }
 
     // MARK: Public API
@@ -104,8 +127,9 @@ final class CloudAccountStatusProvider: ObservableObject {
             return await resolve(task: fetchTask)
         }
 
+        let fetcher = accountStatusFetcher
         let task = Task { () throws -> CKAccountStatus in
-            try await container.accountStatus()
+            try await fetcher()
         }
         fetchTask = task
 
@@ -122,6 +146,35 @@ final class CloudAccountStatusProvider: ObservableObject {
     }
 
     // MARK: Private Helpers
+
+    private func registerForAccountChanges() {
+#if canImport(CloudKit)
+#if os(macOS)
+        if #available(macOS 10.16, *) {
+            accountChangeObserver = notificationCenter.addObserver(
+                forName: .CKAccountChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleAccountChangeNotification()
+            }
+        }
+#else
+        accountChangeObserver = notificationCenter.addObserver(
+            forName: .CKAccountChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleAccountChangeNotification()
+        }
+#endif
+#endif
+    }
+
+    private func handleAccountChangeNotification() {
+        invalidateCache()
+        refreshStatus(force: true)
+    }
 
     private func resolve(task: Task<CKAccountStatus, Error>) async -> Bool {
         defer { fetchTask = nil }

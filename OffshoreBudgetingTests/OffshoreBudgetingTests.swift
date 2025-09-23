@@ -5,12 +5,71 @@
 //  Created by Michael Brown on 8/11/25.
 //
 
+import CloudKit
 import Combine
 import Foundation
 import Testing
 @testable import OffshoreBudgeting
 
 struct OffshoreBudgetingTests {
+
+    // MARK: - CloudAccountStatusProvider
+
+    @Test
+    @MainActor
+    func cloudAccountStatusProvider_resetsCacheWhenAccountChanges() async throws {
+        let notificationCenter = MockNotificationCenter()
+        let statusStream = AccountStatusStream()
+        await statusStream.enqueue(.available)
+
+        var provider: CloudAccountStatusProvider? = CloudAccountStatusProvider(
+            notificationCenter: notificationCenter,
+            accountStatusFetcher: {
+                await statusStream.next()
+            }
+        )
+
+        #expect(provider?.availability == .unknown)
+
+#if os(macOS)
+        if #available(macOS 10.16, *) {
+            #expect(notificationCenter.addObserverCallCount == 1)
+        } else {
+            #expect(notificationCenter.addObserverCallCount == 0)
+        }
+#else
+        #expect(notificationCenter.addObserverCallCount == 1)
+#endif
+
+        let isInitiallyAvailable = await provider?.resolveAvailability()
+        #expect(isInitiallyAvailable == true)
+        #expect(provider?.availability == .available)
+
+        notificationCenter.post(name: .CKAccountChanged, object: nil)
+
+        #expect(provider?.availability == .unknown)
+
+        await statusStream.enqueue(.noAccount)
+
+        let isFinallyAvailable = await provider?.resolveAvailability()
+        #expect(isFinallyAvailable == false)
+        #expect(provider?.availability == .unavailable)
+
+        weak var weakProvider = provider
+        provider = nil
+        await Task.yield()
+
+        #expect(weakProvider == nil)
+#if os(macOS)
+        if #available(macOS 10.16, *) {
+            #expect(notificationCenter.removeObserverCallCount == 1)
+        } else {
+            #expect(notificationCenter.removeObserverCallCount == 0)
+        }
+#else
+        #expect(notificationCenter.removeObserverCallCount == 1)
+#endif
+    }
 
     // MARK: - ThemeManager
 
@@ -188,5 +247,29 @@ private final class ObserverToken: NSObject {
         let nameMatches = self.name == nil || self.name == name
         let objectMatches = self.object == nil || self.object === object
         return nameMatches && objectMatches
+    }
+}
+
+private actor AccountStatusStream {
+    private var bufferedStatuses: [CKAccountStatus] = []
+    private var waitingContinuations: [CheckedContinuation<CKAccountStatus, Never>] = []
+
+    func enqueue(_ status: CKAccountStatus) {
+        if !waitingContinuations.isEmpty {
+            let continuation = waitingContinuations.removeFirst()
+            continuation.resume(returning: status)
+        } else {
+            bufferedStatuses.append(status)
+        }
+    }
+
+    func next() async -> CKAccountStatus {
+        if !bufferedStatuses.isEmpty {
+            return bufferedStatuses.removeFirst()
+        }
+
+        return await withCheckedContinuation { continuation in
+            waitingContinuations.append(continuation)
+        }
     }
 }
