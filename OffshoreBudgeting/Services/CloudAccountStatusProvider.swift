@@ -156,7 +156,9 @@ final class CloudAccountStatusProvider: ObservableObject {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.handleAccountChangeNotification()
+                Task { @MainActor [weak self] in
+                    self?.handleAccountChangeNotification()
+                }
             }
         }
 #else
@@ -165,7 +167,9 @@ final class CloudAccountStatusProvider: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleAccountChangeNotification()
+            Task { @MainActor [weak self] in
+                self?.handleAccountChangeNotification()
+            }
         }
 #endif
 #endif
