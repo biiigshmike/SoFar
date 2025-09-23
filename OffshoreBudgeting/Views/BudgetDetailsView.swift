@@ -529,7 +529,7 @@ private struct GlassCapsuleContainer<Content: View>: View {
         let capsule = Capsule(style: .continuous)
 
         let decorated = content
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .contentShape(capsule)
