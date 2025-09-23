@@ -54,12 +54,38 @@ struct BudgetDetailsView: View {
     }
 
     private var headerSpacing: CGFloat {
-        isWideHeaderLayout ? DS.Spacing.s : DS.Spacing.m
+#if os(macOS)
+        return DS.Spacing.s
+#else
+        return isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.s
+#endif
     }
 
     private var summaryTopPadding: CGFloat {
-        isWideHeaderLayout ? -DS.Spacing.m : -DS.Spacing.s
+#if os(macOS)
+        return -DS.Spacing.m
+#else
+        if isWideHeaderLayout {
+            return -(DS.Spacing.m - DS.Spacing.xs / 2)
+        } else {
+            return -(DS.Spacing.s - DS.Spacing.xs / 2)
+        }
+#endif
     }
+
+    private var effectiveHeaderTopPadding: CGFloat {
+#if os(macOS)
+        return headerTopPadding
+#else
+        return max(0, headerTopPadding - headerTopPaddingAdjustment)
+#endif
+    }
+
+#if !os(macOS)
+    private var headerTopPaddingAdjustment: CGFloat {
+        isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.xs / 2
+    }
+#endif
 
     // MARK: Init
     init(
@@ -148,7 +174,7 @@ struct BudgetDetailsView: View {
                 )
             }
             .padding(.horizontal, DS.Spacing.l)
-            .padding(.top, headerTopPadding)
+            .padding(.top, effectiveHeaderTopPadding)
             .padding(.bottom, DS.Spacing.m)
 
             // MARK: Lists
