@@ -1,6 +1,6 @@
 //
-//  SoFarUITests.swift
-//  SoFarUITests
+//  OffshoreBudgetingUITests.swift
+//  OffshoreBudgetingUITests
 //
 //  Created by Michael Brown on 8/11/25.
 //
@@ -14,7 +14,7 @@ import XCTest
 import Foundation
 import CoreGraphics
 
-final class SoFarUITests: XCTestCase {
+final class OffshoreBudgetingUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
