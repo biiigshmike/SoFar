@@ -19,12 +19,23 @@ enum RootHeaderGlassMetrics {
 struct RootHeaderControlIcon: View {
     @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
+    /// Optional symbol variant override keeps headers in sync with design
+    /// specifications when SF Symbols offer multiple contextual variants.
+    var symbolVariants: SymbolVariants? = nil
 
     var body: some View {
-        Image(systemName: systemImage)
+        configuredImage
             .font(.system(size: 18, weight: .semibold))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(foregroundColor)
+    }
+
+    private var configuredImage: Image {
+        var image = Image(systemName: systemImage)
+        if let symbolVariants {
+            image = image.symbolVariant(symbolVariants)
+        }
+        return image
     }
 
     private var foregroundColor: Color {

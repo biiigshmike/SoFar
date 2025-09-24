@@ -316,7 +316,8 @@ struct HomeView: View {
                 }
             }
         } label: {
-            RootHeaderControlIcon(systemImage: "ellipsis")
+            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: .none)
+                // Keep overflow menu glyph horizontal per header controls design.
                 .accessibilityLabel(summary == nil ? "Budget Options" : "Budget Actions")
         }
         .modifier(HideMenuIndicatorIfPossible())
