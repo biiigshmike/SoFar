@@ -121,7 +121,7 @@ final class HomeViewModel: ObservableObject {
     private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue {
         didSet {
             selectedDate = period.start(of: Date())
-            Task { [weak self] in await self?.refresh() }
+            Task { await refresh() }
         }
     }
 
@@ -130,7 +130,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     @Published var selectedDate: Date = BudgetPeriod.monthly.start(of: Date()) {
-        didSet { Task { [weak self] in await self?.refresh() } }
+        didSet { Task { await refresh() } }
     }
     @Published private(set) var state: BudgetLoadState = .initial
     @Published var alert: HomeViewAlert?
@@ -139,12 +139,6 @@ final class HomeViewModel: ObservableObject {
     private let context: NSManagedObjectContext
     private let budgetService = BudgetService()
     private var hasStarted = false
-
-    // MARK: Refresh Coordination
-    private var isRefreshing = false
-    private var hasPendingRefresh = false
-    private var shouldDebouncePendingRefresh = false
-    private let refreshDebounceDelay: UInt64 = 200_000_000
 
     // MARK: init()
     /// - Parameter context: The Core Data context to use (defaults to main viewContext).
@@ -171,42 +165,13 @@ final class HomeViewModel: ObservableObject {
         }
 
         // Immediately start the actual data fetch.
-        Task { [weak self] in await self?.refresh() }
+        Task { await refresh() }
     }
 
     // MARK: refresh()
     /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
-    func refresh(debounce: Bool = false) async {
-        if isRefreshing {
-            hasPendingRefresh = true
-            shouldDebouncePendingRefresh = shouldDebouncePendingRefresh || debounce
-            return
-        }
-
-        isRefreshing = true
-
-        if debounce {
-            try? await Task.sleep(nanoseconds: refreshDebounceDelay)
-        }
-
-        defer {
-            isRefreshing = false
-            if hasPendingRefresh {
-                let shouldDebounce = shouldDebouncePendingRefresh
-                hasPendingRefresh = false
-                shouldDebouncePendingRefresh = false
-                Task { [weak self] in
-                    guard let self else { return }
-                    await self.refresh(debounce: shouldDebounce)
-                }
-            }
-        }
-
-        await performRefresh()
-    }
-
-    private func performRefresh() async {
+    func refresh() async {
         AppLog.viewModel.debug("HomeViewModel.refresh() started – current state: \(String(describing: self.state))")
         CoreDataService.shared.ensureLoaded()
         AppLog.viewModel.debug("HomeViewModel.refresh() awaiting persistent stores…")
@@ -219,6 +184,11 @@ final class HomeViewModel: ObservableObject {
         let summaries = await loadSummaries(period: currentPeriod, dateRange: start...end)
         AppLog.viewModel.debug("HomeViewModel.refresh() finished fetching summaries – count: \(summaries.count)")
 
+        // Even if this task was cancelled (for example, by a rapid burst of
+        // .dataStoreDidChange notifications), finalize the UI state once we
+        // have computed summaries so the view never gets stuck showing the
+        // "Loading…" placeholder. This mirrors the Budget Details fix and
+        // keeps HomeView responsive for non‑iCloud accounts as well.
         if summaries.isEmpty {
             self.state = .empty
             AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
