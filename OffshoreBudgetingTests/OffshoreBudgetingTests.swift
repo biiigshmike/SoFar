@@ -185,6 +185,35 @@ struct OffshoreBudgetingTests {
         _ = manager
     }
 
+    @Test
+    @MainActor
+    func themeManager_doesNotResolveUbiquitousStoreWhenSyncDisabled() async throws {
+        let suiteName = "ThemeManagerLazyResolution"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+
+        var factoryCallCount = 0
+        let manager = ThemeManager(
+            userDefaults: defaults,
+            ubiquitousStoreFactory: {
+                factoryCallCount += 1
+                return MockUbiquitousKeyValueStore()
+            },
+            cloudStatusProvider: MockCloudAvailabilityProvider(initialAvailability: .available),
+            notificationCenter: MockNotificationCenter()
+        )
+
+        manager.selectedTheme = .sunrise
+
+        #expect(factoryCallCount == 0)
+
+        _ = manager
+    }
+
     // MARK: - CardAppearanceStore
 
     @Test
@@ -251,6 +280,35 @@ struct OffshoreBudgetingTests {
         #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
         #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
         #expect(store.theme(for: cardID) == .midnight)
+
+        _ = store
+    }
+
+    @Test
+    @MainActor
+    func cardAppearanceStore_doesNotResolveUbiquitousStoreWhenSyncDisabled() throws {
+        let suiteName = "CardAppearanceStoreLazyResolution"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
+        defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
+
+        var factoryCallCount = 0
+        let store = CardAppearanceStore(
+            userDefaults: defaults,
+            ubiquitousStoreFactory: {
+                factoryCallCount += 1
+                return MockUbiquitousKeyValueStore()
+            },
+            cloudStatusProvider: MockCloudAvailabilityProvider(initialAvailability: .available),
+            notificationCenter: MockNotificationCenter()
+        )
+
+        store.setTheme(.midnight, for: UUID())
+
+        #expect(factoryCallCount == 0)
 
         _ = store
     }
