@@ -90,7 +90,7 @@ struct OffshoreBudgetingTests {
 
         let manager = ThemeManager(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
@@ -124,7 +124,7 @@ struct OffshoreBudgetingTests {
 
         let manager = ThemeManager(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
@@ -159,7 +159,7 @@ struct OffshoreBudgetingTests {
 
         let manager = ThemeManager(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
@@ -204,7 +204,7 @@ struct OffshoreBudgetingTests {
 
         let store = CardAppearanceStore(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
@@ -242,7 +242,7 @@ struct OffshoreBudgetingTests {
 
         let store = CardAppearanceStore(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
@@ -273,7 +273,7 @@ struct OffshoreBudgetingTests {
 
         let store = CardAppearanceStore(
             userDefaults: defaults,
-            ubiquitousStore: ubiquitousStore,
+            ubiquitousStoreFactory: { ubiquitousStore },
             cloudStatusProvider: cloudProvider,
             notificationCenter: notificationCenter
         )
