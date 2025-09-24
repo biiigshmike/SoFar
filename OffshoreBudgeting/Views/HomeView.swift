@@ -119,7 +119,7 @@ struct HomeView: View {
         let showsStandalonePeriodNavigation = hasBudget && headerSummary != nil && !showsHeaderSummary
         let matchedControlWidth = hasBudget
             ? matchedHeaderControlWidth
-            : (cachedHeaderControlWidth ?? headerControlMinimumWidth)
+            : cachedHeaderControlWidth
 
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Group {
@@ -468,10 +468,6 @@ struct HomeView: View {
 #else
         return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.s
 #endif
-    }
-
-    private var headerControlMinimumWidth: CGFloat {
-        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
     }
 
     private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
