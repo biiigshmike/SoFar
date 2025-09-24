@@ -243,7 +243,7 @@ struct BudgetDetailsView: View {
                 .publisher(for: .dataStoreDidChange)
                 .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
         ) { _ in
-            Task { await vm.load() }
+            Task { await vm.load(debounce: true) }
         }
         .onReceive(
             NotificationCenter.default

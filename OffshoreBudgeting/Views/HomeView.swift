@@ -66,7 +66,7 @@ struct HomeView: View {
                 .publisher(for: .dataStoreDidChange)
                 .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
         ) { _ in
-            Task { await vm.refresh() }
+            Task { await vm.refresh(debounce: true) }
         }
         .ub_onChange(of: budgetPeriodRawValue) { newValue in
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly

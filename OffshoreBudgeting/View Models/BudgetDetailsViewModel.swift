@@ -67,6 +67,12 @@ final class BudgetDetailsViewModel: ObservableObject {
     /// Tracks the first load to avoid resetting `loadState` if multiple observers request it simultaneously.
     private var isInitialLoadInFlight = false
 
+    // MARK: Load Coordination
+    private var isLoading = false
+    private var hasPendingLoad = false
+    private var shouldDebouncePendingLoad = false
+    private let loadDebounceDelay: UInt64 = 200_000_000
+
     struct IncomeTotals: Equatable {
         var planned: Double
         var actual: Double
@@ -200,7 +206,36 @@ final class BudgetDetailsViewModel: ObservableObject {
     // MARK: Public API
 
     /// Loads budget, initializes date window, and fetches rows.
-    func load() async {
+    func load(debounce: Bool = false) async {
+        if isLoading {
+            hasPendingLoad = true
+            shouldDebouncePendingLoad = shouldDebouncePendingLoad || debounce
+            return
+        }
+
+        isLoading = true
+
+        if debounce {
+            try? await Task.sleep(nanoseconds: loadDebounceDelay)
+        }
+
+        defer {
+            isLoading = false
+            if hasPendingLoad {
+                let shouldDebounce = shouldDebouncePendingLoad
+                hasPendingLoad = false
+                shouldDebouncePendingLoad = false
+                Task { [weak self] in
+                    guard let self else { return }
+                    await self.load(debounce: shouldDebounce)
+                }
+            }
+        }
+
+        await performLoad()
+    }
+
+    private func performLoad() async {
         AppLog.viewModel.debug("BudgetDetailsViewModel.load() started – current state: \(String(describing: self.loadState))")
         if budget != nil, didInitializeDateWindow {
             await refreshRows()
