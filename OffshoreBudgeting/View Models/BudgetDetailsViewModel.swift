@@ -201,7 +201,7 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
-        AppLog.viewModel.debug("BudgetDetailsViewModel.load() started – current state: \(String(describing: loadState))")
+        AppLog.viewModel.debug("BudgetDetailsViewModel.load() started – current state: \(String(describing: self.loadState))")
         if budget != nil, didInitializeDateWindow {
             await refreshRows()
             if case .failed = loadState {
@@ -274,7 +274,7 @@ final class BudgetDetailsViewModel: ObservableObject {
             incomeTotals = .zero
         }
         AppLog.viewModel.debug(
-            "BudgetDetailsViewModel.refreshRows() updated – planned: \(plannedExpenses.count), unplanned: \(unplannedExpenses.count), incomeTotals: planned=\(incomeTotals.planned) actual=\(incomeTotals.actual)"
+            "BudgetDetailsViewModel.refreshRows() updated – planned: \(self.plannedExpenses.count), unplanned: \(self.unplannedExpenses.count), incomeTotals: planned=\(self.incomeTotals.planned) actual=\(self.incomeTotals.actual)"
         )
     }
 

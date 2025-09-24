@@ -172,7 +172,7 @@ final class HomeViewModel: ObservableObject {
     /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
     func refresh() async {
-        AppLog.viewModel.debug("HomeViewModel.refresh() started – current state: \(String(describing: state))")
+        AppLog.viewModel.debug("HomeViewModel.refresh() started – current state: \(String(describing: self.state))")
         CoreDataService.shared.ensureLoaded()
         AppLog.viewModel.debug("HomeViewModel.refresh() awaiting persistent stores…")
         await CoreDataService.shared.waitUntilStoresLoaded()
