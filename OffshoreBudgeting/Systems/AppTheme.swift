@@ -1153,7 +1153,7 @@ final class ThemeManager: ObservableObject {
     private let storageKey = "selectedTheme"
     private static let legacyLiquidGlassIdentifier = "tahoe"
     private let ubiquitousStoreFactory: () -> UbiquitousKeyValueStoring
-    private lazy var ubiquitousStore: UbiquitousKeyValueStoring = ubiquitousStoreFactory()
+    private var cachedUbiquitousStore: UbiquitousKeyValueStoring?
     private let userDefaults: UserDefaults
     private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
     private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
@@ -1180,8 +1180,9 @@ final class ThemeManager: ObservableObject {
         if Self.isThemeSyncEnabled(in: userDefaults) {
             let provider = resolveCloudStatusProvider()
             if Self.isCloudAvailable(from: provider) {
-                _ = ubiquitousStore.synchronize()
-                let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+                let store = instantiateUbiquitousStore()
+                _ = store.synchronize()
+                let raw = store.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
                 initialTheme = Self.resolveTheme(from: raw)
             } else {
                 let raw = userDefaults.string(forKey: storageKey)
@@ -1211,16 +1212,16 @@ final class ThemeManager: ObservableObject {
 
     private func save() {
         userDefaults.set(selectedTheme.rawValue, forKey: storageKey)
-        guard shouldUseICloud else { return }
+        guard let store = ubiquitousStoreIfAvailable() else { return }
 
-        guard ubiquitousStore.synchronize() else {
+        guard store.synchronize() else {
             handleICloudSynchronizationFailure()
             return
         }
 
-        ubiquitousStore.set(selectedTheme.rawValue, forKey: storageKey)
+        store.set(selectedTheme.rawValue, forKey: storageKey)
 
-        guard ubiquitousStore.synchronize() else {
+        guard store.synchronize() else {
             handleICloudSynchronizationFailure()
             return
         }
@@ -1321,15 +1322,15 @@ final class ThemeManager: ObservableObject {
     }
 
     private func loadThemeFromCloud() {
-        guard shouldUseICloud else { return }
+        guard let store = ubiquitousStoreIfAvailable() else { return }
 
-        guard ubiquitousStore.synchronize() else {
+        guard store.synchronize() else {
             handleICloudSynchronizationFailure()
             applyThemeFromUserDefaultsIfNeeded()
             return
         }
 
-        let raw = ubiquitousStore.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
+        let raw = store.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
         applyThemeIfNeeded(from: raw)
     }
 
@@ -1350,9 +1351,10 @@ final class ThemeManager: ObservableObject {
 
     private func startObservingUbiquitousStoreIfNeeded() {
         guard ubiquitousObserver == nil else { return }
+        guard let store = ubiquitousStoreIfAvailable() else { return }
         ubiquitousObserver = notificationCenter.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore as AnyObject,
+            object: store as AnyObject,
             queue: nil
         ) { [weak self] note in
             Task { @MainActor [weak self] in
@@ -1381,5 +1383,19 @@ final class ThemeManager: ObservableObject {
         #if DEBUG
         print("⚠️ ThemeManager: Falling back to UserDefaults after iCloud synchronize() failed.")
         #endif
+}
+
+    private func instantiateUbiquitousStore() -> UbiquitousKeyValueStoring {
+        if let store = cachedUbiquitousStore {
+            return store
+        }
+        let store = ubiquitousStoreFactory()
+        cachedUbiquitousStore = store
+        return store
+    }
+
+    private func ubiquitousStoreIfAvailable() -> UbiquitousKeyValueStoring? {
+        guard shouldUseICloud else { return nil }
+        return instantiateUbiquitousStore()
     }
 }

@@ -24,7 +24,7 @@ final class CardAppearanceStore {
     // MARK: Storage Backbone
     private let userDefaults: UserDefaults
     private let ubiquitousStoreFactory: () -> UbiquitousKeyValueStoring
-    private lazy var ubiquitousStore: UbiquitousKeyValueStoring = ubiquitousStoreFactory()
+    private var cachedUbiquitousStore: UbiquitousKeyValueStoring?
     private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
     private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
     private var cloudStatusProvider: CloudAvailabilityProviding?
@@ -108,9 +108,9 @@ final class CardAppearanceStore {
     /// Hydrates the in-memory cache from UserDefaults and optionally iCloud.
     private func load() {
         let data: Data?
-        if shouldUseICloud {
-            if ubiquitousStore.synchronize() {
-                data = ubiquitousStore.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
+        if let store = ubiquitousStoreIfAvailable() {
+            if store.synchronize() {
+                data = store.data(forKey: storageKey) ?? userDefaults.data(forKey: storageKey)
             } else {
                 handleUbiquitousStoreFailure()
                 data = userDefaults.data(forKey: storageKey)
@@ -140,16 +140,16 @@ final class CardAppearanceStore {
         })
         if let data = try? JSONEncoder().encode(dict) {
             userDefaults.set(data, forKey: storageKey)
-            guard shouldUseICloud else { return }
+            guard let store = ubiquitousStoreIfAvailable() else { return }
 
-            guard ubiquitousStore.synchronize() else {
+            guard store.synchronize() else {
                 handleUbiquitousStoreFailure()
                 return
             }
 
-            ubiquitousStore.set(data, forKey: storageKey)
+            store.set(data, forKey: storageKey)
 
-            guard ubiquitousStore.synchronize() else {
+            guard store.synchronize() else {
                 handleUbiquitousStoreFailure()
                 return
             }
@@ -192,9 +192,10 @@ final class CardAppearanceStore {
 
     private func startObservingUbiquitousStoreIfNeeded() {
         guard ubiquitousObserver == nil else { return }
+        guard let store = ubiquitousStoreIfAvailable() else { return }
         ubiquitousObserver = notificationCenter.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore as AnyObject,
+            object: store as AnyObject,
             queue: nil
         ) { [weak self] note in
             Task { @MainActor [weak self, note] in
@@ -208,6 +209,20 @@ final class CardAppearanceStore {
             notificationCenter.removeObserver(observer)
             ubiquitousObserver = nil
         }
+    }
+
+    private func instantiateUbiquitousStore() -> UbiquitousKeyValueStoring {
+        if let store = cachedUbiquitousStore {
+            return store
+        }
+        let store = ubiquitousStoreFactory()
+        cachedUbiquitousStore = store
+        return store
+    }
+
+    private func ubiquitousStoreIfAvailable() -> UbiquitousKeyValueStoring? {
+        guard shouldUseICloud else { return nil }
+        return instantiateUbiquitousStore()
     }
 
     private func handleUbiquitousStoreChange(_ note: Notification) {
