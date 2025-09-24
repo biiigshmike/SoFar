@@ -220,9 +220,9 @@ final class CoreDataService: ObservableObject {
             await provider.requestAccountStatusCheck(force: true)
         }
 
-        #if DEBUG
-        print("⚠️ Cloud sync disabled after detecting an iCloud account change. Error: \(error)")
-        #endif
+        if AppLog.isVerbose {
+            AppLog.iCloud.info("Cloud sync disabled after iCloud account change. Error: \(String(describing: error))")
+        }
     }
     
     // MARK: Save
@@ -302,10 +302,11 @@ private extension CoreDataService {
             postLoadConfiguration()
             storesLoaded = true
 
-            #if DEBUG
             let urls = container.persistentStoreCoordinator.persistentStores.compactMap { $0.url }
-            print("✅ Core Data stores loaded (\(urls.count)):", urls)
-            #endif
+            let names = urls.map { $0.lastPathComponent }.joined(separator: ", ")
+            if AppLog.isVerbose {
+                AppLog.coreData.info("Core Data stores loaded (\(urls.count)): \(names)")
+            }
         } catch {
             let nsError = error as NSError
             fatalError("❌ Core Data failed to load at \(file):\(line): \(nsError), \(nsError.userInfo)")

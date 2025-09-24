@@ -134,9 +134,7 @@ struct PresetBudgetAssignmentSheet: View {
     private func saveContext() {
         guard viewContext.hasChanges else { return }
         do { try viewContext.save() } catch {
-            #if DEBUG
-            print("PresetBudgetAssignmentSheet save error: \(error)")
-            #endif
+            AppLog.ui.error("PresetBudgetAssignmentSheet save error: \(String(describing: error))")
         }
     }
 

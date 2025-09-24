@@ -852,9 +852,10 @@ private struct PlannedListFR: View {
     /// refreshing totals. Errors are logged and rolled back on failure.
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
-            // Step 1: Log that deletion was triggered. This helps verify that the
-            // swipe or context‑menu action is correctly invoking this helper.
-            print("deletePlanned called for: \(item.descriptionText ?? "<no description>")")
+            // Step 1: Log that deletion was triggered (verbose only).
+            if AppLog.isVerbose {
+                AppLog.ui.debug("deletePlanned called for: \(item.descriptionText ?? "<no description>")")
+            }
             do {
                 try PlannedExpenseService.shared.delete(item)
                 // Defer the totals refresh to the next run loop. Updating the view model
@@ -864,7 +865,7 @@ private struct PlannedListFR: View {
                     onTotalsChanged()
                 }
             } catch {
-                print("Failed to delete planned expense: \(error.localizedDescription)")
+                AppLog.ui.error("Failed to delete planned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
         }
@@ -1053,14 +1054,16 @@ private struct VariableListFR: View {
             let service = UnplannedExpenseService()
             do {
                 // Step 1: Log that deletion was triggered for debugging purposes.
-                print("deleteUnplanned called for: \(item.descriptionText ?? "<no description>")")
+                if AppLog.isVerbose {
+                    AppLog.ui.debug("deleteUnplanned called for: \(item.descriptionText ?? "<no description>")")
+                }
                 try service.delete(item, cascadeChildren: true)
                 // Defer totals refresh to the next run loop to avoid view update loops.
                 DispatchQueue.main.async {
                     onTotalsChanged()
                 }
             } catch {
-                print("Failed to delete unplanned expense: \(error.localizedDescription)")
+                AppLog.ui.error("Failed to delete unplanned expense: \(error.localizedDescription)")
                 viewContext.rollback()
             }
         }

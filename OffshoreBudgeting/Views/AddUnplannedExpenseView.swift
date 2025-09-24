@@ -243,9 +243,7 @@ private struct CategoryChipsRow: View {
                     // Auto-select the newly created category.
                     selectedCategoryID = category.objectID
                 } catch {
-                    #if DEBUG
-                    print("Failed to create category:", error.localizedDescription)
-                    #endif
+                    AppLog.ui.error("Failed to create category: \(error.localizedDescription)")
                 }
             }
             .environment(\.managedObjectContext, viewContext)
@@ -317,4 +315,3 @@ private struct CategoryChip: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
-

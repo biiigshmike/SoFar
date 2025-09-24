@@ -162,9 +162,7 @@ struct PresetsView: View {
             try PlannedExpenseService.shared.deleteTemplateAndChildren(template: template, in: viewContext)
             viewModel.loadTemplates(using: viewContext)
         } catch {
-            #if DEBUG
-            print("PresetsView delete error: \(error)")
-            #endif
+            AppLog.ui.error("PresetsView delete error: \(String(describing: error))")
             viewContext.rollback()
         }
     }
@@ -340,4 +338,3 @@ private extension View {
         }
     }
 }
-

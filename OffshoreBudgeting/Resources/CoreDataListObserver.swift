@@ -58,9 +58,7 @@ final class CoreDataListObserver<T: NSManagedObject>: NSObject, NSFetchedResults
         } catch {
             // If an error occurs, still deliver an empty list to keep UI stable.
             onChange([])
-            #if DEBUG
-            print("CoreDataListObserver start() error:", error)
-            #endif
+            AppLog.coreData.error("CoreDataListObserver start() error: \(String(describing: error))")
         }
     }
 

@@ -30,12 +30,14 @@ struct RootHeaderControlIcon: View {
             .foregroundStyle(foregroundColor)
     }
 
-    private var configuredImage: Image {
-        var image = Image(systemName: systemImage)
+    @ViewBuilder
+    private var configuredImage: some View {
         if let symbolVariants {
-            image = image.symbolVariant(symbolVariants)
+            Image(systemName: systemImage)
+                .symbolVariant(symbolVariants)
+        } else {
+            Image(systemName: systemImage)
         }
-        return image
     }
 
     private var foregroundColor: Color {

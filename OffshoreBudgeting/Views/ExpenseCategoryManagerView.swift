@@ -213,9 +213,7 @@ struct ExpenseCategoryManagerView: View {
         do {
             try viewContext.save()
         } catch {
-            #if DEBUG
-            print("Failed to save categories:", error.localizedDescription)
-            #endif
+            AppLog.ui.error("Failed to save categories: \(error.localizedDescription)")
         }
     }
 }

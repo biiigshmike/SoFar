@@ -356,9 +356,7 @@ private struct CategoryChipsRow: View {
                     try viewContext.save()
                     selectedCategoryID = category.objectID
                 } catch {
-                    #if DEBUG
-                    print("Failed to create category:", error.localizedDescription)
-                    #endif
+                    AppLog.ui.error("Failed to create category: \(error.localizedDescription)")
                 }
             }
             // Guard presentationDetents for iOS 16+ only.

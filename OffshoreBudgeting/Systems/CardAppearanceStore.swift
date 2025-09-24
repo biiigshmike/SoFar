@@ -238,8 +238,8 @@ final class CardAppearanceStore {
         CloudSyncPreferences.disableCardThemeSync(in: userDefaults)
         let provider = resolveCloudStatusProvider()
         provider.requestAccountStatusCheck(force: true)
-        #if DEBUG
-        print("⚠️ CardAppearanceStore: Falling back to UserDefaults after iCloud synchronize() failed.")
-        #endif
+        if AppLog.isVerbose {
+            AppLog.iCloud.info("CardAppearanceStore fell back to UserDefaults after iCloud synchronize() failed")
+        }
     }
 }

@@ -232,7 +232,7 @@ final class BudgetDetailsViewModel: ObservableObject {
 
         guard let budget = resolvedBudget else {
             let message = "We couldn't load this budget. It may have been deleted or moved."
-            print("⚠️ BudgetDetailsViewModel failed to resolve budget with objectID \(budgetObjectID)")
+            AppLog.viewModel.error("BudgetDetailsViewModel failed to resolve budget with objectID: \(String(describing: budgetObjectID))")
             loadState = .failed(message: message)
             alert = BudgetDetailsAlert(kind: .error(message: message))
             return
@@ -338,4 +338,3 @@ final class BudgetDetailsViewModel: ObservableObject {
         }
     }
 }
-

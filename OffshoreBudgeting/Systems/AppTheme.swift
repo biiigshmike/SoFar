@@ -1380,9 +1380,9 @@ final class ThemeManager: ObservableObject {
         CloudSyncPreferences.disableAppThemeSync(in: userDefaults)
         let provider = resolveCloudStatusProvider()
         provider.requestAccountStatusCheck(force: true)
-        #if DEBUG
-        print("⚠️ ThemeManager: Falling back to UserDefaults after iCloud synchronize() failed.")
-        #endif
+        if AppLog.isVerbose {
+            AppLog.iCloud.info("ThemeManager fell back to UserDefaults after iCloud synchronize() failed")
+        }
 }
 
     private func instantiateUbiquitousStore() -> UbiquitousKeyValueStoring {

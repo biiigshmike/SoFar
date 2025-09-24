@@ -26,9 +26,7 @@ extension PlannedExpenseService {
         do {
             return try context.fetch(request)
         } catch {
-            #if DEBUG
-            print("fetchGlobalTemplates error: \(error)")
-            #endif
+            AppLog.service.error("fetchGlobalTemplates error: \(String(describing: error))")
             return []
         }
     }
@@ -48,9 +46,7 @@ extension PlannedExpenseService {
         do {
             return try context.fetch(request)
         } catch {
-            #if DEBUG
-            print("fetchChildren error: \(error)")
-            #endif
+            AppLog.service.error("fetchChildren error: \(String(describing: error))")
             return []
         }
     }
@@ -111,9 +107,7 @@ extension PlannedExpenseService {
         do {
             return try context.fetch(request).first
         } catch {
-            #if DEBUG
-            print("child(of:for:) error: \(error)")
-            #endif
+            AppLog.service.error("child(of:for:) error: \(String(describing: error))")
             return nil
         }
     }
@@ -128,9 +122,7 @@ extension PlannedExpenseService {
         do {
             return try context.fetch(request)
         } catch {
-            #if DEBUG
-            print("fetchAllBudgets error: \(error)")
-            #endif
+            AppLog.service.error("fetchAllBudgets error: \(String(describing: error))")
             return []
         }
     }

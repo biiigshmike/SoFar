@@ -71,9 +71,7 @@ final class IncomeScreenViewModel: ObservableObject {
             totalForSelectedWeek = weekTotals.planned + weekTotals.actual
             refreshEventsCache(for: day, force: forceMonthReload)
         } catch {
-            #if DEBUG
-            print("Income fetch error:", error)
-            #endif
+            AppLog.viewModel.error("Income fetch error: \(String(describing: error))")
             incomesForDay = []
             plannedTotalForSelectedDate = 0
             actualTotalForSelectedDate = 0
@@ -96,9 +94,7 @@ final class IncomeScreenViewModel: ObservableObject {
             }
             load(day: day, forceMonthReload: true)
         } catch {
-            #if DEBUG
-            print("Income delete error:", error)
-            #endif
+            AppLog.viewModel.error("Income delete error: \(String(describing: error))")
         }
     }
     
