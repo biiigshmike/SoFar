@@ -16,6 +16,8 @@ struct RootTabView: View {
     @Environment(\.platformCapabilities) private var platformCapabilities
     @Environment(\.colorScheme) private var colorScheme
 
+    @StateObject private var homeViewModel = HomeViewModel()
+
     private enum Tab: Hashable {
         case home
         case income
@@ -32,7 +34,7 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            navigationContainer { HomeView() }
+            navigationContainer { HomeView(viewModel: homeViewModel) }
                 .ub_navigationBackground(
                     theme: themeManager.selectedTheme,
                     configuration: themeManager.glassConfiguration
