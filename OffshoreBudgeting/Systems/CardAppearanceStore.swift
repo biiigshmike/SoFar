@@ -23,7 +23,8 @@ final class CardAppearanceStore {
 
     // MARK: Storage Backbone
     private let userDefaults: UserDefaults
-    private let ubiquitousStore: UbiquitousKeyValueStoring
+    private let ubiquitousStoreFactory: () -> UbiquitousKeyValueStoring
+    private lazy var ubiquitousStore: UbiquitousKeyValueStoring = ubiquitousStoreFactory()
     private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
     private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
     private var cloudStatusProvider: CloudAvailabilityProviding?
@@ -80,12 +81,12 @@ final class CardAppearanceStore {
     // MARK: Init
     init(
         userDefaults: UserDefaults = .standard,
-        ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
+        ubiquitousStoreFactory: @escaping () -> UbiquitousKeyValueStoring = { NSUbiquitousKeyValueStore.default },
         cloudStatusProvider: CloudAvailabilityProviding? = nil,
         notificationCenter: NotificationCentering = NotificationCenterAdapter.shared
     ) {
         self.userDefaults = userDefaults
-        self.ubiquitousStore = ubiquitousStore
+        self.ubiquitousStoreFactory = ubiquitousStoreFactory
         self.pendingInjectedCloudStatusProvider = cloudStatusProvider
         self.defaultCloudStatusProviderFactory = { CloudAccountStatusProvider.shared }
         self.notificationCenter = notificationCenter

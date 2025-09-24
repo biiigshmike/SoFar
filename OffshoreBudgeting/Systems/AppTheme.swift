@@ -1152,7 +1152,8 @@ final class ThemeManager: ObservableObject {
 
     private let storageKey = "selectedTheme"
     private static let legacyLiquidGlassIdentifier = "tahoe"
-    private let ubiquitousStore: UbiquitousKeyValueStoring
+    private let ubiquitousStoreFactory: () -> UbiquitousKeyValueStoring
+    private lazy var ubiquitousStore: UbiquitousKeyValueStoring = ubiquitousStoreFactory()
     private let userDefaults: UserDefaults
     private let defaultCloudStatusProviderFactory: () -> CloudAvailabilityProviding
     private var pendingInjectedCloudStatusProvider: CloudAvailabilityProviding?
@@ -1165,12 +1166,12 @@ final class ThemeManager: ObservableObject {
 
     init(
         userDefaults: UserDefaults = .standard,
-        ubiquitousStore: UbiquitousKeyValueStoring = NSUbiquitousKeyValueStore.default,
+        ubiquitousStoreFactory: @escaping () -> UbiquitousKeyValueStoring = { NSUbiquitousKeyValueStore.default },
         cloudStatusProvider: CloudAvailabilityProviding? = nil,
         notificationCenter: NotificationCentering = NotificationCenterAdapter.shared
     ) {
         self.userDefaults = userDefaults
-        self.ubiquitousStore = ubiquitousStore
+        self.ubiquitousStoreFactory = ubiquitousStoreFactory
         self.pendingInjectedCloudStatusProvider = cloudStatusProvider
         self.defaultCloudStatusProviderFactory = { CloudAccountStatusProvider.shared }
         self.notificationCenter = notificationCenter
