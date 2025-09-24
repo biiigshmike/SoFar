@@ -24,11 +24,7 @@ import Combine
 struct HomeView: View {
 
     // MARK: State & ViewModel
-    @ObservedObject private var vm: HomeViewModel
-
-    init(viewModel: HomeViewModel) {
-        _vm = ObservedObject(wrappedValue: viewModel)
-    }
+    @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -80,7 +76,7 @@ struct HomeView: View {
         // MARK: ADD SHEET — present new budget UI for the selected period
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
         .sheet(item: $editingBudget, content: makeEditBudgetView)
-        .alert(item: vmAlertBinding, content: alert(for:))
+        .alert(item: $vm.alert, content: alert(for:))
         .confirmationDialog(
             "Add",
             isPresented: $isShowingAddExpenseMenu,
@@ -379,13 +375,6 @@ struct HomeView: View {
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
-    }
-
-    private var vmAlertBinding: Binding<HomeViewAlert?> {
-        Binding(
-            get: { vm.alert },
-            set: { vm.alert = $0 }
-        )
     }
 
     private func alert(for alert: HomeViewAlert) -> Alert {
