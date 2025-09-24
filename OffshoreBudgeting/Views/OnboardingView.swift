@@ -431,8 +431,8 @@ private struct CloudSyncStep: View {
                 await requestCloudAvailabilityCheck(force: false)
             }
         }
-        .ub_onChange(of: enableCloudSync, perform: handleCloudSyncToggleChange)
-        .ub_onChange(of: cloudAvailability, perform: handleCloudAvailabilityChange)
+        .ub_onChange(of: enableCloudSync, handleCloudSyncToggleChange)
+        .ub_onChange(of: cloudAvailability, handleCloudAvailabilityChange)
     }
 
     @ViewBuilder
