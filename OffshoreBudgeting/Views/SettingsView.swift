@@ -53,17 +53,8 @@ struct SettingsView: View {
                 await requestCloudAvailabilityCheck(force: false)
             }
         }
-        .ub_onChange(of: viewModel.enableCloudSync) { newValue in
-            if newValue {
-                Task { await requestCloudAvailabilityCheck(force: false) }
-            } else {
-                cloudAvailability = .unknown
-            }
-        }
-        .ub_onChange(of: cloudAvailability) { availability in
-            guard availability == .unavailable else { return }
-            viewModel.enableCloudSync = false
-        }
+        .ub_onChange(of: viewModel.enableCloudSync, perform: handleCloudSyncToggleChange)
+        .ub_onChange(of: cloudAvailability, perform: handleCloudAvailabilityChange)
     }
 
     // MARK: - Helpers
@@ -322,6 +313,31 @@ struct SettingsView: View {
     private func requestCloudAvailabilityCheck(force: Bool) async {
         let provider = await MainActor.run { ensureCloudStatusProvider() }
         _ = await provider.resolveAvailability(forceRefresh: force)
+    }
+
+    private func handleCloudSyncToggleChange(_ isEnabled: Bool) {
+        if isEnabled {
+            Task { await requestCloudAvailabilityCheck(force: false) }
+            if cloudAvailability == .available {
+                Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: true) }
+            }
+        } else {
+            Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: false) }
+            cloudAvailability = .unknown
+        }
+    }
+
+    private func handleCloudAvailabilityChange(_ availability: CloudAccountStatusProvider.Availability) {
+        switch availability {
+        case .available where viewModel.enableCloudSync:
+            Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: true) }
+        case .unavailable:
+            if viewModel.enableCloudSync {
+                viewModel.enableCloudSync = false
+            }
+        case .unknown:
+            break
+        }
     }
 
     private var canUseCloudSync: Bool {

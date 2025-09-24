@@ -259,14 +259,27 @@ final class CoreDataService: ObservableObject {
     }
 
     // MARK: Await Stores Loaded (Tiny helper)
-    /// Suspends until `storesLoaded` is true (or a short timeout elapses).
-    /// Use this before first fetches that must succeed immediately after launch.
-    func waitUntilStoresLoaded(timeout: TimeInterval = 3.0, pollInterval: TimeInterval = 0.05) async {
+    /// Suspends until `storesLoaded` is true. Optionally provide a timeout to
+    /// prevent indefinite waiting when debugging store configuration issues.
+    func waitUntilStoresLoaded(timeout: TimeInterval? = nil, pollInterval: TimeInterval = 0.05) async {
         if storesLoaded { return }
         ensureLoaded()
-        let deadline = Date().addingTimeInterval(timeout)
-        while !storesLoaded && Date() < deadline {
+
+        let start = Date()
+        while !storesLoaded {
+            if Task.isCancelled { return }
+
+            if let timeout, Date().timeIntervalSince(start) >= timeout {
+                if AppLog.isVerbose {
+                    AppLog.coreData.info("waitUntilStoresLoaded() timed out after \(timeout)s while awaiting persistent stores")
+                }
+                return
+            }
+
             try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+        }
+        if AppLog.isVerbose {
+            AppLog.coreData.debug("waitUntilStoresLoaded() finished after \(String(format: "%.2f", Date().timeIntervalSince(start)))s")
         }
     }
 
@@ -371,17 +384,70 @@ private extension CoreDataService {
 
     @MainActor
     func reconfigurePersistentStoresForLocalMode() async {
+        await rebuildPersistentStores(for: .local)
+    }
+
+    @MainActor
+    func reconfigurePersistentStoresForCloudMode(containerIdentifier: String? = nil) async {
+        let identifier = containerIdentifier ?? await mainActorCloudAccountContainerIdentifier()
+        await rebuildPersistentStores(for: .cloud(containerIdentifier: identifier))
+    }
+
+    @MainActor
+    func applyCloudSyncPreferenceChange(enableSync: Bool) async {
+        if enableSync {
+            await reconfigurePersistentStoresForCloudMode()
+        } else {
+            await reconfigurePersistentStoresForLocalMode()
+        }
+    }
+
+    private func cloudAccountStatusProvider() async -> CloudAvailabilityProviding {
+        await MainActor.run { CloudAccountStatusProvider.shared }
+    }
+
+    private func mainActorCloudAccountContainerIdentifier() async -> String {
+        await MainActor.run { CloudAccountStatusProvider.containerIdentifier }
+    }
+
+    private enum PersistentStoreMode: Equatable {
+        case local
+        case cloud(containerIdentifier: String)
+    }
+
+    @MainActor
+    private func rebuildPersistentStores(for mode: PersistentStoreMode) async {
         guard let description = container.persistentStoreDescriptions.first else { return }
 
-        // Ensure CloudKit mirroring is disabled for the rebuilt stack.
-        description.cloudKitContainerOptions = nil
+        let currentMode: PersistentStoreMode
+        if let options = description.cloudKitContainerOptions {
+            currentMode = .cloud(containerIdentifier: options.containerIdentifier)
+        } else {
+            currentMode = .local
+        }
+
+        if currentMode == mode, storesLoaded {
+            if AppLog.isVerbose {
+                AppLog.coreData.debug("Skipping persistent store rebuild – already configured for \(mode.logDescription)")
+            }
+            return
+        }
+
+        loadingTask?.cancel()
+        loadingTask = nil
+
+        switch mode {
+        case .local:
+            description.cloudKitContainerOptions = nil
+        case .cloud(let containerIdentifier):
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: containerIdentifier
+            )
+        }
 
         let coordinator = container.persistentStoreCoordinator
-
-        // Reset the main context so it releases references to the existing stores.
         viewContext.reset()
 
-        // Remove the in-memory store attachments without deleting the underlying files.
         for store in coordinator.persistentStores {
             do {
                 try coordinator.remove(store)
@@ -397,16 +463,22 @@ private extension CoreDataService {
             postLoadConfiguration()
             storesLoaded = true
             notificationCenter.post(name: .dataStoreDidChange, object: nil)
+            if AppLog.isVerbose {
+                AppLog.coreData.info("Rebuilt persistent stores for \(mode.logDescription)")
+            }
         } catch {
-            assertionFailure("❌ Failed to rebuild persistent stores without CloudKit: \(error)")
+            assertionFailure("❌ Failed to rebuild persistent stores for \(mode.logDescription): \(error)")
         }
     }
+}
 
-    private func cloudAccountStatusProvider() async -> CloudAvailabilityProviding {
-        await MainActor.run { CloudAccountStatusProvider.shared }
-    }
-
-    private func mainActorCloudAccountContainerIdentifier() async -> String {
-        await MainActor.run { CloudAccountStatusProvider.containerIdentifier }
+private extension CoreDataService.PersistentStoreMode {
+    var logDescription: String {
+        switch self {
+        case .local:
+            return "local mode"
+        case .cloud(let identifier):
+            return "CloudKit mode (\(identifier))"
+        }
     }
 }

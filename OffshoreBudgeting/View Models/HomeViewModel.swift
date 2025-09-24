@@ -172,13 +172,17 @@ final class HomeViewModel: ObservableObject {
     /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
     func refresh() async {
+        AppLog.viewModel.debug("HomeViewModel.refresh() started – current state: \(String(describing: state))")
         CoreDataService.shared.ensureLoaded()
+        AppLog.viewModel.debug("HomeViewModel.refresh() awaiting persistent stores…")
         await CoreDataService.shared.waitUntilStoresLoaded()
+        AppLog.viewModel.debug("HomeViewModel.refresh() continuing – storesLoaded: \(CoreDataService.shared.storesLoaded)")
 
         let currentPeriod = period
         let (start, end) = currentPeriod.range(containing: selectedDate)
 
         let summaries = await loadSummaries(period: currentPeriod, dateRange: start...end)
+        AppLog.viewModel.debug("HomeViewModel.refresh() finished fetching summaries – count: \(summaries.count)")
 
         // Even if this task was cancelled (for example, by a rapid burst of
         // .dataStoreDidChange notifications), finalize the UI state once we
@@ -187,8 +191,10 @@ final class HomeViewModel: ObservableObject {
         // keeps HomeView responsive for non‑iCloud accounts as well.
         if summaries.isEmpty {
             self.state = .empty
+            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
         } else {
             self.state = .loaded(summaries)
+            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
         }
     }
 

@@ -201,17 +201,20 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
+        AppLog.viewModel.debug("BudgetDetailsViewModel.load() started – current state: \(String(describing: loadState))")
         if budget != nil, didInitializeDateWindow {
             await refreshRows()
             if case .failed = loadState {
                 // Preserve failure state if we previously surfaced an error.
             } else {
                 loadState = .loaded
+                AppLog.viewModel.debug("BudgetDetailsViewModel.load() reused existing budget – transitioning to .loaded")
             }
             return
         }
 
         if isInitialLoadInFlight {
+            AppLog.viewModel.debug("BudgetDetailsViewModel.load() exiting early – initial load already in flight")
             return
         }
 
@@ -219,8 +222,10 @@ final class BudgetDetailsViewModel: ObservableObject {
         defer { isInitialLoadInFlight = false }
 
         loadState = .loading
+        AppLog.viewModel.debug("BudgetDetailsViewModel.load() awaiting persistent stores…")
         CoreDataService.shared.ensureLoaded()
         await CoreDataService.shared.waitUntilStoresLoaded()
+        AppLog.viewModel.debug("BudgetDetailsViewModel.load() continuing – storesLoaded: \(CoreDataService.shared.storesLoaded)")
 
         // Resolve the Budget instance (use existingObject to avoid stale faults)
         let resolvedBudget: Budget?
@@ -251,6 +256,7 @@ final class BudgetDetailsViewModel: ObservableObject {
 
         await refreshRows()
         loadState = .loaded
+        AppLog.viewModel.debug("BudgetDetailsViewModel.load() finished – transitioning to .loaded")
     }
 
     /// Re-fetches rows for current filters (date window driven on fetch).
@@ -267,6 +273,9 @@ final class BudgetDetailsViewModel: ObservableObject {
         } else {
             incomeTotals = .zero
         }
+        AppLog.viewModel.debug(
+            "BudgetDetailsViewModel.refreshRows() updated – planned: \(plannedExpenses.count), unplanned: \(unplannedExpenses.count), incomeTotals: planned=\(incomeTotals.planned) actual=\(incomeTotals.actual)"
+        )
     }
 
     /// Resets the date window to the budget's own period.
