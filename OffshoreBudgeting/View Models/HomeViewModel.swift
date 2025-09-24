@@ -180,8 +180,11 @@ final class HomeViewModel: ObservableObject {
 
         let summaries = await loadSummaries(period: currentPeriod, dateRange: start...end)
 
-        guard !Task.isCancelled else { return }
-
+        // Even if this task was cancelled (for example, by a rapid burst of
+        // .dataStoreDidChange notifications), finalize the UI state once we
+        // have computed summaries so the view never gets stuck showing the
+        // "Loading…" placeholder. This mirrors the Budget Details fix and
+        // keeps HomeView responsive for non‑iCloud accounts as well.
         if summaries.isEmpty {
             self.state = .empty
         } else {

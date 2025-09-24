@@ -53,14 +53,14 @@ struct SettingsView: View {
                 await requestCloudAvailabilityCheck(force: false)
             }
         }
-        .onChange(of: viewModel.enableCloudSync) { newValue in
+        .ub_onChange(of: viewModel.enableCloudSync) { newValue in
             if newValue {
                 Task { await requestCloudAvailabilityCheck(force: false) }
             } else {
                 cloudAvailability = .unknown
             }
         }
-        .onChange(of: cloudAvailability) { availability in
+        .ub_onChange(of: cloudAvailability) { availability in
             guard availability == .unavailable else { return }
             viewModel.enableCloudSync = false
         }

@@ -59,10 +59,12 @@ struct HomeView: View {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
         }
+        // Debounce rapid change bursts (e.g., multiple saves/merges) to avoid
+        // redundant refresh calls that could keep the view in a loading state.
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .dataStoreDidChange)
-                .receive(on: RunLoop.main)
+                .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
         ) { _ in
             Task { await vm.refresh() }
         }
@@ -316,7 +318,7 @@ struct HomeView: View {
                 }
             }
         } label: {
-            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: .none)
+            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
                 // Keep overflow menu glyph horizontal per header controls design.
                 .accessibilityLabel(summary == nil ? "Budget Options" : "Budget Actions")
         }

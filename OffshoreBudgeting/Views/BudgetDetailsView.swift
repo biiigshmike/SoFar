@@ -236,10 +236,12 @@ struct BudgetDetailsView: View {
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
+        // Debounce bursts of Core Data change notifications to avoid
+        // overlapping loads that can prolong the loading placeholder.
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .dataStoreDidChange)
-                .receive(on: RunLoop.main)
+                .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
         ) { _ in
             Task { await vm.load() }
         }
