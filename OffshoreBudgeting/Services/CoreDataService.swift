@@ -299,6 +299,22 @@ final class CoreDataService: ObservableObject {
     }
 }
 
+// MARK: - Cloud Sync Preferences
+
+extension CoreDataService {
+
+    /// Applies the user's Cloud Sync preference and reconfigures persistent stores accordingly.
+    /// - Parameter enableSync: When `true`, persistent stores rebuild for CloudKit mode; otherwise they revert to local mode.
+    @MainActor
+    func applyCloudSyncPreferenceChange(enableSync: Bool) async {
+        if enableSync {
+            await reconfigurePersistentStoresForCloudMode()
+        } else {
+            await reconfigurePersistentStoresForLocalMode()
+        }
+    }
+}
+
 // MARK: - Private Helpers
 
 private extension CoreDataService {
@@ -396,15 +412,6 @@ private extension CoreDataService {
             identifier = await mainActorCloudAccountContainerIdentifier()
         }
         await rebuildPersistentStores(for: .cloud(containerIdentifier: identifier))
-    }
-
-    @MainActor
-    func applyCloudSyncPreferenceChange(enableSync: Bool) async {
-        if enableSync {
-            await reconfigurePersistentStoresForCloudMode()
-        } else {
-            await reconfigurePersistentStoresForLocalMode()
-        }
     }
 
     private func cloudAccountStatusProvider() async -> CloudAvailabilityProviding {

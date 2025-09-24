@@ -53,8 +53,8 @@ struct SettingsView: View {
                 await requestCloudAvailabilityCheck(force: false)
             }
         }
-        .ub_onChange(of: viewModel.enableCloudSync, perform: handleCloudSyncToggleChange)
-        .ub_onChange(of: cloudAvailability, perform: handleCloudAvailabilityChange)
+        .ub_onChange(of: viewModel.enableCloudSync, handleCloudSyncToggleChange)
+        .ub_onChange(of: cloudAvailability, handleCloudAvailabilityChange)
     }
 
     // MARK: - Helpers
@@ -335,7 +335,7 @@ struct SettingsView: View {
             if viewModel.enableCloudSync {
                 viewModel.enableCloudSync = false
             }
-        case .unknown:
+        case .available, .unknown:
             break
         }
     }
