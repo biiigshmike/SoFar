@@ -42,6 +42,7 @@ struct BudgetDetailsView: View {
     // MARK: UI State
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
+    @State private var didTriggerInitialLoad = false
 
     // MARK: Layout
     private var isWideHeaderLayout: Bool {
@@ -110,7 +111,23 @@ struct BudgetDetailsView: View {
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
         self.onSegmentChange = onSegmentChange
-        _vm = StateObject(wrappedValue: BudgetDetailsViewModel(budgetObjectID: budgetObjectID))
+        _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
+    }
+
+    /// Alternate initializer that accepts an existing, cached view model.
+    init(
+        viewModel: BudgetDetailsViewModel,
+        periodNavigation: PeriodNavigationConfiguration? = nil,
+        displaysBudgetTitle: Bool = true,
+        headerTopPadding: CGFloat = DS.Spacing.s,
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
+    ) {
+        self.budgetObjectID = viewModel.budgetObjectID
+        self.periodNavigation = periodNavigation
+        self.displaysBudgetTitle = displaysBudgetTitle
+        self.headerTopPadding = headerTopPadding
+        self.onSegmentChange = onSegmentChange
+        _vm = StateObject(wrappedValue: viewModel)
     }
 
     // MARK: Body
@@ -209,18 +226,19 @@ struct BudgetDetailsView: View {
                         placeholderView()
                     }
                 } else {
-                    if let cards = (vm.budget?.cards as? Set<Card>) {
-                        VariableListFR(
-                            attachedCards: Array(cards),
-                            startDate: vm.startDate,
-                            endDate: vm.endDate,
-                            sort: vm.sort,
-                            onAddTapped: { isPresentingAddUnplannedSheet = true },
-                            onTotalsChanged: { Task { await vm.refreshRows() } }
-                        )
-                    } else {
-                        placeholderView()
-                    }
+                    // Even if the budget hasn't fully resolved yet, render the
+                    // variable list with an empty cards array so the user sees
+                    // the proper empty state (with Add button) instead of a
+                    // perpetual "Loading…" placeholder.
+                    let cards = (vm.budget?.cards as? Set<Card>) ?? []
+                    VariableListFR(
+                        attachedCards: Array(cards),
+                        startDate: vm.startDate,
+                        endDate: vm.endDate,
+                        sort: vm.sort,
+                        onAddTapped: { isPresentingAddUnplannedSheet = true },
+                        onTotalsChanged: { Task { await vm.refreshRows() } }
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
@@ -230,21 +248,17 @@ struct BudgetDetailsView: View {
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
-        .onAppear {
-            CoreDataService.shared.ensureLoaded()
-            Task { await vm.load() }
+        // Load once per view instance. Gate with local state to avoid
+        // accidental re-entrant loads caused by view tree churn.
+        .task {
+            if !didTriggerInitialLoad {
+                didTriggerInitialLoad = true
+                CoreDataService.shared.ensureLoaded()
+                await vm.load()
+            }
         }
         // Pull to refresh to reload expenses with current filters
         .refreshable { await vm.refreshRows() }
-        // Debounce bursts of Core Data change notifications to avoid
-        // overlapping loads that can prolong the loading placeholder.
-        .onReceive(
-            NotificationCenter.default
-                .publisher(for: .dataStoreDidChange)
-                .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
-        ) { _ in
-            Task { await vm.load() }
-        }
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .budgetDetailsRequestAddPlannedExpense)

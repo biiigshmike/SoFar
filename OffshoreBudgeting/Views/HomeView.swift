@@ -59,15 +59,9 @@ struct HomeView: View {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
         }
-        // Debounce rapid change bursts (e.g., multiple saves/merges) to avoid
-        // redundant refresh calls that could keep the view in a loading state.
-        .onReceive(
-            NotificationCenter.default
-                .publisher(for: .dataStoreDidChange)
-                .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
-        ) { _ in
-            Task { await vm.refresh() }
-        }
+        // Temporarily disable automatic refresh on every Core Data save to
+        // prevent re-entrant view reconstruction and load() loops. Explicit
+        // onSaved callbacks already trigger refreshes where it matters.
         .ub_onChange(of: budgetPeriodRawValue) { newValue in
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly
             vm.updateBudgetPeriod(to: newPeriod)
@@ -431,7 +425,6 @@ struct HomeView: View {
                         }
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                    .id(first.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #else
                     BudgetDetailsView(
@@ -443,7 +436,6 @@ struct HomeView: View {
                         }
                     )
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                    .id(first.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #endif
                 } else {

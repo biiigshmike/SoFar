@@ -9,18 +9,6 @@
         </array>
         <key>CFBundleVersion</key>
         <string>$(CURRENT_PROJECT_VERSION)</string>
-        <key>NSUbiquitousContainers</key>
-        <dict>
-                <key>iCloud.com.mbrown.offshore</key>
-                <dict>
-                        <key>NSUbiquitousContainerIsDocumentScopePublic</key>
-                        <true/>
-                        <key>NSUbiquitousContainerName</key>
-                        <string>Offshore Budgeting</string>
-                        <key>NSUbiquitousContainerSupportedFolderLevels</key>
-                        <string>ANY</string>
-                </dict>
-        </dict>
         <key>NSServices</key>
         <array>
                 <dict/>

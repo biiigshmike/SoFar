@@ -206,12 +206,14 @@ final class HomeViewModel: ObservableObject {
         // have computed summaries so the view never gets stuck showing the
         // "Loading…" placeholder. This mirrors the Budget Details fix and
         // keeps HomeView responsive for non‑iCloud accounts as well.
-        if summaries.isEmpty {
-            self.state = .empty
-            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
-        } else {
-            self.state = .loaded(summaries)
-            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+        let newState: BudgetLoadState = summaries.isEmpty ? .empty : .loaded(summaries)
+        if self.state != newState {
+            self.state = newState
+            if summaries.isEmpty {
+                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
+            } else {
+                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+            }
         }
 
         isRefreshing = false
@@ -228,10 +230,10 @@ final class HomeViewModel: ObservableObject {
         await withCheckedContinuation { continuation in
             let backgroundContext = CoreDataService.shared.newBackgroundContext()
             backgroundContext.perform {
-                let budgets = Self.fetchBudgets(overlapping: dateRange, in: backgroundContext).filter { budget in
-                    guard let start = budget.startDate, let end = budget.endDate else { return false }
-                    return period.matches(startDate: start, endDate: end)
-                }
+                // Include any budgets that overlap the selected range. Do NOT
+                // require exact period alignment so empty or partial budgets
+                // still appear on Home and do not cause empty/loaded flapping.
+                let budgets = Self.fetchBudgets(overlapping: dateRange, in: backgroundContext)
 
                 let summaries: [BudgetSummary] = budgets.compactMap { budget -> BudgetSummary? in
                     guard let startDate = budget.startDate, let endDate = budget.endDate else { return nil }

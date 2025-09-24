@@ -14,6 +14,9 @@ import SwiftUI
 // MARK: - BudgetDetailsViewModel
 @MainActor
 final class BudgetDetailsViewModel: ObservableObject {
+    deinit {
+        AppLog.viewModel.debug("BudgetDetailsViewModel.deinit – objectID: \(self.budgetObjectID)")
+    }
 
     // MARK: Inputs
     let budgetObjectID: NSManagedObjectID
@@ -197,12 +200,22 @@ final class BudgetDetailsViewModel: ObservableObject {
          context: NSManagedObjectContext = CoreDataService.shared.viewContext) {
         self.budgetObjectID = budgetObjectID
         self.context = context
+        AppLog.viewModel.debug("BudgetDetailsViewModel.init – objectID: \(self.budgetObjectID)")
     }
 
     // MARK: Public API
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
+        // Fast-path: if we already resolved the budget and initialized the
+        // date window, avoid re-running the full load. Row refreshes are
+        // triggered explicitly by user actions (onSaved/onTotalsChanged)
+        // and lists update via @FetchRequest.
+        if loadState == .loaded, budget != nil, didInitializeDateWindow {
+            AppLog.viewModel.debug("BudgetDetailsViewModel.load() no-op – already loaded")
+            return
+        }
+
         if isLoadInFlight {
             shouldReloadAfterCurrentRun = true
             AppLog.viewModel.debug("BudgetDetailsViewModel.load() coalesced – load already in flight")

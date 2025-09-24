@@ -9,10 +9,8 @@ import Foundation
 import CoreData
 
 // MARK: - CoreDataService
-/// Centralized Core Data stack using NSPersistentCloudKitContainer to allow
-/// future CloudKit sync without rewriting the stack. Cloud is OFF by default
-/// (no special store options added). We keep history tracking ON to enable
-/// responsive UI updates later.
+/// Centralized Core Data stack configured for local-only storage.
+/// iCloud/CloudKit mirroring is disabled to simplify testing and UI work.
 final class CoreDataService: ObservableObject {
 
     // MARK: Singleton
@@ -29,10 +27,8 @@ final class CoreDataService: ObservableObject {
     /// IMPORTANT: Ensure your model is named "SoFarModel.xcdatamodeld".
     private let modelName = "OffshoreBudgetingModel"
     
-    /// Determines whether CloudKit-backed sync is enabled via user settings.
-    private var enableCloudKitSync: Bool {
-        UserDefaults.standard.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
-    }
+    /// CloudKit sync is disabled in this build.
+    private var enableCloudKitSync: Bool { false }
 
     private var loadingTask: Task<Void, Never>?
     
@@ -47,10 +43,9 @@ final class CoreDataService: ObservableObject {
     private var cloudKitEventObserver: NSObjectProtocol?
     
     // MARK: Persistent Container
-    /// Expose the container as NSPersistentContainer to satisfy CoreDataStackProviding.
-    /// Internally we still build an NSPersistentCloudKitContainer for future sync.
+    /// Expose the container as NSPersistentContainer (local-only).
     public lazy var container: NSPersistentContainer = {
-        let container = NSPersistentCloudKitContainer(name: modelName)
+        let container = NSPersistentContainer(name: modelName)
         
         // Store location
         let storeURL = NSPersistentContainer.defaultDirectoryURL()
@@ -60,13 +55,13 @@ final class CoreDataService: ObservableObject {
         // MARK: Store Options
         // Keep these ON consistently to avoid "previously opened with X, now without X" read-only issues.
         description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+        // Remote change notifications are only relevant for CloudKit setups.
+        // Keep this OFF to avoid spurious notifications/infinite refresh loops.
+        description.setOption(false as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
         description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
         
-        // CloudKit (deferred). When you’re ready, we’ll set:
-        // description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.mbrown.offshore)
-        // and ensure entitlements are set up. For now, leave it nil.
+        // No CloudKit options; local-only store.
         
         container.persistentStoreDescriptions = [description]
         return container
@@ -114,22 +109,16 @@ final class CoreDataService: ObservableObject {
         // Optional: performance niceties
         viewContext.undoManager = nil
 
-        // Begin monitoring Core Data saves and remote changes.
+        // Begin monitoring Core Data saves.
         startObservingChanges()
-
-        if enableCloudKitSync {
-            startObservingCloudKitEvents()
-        } else {
-            stopObservingCloudKitEvents()
-        }
     }
 
     // MARK: Change Observation
-    /// Listens for context saves and remote store changes and posts a unified
-    /// `.dataStoreDidChange` notification so views can react centrally.
+    /// Listens for context saves and posts a unified `.dataStoreDidChange`
+    /// notification so views can react centrally.
     private func startObservingChanges() {
         // Avoid duplicate observers if called more than once.
-        if didSaveObserver != nil || remoteChangeObserver != nil { return }
+        if didSaveObserver != nil { return }
 
         let center = notificationCenter
 
@@ -141,88 +130,7 @@ final class CoreDataService: ObservableObject {
             center.post(name: .dataStoreDidChange, object: nil)
         }
 
-        remoteChangeObserver = center.addObserver(
-            forName: NSNotification.Name.NSPersistentStoreRemoteChange,
-            object: container.persistentStoreCoordinator,
-            queue: .main
-        ) { _ in
-            center.post(name: .dataStoreDidChange, object: nil)
-        }
-    }
-
-    // MARK: CloudKit Event Observation
-    /// Watches for CloudKit setup issues so we can disable sync automatically
-    /// instead of logging noisy errors when the user signs out or switches
-    /// iCloud accounts.
-    private func startObservingCloudKitEvents() {
-        guard cloudKitEventObserver == nil else { return }
-
-        let center = notificationCenter
-
-        cloudKitEventObserver = center.addObserver(
-            forName: NSPersistentCloudKitContainer.eventChangedNotification,
-            object: container,
-            queue: .main
-        ) { [weak self] note in
-            guard
-                let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event
-            else {
-                return
-            }
-
-            self?.handleCloudKitEvent(event)
-        }
-    }
-
-    private func stopObservingCloudKitEvents() {
-        if let observer = cloudKitEventObserver {
-            notificationCenter.removeObserver(observer)
-        }
-        cloudKitEventObserver = nil
-    }
-
-    private func handleCloudKitEvent(_ event: NSPersistentCloudKitContainer.Event) {
-        let isSetupFailure = event.type == .setup && event.error != nil
-        // "Account change" events were added in later SDKs. Fall back to the raw value
-        // so the handler still works when built with older deployment targets.
-        let accountChangeEventType = NSPersistentCloudKitContainer.EventType(rawValue: 4)
-        let isAccountChange = accountChangeEventType.map { event.type == $0 } ?? false
-
-        guard isSetupFailure || isAccountChange else { return }
-
-        guard let error = event.error as NSError? else { return }
-        let isAccountMissing: Bool
-        if error.domain == NSCocoaErrorDomain {
-            isAccountMissing = error.code == 134405 || error.code == 134400
-        } else if error.domain == "SyncedDefaults" {
-            // When the user is signed out of iCloud, CloudKit can surface the
-            // "SyncedDefaults" 8888 error instead of the traditional Core Data
-            // codes. Treat it the same way so we silence repeated sync attempts
-            // and disable the CloudKit toggle automatically.
-            isAccountMissing = error.code == 8888
-        } else {
-            isAccountMissing = false
-        }
-        guard isAccountMissing else { return }
-
-        stopObservingCloudKitEvents()
-
-        disableCloudSyncPreferences()
-
-        Task { [weak self] in
-            guard let self else { return }
-            await self.reconfigurePersistentStoresForLocalMode()
-        }
-
-        Task {
-            let provider = await cloudAccountStatusProvider()
-            await provider.invalidateCache()
-            await provider.requestAccountStatusCheck(force: true)
-        }
-
-        if AppLog.isVerbose {
-            AppLog.iCloud.info("Cloud sync disabled after iCloud account change. Error: \(String(describing: error))")
-        }
+        // Remote change observation is disabled in local-only mode.
     }
     
     // MARK: Save
@@ -307,11 +215,8 @@ extension CoreDataService {
     /// - Parameter enableSync: When `true`, persistent stores rebuild for CloudKit mode; otherwise they revert to local mode.
     @MainActor
     func applyCloudSyncPreferenceChange(enableSync: Bool) async {
-        if enableSync {
-            await reconfigurePersistentStoresForCloudMode()
-        } else {
-            await reconfigurePersistentStoresForLocalMode()
-        }
+        // No-op in local-only builds. Always ensure local mode is active.
+        await reconfigurePersistentStoresForLocalMode()
     }
 }
 
@@ -323,9 +228,6 @@ private extension CoreDataService {
         defer { loadingTask = nil }
 
         do {
-            let shouldEnableCloudSync = await shouldEnableCloudKitSync()
-            await configureCloudKitOptions(isEnabled: shouldEnableCloudSync)
-
             try await loadPersistentStores()
 
             postLoadConfiguration()
@@ -342,19 +244,6 @@ private extension CoreDataService {
         }
     }
 
-    func configureCloudKitOptions(isEnabled: Bool) async {
-        guard let description = container.persistentStoreDescriptions.first else { return }
-
-        if isEnabled {
-            let containerIdentifier = await mainActorCloudAccountContainerIdentifier()
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: containerIdentifier
-            )
-        } else {
-            description.cloudKitContainerOptions = nil
-        }
-    }
-
     func loadPersistentStores() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             container.loadPersistentStores { _, error in
@@ -365,29 +254,6 @@ private extension CoreDataService {
                 }
             }
         }
-    }
-
-    /// Determines whether the persistent store should be configured for CloudKit mirroring.
-    /// - Parameter providerOverride: Optional cloud status provider to use instead of the shared singleton.
-    /// - Returns: `true` when CloudKit should be enabled for this launch.
-    func shouldEnableCloudKitSync(using providerOverride: CloudAvailabilityProviding? = nil) async -> Bool {
-        guard enableCloudKitSync else {
-            disableCloudSyncPreferences()
-            return false
-        }
-
-        let provider: CloudAvailabilityProviding
-        if let providerOverride {
-            provider = providerOverride
-        } else {
-            provider = await cloudAccountStatusProvider()
-        }
-
-        let accountAvailable = await provider.resolveAvailability(forceRefresh: false)
-        if !accountAvailable {
-            disableCloudSyncPreferences()
-        }
-        return accountAvailable
     }
 
     func disableCloudSyncPreferences() {
@@ -403,35 +269,13 @@ private extension CoreDataService {
         await rebuildPersistentStores(for: .local)
     }
 
-    @MainActor
-    func reconfigurePersistentStoresForCloudMode(containerIdentifier: String? = nil) async {
-        let identifier: String
-        if let containerIdentifier {
-            identifier = containerIdentifier
-        } else {
-            identifier = await mainActorCloudAccountContainerIdentifier()
-        }
-        await rebuildPersistentStores(for: .cloud(containerIdentifier: identifier))
-    }
-
-    private func cloudAccountStatusProvider() async -> CloudAvailabilityProviding {
-        await MainActor.run { CloudAccountStatusProvider.shared }
-    }
-
-    private func mainActorCloudAccountContainerIdentifier() async -> String {
-        await MainActor.run { CloudAccountStatusProvider.containerIdentifier }
-    }
-
     private enum PersistentStoreMode: Equatable {
         case local
-        case cloud(containerIdentifier: String)
 
         var logDescription: String {
             switch self {
             case .local:
                 return "local mode"
-            case .cloud(let identifier):
-                return "CloudKit mode (\(identifier))"
             }
         }
     }
@@ -441,11 +285,7 @@ private extension CoreDataService {
         guard let description = container.persistentStoreDescriptions.first else { return }
 
         let currentMode: PersistentStoreMode
-        if let options = description.cloudKitContainerOptions {
-            currentMode = .cloud(containerIdentifier: options.containerIdentifier)
-        } else {
-            currentMode = .local
-        }
+        currentMode = .local
 
         if currentMode == mode, storesLoaded {
             if AppLog.isVerbose {
@@ -457,14 +297,7 @@ private extension CoreDataService {
         loadingTask?.cancel()
         loadingTask = nil
 
-        switch mode {
-        case .local:
-            description.cloudKitContainerOptions = nil
-        case .cloud(let containerIdentifier):
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: containerIdentifier
-            )
-        }
+        // Nothing to toggle; always local-only.
 
         let coordinator = container.persistentStoreCoordinator
         viewContext.reset()

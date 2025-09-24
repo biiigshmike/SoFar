@@ -107,7 +107,8 @@ struct SettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            // MARK: Sync Card
+            // MARK: Sync Card (disabled)
+            if false {
             SettingsCard(
                 iconSystemName: "icloud",
                 title: "iCloud Services",
@@ -164,6 +165,7 @@ struct SettingsView: View {
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
             }
 
 //            // MARK: Calendar Card

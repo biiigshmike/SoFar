@@ -2,10 +2,10 @@
 //  CloudAccountStatusProvider.swift
 //  SoFar
 //
-//  Created by OpenAI Assistant on 2024-05-17.
+//  Simplified stub for local-only builds. Always reports iCloud as unavailable
+//  and performs no CloudKit calls.
 //
 
-import CloudKit
 import Combine
 import Foundation
 
@@ -18,8 +18,8 @@ final class CloudAccountStatusProvider: ObservableObject {
 
     // MARK: Shared Instance
 
-    /// Identifier that matches the entitlements and Core Data configuration.
-    static let containerIdentifier = "iCloud.com.mbrown.offshore"
+    /// Kept for API compatibility only.
+    static let containerIdentifier = ""
 
     static let shared = CloudAccountStatusProvider()
 
@@ -31,7 +31,7 @@ final class CloudAccountStatusProvider: ObservableObject {
         case unavailable
     }
 
-    @Published private(set) var availability: Availability = .unknown
+    @Published private(set) var availability: Availability = .unavailable
 
     /// Returns `true` when `availability == .available` and `false` when the
     /// check has finished and determined that iCloud is not usable. Returns
@@ -47,43 +47,11 @@ final class CloudAccountStatusProvider: ObservableObject {
         }
     }
 
-    // MARK: Private Properties
-
-    typealias AccountStatusFetcher = @Sendable () async throws -> CKAccountStatus
-
-    private let notificationCenter: NotificationCentering
-    private let accountStatusFetcher: AccountStatusFetcher
-    private var accountChangeObserver: NSObjectProtocol?
-    private var cachedStatus: CKAccountStatus?
-    private var fetchTask: Task<CKAccountStatus, Error>?
-
     // MARK: Init
-
-    init(
-        container: CKContainer? = nil,
-        notificationCenter: NotificationCentering = NotificationCenterAdapter.shared,
-        accountStatusFetcher: AccountStatusFetcher? = nil
-    ) {
-        self.notificationCenter = notificationCenter
-
-        if let accountStatusFetcher {
-            self.accountStatusFetcher = accountStatusFetcher
-        } else {
-            let resolvedContainer = container ?? CKContainer(identifier: Self.containerIdentifier)
-            self.accountStatusFetcher = {
-                try await resolvedContainer.accountStatus()
-            }
-        }
-
-        registerForAccountChanges()
-    }
+    init() {}
 
     deinit {
-        fetchTask?.cancel()
-
-        if let accountChangeObserver {
-            notificationCenter.removeObserver(accountChangeObserver)
-        }
+        // no-op
     }
 
     // MARK: Public API
@@ -91,12 +59,7 @@ final class CloudAccountStatusProvider: ObservableObject {
     /// Starts a background task (if one is not already running) to refresh the
     /// CloudKit account status. Useful for callers that do not need the result
     /// immediately but want to make sure the cache stays fresh.
-    func requestAccountStatusCheck(force: Bool = false) {
-        Task { [weak self] in
-            guard let self else { return }
-            _ = await self.resolveAvailability(forceRefresh: force)
-        }
-    }
+    func requestAccountStatusCheck(force: Bool = false) { /* no-op */ }
 
     /// Returns whether iCloud is currently available. When the status has not
     /// been fetched yet this method queries CloudKit and caches the result.
@@ -104,92 +67,15 @@ final class CloudAccountStatusProvider: ObservableObject {
     ///   re-queries CloudKit.
     /// - Returns: `true` when the user has an available iCloud account for the
     ///   configured container.
-    func resolveAvailability(forceRefresh: Bool = false) async -> Bool {
-        if forceRefresh {
-            cachedStatus = nil
-            fetchTask?.cancel()
-            fetchTask = nil
-            availability = .unknown
-        }
-
-        if let cachedStatus, !forceRefresh {
-            let available = cachedStatus == .available
-            availability = available ? .available : .unavailable
-            return available
-        }
-
-        if let fetchTask, !forceRefresh {
-            return await resolve(task: fetchTask)
-        }
-
-        let fetcher = accountStatusFetcher
-        let task = Task { () throws -> CKAccountStatus in
-            try await fetcher()
-        }
-        fetchTask = task
-
-        return await resolve(task: task)
-    }
+    func resolveAvailability(forceRefresh: Bool = false) async -> Bool { false }
 
     /// Removes any cached status so the next call to `resolveAvailability`
     /// fetches from CloudKit again.
-    func invalidateCache() {
-        cachedStatus = nil
-        fetchTask?.cancel()
-        fetchTask = nil
-        availability = .unknown
-    }
+    func invalidateCache() { /* no-op */ }
 
     // MARK: Private Helpers
 
-    private func registerForAccountChanges() {
-#if canImport(CloudKit)
-#if os(macOS)
-        if #available(macOS 10.16, *) {
-            accountChangeObserver = notificationCenter.addObserver(
-                forName: .CKAccountChanged,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    self?.handleAccountChangeNotification()
-                }
-            }
-        }
-#else
-        accountChangeObserver = notificationCenter.addObserver(
-            forName: .CKAccountChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.handleAccountChangeNotification()
-            }
-        }
-#endif
-#endif
-    }
-
-    private func handleAccountChangeNotification() {
-        invalidateCache()
-        requestAccountStatusCheck(force: true)
-    }
-
-    private func resolve(task: Task<CKAccountStatus, Error>) async -> Bool {
-        defer { fetchTask = nil }
-
-        do {
-            let status = try await task.value
-            cachedStatus = status
-            let available = status == .available
-            availability = available ? .available : .unavailable
-            return available
-        } catch {
-            cachedStatus = .noAccount
-            availability = .unavailable
-            return false
-        }
-    }
+    // No observers or CloudKit interactions in stub.
 }
 
 // MARK: - CloudAvailabilityProviding

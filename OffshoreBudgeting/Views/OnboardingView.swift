@@ -60,7 +60,7 @@ struct OnboardingView: View {
                 )
             case .presets:
                 PresetsStep(
-                    onNext: { step = .cloudSync },
+                    onNext: { step = .loading },
                     onBack: { step = .cards }
                 )
             case .cloudSync:
