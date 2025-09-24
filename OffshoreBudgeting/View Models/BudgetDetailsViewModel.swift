@@ -66,6 +66,8 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Tracks the first load to avoid resetting `loadState` if multiple observers request it simultaneously.
     private var isInitialLoadInFlight = false
+    private var isLoadInFlight = false
+    private var shouldReloadAfterCurrentRun = false
 
     struct IncomeTotals: Equatable {
         var planned: Double
@@ -201,7 +203,25 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
+        if isLoadInFlight {
+            shouldReloadAfterCurrentRun = true
+            AppLog.viewModel.debug("BudgetDetailsViewModel.load() coalesced – load already in flight")
+            return
+        }
+
+        isLoadInFlight = true
         AppLog.viewModel.debug("BudgetDetailsViewModel.load() started – current state: \(String(describing: self.loadState))")
+        defer {
+            isLoadInFlight = false
+            if shouldReloadAfterCurrentRun {
+                shouldReloadAfterCurrentRun = false
+                AppLog.viewModel.debug("BudgetDetailsViewModel.load() scheduling coalesced reload")
+                Task { [weak self] in
+                    await self?.load()
+                }
+            }
+        }
+
         if budget != nil, didInitializeDateWindow {
             await refreshRows()
             if case .failed = loadState {
