@@ -120,8 +120,11 @@ final class HomeViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue)
     private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue {
         didSet {
+            guard budgetPeriodRawValue != oldValue else { return }
             selectedDate = period.start(of: Date())
-            Task { await refresh() }
+            Task { [weak self] in
+                await self?.refresh()
+            }
         }
     }
 
@@ -130,7 +133,12 @@ final class HomeViewModel: ObservableObject {
     }
 
     @Published var selectedDate: Date = BudgetPeriod.monthly.start(of: Date()) {
-        didSet { Task { await refresh() } }
+        didSet {
+            guard selectedDate != oldValue else { return }
+            Task { [weak self] in
+                await self?.refresh()
+            }
+        }
     }
     @Published private(set) var state: BudgetLoadState = .initial
     @Published var alert: HomeViewAlert?
@@ -139,6 +147,8 @@ final class HomeViewModel: ObservableObject {
     private let context: NSManagedObjectContext
     private let budgetService = BudgetService()
     private var hasStarted = false
+    private var isRefreshing = false
+    private var needsAnotherRefresh = false
 
     // MARK: init()
     /// - Parameter context: The Core Data context to use (defaults to main viewContext).
@@ -172,6 +182,13 @@ final class HomeViewModel: ObservableObject {
     /// Loads budgets that overlap the selected period and computes summaries.
     /// - Important: This uses each budget's own start/end when computing totals.
     func refresh() async {
+        if isRefreshing {
+            needsAnotherRefresh = true
+            AppLog.viewModel.debug("HomeViewModel.refresh() coalesced – refresh already in flight")
+            return
+        }
+
+        isRefreshing = true
         AppLog.viewModel.debug("HomeViewModel.refresh() started – current state: \(String(describing: self.state))")
         CoreDataService.shared.ensureLoaded()
         AppLog.viewModel.debug("HomeViewModel.refresh() awaiting persistent stores…")
@@ -195,6 +212,15 @@ final class HomeViewModel: ObservableObject {
         } else {
             self.state = .loaded(summaries)
             AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+        }
+
+        isRefreshing = false
+        if needsAnotherRefresh {
+            needsAnotherRefresh = false
+            AppLog.viewModel.debug("HomeViewModel.refresh() scheduling coalesced refresh")
+            Task { [weak self] in
+                await self?.refresh()
+            }
         }
     }
 
@@ -230,6 +256,7 @@ final class HomeViewModel: ObservableObject {
     /// Updates the budget period preference and triggers a refresh.
     /// - Parameter newPeriod: The newly selected budget period.
     func updateBudgetPeriod(to newPeriod: BudgetPeriod) {
+        guard budgetPeriodRawValue != newPeriod.rawValue else { return }
         budgetPeriodRawValue = newPeriod.rawValue
     }
 
