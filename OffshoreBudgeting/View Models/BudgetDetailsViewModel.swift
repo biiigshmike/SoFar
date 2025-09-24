@@ -64,6 +64,9 @@ final class BudgetDetailsViewModel: ObservableObject {
     @Published private(set) var loadState: LoadState = .idle
     @Published var alert: BudgetDetailsAlert?
 
+    /// Tracks the first load to avoid resetting `loadState` if multiple observers request it simultaneously.
+    private var isInitialLoadInFlight = false
+
     struct IncomeTotals: Equatable {
         var planned: Double
         var actual: Double
@@ -198,6 +201,23 @@ final class BudgetDetailsViewModel: ObservableObject {
 
     /// Loads budget, initializes date window, and fetches rows.
     func load() async {
+        if budget != nil, didInitializeDateWindow {
+            await refreshRows()
+            if case .failed = loadState {
+                // Preserve failure state if we previously surfaced an error.
+            } else {
+                loadState = .loaded
+            }
+            return
+        }
+
+        if isInitialLoadInFlight {
+            return
+        }
+
+        isInitialLoadInFlight = true
+        defer { isInitialLoadInFlight = false }
+
         loadState = .loading
         CoreDataService.shared.ensureLoaded()
         await CoreDataService.shared.waitUntilStoresLoaded()
