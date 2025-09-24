@@ -120,8 +120,14 @@ final class HomeViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue)
     private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue {
         didSet {
-            selectedDate = period.start(of: Date())
-            Task { await refresh() }
+            guard oldValue != budgetPeriodRawValue else { return }
+
+            let normalizedStart = period.start(of: Date())
+            if !Calendar.current.isDate(selectedDate, inSameDayAs: normalizedStart) {
+                selectedDate = normalizedStart
+            } else {
+                Task { await refresh() }
+            }
         }
     }
 
@@ -130,7 +136,10 @@ final class HomeViewModel: ObservableObject {
     }
 
     @Published var selectedDate: Date = BudgetPeriod.monthly.start(of: Date()) {
-        didSet { Task { await refresh() } }
+        didSet {
+            guard oldValue != selectedDate else { return }
+            Task { await refresh() }
+        }
     }
     @Published private(set) var state: BudgetLoadState = .initial
     @Published var alert: HomeViewAlert?
@@ -190,11 +199,19 @@ final class HomeViewModel: ObservableObject {
         // "Loading…" placeholder. This mirrors the Budget Details fix and
         // keeps HomeView responsive for non‑iCloud accounts as well.
         if summaries.isEmpty {
-            self.state = .empty
-            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
+            if case .empty = self.state {
+                AppLog.viewModel.debug("HomeViewModel.refresh() detected empty summaries – state already .empty, skipping update")
+            } else {
+                self.state = .empty
+                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
+            }
         } else {
-            self.state = .loaded(summaries)
-            AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+            if case .loaded(let existing) = self.state, existing == summaries {
+                AppLog.viewModel.debug("HomeViewModel.refresh() summaries unchanged – keeping existing .loaded state")
+            } else {
+                self.state = .loaded(summaries)
+                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+            }
         }
     }
 
