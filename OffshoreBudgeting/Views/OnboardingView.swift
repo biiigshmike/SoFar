@@ -431,20 +431,8 @@ private struct CloudSyncStep: View {
                 await requestCloudAvailabilityCheck(force: false)
             }
         }
-        .ub_onChange(of: enableCloudSync) { newValue in
-            if newValue {
-                Task { await requestCloudAvailabilityCheck(force: false) }
-            } else {
-                cloudAvailability = .unknown
-            }
-        }
-        .ub_onChange(of: cloudAvailability) { availability in
-            guard availability == .unavailable else { return }
-            enableCloudSync = false
-            syncCardThemes = false
-            syncAppTheme = false
-            syncBudgetPeriod = false
-        }
+        .ub_onChange(of: enableCloudSync, perform: handleCloudSyncToggleChange)
+        .ub_onChange(of: cloudAvailability, perform: handleCloudAvailabilityChange)
     }
 
     @ViewBuilder
@@ -576,6 +564,37 @@ private struct CloudSyncStep: View {
     private func requestCloudAvailabilityCheck(force: Bool) async {
         let provider = await MainActor.run { ensureCloudStatusProvider() }
         _ = await provider.resolveAvailability(forceRefresh: force)
+    }
+
+    private func handleCloudSyncToggleChange(_ isEnabled: Bool) {
+        if isEnabled {
+            Task { await requestCloudAvailabilityCheck(force: false) }
+            if cloudAvailability == .available {
+                Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: true) }
+            }
+        } else {
+            syncCardThemes = false
+            syncAppTheme = false
+            syncBudgetPeriod = false
+            Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: false) }
+            cloudAvailability = .unknown
+        }
+    }
+
+    private func handleCloudAvailabilityChange(_ availability: CloudAccountStatusProvider.Availability) {
+        switch availability {
+        case .available where enableCloudSync:
+            Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: true) }
+        case .unavailable:
+            if enableCloudSync {
+                enableCloudSync = false
+            }
+            syncCardThemes = false
+            syncAppTheme = false
+            syncBudgetPeriod = false
+        case .unknown:
+            break
+        }
     }
 
     private var canUseCloudSync: Bool {

@@ -2,15 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
+        <key>BGTaskSchedulerPermittedIdentifiers</key>
+        <array>
                 <string>com.mbrown.OffshoreBudgeting.refresh</string>
                 <string>com.mbrown.OffshoreBudgeting.processing</string>
-	</array>
-	<key>NSServices</key>
-	<array>
-		<dict/>
-	</array>
+        </array>
+        <key>CFBundleVersion</key>
+        <string>$(CURRENT_PROJECT_VERSION)</string>
+        <key>NSUbiquitousContainers</key>
+        <dict>
+                <key>iCloud.com.mbrown.offshore</key>
+                <dict>
+                        <key>NSUbiquitousContainerIsDocumentScopePublic</key>
+                        <true/>
+                        <key>NSUbiquitousContainerName</key>
+                        <string>Offshore Budgeting</string>
+                        <key>NSUbiquitousContainerSupportedFolderLevels</key>
+                        <string>ANY</string>
+                </dict>
+        </dict>
+        <key>NSServices</key>
+        <array>
+                <dict/>
+        </array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
