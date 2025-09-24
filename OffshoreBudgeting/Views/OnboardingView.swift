@@ -592,7 +592,7 @@ private struct CloudSyncStep: View {
             syncCardThemes = false
             syncAppTheme = false
             syncBudgetPeriod = false
-        case .unknown:
+        case .available, .unknown:
             break
         }
     }
