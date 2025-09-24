@@ -389,7 +389,12 @@ private extension CoreDataService {
 
     @MainActor
     func reconfigurePersistentStoresForCloudMode(containerIdentifier: String? = nil) async {
-        let identifier = containerIdentifier ?? await mainActorCloudAccountContainerIdentifier()
+        let identifier: String
+        if let containerIdentifier {
+            identifier = containerIdentifier
+        } else {
+            identifier = await mainActorCloudAccountContainerIdentifier()
+        }
         await rebuildPersistentStores(for: .cloud(containerIdentifier: identifier))
     }
 
@@ -413,6 +418,15 @@ private extension CoreDataService {
     private enum PersistentStoreMode: Equatable {
         case local
         case cloud(containerIdentifier: String)
+
+        var logDescription: String {
+            switch self {
+            case .local:
+                return "local mode"
+            case .cloud(let identifier):
+                return "CloudKit mode (\(identifier))"
+            }
+        }
     }
 
     @MainActor
@@ -468,17 +482,6 @@ private extension CoreDataService {
             }
         } catch {
             assertionFailure("❌ Failed to rebuild persistent stores for \(mode.logDescription): \(error)")
-        }
-    }
-}
-
-private extension CoreDataService.PersistentStoreMode {
-    var logDescription: String {
-        switch self {
-        case .local:
-            return "local mode"
-        case .cloud(let identifier):
-            return "CloudKit mode (\(identifier))"
         }
     }
 }
