@@ -106,7 +106,7 @@ struct CardDetailView: View {
         case .loaded(let total, _, _):
             ScrollView {
                 VStack(spacing: 20) {
-                    CardTileView(card: card)
+                    CardTileView(card: card, enableMotionShine: true)
                         .frame(maxWidth: 360)
                         .frame(maxWidth: .infinity, alignment: .center)
                     totalsSection(total: total)
@@ -334,4 +334,3 @@ private struct IconOnlyButton: View {
         }
     }
 }
-

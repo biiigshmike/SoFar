@@ -114,13 +114,15 @@ private extension View {
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, macCatalyst 18.0, *) {
                 RootHeaderGlassCapsuleContainer { self }
             } else {
-                rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+                // Classic fallback: no decoration (plain glyphs)
+                self
             }
         } else {
-            rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+            // Classic OS: return plain controls (no capsule background)
+            self
         }
 #else
-        rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+        self
 #endif
     }
 }
@@ -543,43 +545,18 @@ enum RootHeaderLegacyGlass {
 extension View {
     func rootHeaderLegacyGlassDecorated(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
         let shape = Capsule(style: .continuous)
+        // Classic OS style: keep it flat and subtle. No glow, no highlight,
+        // no faux glass. Just a neutral fill and a light stroke.
         return self
             .background(
                 shape
-                    .fill(RootHeaderLegacyGlass.fillColor(for: theme))
-                    .shadow(
-                        color: RootHeaderLegacyGlass.shadowColor(for: theme),
-                        radius: RootHeaderLegacyGlass.shadowRadius(for: capabilities),
-                        x: 0,
-                        y: RootHeaderLegacyGlass.shadowYOffset(for: capabilities)
-                    )
+                    .fill(theme.secondaryBackground)
+                    .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
             )
             .overlay(
                 shape
-                    .stroke(
-                        RootHeaderLegacyGlass.borderColor(for: theme),
-                        lineWidth: RootHeaderLegacyGlass.borderLineWidth(for: capabilities)
-                    )
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
             )
-            .overlay(
-                shape
-                    .stroke(
-                        Color.white.opacity(RootHeaderLegacyGlass.highlightOpacity(for: capabilities)),
-                        lineWidth: RootHeaderLegacyGlass.highlightLineWidth(for: capabilities)
-                    )
-                    .blendMode(.screen)
-            )
-            .overlay(
-                shape
-                    .stroke(
-                        RootHeaderLegacyGlass.glowColor(for: theme),
-                        lineWidth: RootHeaderLegacyGlass.glowLineWidth(for: capabilities)
-                    )
-                    .blur(radius: RootHeaderLegacyGlass.glowBlurRadius(for: capabilities))
-                    .opacity(RootHeaderLegacyGlass.glowOpacity(for: theme))
-                    .blendMode(.screen)
-            )
-            .compositingGroup()
     }
 }
 #endif
@@ -590,6 +567,7 @@ struct RootHeaderIconActionButton: View {
     var accessibilityLabel: String
     var accessibilityIdentifier: String?
     var action: () -> Void
+    @Environment(\.platformCapabilities) private var capabilities
 
     init(
         systemImage: String,
@@ -604,6 +582,9 @@ struct RootHeaderIconActionButton: View {
     }
 
     var body: some View {
+        // Always use RootHeaderGlassControl to keep consistent sizing and
+        // alignment with the title row. Decoration is suppressed on
+        // classic OS by RootHeaderGlassControl/rootHeaderGlassDecorated.
         RootHeaderGlassControl {
             baseButton
                 .buttonStyle(RootHeaderActionButtonStyle())

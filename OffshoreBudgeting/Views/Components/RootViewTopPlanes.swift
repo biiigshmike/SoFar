@@ -7,28 +7,33 @@ struct RootViewTopPlanes<ActionContent: View>: View {
     private let horizontalPadding: CGFloat
     private let actionContent: ActionContent?
     private let topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle
+    private let trailingPlacement: RootTabHeaderLayout.TrailingPlacement
 
     init(
         title: String,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
-        topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard
+        topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
+        trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right
     ) where ActionContent == EmptyView {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.actionContent = nil
         self.topPaddingStyle = topPaddingStyle
+        self.trailingPlacement = trailingPlacement
     }
 
     init(
         title: String,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
+        trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right,
         @ViewBuilder actions: () -> ActionContent
     ) {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.actionContent = actions()
         self.topPaddingStyle = topPaddingStyle
+        self.trailingPlacement = trailingPlacement
     }
 
     @ViewBuilder
@@ -37,7 +42,8 @@ struct RootViewTopPlanes<ActionContent: View>: View {
             RootTabHeader(
                 title: title,
                 horizontalPadding: horizontalPadding,
-                topPaddingStyle: topPaddingStyle
+                topPaddingStyle: topPaddingStyle,
+                trailingPlacement: trailingPlacement
             ) {
                 actionContent
             }
@@ -45,7 +51,8 @@ struct RootViewTopPlanes<ActionContent: View>: View {
             RootTabHeader(
                 title: title,
                 horizontalPadding: horizontalPadding,
-                topPaddingStyle: topPaddingStyle
+                topPaddingStyle: topPaddingStyle,
+                trailingPlacement: trailingPlacement
             )
         }
     }

@@ -806,13 +806,15 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
             .stroke(tint.opacity(isPressed ? 0.6 : 0.45), lineWidth: 1.5)
     }
 
+    @ViewBuilder
     private func highlight(radius: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(
-                Color.white.opacity(capabilities.supportsOS26Translucency ? 0.22 : 0.14),
-                lineWidth: 1
-            )
-            .blendMode(.screen)
+        if capabilities.supportsOS26Translucency {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                .blendMode(.screen)
+        } else {
+            EmptyView()
+        }
     }
 }
 

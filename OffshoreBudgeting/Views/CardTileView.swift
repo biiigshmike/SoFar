@@ -25,6 +25,10 @@ struct CardTileView: View {
     var isSelected: Bool = false
     /// Optional tap callback.
     var onTap: (() -> Void)? = nil
+    /// When true, enables motion‑driven metallic/shine overlays in the title.
+    /// Keep this OFF for grids to avoid heavy per‑frame updates; turn ON for
+    /// single, prominent tiles (e.g., detail header).
+    var enableMotionShine: Bool = false
 
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -47,16 +51,10 @@ struct CardTileView: View {
                 }
 
                 // MARK: Title (Metallic shimmer stays)
-                HolographicMetallicText(
-                    text: card.name,
-                    titleFont: Font.system(.title, design: .rounded).weight(.semibold),
-                    shimmerResponsiveness: 1.5,
-                    maxMetallicOpacity: 0.6,
-                    maxShineOpacity: 0.7
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .padding(.all, DS.Spacing.l)
+                cardTitle
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.all, DS.Spacing.l)
             }
             .aspectRatio(aspectRatio, contentMode: .fit)
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -121,5 +119,25 @@ private extension CardTileView {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
             .allowsHitTesting(false)
+    }
+
+    // MARK: Title builder
+    var cardTitle: some View {
+        Group {
+            if enableMotionShine {
+                HolographicMetallicText(
+                    text: card.name,
+                    titleFont: Font.system(.title, design: .rounded).weight(.semibold),
+                    shimmerResponsiveness: 1.5,
+                    maxMetallicOpacity: 0.6,
+                    maxShineOpacity: 0.7
+                )
+            } else {
+                Text(card.name)
+                    .font(.system(.title, design: .rounded).weight(.semibold))
+                    .foregroundStyle(UBTypography.cardTitleStatic)
+                    .ub_cardTitleShadow()
+            }
+        }
     }
 }

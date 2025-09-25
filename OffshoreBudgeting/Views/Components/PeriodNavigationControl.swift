@@ -75,7 +75,7 @@ struct PeriodNavigationControl: View {
             Text(title)
                 .font(titleTypography.font)
                 .multilineTextAlignment(.center)
-                .lineLimit(2)
+                .lineLimit(1)
                 .minimumScaleFactor(titleTypography.minimumScaleFactor)
                 .allowsTightening(true)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -105,7 +105,7 @@ private extension PeriodNavigationControl {
             return TitleTypography(font: .title3.bold(), minimumScaleFactor: 0.6)
         }
 #endif
-        return TitleTypography(font: .title2.bold(), minimumScaleFactor: 0.8)
+        return TitleTypography(font: .title2.bold(), minimumScaleFactor: 0.7)
     }
 }
 

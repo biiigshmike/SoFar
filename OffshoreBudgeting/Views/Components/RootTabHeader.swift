@@ -7,6 +7,12 @@ enum RootTabHeaderLayout {
         case standard
         case navigationBarAligned
     }
+    enum TrailingPlacement {
+        /// Default: title expands to fill and trailing controls are pinned right.
+        case right
+        /// Title and trailing controls are placed inline then pushed left together.
+        case inline
+    }
 }
 
 /// Shared header for root tab screens. Ensures a large, bold title is consistently
@@ -19,6 +25,7 @@ struct RootTabHeader<Trailing: View>: View {
     private let title: String
     private let horizontalPadding: CGFloat
     private let topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle
+    private let trailingPlacement: RootTabHeaderLayout.TrailingPlacement
     @ViewBuilder private let trailing: () -> Trailing
 
     // MARK: Init
@@ -26,40 +33,52 @@ struct RootTabHeader<Trailing: View>: View {
         title: String,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
+        trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right,
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.topPaddingStyle = topPaddingStyle
+        self.trailingPlacement = trailingPlacement
         self.trailing = trailing
     }
 
     init(
         title: String,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
-        topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard
+        topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
+        trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right
     ) where Trailing == EmptyView {
         self.title = title
         self.horizontalPadding = horizontalPadding
         self.topPaddingStyle = topPaddingStyle
+        self.trailingPlacement = trailingPlacement
         self.trailing = { EmptyView() }
     }
 
     // MARK: Body
     var body: some View {
+        headerStack
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.top, resolvedTopPadding)
+    }
+
+    private var headerStack: some View {
         HStack(alignment: .top, spacing: DS.Spacing.m) {
             Text(title)
                 .font(.largeTitle.bold())
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
                 .accessibilityAddTraits(.isHeader)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: trailingPlacement == .right ? .infinity : nil, alignment: .leading)
 
             trailing()
+
+            if trailingPlacement == .inline {
+                Spacer(minLength: 0)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, horizontalPadding)
-        .padding(.top, resolvedTopPadding)
     }
 
     private var resolvedTopPadding: CGFloat {

@@ -129,14 +129,9 @@ struct TranslucentButtonStyle: ButtonStyle {
                 )
                 .compositingGroup()
         } else {
+            // Classic OS: flat, no drop shadow per legacyOptions guidance.
             shape
                 .fill(flatFillColor(for: theme, isPressed: isPressed))
-                .shadow(
-                    color: flatShadowColor(for: theme, isPressed: isPressed),
-                    radius: legacyShadowRadius(isPressed: isPressed),
-                    x: 0,
-                    y: legacyShadowY(isPressed: isPressed)
-                )
         }
     }
 

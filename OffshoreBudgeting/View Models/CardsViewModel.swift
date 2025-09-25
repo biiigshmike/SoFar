@@ -91,12 +91,19 @@ final class CardsViewModel: ObservableObject {
         guard !hasStarted else { return }
         hasStarted = true
 
+        if AppLog.isVerbose {
+            AppLog.viewModel.info("CardsViewModel.startIfNeeded()")
+        }
+
         // After a 200ms delay, if we are still in the `initial` state,
         // we transition to the `loading` state to show the shimmer UI.
         Task {
             try? await Task.sleep(nanoseconds: 200_000_000)
             if self.state == .initial {
                 self.state = .loading
+                if AppLog.isVerbose {
+                    AppLog.viewModel.info("CardsViewModel -> state = loading")
+                }
             }
         }
 
@@ -104,6 +111,9 @@ final class CardsViewModel: ObservableObject {
         Task { [weak self] in
             guard let self else { return }
             await CoreDataService.shared.waitUntilStoresLoaded(timeout: 3.0, pollInterval: 0.05)
+            if AppLog.isVerbose {
+                AppLog.viewModel.info("CardsViewModel configuring observer")
+            }
             self.configureAndStartObserver()
         }
     }
@@ -156,8 +166,14 @@ final class CardsViewModel: ObservableObject {
 
             if mappedItems.isEmpty {
                 self.state = .empty
+                if AppLog.isVerbose {
+                    AppLog.viewModel.info("CardsViewModel -> state = empty")
+                }
             } else {
                 self.state = .loaded(mappedItems)
+                if AppLog.isVerbose {
+                    AppLog.viewModel.info("CardsViewModel -> state = loaded (\(mappedItems.count))")
+                }
             }
         }
 

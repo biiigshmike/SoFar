@@ -43,6 +43,9 @@ struct UBEmptyState: View {
     // MARK: Layout
     /// Optional width limit for message text; defaults to a comfortably readable width.
     let maxMessageWidth: CGFloat
+    /// How the empty state content should align within its available container.
+    /// Defaults to centered to preserve existing call sites.
+    let containerAlignment: Alignment
 
     // MARK: init(...)
     /// Designated initializer.
@@ -59,7 +62,8 @@ struct UBEmptyState: View {
         message: String,
         primaryButtonTitle: String? = nil,
         onPrimaryTap: (() -> Void)? = nil,
-        maxMessageWidth: CGFloat = 520
+        maxMessageWidth: CGFloat = 520,
+        containerAlignment: Alignment = .center
     ) {
         self.iconSystemName = iconSystemName
         self.title = title
@@ -67,6 +71,7 @@ struct UBEmptyState: View {
         self.primaryButtonTitle = primaryButtonTitle
         self.onPrimaryTap = onPrimaryTap
         self.maxMessageWidth = maxMessageWidth
+        self.containerAlignment = containerAlignment
     }
 
     // MARK: Body
@@ -95,9 +100,17 @@ struct UBEmptyState: View {
                 primaryButton(title: primaryButtonTitle, action: onPrimaryTap)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: containerAlignment)
         .padding(.horizontal, DS.Spacing.xl)
-        .padding(.vertical, DS.Spacing.xl)
+        .padding(.vertical, resolvedVerticalPadding)
+    }
+
+    private var resolvedVerticalPadding: CGFloat {
+        #if os(iOS)
+        return verticalSizeClass == .compact ? DS.Spacing.s : DS.Spacing.m
+        #else
+        return DS.Spacing.m
+        #endif
     }
 
     private var onboardingTint: Color {
@@ -218,6 +231,9 @@ struct UBEmptyState: View {
     }
 #endif
 
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
     private var primaryButtonTint: Color {
         themeManager.selectedTheme.resolvedTint
     }
@@ -226,4 +242,3 @@ struct UBEmptyState: View {
         themeManager.selectedTheme.glassPalette.accent
     }
 }
-

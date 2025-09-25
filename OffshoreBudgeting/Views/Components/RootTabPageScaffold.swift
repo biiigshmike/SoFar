@@ -35,6 +35,10 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
     private let spacing: CGFloat
     private let alignment: HorizontalAlignment
     private let widthLimits: WidthLimits
+    /// When true, the scaffold wraps the content in its own ScrollView (keeping the
+    /// header sticky). When false, the content is placed directly under the header so
+    /// child lists/scroll views can manage their own scrolling (avoids nested scrolls).
+    private let wrapsContentInScrollView: Bool
     private let headerBuilder: (RootTabPageProxy) -> Header
     private let contentBuilder: (RootTabPageProxy) -> Content
 
@@ -42,6 +46,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
     @Environment(\.responsiveLayoutContext) private var responsiveLayoutContext
     @Environment(\.ub_safeAreaInsets) private var legacySafeAreaInsets
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var platformCapabilities
 
     // MARK: State
     @State private var headerHeight: CGFloat = 0
@@ -53,6 +58,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         spacing: CGFloat = DS.Spacing.l,
         alignment: HorizontalAlignment = .leading,
         widthLimits: WidthLimits = .unconstrained,
+        wrapsContentInScrollView: Bool = true,
         @ViewBuilder header: @escaping (RootTabPageProxy) -> Header,
         @ViewBuilder content: @escaping (RootTabPageProxy) -> Content
     ) {
@@ -60,6 +66,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         self.spacing = spacing
         self.alignment = alignment
         self.widthLimits = widthLimits
+        self.wrapsContentInScrollView = wrapsContentInScrollView
         self.headerBuilder = header
         self.contentBuilder = content
     }
@@ -69,6 +76,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         spacing: CGFloat = DS.Spacing.l,
         alignment: HorizontalAlignment = .leading,
         widthLimits: WidthLimits = .unconstrained,
+        wrapsContentInScrollView: Bool = true,
         @ViewBuilder header: @escaping () -> Header,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -77,6 +85,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
             spacing: spacing,
             alignment: alignment,
             widthLimits: widthLimits,
+            wrapsContentInScrollView: wrapsContentInScrollView,
             header: { _ in header() },
             content: { _ in content() }
         )
@@ -87,6 +96,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         spacing: CGFloat = DS.Spacing.l,
         alignment: HorizontalAlignment = .leading,
         widthLimits: WidthLimits = .unconstrained,
+        wrapsContentInScrollView: Bool = true,
         @ViewBuilder header: @escaping () -> Header,
         @ViewBuilder content: @escaping (RootTabPageProxy) -> Content
     ) {
@@ -95,6 +105,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
             spacing: spacing,
             alignment: alignment,
             widthLimits: widthLimits,
+            wrapsContentInScrollView: wrapsContentInScrollView,
             header: { _ in header() },
             content: content
         )
@@ -105,6 +116,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         spacing: CGFloat = DS.Spacing.l,
         alignment: HorizontalAlignment = .leading,
         widthLimits: WidthLimits = .unconstrained,
+        wrapsContentInScrollView: Bool = true,
         @ViewBuilder header: @escaping (RootTabPageProxy) -> Header,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -113,6 +125,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
             spacing: spacing,
             alignment: alignment,
             widthLimits: widthLimits,
+            wrapsContentInScrollView: wrapsContentInScrollView,
             header: header,
             content: { _ in content() }
         )
@@ -138,13 +151,53 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         )
 
         Group {
-            if isScrollEnabled {
-                ScrollView(.vertical) {
-                    stackContent(using: proxy)
+            if isScrollEnabled && wrapsContentInScrollView {
+                // Sticky header: keep the header outside the scroll view so it
+                // stays visible while the content scrolls.
+                VStack(alignment: alignment, spacing: spacing) {
+                    headerBuilder(proxy)
+                        .background(sectionHeightReader(for: .header))
+
+                    ScrollView(.vertical) {
+                        VStack(alignment: alignment, spacing: spacing) {
+                            contentBuilder(proxy)
+                                .background(sectionHeightReader(for: .content))
+                                #if os(iOS)
+                                .background(
+                                    Group {
+                                        if !platformCapabilities.supportsOS26Translucency {
+                                            UBScrollViewInsetAdjustmentDisabler()
+                                        } else {
+                                            Color.clear
+                                        }
+                                    }
+                                )
+                                #endif
+                        }
+                        .frame(maxWidth: .infinity, alignment: stackAlignment)
+                        #if os(macOS)
+                        .frame(
+                            minWidth: widthLimits.minimum,
+                            idealWidth: widthLimits.ideal,
+                            maxWidth: widthLimits.maximum,
+                            alignment: stackAlignment
+                        )
+                        .frame(maxWidth: .infinity, alignment: stackAlignment)
+                        #endif
+                    }
+                    .ub_hideScrollIndicators()
+                    // On classic OS, allow content under the tab bar and control
+                    // spacing via `rootTabContentPadding`. On OS 26, respect the
+                    // safe area to avoid intercepting tab bar gestures.
+                    .modifier(IgnoreBottomSafeAreaIfClassic(capabilities: platformCapabilities))
                 }
-                .ub_hideScrollIndicators()
+                .frame(maxWidth: .infinity, alignment: stackAlignment)
             } else {
                 stackContent(using: proxy)
+                    // Allow content to extend under the tab bar in non-scrolling
+                    // layouts as well. Individual screens add any desired
+                    // bottom spacing via `rootTabContentPadding`.
+                    .modifier(IgnoreBottomSafeAreaIfClassic(capabilities: platformCapabilities))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: stackAlignment)
@@ -214,7 +267,14 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         safeArea: EdgeInsets
     ) -> CGFloat {
         guard context.containerSize.height > 0 else { return 0 }
+        #if os(iOS) || os(tvOS)
+        // Allow content to extend into the bottom safe area so controls with
+        // shadows (e.g., primary CTA) aren’t visually clipped. Individual
+        // screens can still add bottom padding via `rootTabContentPadding`.
+        let verticalInsets = safeArea.top
+        #else
         let verticalInsets = safeArea.top + safeArea.bottom
+        #endif
         return max(context.containerSize.height - verticalInsets, 0)
     }
 
@@ -307,9 +367,12 @@ struct RootTabPageProxy {
 
     var tabBarGutterSpacing: CGFloat {
         #if os(iOS)
-        return effectiveSafeAreaInsets.bottom > 0 ? DS.Spacing.xs : DS.Spacing.s
+        // Global request: remove additional gutter above the tab bar so content
+        // aligns tighter across all root tabs. Safe-area padding remains
+        // controlled separately via `includeSafeArea`.
+        return 0
         #else
-        return DS.Spacing.m
+        return 0
         #endif
     }
 
@@ -369,6 +432,18 @@ private struct RootTabSectionHeightPreferenceKey: PreferenceKey {
 }
 
 // MARK: - Padding Helpers
+private struct IgnoreBottomSafeAreaIfClassic: ViewModifier {
+    let capabilities: PlatformCapabilities
+
+    func body(content: Content) -> some View {
+        if capabilities.supportsOS26Translucency {
+            content // respect safe area on OS 26
+        } else {
+            content.ub_ignoreSafeArea(edges: .bottom)
+        }
+    }
+}
+
 extension View {
     /// Applies the shared horizontal and bottom padding recommended for content
     /// hosted inside a ``RootTabPageScaffold``. Accepts the proxy supplied to the

@@ -27,7 +27,7 @@ struct PresetsView: View {
 
     // MARK: Body
     var body: some View {
-        RootTabPageScaffold {
+        RootTabPageScaffold(spacing: DS.Spacing.s) {
             RootViewTopPlanes(title: "Presets") {
                 addPresetButton
             }
@@ -100,6 +100,7 @@ struct PresetsView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: 0,
+            includeSafeArea: false,
             tabBarGutter: proxy.compactAwareTabBarGutter
         )
         // MARK: Data lifecycle

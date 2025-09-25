@@ -32,6 +32,7 @@ struct HomeView: View {
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
+    @State private var homeSort: BudgetDetailsViewModel.SortOption = .dateNewOld
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -44,14 +45,39 @@ struct HomeView: View {
     @State private var cachedHeaderControlWidth: CGFloat?
     @State private var headerActionPillIntrinsicWidth: CGFloat?
     @State private var periodNavigationIntrinsicWidth: CGFloat?
+    // Tracks the last measured header control width to avoid micro-update loops
+    // that can cause continuous layout thrash and block interactions.
+    @State private var lastMeasuredHeaderControlPrefWidth: CGFloat?
+    // Track measured height of the empty-state content to size the bottom filler precisely.
+    @State private var emptyStateMeasuredHeight: CGFloat = 0
+    // Reset header width matching on trait changes (e.g., rotation) to avoid
+    // stale measurements forcing an oversized minWidth when returning from
+    // landscape → portrait. This keeps the period navigation rendering stable.
+#if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+#endif
 
     // MARK: Body
     var body: some View {
-        RootTabPageScaffold {
+        // Sticky header; conditionally wrap content in a ScrollView.
+        // - When a budget exists, do NOT wrap (BudgetDetailsView has Lists).
+        // - When empty/no budget, wrap and force a ScrollView so pull-to-refresh
+        //   and drag gestures are recognized even if content is shorter than the viewport.
+        // Manage scroll per-state; keep header sticky without an outer ScrollView.
+        RootTabPageScaffold(
+            scrollBehavior: .auto,
+            spacing: DS.Spacing.s,
+            wrapsContentInScrollView: false
+        ) {
             headerSection
         } content: { proxy in
-            contentContainer
-                .rootTabContentPadding(proxy, horizontal: 0)
+            contentContainer(proxy: proxy)
+                .rootTabContentPadding(
+                    proxy,
+                    horizontal: 0,
+                    includeSafeArea: false,
+                    tabBarGutter: proxy.compactAwareTabBarGutter
+                )
         }
         .ub_tabNavigationTitle("Home")
         .refreshable { await vm.refresh() }
@@ -88,31 +114,61 @@ struct HomeView: View {
                 addMenuTargetBudgetID = nil
             }
         }
+        // Clear cached/matched widths when key traits change so controls can
+        // re-measure for the new size class/orientation.
+#if os(iOS)
+        .ub_onChange(of: horizontalSizeClass) { _ in resetHeaderWidthMatching() }
+        .ub_onChange(of: verticalSizeClass) { _ in resetHeaderWidthMatching() }
+#endif
     }
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: headerSectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
-                topPaddingStyle: .navigationBarAligned
+                topPaddingStyle: .navigationBarAligned,
+                trailingPlacement: .right
             ) {
                 headerActions
             }
 
             if let summary = primarySummary {
-                HomeHeaderPrimarySummaryView(summary: summary)
+                HomeHeaderPrimarySummaryView(
+                    summary: summary,
+                    displayTitle: periodHeaderTitle,
+                    displayDetail: periodRangeDetail
+                )
+                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            } else {
+                // Sticky header fallback when no budget is loaded for the period.
+                HomeHeaderFallbackTitleView(
+                    displayTitle: periodHeaderTitle,
+                    displayDetail: periodRangeDetail
+                )
+                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+
+                // Show the income/savings grid with zero values so the header
+                // remains informative even before a budget exists for this
+                // period. This mirrors the look when a budget is present.
+                HomeIncomeSavingsZeroSummaryView()
                     .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+
+                // Keep the dynamic header concise; segment control appears in content below.
             }
         }
     }
 
     @ViewBuilder
     private var headerActions: some View {
-        let trailing = trailingActionControl
         let headerSummary = primarySummary
         let hasBudget = hasActiveBudget
         let showsContextSummary = hasBudget && headerSummary != nil && showsHeaderSummary
-        let showsStandalonePeriodNavigation = hasBudget && headerSummary != nil && !showsHeaderSummary
+        // Move the period navigation into BudgetDetailsView when a budget is
+        // loaded so it scrolls with content. Keep it in the Home header only
+        // when no budget exists for the selected period.
+        // Period navigation should render in the content area for both states
+        // to match the prior design. Keep it out of the sticky header.
+        let showsPeriodNavigation = false
         let matchedControlWidth = hasBudget
             ? matchedHeaderControlWidth
             : cachedHeaderControlWidth
@@ -120,43 +176,19 @@ struct HomeView: View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Group {
                 switch headerSummary {
-                case .some:
-                    if showsStandalonePeriodNavigation {
-                        RootHeaderGlassPill(
-                            showsDivider: trailing != nil,
-                            hasTrailing: trailing != nil
-                        ) {
-                            periodPickerControl
-                        } trailing: {
-                            if let trailing {
-                                trailing
-                            }
-                        }
-                    } else {
-                        RootHeaderGlassPill(
-                            showsDivider: trailing != nil,
-                            hasTrailing: trailing != nil
-                        ) {
-                            periodPickerControl
-                        } trailing: {
-                            if let trailing {
-                                trailing
-                            }
-                        } secondaryContent: {
-                            periodNavigationControl(style: .plain)
-                                .frame(maxWidth: .infinity)
-                        }
+                case .some(let summary):
+                    // Always three standalone glass buttons when a budget exists.
+                    HStack(spacing: DS.Spacing.s) {
+                        calendarMenuButton()
+                        addExpenseIconButton(for: summary.id)
+                        optionsMenuButton(summary: summary)
                     }
                 case .none:
-                    RootHeaderGlassPill(
-                        showsDivider: trailing != nil,
-                        hasTrailing: trailing != nil
-                    ) {
-                        periodPickerControl
-                    } trailing: {
-                        if let trailing {
-                            trailing
-                        }
+                    // Three standalone glass buttons (calendar, +, …)
+                    HStack(spacing: DS.Spacing.s) {
+                        calendarMenuButton()
+                        addBudgetIconButton()
+                        optionsMenuButton()
                     }
                 }
             }
@@ -165,36 +197,50 @@ struct HomeView: View {
                 matchedWidth: matchedControlWidth
             )
 
-            if showsContextSummary || showsStandalonePeriodNavigation {
-                HStack(spacing: DS.Spacing.s) {
-                    if showsContextSummary, let summary = headerSummary {
+            if showsContextSummary || showsPeriodNavigation {
+                if showsContextSummary, let summary = headerSummary {
+                    HStack(spacing: DS.Spacing.s) {
                         HomeHeaderContextSummary(summary: summary)
-                        .layoutPriority(0)
-                    }
+                            .layoutPriority(0)
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
 
-                    if showsStandalonePeriodNavigation {
-                        periodNavigationControl(style: .glassIfAvailable)
-                            .layoutPriority(1)
-                            .homeHeaderMatchedControlWidth(
-                                intrinsicWidth: $periodNavigationIntrinsicWidth,
-                                matchedWidth: matchedControlWidth
-                            )
+                        if showsPeriodNavigation {
+                            periodNavigationControl(style: .glassIfAvailable)
+                                .layoutPriority(1)
+                                .homeHeaderMinMatchedWidth(
+                                    intrinsicWidth: $periodNavigationIntrinsicWidth,
+                                    matchedWidth: matchedControlWidth
+                                )
+                        }
                     }
+                } else if showsPeriodNavigation {
+                    periodNavigationControl(style: .glassIfAvailable)
+                        .layoutPriority(1)
+                        .homeHeaderMinMatchedWidth(
+                            intrinsicWidth: $periodNavigationIntrinsicWidth,
+                            matchedWidth: matchedControlWidth
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
         .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
-            let resolvedWidth = width > 0 ? width : nil
+            // Guard against tiny oscillations (e.g., sub‑pixel rounding) that
+            // can create an endless measure→set→measure loop.
+            let newWidth = (width * 2).rounded() / 2 // quantize to 0.5pt
+            guard newWidth > 0 else { return }
+
+            let previous = lastMeasuredHeaderControlPrefWidth ?? 0
+            let tolerance: CGFloat = 0.5
+            guard abs(newWidth - previous) > tolerance else { return }
+
+            lastMeasuredHeaderControlPrefWidth = newWidth
 
             if hasBudget {
-                matchedHeaderControlWidth = resolvedWidth
+                matchedHeaderControlWidth = newWidth
             }
-
-            if let resolvedWidth {
-                cachedHeaderControlWidth = resolvedWidth
-            }
+            cachedHeaderControlWidth = newWidth
         }
         .ub_onChange(of: hasBudget) { newValue in
             guard !newValue else { return }
@@ -202,6 +248,14 @@ struct HomeView: View {
             headerActionPillIntrinsicWidth = nil
             periodNavigationIntrinsicWidth = nil
         }
+    }
+
+    private func resetHeaderWidthMatching() {
+        matchedHeaderControlWidth = nil
+        cachedHeaderControlWidth = nil
+        headerActionPillIntrinsicWidth = nil
+        periodNavigationIntrinsicWidth = nil
+        lastMeasuredHeaderControlPrefWidth = nil
     }
 
     @ViewBuilder
@@ -287,9 +341,7 @@ struct HomeView: View {
         .accessibilityLabel("Add Expense")
     }
 
-    private var emptyStateTrailingControls: some View {
-        budgetActionMenu(summary: nil)
-    }
+    private var emptyStateTrailingControls: some View { EmptyView() }
 
     private func budgetActionMenu(summary: BudgetSummary?) -> some View {
         Menu {
@@ -325,6 +377,120 @@ struct HomeView: View {
             maxWidth: .infinity,
             minHeight: RootHeaderActionMetrics.dimension
         )
+    }
+
+    // MARK: Empty-state: Create budget (+)
+    private func addBudgetButton() -> some View {
+        let dimension = RootHeaderActionMetrics.dimension
+        return Button {
+            isPresentingAddBudget = true
+        } label: {
+            RootHeaderControlIcon(systemImage: "plus")
+        }
+        .buttonStyle(RootHeaderActionButtonStyle())
+        .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
+        .contentShape(Rectangle())
+        .accessibilityLabel("Create Budget")
+    }
+
+    // MARK: New: Standalone glass buttons for empty state header
+    private func calendarMenuButton() -> some View {
+        RootHeaderGlassControl {
+            Menu {
+                ForEach(BudgetPeriod.selectableCases) { period in
+                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                }
+            } label: {
+                RootHeaderControlIcon(systemImage: "calendar")
+                    .accessibilityLabel(budgetPeriod.displayName)
+            }
+#if os(macOS)
+            .menuStyle(.borderlessButton)
+#endif
+            .modifier(HideMenuIndicatorIfPossible())
+        }
+    }
+
+    private func addBudgetIconButton() -> some View {
+        RootHeaderGlassControl {
+            Button {
+                isPresentingAddBudget = true
+            } label: {
+                RootHeaderControlIcon(systemImage: "plus")
+            }
+            .buttonStyle(RootHeaderActionButtonStyle())
+            .accessibilityLabel("Create Budget")
+        }
+    }
+
+    private func optionsMenuButton() -> some View {
+        RootHeaderGlassControl {
+            Menu {
+                Button {
+                    isPresentingAddBudget = true
+                } label: {
+                    Label("Create Budget", systemImage: "plus")
+                }
+            } label: {
+                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
+                    .accessibilityLabel("Budget Options")
+            }
+            .modifier(HideMenuIndicatorIfPossible())
+#if os(macOS)
+            .menuStyle(.borderlessButton)
+#endif
+        }
+    }
+
+    private func addExpenseIconButton(for budgetID: NSManagedObjectID) -> some View {
+        RootHeaderGlassControl {
+            Group {
+            #if os(iOS)
+                Button { presentAddExpenseMenu(for: budgetID) } label: {
+                    RootHeaderControlIcon(systemImage: "plus")
+                }
+                .buttonStyle(RootHeaderActionButtonStyle())
+                .accessibilityLabel("Add Expense")
+            #else
+                Menu {
+                    Button("Add Planned Expense") {
+                        triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
+                    }
+                    Button("Add Variable Expense") {
+                        triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
+                    }
+                } label: {
+                    RootHeaderControlIcon(systemImage: "plus")
+                }
+                .modifier(HideMenuIndicatorIfPossible())
+                .menuStyle(.borderlessButton)
+            #endif
+            }
+        }
+    }
+
+    private func optionsMenuButton(summary: BudgetSummary) -> some View {
+        RootHeaderGlassControl {
+            Menu {
+                Button {
+                    editingBudget = summary
+                } label: {
+                    Label("Edit Budget", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    vm.requestDelete(budgetID: summary.id)
+                } label: {
+                    Label("Delete Budget", systemImage: "trash")
+                }
+            } label: {
+                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
+                    .accessibilityLabel("Budget Actions")
+            }
+            .modifier(HideMenuIndicatorIfPossible())
+        #if os(macOS)
+            .menuStyle(.borderlessButton)
+        #endif
+        }
     }
 
     // MARK: Sheets & Alerts
@@ -390,78 +556,128 @@ struct HomeView: View {
     }
 
     // MARK: Content Container
-    private var contentContainer: some View {
-        ZStack {
+    private func contentContainer(proxy: RootTabPageProxy) -> some View {
+        Group {
             switch vm.state {
             case .initial:
                 // Initially nothing is shown to prevent blinking
                 Color.clear
-                
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
             case .loading:
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                
+
             case .empty:
-                // Show empty state only when we've confirmed there are no budgets
-                UBEmptyState(
-                    iconSystemName: "rectangle.on.rectangle.slash",
-                    title: "Budgets",
-                    message: emptyStateMessage,
-                    primaryButtonTitle: "Create a budget",
-                    onPrimaryTap: { isPresentingAddBudget = true }
-                )
-                .padding(.horizontal, DS.Spacing.l)
-                .accessibilityElement(children: .contain)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                
+                emptyPeriodShell(proxy: proxy)
+
             case .loaded(let summaries):
                 if let first = summaries.first {
 #if os(macOS)
                     BudgetDetailsView(
                         budgetObjectID: first.id,
+                        periodNavigation: .init(
+                            title: title(for: vm.selectedDate),
+                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
+                        ),
                         displaysBudgetTitle: false,
+                        showsIncomeSavingsGrid: false,
                         onSegmentChange: { newSegment in
                             self.selectedSegment = newSegment
                         }
                     )
+                    .id(first.id)
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #else
                     BudgetDetailsView(
                         budgetObjectID: first.id,
+                        periodNavigation: .init(
+                            title: title(for: vm.selectedDate),
+                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
+                        ),
                         displaysBudgetTitle: false,
                         headerTopPadding: DS.Spacing.xs,
+                        showsIncomeSavingsGrid: false,
                         onSegmentChange: { newSegment in
                             self.selectedSegment = newSegment
                         }
                     )
+                    .id(first.id)
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 #endif
                 } else {
-                    UBEmptyState(
-                        iconSystemName: "rectangle.on.rectangle.slash",
-                        title: "Budgets",
-                        message: emptyStateMessage,
-                        primaryButtonTitle: "Create a budget",
-                        onPrimaryTap: { isPresentingAddBudget = true }
-                    )
-                    .padding(.horizontal, DS.Spacing.l)
-                    .accessibilityElement(children: .contain)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    emptyPeriodShell(proxy: proxy)
                 }
             }
         }
-        // Fill remaining viewport under header so centering is exact.
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    // MARK: Empty Period Shell (replaces generic empty state)
+    @ViewBuilder
+    private func emptyPeriodShell(proxy: RootTabPageProxy) -> some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                // Period navigation in content (original position)
+                periodNavigationControl(style: .glassIfAvailable)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Section header + running total for the current segment
+                HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
+
+                // Segment control in content
+                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                    Picker("", selection: $selectedSegment) {
+                        Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                        Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
+                    }
+                    .pickerStyle(.segmented)
+                    .equalWidthSegments()
+                    .frame(maxWidth: .infinity)
+#if os(macOS)
+                    .controlSize(.large)
+#endif
+                }
+
+                // Filter bar (sort options)
+                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                    Picker("Sort", selection: $homeSort) {
+                        Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                        Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                        Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                        Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                        Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+                    }
+                    .pickerStyle(.segmented)
+                    .equalWidthSegments()
+                    .frame(maxWidth: .infinity)
+#if os(macOS)
+                    .controlSize(.large)
+#endif
+                }
+
+                // Segment-specific guidance
+                Text(emptyShellMessage)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.Spacing.l)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
+        }
+        .ub_ignoreSafeArea(edges: .bottom)
+        .ub_hideScrollIndicators()
     }
 
     private var headerSectionSpacing: CGFloat {
         let hasPrimarySummary = primarySummary != nil
 #if os(macOS)
-        return hasPrimarySummary ? 0 : DS.Spacing.xs
+        return hasPrimarySummary ? 0 : DS.Spacing.xs / 2
 #else
-        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.s
+        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.xs / 2
 #endif
     }
 
@@ -478,7 +694,10 @@ struct HomeView: View {
 #if os(macOS)
         return false
 #elseif os(iOS)
-        return horizontalSizeClass == .regular
+        // Keep the Home header compact on iOS in all size classes to avoid
+        // duplication next to the period navigation and to reduce height in
+        // landscape.
+        return false
 #else
         return false
 #endif
@@ -487,6 +706,19 @@ struct HomeView: View {
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
+    }
+
+    // Period-driven header title, e.g. "September 2025 Budget" or
+    // "Sep 1 – Sep 7, 2025 Budget" when viewing Weekly, etc.
+    private var periodHeaderTitle: String {
+        "\(title(for: vm.selectedDate)) Budget"
+    }
+
+    private var periodRangeDetail: String {
+        let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return "\(f.string(from: start)) through \(f.string(from: end))"
     }
 
     private var primarySummary: BudgetSummary? {
@@ -505,6 +737,15 @@ struct HomeView: View {
 
     private var emptyStateMessage: String {
         "No budget found for \(title(for: vm.selectedDate)). Use Create a budget to set one up for this period."
+    }
+
+    private var emptyShellMessage: String {
+        switch selectedSegment {
+        case .planned:
+            return "No planned expenses in this period."
+        case .variable:
+            return "No variable expenses in this period."
+        }
     }
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
@@ -535,6 +776,8 @@ struct HomeView: View {
 private struct HomeHeaderPrimarySummaryView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     let summary: BudgetSummary
+    let displayTitle: String
+    let displayDetail: String
 
     var body: some View {
         Group {
@@ -554,12 +797,12 @@ private struct HomeHeaderPrimarySummaryView: View {
 
     private var budgetTitleView: some View {
         VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
-            Text(summary.budgetName)
+            Text(displayTitle)
                 .font(HomeHeaderPrimarySummaryStyle.titleFont)
                 .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
                 .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
 
-            Text(summary.periodString)
+            Text(displayDetail)
                 .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
@@ -584,6 +827,311 @@ private enum HomeHeaderPrimarySummaryStyle {
     static let subtitleLineLimit: Int = 1
     static let subtitleMinimumScaleFactor: CGFloat = 0.85
 }
+
+// MARK: - Fallback header when no budget exists
+private struct HomeHeaderFallbackTitleView: View {
+    let displayTitle: String
+    let displayDetail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
+            Text(displayTitle)
+                .font(HomeHeaderPrimarySummaryStyle.titleFont)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
+
+            Text(displayDetail)
+                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
+                .foregroundStyle(.secondary)
+                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
+                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Zero summary grid for empty periods
+private struct HomeIncomeSavingsZeroSummaryView: View {
+    var body: some View {
+        Group {
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: HomeIncomeSavingsMetrics.rowSpacing) {
+                    headerRow("POTENTIAL INCOME", "POTENTIAL SAVINGS")
+                    valuesRow(0, DS.Colors.plannedIncome, 0, DS.Colors.savingsGood)
+                    headerRow("ACTUAL INCOME", "ACTUAL SAVINGS")
+                    valuesRow(0, DS.Colors.actualIncome, 0, DS.Colors.savingsGood)
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                HStack(alignment: .top, spacing: DS.Spacing.m) {
+                    VStack(alignment: .leading, spacing: HomeIncomeSavingsMetrics.rowSpacing) {
+                        VStack(alignment: .leading) {
+                            header("POTENTIAL INCOME")
+                            value(0, DS.Colors.plannedIncome)
+                        }
+                        VStack(alignment: .leading) {
+                            header("ACTUAL INCOME")
+                            value(0, DS.Colors.actualIncome)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(alignment: .trailing, spacing: HomeIncomeSavingsMetrics.rowSpacing) {
+                        VStack(alignment: .trailing) {
+                            header("POTENTIAL SAVINGS")
+                            value(0, DS.Colors.savingsGood)
+                        }
+                        VStack(alignment: .trailing) {
+                            header("ACTUAL SAVINGS")
+                            value(0, DS.Colors.savingsGood)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func headerRow(_ left: String, _ right: String) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell { header(left) }
+            trailingGridCell { header(right) }
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func valuesRow(_ leftValue: Double, _ leftColor: Color, _ rightValue: Double, _ rightColor: Color) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell { value(leftValue, leftColor) }
+            trailingGridCell { value(rightValue, rightColor) }
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func leadingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 0) { content(); Spacer(minLength: 0) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func trailingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 0) { Spacer(minLength: 0); content().multilineTextAlignment(.trailing) }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    @ViewBuilder
+    private func header(_ title: String) -> some View {
+        Text(title)
+            .font(HomeIncomeSavingsMetrics.labelFont)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+    }
+
+    @ViewBuilder
+    private func value(_ amount: Double, _ color: Color) -> some View {
+        Text(formatCurrency(amount))
+            .font(HomeIncomeSavingsMetrics.valueFont)
+            .foregroundStyle(color)
+            .lineLimit(1)
+    }
+
+    private func formatCurrency(_ amount: Double) -> String {
+        if #available(iOS 15.0, macOS 12.0, *) {
+            let code: String
+            if #available(iOS 16.0, macOS 13.0, *) {
+                code = Locale.current.currency?.identifier ?? "USD"
+            } else {
+                code = Locale.current.currencyCode ?? "USD"
+            }
+            return amount.formatted(.currency(code: code))
+        } else {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.currencyCode = Locale.current.currencyCode ?? "USD"
+            return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+        }
+    }
+}
+
+private enum HomeIncomeSavingsMetrics {
+    static let labelFont: Font = .caption.weight(.semibold)
+    static let valueFont: Font = .body.weight(.semibold)
+    static let rowSpacing: CGFloat = 5
+}
+
+// MARK: - Section header + total row
+private struct HomeSegmentTotalsRowView: View {
+    let segment: BudgetDetailsViewModel.Segment
+    let total: Double
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(segment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Spacer()
+            Text(totalString)
+                .font(.title3.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var totalString: String {
+        // Lightweight currency formatting; mirrors the helper used elsewhere
+        if #available(iOS 15.0, macOS 12.0, *) {
+            let code: String
+            if #available(iOS 16.0, macOS 13.0, *) {
+                code = Locale.current.currency?.identifier ?? "USD"
+            } else {
+                code = Locale.current.currencyCode ?? "USD"
+            }
+            return total.formatted(.currency(code: code))
+        } else {
+            let f = NumberFormatter()
+            f.numberStyle = .currency
+            f.currencyCode = Locale.current.currencyCode ?? "USD"
+            return f.string(from: total as NSNumber) ?? String(format: "%.2f", total)
+        }
+    }
+}
+
+// MARK: - Empty shell helpers (glass capsule + segmented sizing)
+private struct HomeGlassCapsuleContainer<Content: View>: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+    @Environment(\.platformCapabilities) private var capabilities
+
+    private let content: Content
+    private let horizontalPadding: CGFloat
+    private let verticalPadding: CGFloat
+    private let contentAlignment: Alignment
+
+    init(
+        horizontalPadding: CGFloat = DS.Spacing.l,
+        verticalPadding: CGFloat = DS.Spacing.m,
+        alignment: Alignment = .leading,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+        self.horizontalPadding = horizontalPadding
+        self.verticalPadding = verticalPadding
+        self.contentAlignment = alignment
+    }
+
+    var body: some View {
+        let capsule = Capsule(style: .continuous)
+        let decorated = content
+            .frame(maxWidth: .infinity, alignment: contentAlignment)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .contentShape(capsule)
+
+        if #available(iOS 26.0, macOS 26.0, *), capabilities.supportsOS26Translucency {
+            GlassEffectContainer {
+                decorated
+                    .glassEffect(in: capsule)
+            }
+        } else {
+            decorated
+        }
+    }
+}
+
+private extension View {
+    func segmentedFill() -> some View { frame(maxWidth: .infinity) }
+    func equalWidthSegments() -> some View { modifier(HomeEqualWidthSegmentsModifier()) }
+}
+
+private struct HomeEqualWidthSegmentsModifier: ViewModifier {
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content.background(HomeEqualWidthSegmentApplier())
+#elseif os(macOS)
+        content.background(HomeEqualWidthSegmentApplier())
+#else
+        content
+#endif
+    }
+}
+
+#if os(iOS)
+private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: uiView) }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: UIView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        segmented.apportionsSegmentWidthsByContent = false
+        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        segmented.invalidateIntrinsicContentSize()
+    }
+
+    private func findSegmentedControl(from view: UIView) -> UISegmentedControl? {
+        var current: UIView? = view
+        while let candidate = current {
+            if let segmented = candidate as? UISegmentedControl { return segmented }
+            current = candidate.superview
+        }
+        return nil
+    }
+}
+#elseif os(macOS)
+private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.alphaValue = 0.0
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: NSView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        if #available(macOS 13.0, *) {
+            segmented.segmentDistribution = .fillEqually
+        } else {
+            let count = segmented.segmentCount
+            guard count > 0 else { return }
+            let totalWidth = segmented.bounds.width
+            guard totalWidth > 0 else { return }
+            let equalWidth = totalWidth / CGFloat(count)
+            for index in 0..<count { segmented.setWidth(equalWidth, forSegment: index) }
+        }
+        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        segmented.invalidateIntrinsicContentSize()
+    }
+
+    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
+        var current: NSView? = view
+        while let candidate = current {
+            if let segmented = candidate as? NSSegmentedControl { return segmented }
+            current = candidate.superview
+        }
+        return nil
+    }
+}
+#endif
 
 // MARK: - Home Header Summary
 private struct HomeHeaderContextSummary: View {
@@ -630,15 +1178,15 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
 
     private var resolvedWidth: CGFloat? {
         let minimum = Self.minimumWidth
+        let intrinsic = intrinsicWidth.wrappedValue ?? 0
 
         if let matchedWidth, matchedWidth > 0 {
-            return max(matchedWidth, minimum)
+            // Allow the view to grow to its intrinsic width if it's larger than
+            // the matched width to avoid truncation (e.g., long month names).
+            return max(max(matchedWidth, intrinsic), minimum)
         }
 
-        if let intrinsic = intrinsicWidth.wrappedValue, intrinsic > 0 {
-            return max(intrinsic, minimum)
-        }
-
+        if intrinsic > 0 { return max(intrinsic, minimum) }
         return nil
     }
 
@@ -664,8 +1212,11 @@ private struct HomeHeaderControlWidthReporter: View {
     private func updateIntrinsicWidth(_ width: CGFloat) {
         let binding = intrinsicWidth
         DispatchQueue.main.async {
-            if binding.wrappedValue != width {
-                binding.wrappedValue = width
+            let quantized = (width * 2).rounded() / 2 // 0.5pt steps
+            let old = binding.wrappedValue ?? 0
+            let tolerance: CGFloat = 0.5
+            if abs(old - quantized) > tolerance {
+                binding.wrappedValue = quantized
             }
         }
     }
@@ -692,6 +1243,22 @@ private extension View {
         )
     }
 
+    /// Applies a minimum width equal to the larger of the matched width or
+    /// the view's intrinsic width (never smaller than the design minimum).
+    /// This allows content (e.g., a period picker) to expand as needed to
+    /// avoid truncation while still aligning with the header controls.
+    func homeHeaderMinMatchedWidth(
+        intrinsicWidth: Binding<CGFloat?>,
+        matchedWidth: CGFloat?
+    ) -> some View {
+        modifier(
+            HomeHeaderMinWidthModifier(
+                intrinsicWidth: intrinsicWidth,
+                matchedWidth: matchedWidth
+            )
+        )
+    }
+
     @ViewBuilder
     func applyIf<Content: View>(
         _ condition: Bool,
@@ -702,6 +1269,31 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+private struct HomeHeaderMinWidthModifier: ViewModifier {
+    let intrinsicWidth: Binding<CGFloat?>
+    let matchedWidth: CGFloat?
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                HomeHeaderControlWidthReporter(intrinsicWidth: intrinsicWidth)
+            )
+            .frame(minWidth: resolvedMinWidth)
+    }
+
+    private var resolvedMinWidth: CGFloat? {
+        let minimum = Self.minimumWidth
+        let intrinsic = intrinsicWidth.wrappedValue ?? 0
+        let matched = matchedWidth ?? 0
+        let base = max(intrinsic, matched, minimum)
+        return base > 0 ? base : nil
+    }
+
+    private static var minimumWidth: CGFloat {
+        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
     }
 }
 
@@ -718,3 +1310,23 @@ private struct HideMenuIndicatorIfPossible: ViewModifier {
     }
 }
 #endif
+
+// MARK: - Utility: Height measurement helper
+private struct ViewHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private extension View {
+    func measureHeight(_ binding: Binding<CGFloat>) -> some View {
+        background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(key: ViewHeightKey.self, value: proxy.size.height)
+            }
+        )
+        .onPreferenceChange(ViewHeightKey.self) { binding.wrappedValue = $0 }
+    }
+}

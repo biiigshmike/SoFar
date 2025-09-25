@@ -282,7 +282,7 @@ private extension CoreDataService {
 
     @MainActor
     private func rebuildPersistentStores(for mode: PersistentStoreMode) async {
-        guard let description = container.persistentStoreDescriptions.first else { return }
+        guard container.persistentStoreDescriptions.first != nil else { return }
 
         let currentMode: PersistentStoreMode
         currentMode = .local

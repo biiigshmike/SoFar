@@ -443,12 +443,14 @@ private struct UBGlassBackgroundModifier: ViewModifier {
 }
 
 private struct UBSurfaceBackgroundModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
     let theme: AppTheme
     let configuration: AppTheme.GlassConfiguration
     let ignoresSafeAreaEdges: Edge.Set
 
     func body(content: Content) -> some View {
-        if theme.usesGlassMaterials {
+        if capabilities.supportsOS26Translucency && theme.usesGlassMaterials {
             content.ub_glassBackground(
                 theme.glassBaseColor,
                 configuration: configuration,
@@ -463,44 +465,14 @@ private struct UBSurfaceBackgroundModifier: ViewModifier {
 }
 
 private struct UBNavigationGlassModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var capabilities
-
+    // On OS 26, let the system manage navigation bar chrome. On classic OS,
+    // we avoid liquid glass entirely to keep a flat aesthetic. Therefore this
+    // modifier is effectively a no-op across platforms.
     let baseColor: Color
     let configuration: AppTheme.GlassConfiguration
 
     @ViewBuilder
-    func body(content: Content) -> some View {
-        #if os(iOS)
-        if capabilities.supportsOS26Translucency {
-            if #available(iOS 16.0, *) {
-                content
-                    .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(configuration.glass.material.shapeStyle, for: .navigationBar)
-                    .toolbarBackground(gradientStyle, for: .navigationBar)
-            } else {
-                content
-            }
-        } else {
-            content
-        }
-        #elseif os(macOS)
-        if capabilities.supportsOS26Translucency {
-            if #available(macOS 13.0, *) {
-                // Apply a subtle gradient wash on top of the material for macOS toolbars.
-                content
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(configuration.glass.material.shapeStyle, for: .windowToolbar)
-                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
-            } else {
-                content
-            }
-        } else {
-            content
-        }
-        #else
-        content
-        #endif
-    }
+    func body(content: Content) -> some View { content }
 
     #if os(iOS)
     @available(iOS 16.0, *)
@@ -539,40 +511,24 @@ private struct UBNavigationGlassModifier: ViewModifier {
 }
 
 private struct UBChromeGlassModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var capabilities
-
+    // Do not paint custom chrome on OS 26 (system-managed) or classic OS
+    // (flat). This modifier becomes a no-op to honor platform aesthetics.
     let baseColor: Color
     let configuration: AppTheme.GlassConfiguration
 
-    func body(content: Content) -> some View {
-        #if os(macOS)
-        if capabilities.supportsOS26Translucency {
-            content
-                .background(
-                    UBMacChromeGlassBackground(
-                        baseColor: baseColor,
-                        configuration: configuration
-                    )
-                )
-        } else {
-            content
-        }
-        #else
-        content
-        #endif
-    }
+    func body(content: Content) -> some View { content }
 }
 
 private struct UBChromeBackgroundModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
     let theme: AppTheme
     let configuration: AppTheme.GlassConfiguration
 
     func body(content: Content) -> some View {
-        if theme.usesGlassMaterials {
-            content.ub_chromeGlassBackground(
-                baseColor: theme.glassBaseColor,
-                configuration: configuration
-            )
+        // On OS 26, defer to system chrome; on classic, use a flat background.
+        if capabilities.supportsOS26Translucency {
+            content
         } else {
             content.background(theme.background)
         }
@@ -580,16 +536,17 @@ private struct UBChromeBackgroundModifier: ViewModifier {
 }
 
 private struct UBNavigationBackgroundModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
     let theme: AppTheme
     let configuration: AppTheme.GlassConfiguration
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if theme.usesGlassMaterials {
-            content.ub_navigationGlassBackground(
-                baseColor: theme.glassBaseColor,
-                configuration: configuration
-            )
+        if capabilities.supportsOS26Translucency {
+            // On OS 26, avoid overriding navigation bar backgrounds; let the
+            // system render Liquid Glass chrome.
+            content
         } else {
             #if os(iOS)
             if #available(iOS 16.0, *) {
@@ -647,7 +604,8 @@ private struct UBGlassBackgroundView: View {
                 decoratedGlass
             }
         } else {
-            decoratedGlass
+            // Classic OS: use a flat fill that matches the theme's base color.
+            Rectangle().fill(baseColor)
         }
     }
 

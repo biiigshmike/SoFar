@@ -44,6 +44,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		4CDCC34A2E849409002582E5 /* Screenshots */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Screenshots;
+			sourceTree = "<group>";
+		};
+		4CDCC3932E858A24002582E5 /* Apple Documentation */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Apple Documentation";
+			sourceTree = "<group>";
+		};
 		4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -93,6 +103,8 @@
 		4CF2202E2E4A33B900AD5F29 = {
 			isa = PBXGroup;
 			children = (
+				4CDCC3932E858A24002582E5 /* Apple Documentation */,
+				4CDCC34A2E849409002582E5 /* Screenshots */,
 				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 				4CF220482E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
 				4CF220522E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
@@ -126,6 +138,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				4CDCC34A2E849409002582E5 /* Screenshots */,
+				4CDCC3932E858A24002582E5 /* Apple Documentation */,
 				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 			);
 			name = OffshoreBudgeting;

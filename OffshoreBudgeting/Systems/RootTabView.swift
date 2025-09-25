@@ -110,6 +110,11 @@ struct RootTabView: View {
         let capabilities = platformCapabilities
         let currentColorScheme = colorScheme
 
+        // On OS 26, defer to the system's Liquid Glass-managed tab bar.
+        if capabilities.supportsOS26Translucency {
+            return
+        }
+
         let newSignature = TabBarAppearanceSignature.make(
             theme: theme,
             colorScheme: currentColorScheme,
@@ -137,15 +142,7 @@ struct RootTabView: View {
 
         let appearance = UITabBarAppearance()
 
-        if theme.usesGlassMaterials && capabilities.supportsOS26Translucency {
-            appearance.configureWithTransparentBackground()
-            let blurStyle = configuration.glass.material.uiBlurEffectStyle
-            appearance.backgroundEffect = UIBlurEffect(style: blurStyle)
-
-            let baseColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
-            let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
-            appearance.backgroundColor = baseColor.withAlphaComponent(opacity)
-        } else if theme.usesGlassMaterials {
+        if theme.usesGlassMaterials {
             appearance.configureWithOpaqueBackground()
             appearance.backgroundColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
         } else {

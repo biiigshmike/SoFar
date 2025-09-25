@@ -65,9 +65,14 @@ struct OffshoreBudgetingApp: App {
                 .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
                 .onAppear {
                     themeManager.refreshSystemAppearance(systemColorScheme)
+                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
                 }
                 .ub_onChange(of: systemColorScheme) { newScheme in
                     themeManager.refreshSystemAppearance(newScheme)
+                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: newScheme)
+                }
+                .ub_onChange(of: themeManager.selectedTheme) {
+                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
                 }
             }
 #if os(macOS)

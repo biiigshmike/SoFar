@@ -46,15 +46,13 @@ struct CardsView: View {
 
     // MARK: Body
     var body: some View {
-        RootTabPageScaffold {
+        RootTabPageScaffold(scrollBehavior: .always, spacing: DS.Spacing.s) {
             RootViewTopPlanes(title: "Cards") {
                 addCardButton
             }
         } content: { proxy in
             contentView(using: proxy)
         }
-        // Let SwiftUI handle transitions between loading/empty/loaded states.
-        .animation(.default, value: viewModel.state)
         // MARK: Start observing when view appears
         .onAppear { viewModel.startIfNeeded() }
         // Pull to refresh to manually reload cards
@@ -133,11 +131,11 @@ struct CardsView: View {
             if case .initial = viewModel.state {
                 Color.clear
             } else if case .loading = viewModel.state {
-                loadingView
+                loadingView(using: proxy)
             } else if case .empty = viewModel.state {
                 emptyView
             } else if case .loaded(let cards) = viewModel.state {
-                gridView(cards: cards)
+                gridView(cards: cards, using: proxy)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -149,7 +147,7 @@ struct CardsView: View {
     }
 
     // MARK: Loading View
-    private var loadingView: some View {
+    private func loadingView(using proxy: RootTabPageProxy) -> some View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: DS.Spacing.l) {
                 ForEach(0..<2, id: \.self) { _ in
@@ -165,8 +163,10 @@ struct CardsView: View {
                 }
             }
             .padding([.horizontal, .top], DS.Spacing.l)
-            .padding(.bottom, DS.Spacing.xxl)
+            .padding(.bottom, proxy.tabBarGutterSpacing(proxy.compactAwareTabBarGutter))
         }
+        // Removed extra bottom inset; RootTabPageScaffold + rootTabContentPadding
+        // control any desired gutter above the tab bar.
     }
 
     // MARK: Empty View
@@ -183,7 +183,7 @@ struct CardsView: View {
 
     // MARK: Grid View
     /// - Parameter cards: Data snapshot to render.
-    private func gridView(cards: [CardItem]) -> some View {
+    private func gridView(cards: [CardItem], using proxy: RootTabPageProxy) -> some View {
         ZStack {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: DS.Spacing.l) {
@@ -215,10 +215,12 @@ struct CardsView: View {
                 }
             }
             .padding([.horizontal, .top], DS.Spacing.l)
-            .padding(.bottom, DS.Spacing.xxl)
+            .padding(.bottom, proxy.tabBarGutterSpacing(proxy.compactAwareTabBarGutter))
             // Disable the default animation for grid changes to prevent "grid hop".
             .animation(nil, value: cards)
         }
+        // Removed extra bottom inset; RootTabPageScaffold + rootTabContentPadding
+        // control any desired gutter above the tab bar.
             // Detail overlay
             if let selID = selectedCardStableID,
                let selected = cards.first(where: { $0.id == selID }) {
@@ -264,31 +266,37 @@ struct CardsView: View {
 // MARK: - Tiny shimmer for placeholder
 private extension View {
     /// Lightweight shimmer to hint loading (iOS/macOS). No external deps.
+    /// Implemented with a stable, self-contained animation to avoid
+    /// recomposition loops that can stall gesture handling on newer OSes.
     func shimmer() -> some View {
-        self.overlay(
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: .white.opacity(0.0), location: 0.0),
-                            .init(color: .white.opacity(0.35), location: 0.45),
-                            .init(color: .white.opacity(0.0), location: 1.0),
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .rotationEffect(.degrees(12))
-                .blendMode(.overlay)
-                .opacity(0.35)
-                .offset(x: -200)
-                .mask(self)
-                .animation(
-                    Animation.linear(duration: 1.2)
-                        .repeatForever(autoreverses: false),
-                    value: UUID() // restart each appearance
-                )
-        )
+        overlay(ShimmerOverlay().mask(self))
     }
 }
 
+private struct ShimmerOverlay: View {
+    @State private var animate = false
+
+    private var gradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(stops: [
+                .init(color: .white.opacity(0.0), location: 0.0),
+                .init(color: .white.opacity(0.35), location: 0.45),
+                .init(color: .white.opacity(0.0), location: 1.0),
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    var body: some View {
+        Rectangle()
+            .fill(gradient)
+            .rotationEffect(.degrees(12))
+            .blendMode(.overlay)
+            .opacity(0.35)
+            .offset(x: animate ? 300 : -300)
+            .allowsHitTesting(false)
+            .animation(.linear(duration: 1.2).repeatForever(autoreverses: false), value: animate)
+            .onAppear { animate = true }
+    }
+}

@@ -28,6 +28,7 @@ struct BudgetDetailsView: View {
     private let periodNavigation: PeriodNavigationConfiguration?
     private let displaysBudgetTitle: Bool
     private let headerTopPadding: CGFloat
+    private let showsIncomeSavingsGrid: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
 
     // MARK: View Model
@@ -35,6 +36,8 @@ struct BudgetDetailsView: View {
 
     // MARK: Theme
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+    @Environment(\.managedObjectContext) private var viewContext
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -104,12 +107,14 @@ struct BudgetDetailsView: View {
         periodNavigation: PeriodNavigationConfiguration? = nil,
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
+        showsIncomeSavingsGrid: Bool = true,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
+        self.showsIncomeSavingsGrid = showsIncomeSavingsGrid
         self.onSegmentChange = onSegmentChange
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
     }
@@ -120,12 +125,14 @@ struct BudgetDetailsView: View {
         periodNavigation: PeriodNavigationConfiguration? = nil,
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
+        showsIncomeSavingsGrid: Bool = true,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
     ) {
         self.budgetObjectID = viewModel.budgetObjectID
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
+        self.showsIncomeSavingsGrid = showsIncomeSavingsGrid
         self.onSegmentChange = onSegmentChange
         _vm = StateObject(wrappedValue: viewModel)
     }
@@ -134,93 +141,27 @@ struct BudgetDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // MARK: Header (name + summary + controls)
-            VStack(alignment: .leading, spacing: headerSpacing) {
-
-                // MARK: Title + Date Range
-                if displaysBudgetTitle || shouldShowPeriodNavigation {
-                    HStack(alignment: .top, spacing: DS.Spacing.m) {
-                        if displaysBudgetTitle {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(vm.budget?.name ?? "Budget")
-                                    .font(.largeTitle.bold())
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.5)
-
-                                if let startDate = vm.budget?.startDate,
-                                   let endDate = vm.budget?.endDate {
-                                    Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        if shouldShowPeriodNavigation, let navigation = periodNavigation {
-                            Spacer()
-                            PeriodNavigationControl(
-                                title: navigation.title,
-                                style: .glassIfAvailable,
-                                onPrevious: { navigation.onAdjust(-1) },
-                                onNext: { navigation.onAdjust(+1) }
-                            )
-                            .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
-                        }
-                    }
-                }
-
-                if let summary = vm.summary {
-                    SummarySection(summary: summary, selectedSegment: vm.selectedSegment)
-                        .padding(.top, summaryTopPadding)
-                    if !summary.categoryBreakdown.isEmpty {
-                        CategoryTotalsRow(categories: summary.categoryBreakdown)
-                    }
-                }
-
-                // MARK: Segment Picker
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
-                    Picker("", selection: $vm.selectedSegment) {
-                        Text("Planned Expenses")
-                            .segmentedFill()
-                            .tag(BudgetDetailsViewModel.Segment.planned)
-                        Text("Variable Expenses")
-                            .segmentedFill()
-                            .tag(BudgetDetailsViewModel.Segment.variable)
-                    }
-                    .pickerStyle(.segmented)
-                    .equalWidthSegments()
-                    .frame(maxWidth: .infinity)
-#if os(macOS)
-                    .controlSize(.large)
-#endif
-                }
-                .ub_onChange(of: vm.selectedSegment) { newValue in
-                    onSegmentChange?(newValue)
-                }
-
-                // MARK: Filters
-                FilterBar(
-                    startDate: $vm.startDate,
-                    endDate: $vm.endDate,
-                    sort: $vm.sort,
-                    onChanged: { /* @FetchRequest-driven children auto-refresh */ },
-                    onResetDate: { vm.resetDateWindowToBudget() }
-                )
-            }
-            .padding(.horizontal, DS.Spacing.l)
-            .padding(.top, effectiveHeaderTopPadding)
-            .padding(.bottom, DS.Spacing.m)
+            // Keep only a small top spacer to align the scrolling list header
+            // with the navigation chrome. The heavy header content has moved
+            // into the list's header so it scrolls with the rows.
+            Color.clear
+                .frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
 
             // MARK: Lists
             Group {
                 if vm.selectedSegment == .planned {
-                    if let budget = vm.budget {
+                    // Prefer a fresh instance from the context so we don't
+                    // show a transient placeholder while the view model resolves.
+                    let resolvedBudget = (try? viewContext.existingObject(with: vm.budgetObjectID) as? Budget) ?? vm.budget
+                    if let budget = resolvedBudget {
                         PlannedListFR(
                             budget: budget,
                             startDate: vm.startDate,
                             endDate: vm.endDate,
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
-                            onTotalsChanged: { Task { await vm.refreshRows() } }
+                            onTotalsChanged: { Task { await vm.refreshRows() } },
+                            header: AnyView(listHeader)
                         )
                     } else {
                         placeholderView()
@@ -237,12 +178,18 @@ struct BudgetDetailsView: View {
                         endDate: vm.endDate,
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
-                        onTotalsChanged: { Task { await vm.refreshRows() } }
+                        onTotalsChanged: { Task { await vm.refreshRows() } },
+                        header: AnyView(listHeader)
                     )
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity) // let the List take over scrolling
+            // Ensure the lists/empty states receive an unconstrained vertical
+            // proposal so they can own scrolling in both orientations.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Make the primary container expand to the viewport so inner Lists and
+        // ScrollViews can scroll when height is constrained (e.g., landscape).
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
@@ -323,6 +270,223 @@ struct BudgetDetailsView: View {
         let f = DateFormatter()
         f.dateStyle = .medium
         return f.string(from: d)
+    }
+}
+
+// MARK: - Scrolling List Header Content
+private extension BudgetDetailsView {
+    @ViewBuilder
+    var listHeader: some View {
+        VStack(alignment: .leading, spacing: headerSpacing) {
+            // Title + Period Navigation (when configured)
+            if displaysBudgetTitle || shouldShowPeriodNavigation {
+                HStack(alignment: .top, spacing: DS.Spacing.m) {
+                    if displaysBudgetTitle {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(vm.budget?.name ?? "Budget")
+                                .font(.largeTitle.bold())
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+
+                            if let startDate = vm.budget?.startDate,
+                               let endDate = vm.budget?.endDate {
+                                Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+
+                    if shouldShowPeriodNavigation, let navigation = periodNavigation {
+                        Spacer(minLength: 0)
+                        PeriodNavigationControl(
+                            title: navigation.title,
+                            style: .glassIfAvailable,
+                            onPrevious: { navigation.onAdjust(-1) },
+                            onNext: { navigation.onAdjust(+1) }
+                        )
+                        .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.l)
+            }
+
+            if let summary = vm.summary {
+                CombinedBudgetHeaderGrid(
+                    summary: summary,
+                    selectedSegment: vm.selectedSegment,
+                    showsIncomeGrid: showsIncomeSavingsGrid
+                )
+                    .padding(.horizontal, DS.Spacing.l)
+                    .padding(.top, summaryTopPadding)
+                if !summary.categoryBreakdown.isEmpty {
+                    CategoryTotalsRow(categories: summary.categoryBreakdown)
+                }
+            }
+
+            // Segment Picker
+            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                Picker("", selection: $vm.selectedSegment) {
+                    Text("Planned Expenses")
+                        .segmentedFill()
+                        .tag(BudgetDetailsViewModel.Segment.planned)
+                    Text("Variable Expenses")
+                        .segmentedFill()
+                        .tag(BudgetDetailsViewModel.Segment.variable)
+                }
+                .pickerStyle(.segmented)
+                .equalWidthSegments()
+                .frame(maxWidth: .infinity)
+#if os(macOS)
+                .controlSize(.large)
+#endif
+            }
+            .padding(.horizontal, DS.Spacing.l)
+            .ub_onChange(of: vm.selectedSegment) { newValue in
+                onSegmentChange?(newValue)
+            }
+
+            // Filters
+            FilterBar(
+                startDate: $vm.startDate,
+                endDate: $vm.endDate,
+                sort: $vm.sort,
+                onChanged: { /* @FetchRequest-driven children auto-refresh */ },
+                onResetDate: { vm.resetDateWindowToBudget() }
+            )
+            .padding(.horizontal, DS.Spacing.l)
+            .padding(.bottom, DS.Spacing.m)
+        }
+    }
+}
+
+// MARK: - Combined Budget Header Grid (aligns all numeric totals)
+private struct CombinedBudgetHeaderGrid: View {
+    let summary: BudgetSummary
+    let selectedSegment: BudgetDetailsViewModel.Segment
+    let showsIncomeGrid: Bool
+
+    var body: some View {
+        Group {
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
+                    if showsIncomeGrid {
+                        headerRow(title: "POTENTIAL INCOME", title2: "POTENTIAL SAVINGS")
+                        valuesRow(
+                            firstValue: summary.potentialIncomeTotal,
+                            firstColor: DS.Colors.plannedIncome,
+                            secondValue: summary.potentialSavingsTotal,
+                            secondColor: DS.Colors.savingsGood
+                        )
+                        headerRow(title: "ACTUAL INCOME", title2: "ACTUAL SAVINGS")
+                        valuesRow(
+                            firstValue: summary.actualIncomeTotal,
+                            firstColor: DS.Colors.actualIncome,
+                            secondValue: summary.actualSavingsTotal,
+                            secondColor: summary.actualSavingsTotal >= 0 ? DS.Colors.savingsGood : DS.Colors.savingsBad
+                        )
+                    }
+
+                    // Planned/Variable total aligned to right column
+                    GridRow(alignment: .lastTextBaseline) {
+                        leadingGridCell {
+                            Text(selectedSegment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
+                                .font(BudgetIncomeSavingsSummaryMetrics.labelFont)
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .lineLimit(1)
+                        }
+
+                        trailingGridCell {
+                            Text(totalString)
+                                .font(BudgetIncomeSavingsSummaryMetrics.valueFont.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                // Fallback: simple stacked layout with right-aligned totals
+                VStack(spacing: 6) {
+                    if showsIncomeGrid {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("POTENTIAL INCOME").font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary)
+                                Text(CurrencyFormatterHelper.string(for: summary.potentialIncomeTotal))
+                                    .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("POTENTIAL SAVINGS").font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary)
+                                Text(CurrencyFormatterHelper.string(for: summary.potentialSavingsTotal))
+                                    .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
+                            }
+                        }
+
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("ACTUAL INCOME").font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary)
+                                Text(CurrencyFormatterHelper.string(for: summary.actualIncomeTotal))
+                                    .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("ACTUAL SAVINGS").font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary)
+                                Text(CurrencyFormatterHelper.string(for: summary.actualSavingsTotal))
+                                    .font(BudgetIncomeSavingsSummaryMetrics.valueFont)
+                            }
+                        }
+                    }
+
+                    HStack {
+                        Text(selectedSegment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
+                            .font(BudgetIncomeSavingsSummaryMetrics.labelFont)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        Spacer()
+                        Text(totalString)
+                            .font(BudgetIncomeSavingsSummaryMetrics.valueFont.weight(.semibold))
+                    }
+                }
+            }
+        }
+    }
+
+    private var totalString: String {
+        let value = selectedSegment == .planned ? summary.plannedExpensesActualTotal : summary.variableExpensesTotal
+        return CurrencyFormatterHelper.string(for: value)
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func headerRow(title: String, title2: String) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell { Text(title).font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary).lineLimit(1) }
+            trailingGridCell { Text(title2).font(BudgetIncomeSavingsSummaryMetrics.labelFont).foregroundStyle(.secondary).lineLimit(1) }
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell { Text(CurrencyFormatterHelper.string(for: firstValue)).font(BudgetIncomeSavingsSummaryMetrics.valueFont).foregroundStyle(firstColor).lineLimit(1) }
+            trailingGridCell { Text(CurrencyFormatterHelper.string(for: secondValue)).font(BudgetIncomeSavingsSummaryMetrics.valueFont).foregroundStyle(secondColor).lineLimit(1) }
+        }
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func leadingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 0) { content(); Spacer(minLength: 0) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 16.0, macOS 13.0, *)
+    @ViewBuilder
+    private func trailingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 0) { Spacer(minLength: 0); content() }
+            .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
@@ -564,6 +728,7 @@ private struct FilterBar: View {
 // MARK: - Shared Glass Capsule Container
 private struct GlassCapsuleContainer<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.platformCapabilities) private var capabilities
 
     private let content: Content
@@ -584,7 +749,6 @@ private struct GlassCapsuleContainer<Content: View>: View {
     }
 
     var body: some View {
-        let theme = themeManager.selectedTheme
         let capsule = Capsule(style: .continuous)
 
         let decorated = content
@@ -599,8 +763,8 @@ private struct GlassCapsuleContainer<Content: View>: View {
                     .glassEffect(in: capsule)
             }
         } else {
+            // Classic OS: render inline with no capsule background
             decorated
-                .rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
         }
     }
 }
@@ -718,6 +882,7 @@ private struct PlannedListFR: View {
     private let sort: BudgetDetailsViewModel.SortOption
     private let onAddTapped: () -> Void
     private let onTotalsChanged: () -> Void
+    private let header: AnyView?
     @State private var editingItem: PlannedExpense?
     @State private var itemToDelete: PlannedExpense?
     @State private var showDeleteAlert = false
@@ -725,12 +890,23 @@ private struct PlannedListFR: View {
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+    @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(budget: Budget, startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void, onTotalsChanged: @escaping () -> Void) {
+    init(
+        budget: Budget,
+        startDate: Date,
+        endDate: Date,
+        sort: BudgetDetailsViewModel.SortOption,
+        onAddTapped: @escaping () -> Void,
+        onTotalsChanged: @escaping () -> Void,
+        header: AnyView? = nil
+    ) {
         self.sort = sort
         self.onAddTapped = onAddTapped
         self.onTotalsChanged = onTotalsChanged
+        self.header = header
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<PlannedExpense> = NSFetchRequest(entityName: "PlannedExpense")
@@ -752,66 +928,43 @@ private struct PlannedListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                // MARK: Empty state
-                UBEmptyState(
-                    iconSystemName: "list.bullet.rectangle",
-                    title: "Planned Expenses",
-                    message: "No planned expenses in this range.",
-                    primaryButtonTitle: "Add Planned Expense",
-                    onPrimaryTap: onAddTapped
-                )
-                .padding(.horizontal, DS.Spacing.l)
-            } else {
+                // MARK: Empty state (scrollable so instructions are accessible on small devices)
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        if let header { header }
+                        UBEmptyState(
+                            iconSystemName: "list.bullet.rectangle",
+                            title: "Planned Expenses",
+                            message: "No planned expenses in this range.",
+                            primaryButtonTitle: "Add Planned Expense",
+                            onPrimaryTap: onAddTapped
+                        )
+                        .padding(.horizontal, DS.Spacing.l)
+                        // Keep a modest bottom cushion only on OS 26 to
+                        // complement the floating tab bar. Older OS versions
+                        // should sit closer to the tab chrome to avoid the
+                        // illusion of clipping.
+                        Color.clear.frame(height: capabilities.supportsOS26Translucency ? 120 : 0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .ub_ignoreSafeArea(edges: .bottom)
+                .ub_hideScrollIndicators()
+        } else {
                 // MARK: Real List for native swipe
                 List {
-                    ForEach(items, id: \.objectID) { item in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(item.transactionDate ?? Date(), style: .date)
-                                .font(.headline)
-                            Text(item.descriptionText ?? "Untitled")
-                                .font(.title3.weight(.semibold))
-                            HStack {
-                                Text("Planned:").foregroundStyle(.secondary)
-                                Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
-                            }
-                            HStack {
-                                Text("Actual:").foregroundStyle(.secondary)
-                                Text(CurrencyFormatterHelper.string(for: item.actualAmount))
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                        // MARK: Unified swipe → Edit & Delete
-                        .unifiedSwipeActions(
-                            // Disable full swipe-to-delete to prevent unintended automatic deletes. Only
-                            // tapping the Delete button will confirm removal.
-                            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
-                            onEdit: { editingItem = item },
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    itemToDelete = item
-                                    showDeleteAlert = true
-                                } else {
-                                    deletePlanned(item)
-                                }
-                            }
-                        )
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                    }
-                    .onDelete { indexSet in
-                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
-                        if confirmBeforeDelete, let first = itemsToDelete.first {
-                            itemToDelete = first
-                            showDeleteAlert = true
-                        } else {
-                            itemsToDelete.forEach(deletePlanned(_:))
-                        }
+                    if let header {
+                        Section {
+                            listRows(items: items)
+                        } header: { header }
+                    } else {
+                        listRows(items: items)
                     }
                 }
                 .styledList()
+                .ub_ignoreSafeArea(edges: .bottom)
                 .padding(.horizontal, DS.Spacing.l)
-            }
+        }
         }
         .sheet(item: $editingItem) { expense in
             AddPlannedExpenseView(
@@ -831,6 +984,51 @@ private struct PlannedListFR: View {
             }
         } message: { _ in
             Text("This will remove the planned expense.")
+        }
+    }
+
+    @ViewBuilder
+    private func listRows(items: [PlannedExpense]) -> some View {
+        ForEach(items, id: \.objectID) { item in
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.transactionDate ?? Date(), style: .date)
+                    .font(.headline)
+                Text(item.descriptionText ?? "Untitled")
+                    .font(.title3.weight(.semibold))
+                HStack {
+                    Text("Planned:").foregroundStyle(.secondary)
+                    Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
+                }
+                HStack {
+                    Text("Actual:").foregroundStyle(.secondary)
+                    Text(CurrencyFormatterHelper.string(for: item.actualAmount))
+                }
+            }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .unifiedSwipeActions(
+                UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
+                onEdit: { editingItem = item },
+                onDelete: {
+                    if confirmBeforeDelete {
+                        itemToDelete = item
+                        showDeleteAlert = true
+                    } else {
+                        deletePlanned(item)
+                    }
+                }
+            )
+            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+        }
+        .onDelete { indexSet in
+            let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+            if confirmBeforeDelete, let first = itemsToDelete.first {
+                itemToDelete = first
+                showDeleteAlert = true
+            } else {
+                itemsToDelete.forEach(deletePlanned(_:))
+            }
         }
     }
 
@@ -895,6 +1093,7 @@ private struct VariableListFR: View {
     private let attachedCards: [Card]
     private let onAddTapped: () -> Void
     private let onTotalsChanged: () -> Void
+    private let header: AnyView?
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
     @State private var showDeleteAlert = false
@@ -902,13 +1101,24 @@ private struct VariableListFR: View {
     // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+    @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    init(attachedCards: [Card], startDate: Date, endDate: Date, sort: BudgetDetailsViewModel.SortOption, onAddTapped: @escaping () -> Void, onTotalsChanged: @escaping () -> Void) {
+    init(
+        attachedCards: [Card],
+        startDate: Date,
+        endDate: Date,
+        sort: BudgetDetailsViewModel.SortOption,
+        onAddTapped: @escaping () -> Void,
+        onTotalsChanged: @escaping () -> Void,
+        header: AnyView? = nil
+    ) {
         self.sort = sort
         self.attachedCards = attachedCards
         self.onAddTapped = onAddTapped
         self.onTotalsChanged = onTotalsChanged
+        self.header = header
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<UnplannedExpense> = NSFetchRequest(entityName: "UnplannedExpense")
@@ -936,71 +1146,35 @@ private struct VariableListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                // MARK: Empty state
-                UBEmptyState(
-                    iconSystemName: "creditcard",
-                    title: "Variable Expenses",
-                    message: "No variable expenses in this range.",
-                    primaryButtonTitle: "Add Variable Expense",
-                    onPrimaryTap: onAddTapped
-                )
-                .padding(.horizontal, DS.Spacing.l)
+                // MARK: Empty state (scrollable so instructions are accessible on small devices)
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        if let header { header }
+                        UBEmptyState(
+                            iconSystemName: "creditcard",
+                            title: "Variable Expenses",
+                            message: "No variable expenses in this range.",
+                            primaryButtonTitle: "Add Variable Expense",
+                            onPrimaryTap: onAddTapped
+                        )
+                        .padding(.horizontal, DS.Spacing.l)
+                        Color.clear.frame(height: capabilities.supportsOS26Translucency ? 120 : 0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .ub_ignoreSafeArea(edges: .bottom)
+                .ub_hideScrollIndicators()
             } else {
                 // MARK: Real List for native swipe
                 List {
-                    ForEach(items, id: \.objectID) { item in
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
-                            Circle()
-                                .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
-                                .frame(width: 8, height: 8)
-
-                            VStack(alignment: .leading) {
-                                Text(item.descriptionText ?? "Untitled")
-                                    .font(.title3.weight(.semibold))
-                                if let name = item.expenseCategory?.name {
-                                    Text(name)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            VStack(alignment: .trailing) {
-                                Text(CurrencyFormatterHelper.string(for: item.amount))
-                                Text(Self.mediumDate(item.transactionDate ?? .distantPast))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        .contentShape(Rectangle())
-                        // MARK: Unified swipe → Edit & Delete
-                        .unifiedSwipeActions(
-                            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
-                            onEdit: { editingItem = item },
-                            onDelete: {
-                                if confirmBeforeDelete {
-                                    itemToDelete = item
-                                    showDeleteAlert = true
-                                } else {
-                                    deleteUnplanned(item)
-                                }
-                            }
-                        )
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
-                    }
-                    .onDelete { indexSet in
-                        let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
-                        if confirmBeforeDelete, let first = itemsToDelete.first {
-                            itemToDelete = first
-                            showDeleteAlert = true
-                        } else {
-                            itemsToDelete.forEach(deleteUnplanned(_:))
-                        }
+                    if let header {
+                        Section { listRows(items: items) } header: { header }
+                    } else {
+                        listRows(items: items)
                     }
                 }
                 .styledList()
+                .ub_ignoreSafeArea(edges: .bottom)
                 .padding(.horizontal, DS.Spacing.l)
             }
         }
@@ -1023,6 +1197,60 @@ private struct VariableListFR: View {
             }
         } message: { _ in
             Text("This will remove the expense.")
+        }
+    }
+
+    @ViewBuilder
+    private func listRows(items: [UnplannedExpense]) -> some View {
+        ForEach(items, id: \.objectID) { item in
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+                Circle()
+                    .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                    .frame(width: 8, height: 8)
+
+                VStack(alignment: .leading) {
+                    Text(item.descriptionText ?? "Untitled")
+                        .font(.title3.weight(.semibold))
+                    if let name = item.expenseCategory?.name {
+                        Text(name)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing) {
+                    Text(CurrencyFormatterHelper.string(for: item.amount))
+                    Text(Self.mediumDate(item.transactionDate ?? .distantPast))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .unifiedSwipeActions(
+                UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
+                onEdit: { editingItem = item },
+                onDelete: {
+                    if confirmBeforeDelete {
+                        itemToDelete = item
+                        showDeleteAlert = true
+                    } else {
+                        deleteUnplanned(item)
+                    }
+                }
+            )
+            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+        }
+        .onDelete { indexSet in
+            let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
+            if confirmBeforeDelete, let first = itemsToDelete.first {
+                itemToDelete = first
+                showDeleteAlert = true
+            } else {
+                itemsToDelete.forEach(deleteUnplanned(_:))
+            }
         }
     }
 
@@ -1097,6 +1325,7 @@ private extension View {
                 .scrollContentBackground(.hidden)
 #if os(iOS)
                 .scrollIndicators(.hidden)
+                .background(UBScrollViewInsetAdjustmentDisabler())
 #endif
         } else {
             self.listStyle(.plain)

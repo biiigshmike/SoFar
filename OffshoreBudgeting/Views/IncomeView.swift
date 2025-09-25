@@ -139,7 +139,7 @@ struct IncomeView: View {
 
     // MARK: Body
     var body: some View {
-        RootTabPageScaffold {
+        RootTabPageScaffold(spacing: DS.Spacing.s) {
             RootViewTopPlanes(title: "Income") {
                 addIncomeButton
             }
@@ -294,7 +294,6 @@ struct IncomeView: View {
                 weeklySummaryBar(minHeight: minimums.summary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
             .rootTabContentPadding(
                 proxy,
                 horizontal: DS.Spacing.l,
@@ -302,6 +301,8 @@ struct IncomeView: View {
                 tabBarGutter: gutter
             )
         }
+        // Removed extra bottom inset; RootTabPageScaffold + rootTabContentPadding
+        // control any desired gutter above the tab bar.
     }
 
     private func adaptiveCardHeights(
@@ -936,6 +937,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     private let cornerRadius: CGFloat = 17
     private let role: CalendarNavigationButtonStyle.Role
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     init(role: CalendarNavigationButtonStyle.Role) {
         self.role = role
@@ -943,26 +945,18 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         Group {
-            // Only reference `.glass` when compiling with a toolchain/SDK that provides it.
             #if swift(>=6.0)
-            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, macCatalyst 18.0, *) {
-                content.buttonStyle(.glass)
+            if capabilities.supportsOS26Translucency {
+                if #available(iOS 26.0, macOS 26.0, tvOS 26.0, visionOS 2.0, macCatalyst 18.0, *) {
+                    content.buttonStyle(.glass)
+                } else {
+                    content.buttonStyle(.plain)
+                }
             } else {
-                content.buttonStyle(
-                    TranslucentButtonStyle(
-                        tint: themeManager.selectedTheme.resolvedTint,
-                        metrics: metrics(for: role)
-                    )
-                )
+                content.buttonStyle(.plain)
             }
             #else
-            // Older toolchains/SDKs: fall back to a safe style.
-            content.buttonStyle(
-                TranslucentButtonStyle(
-                    tint: themeManager.selectedTheme.resolvedTint,
-                    metrics: metrics(for: role)
-                )
-            )
+            content.buttonStyle(.plain)
             #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))

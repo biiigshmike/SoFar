@@ -36,8 +36,7 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
     @ViewBuilder
     private func background(for theme: AppTheme, radius: CGFloat, isPressed: Bool) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-
-        if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
             shape
                 .fill(.ultraThinMaterial)
                 .overlay(
@@ -53,26 +52,30 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
                 )
                 .compositingGroup()
         } else {
-            shape
-                .fill(fillColor(for: theme, isPressed: isPressed))
-                .shadow(
-                    color: shadowColor(for: theme, isPressed: isPressed),
-                    radius: isPressed ? 6 : 10,
-                    x: 0,
-                    y: isPressed ? 4 : 7
-                )
+            // Classic OS: no background; keep controls as plain glyphs.
+            Color.clear
         }
     }
 
+    @ViewBuilder
     private func border(for theme: AppTheme, radius: CGFloat, isPressed: Bool) -> some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(borderColor(for: theme, isPressed: isPressed), lineWidth: 1.1)
+        if capabilities.supportsOS26Translucency {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(borderColor(for: theme, isPressed: isPressed), lineWidth: 1.1)
+        } else {
+            EmptyView()
+        }
     }
 
+    @ViewBuilder
     private func highlight(radius: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .stroke(Color.white.opacity(capabilities.supportsOS26Translucency ? 0.22 : 0.14), lineWidth: 1)
-            .blendMode(.screen)
+        if capabilities.supportsOS26Translucency {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                .blendMode(.screen)
+        } else {
+            EmptyView()
+        }
     }
 
     // MARK: - Colors
