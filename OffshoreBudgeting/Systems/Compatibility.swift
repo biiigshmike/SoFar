@@ -594,14 +594,61 @@ private struct UBSurfaceBackgroundModifier: ViewModifier {
 }
 
 private struct UBNavigationGlassModifier: ViewModifier {
-    // On OS 26, let the system manage navigation bar chrome. On classic OS,
-    // we avoid liquid glass entirely to keep a flat aesthetic. Therefore this
-    // modifier is effectively a no-op across platforms.
+    @Environment(\.platformCapabilities) private var capabilities
+
     let baseColor: Color
     let configuration: AppTheme.GlassConfiguration
 
     @ViewBuilder
-    func body(content: Content) -> some View { content }
+    func body(content: Content) -> some View {
+        if capabilities.supportsOS26Translucency {
+            #if os(iOS)
+            if #available(iOS 17.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(
+                        UBNavigationGlassToolbarBackgroundStyle(
+                            capabilities: capabilities,
+                            baseColor: baseColor,
+                            glassConfiguration: configuration,
+                            ignoredEdges: [.top]
+                        ),
+                        for: .navigationBar
+                    )
+            } else if #available(iOS 16.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(gradientStyle, for: .navigationBar)
+            } else {
+                content
+            }
+            #elseif os(macOS)
+            if #available(macOS 14.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(
+                        UBNavigationGlassToolbarBackgroundStyle(
+                            capabilities: capabilities,
+                            baseColor: baseColor,
+                            glassConfiguration: configuration,
+                            ignoredEdges: [.top]
+                        ),
+                        for: .windowToolbar
+                    )
+            } else if #available(macOS 13.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
+            } else {
+                content
+            }
+            #else
+            content
+            #endif
+        } else {
+            content
+        }
+    }
 
     #if os(iOS)
     @available(iOS 16.0, *)
@@ -638,6 +685,25 @@ private struct UBNavigationGlassModifier: ViewModifier {
     }
     #endif
 }
+
+#if os(iOS) || os(macOS)
+@available(iOS 17.0, macOS 14.0, *)
+private struct UBNavigationGlassToolbarBackgroundStyle: ToolbarBackgroundStyle {
+    let capabilities: PlatformCapabilities
+    let baseColor: Color
+    let glassConfiguration: AppTheme.GlassConfiguration
+    let ignoredEdges: Edge.Set
+
+    func makeBody(configuration: Configuration) -> some View {
+        UBGlassBackgroundView(
+            capabilities: capabilities,
+            baseColor: baseColor,
+            configuration: glassConfiguration,
+            ignoresSafeAreaEdges: ignoredEdges
+        )
+    }
+}
+#endif
 
 private struct UBChromeGlassModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
@@ -695,10 +761,13 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency {
-            // On OS 26, avoid overriding navigation bar backgrounds; let the
-            // system render Liquid Glass chrome.
-            content
+        if capabilities.supportsOS26Translucency && theme.usesGlassMaterials {
+            content.modifier(
+                UBNavigationGlassModifier(
+                    baseColor: theme.glassBaseColor,
+                    configuration: configuration
+                )
+            )
         } else {
             #if os(iOS)
             if #available(iOS 16.0, *) {
