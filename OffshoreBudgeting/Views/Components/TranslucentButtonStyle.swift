@@ -19,6 +19,7 @@ struct TranslucentButtonStyle: ButtonStyle {
         var verticalPadding: CGFloat = DS.Spacing.m
         var pressedScale: CGFloat = 0.98
         var font: Font? = nil
+        var overridesLabelForeground: Bool = true
 
         static let standard = Metrics()
 
@@ -65,6 +66,18 @@ struct TranslucentButtonStyle: ButtonStyle {
             pressedScale: 0.96,
             font: .system(size: 16, weight: .semibold, design: .rounded)
         )
+
+        static let macNavigationControl = Metrics(
+            layout: .hugging,
+            width: nil,
+            height: 32,
+            cornerRadius: 16,
+            horizontalPadding: DS.Spacing.m,
+            verticalPadding: 0,
+            pressedScale: 0.97,
+            font: .system(size: 13, weight: .semibold, design: .rounded),
+            overridesLabelForeground: false
+        )
     }
 
     @Environment(\.platformCapabilities) private var capabilities
@@ -84,9 +97,7 @@ struct TranslucentButtonStyle: ButtonStyle {
         let radius = metrics.cornerRadius
         let theme = themeManager.selectedTheme
 
-        return configuration.label
-            .font(metrics.font ?? .headline)
-            .foregroundStyle(labelForeground(for: theme))
+        return labelContent(for: configuration, theme: theme)
             .padding(.vertical, metrics.verticalPadding)
             .padding(.horizontal, metrics.horizontalPadding)
             .frame(maxWidth: metrics.layout == .expandHorizontally ? .infinity : nil)
@@ -106,6 +117,25 @@ struct TranslucentButtonStyle: ButtonStyle {
             }
             .scaleEffect(configuration.isPressed ? metrics.pressedScale : 1.0)
             .animation(.spring(response: 0.32, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+
+    @ViewBuilder
+    private func labelContent(for configuration: Configuration, theme: AppTheme) -> some View {
+        if metrics.overridesLabelForeground {
+            if let font = metrics.font {
+                configuration.label
+                    .font(font)
+                    .foregroundStyle(labelForeground(for: theme))
+            } else {
+                configuration.label
+                    .foregroundStyle(labelForeground(for: theme))
+            }
+        } else if let font = metrics.font {
+            configuration.label
+                .font(font)
+        } else {
+            configuration.label
+        }
     }
 
     private func labelForeground(for theme: AppTheme) -> Color {

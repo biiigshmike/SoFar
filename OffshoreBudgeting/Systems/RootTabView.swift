@@ -187,11 +187,13 @@ private struct MacTabButton: View {
     var body: some View {
         Button(action: action) {
             MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 10)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            TranslucentButtonStyle(
+                tint: palette.active,
+                metrics: .macNavigationControl
+            )
+        )
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? .isSelected : AccessibilityTraits())
     }
