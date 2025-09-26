@@ -357,7 +357,7 @@ struct IncomeView: View {
         VStack(spacing: CalendarSectionMetrics.headerSpacing) {
             HStack(spacing: DS.Spacing.s) {
                 #if os(macOS)
-                if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
+                if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .incomeCalendarGlassButtonStyle(role: .icon)
@@ -861,7 +861,7 @@ private extension View {
         #if os(macOS)
         let shape = RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
 
-        if capabilities.supportsOS26Translucency, #available(macOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
             self
                 .background(
                     shape
@@ -947,7 +947,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
         Group {
             #if swift(>=6.0)
             if capabilities.supportsOS26Translucency {
-                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, macCatalyst 18.0, *) {
+                if #available(iOS 18.0, macOS 26.0, tvOS 18.0, visionOS 2.0, macCatalyst 26.0, *) {
                     content.buttonStyle(.glass)
                 } else {
                     content.buttonStyle(.plain)

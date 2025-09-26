@@ -776,7 +776,7 @@ private struct GlassCapsuleContainer<Content: View>: View {
             .padding(.vertical, verticalPadding)
             .contentShape(capsule)
 
-        if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 18.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
                     .glassEffect(.regular.interactive(), in: capsule)

@@ -118,7 +118,7 @@ private extension View {
     func periodNavigationButtonStyle(capabilities: PlatformCapabilities) -> some View {
 #if swift(>=6.0)
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, watchOS 11.0, macCatalyst 18.0, *) {
+            if #available(iOS 18.0, macOS 26.0, tvOS 18.0, visionOS 2.0, watchOS 11.0, macCatalyst 26.0, *) {
                 buttonStyle(.glass)
             } else {
                 buttonStyle(.plain)
