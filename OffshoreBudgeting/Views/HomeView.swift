@@ -1106,7 +1106,7 @@ private struct HomeGlassCapsuleContainer<Content: View>: View {
             .padding(.vertical, verticalPadding)
             .contentShape(capsule)
 
-        if #available(iOS 26.0, macOS 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 18.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
                     .glassEffect(in: capsule)

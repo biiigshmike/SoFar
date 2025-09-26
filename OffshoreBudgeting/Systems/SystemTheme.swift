@@ -3,14 +3,14 @@ import SwiftUI
 import UIKit
 #endif
 
-/// Central adapter that decides whether the system should use Liquid Glass (OS 26)
-/// or Classic styling (earlier OS versions), and applies minimal global chrome
-/// where appropriate for legacy systems.
+/// Central adapter that decides whether the system should use Liquid Glass (2024
+/// OS cycle) or Classic styling (earlier OS versions), and applies minimal global
+/// chrome where appropriate for legacy systems.
 enum SystemThemeAdapter {
     enum Flavor { case liquid, classic }
 
     static var currentFlavor: Flavor {
-        if #available(iOS 26.0, tvOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
+        if #available(iOS 18.0, tvOS 18.0, macOS 15.0, macCatalyst 18.0, watchOS 11.0, visionOS 2.0, *) {
             return .liquid
         } else {
             return .classic

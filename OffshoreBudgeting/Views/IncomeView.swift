@@ -947,7 +947,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
         Group {
             #if swift(>=6.0)
             if capabilities.supportsOS26Translucency {
-                if #available(iOS 26.0, macOS 26.0, tvOS 26.0, visionOS 2.0, macCatalyst 18.0, *) {
+                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, macCatalyst 18.0, *) {
                     content.buttonStyle(.glass)
                 } else {
                     content.buttonStyle(.plain)

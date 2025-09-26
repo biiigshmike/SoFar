@@ -5,8 +5,9 @@ import SwiftUI
 /// point so that every scene and modifier can consult the same source of
 /// truth when opting into newer system behaviours.
 struct PlatformCapabilities: Equatable {
-    /// Whether the current OS supports the refreshed OS 26 translucent chrome
-    /// treatments introduced alongside the latest system releases.
+    /// Whether the current OS supports the refreshed translucent chrome
+    /// treatments Apple shipped alongside the 2024 OS cycle (iOS/iPadOS/tvOS 18,
+    /// macOS 15, visionOS 2, etc.).
     let supportsOS26Translucency: Bool
 
     /// Whether the adaptive numeric keyboard layout from OS 26 is available on
@@ -19,8 +20,8 @@ extension PlatformCapabilities {
     /// availability information we have at launch.
     static var current: PlatformCapabilities {
         let supportsModernTranslucency: Bool
-        // Liquid Glass is available only on OS 26 across Apple platforms.
-        if #available(iOS 26.0, tvOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
+        // Liquid Glass is available starting with the 2024 system releases.
+        if #available(iOS 18.0, tvOS 18.0, macOS 15.0, macCatalyst 18.0, watchOS 11.0, visionOS 2.0, *) {
             supportsModernTranslucency = true
         } else {
             supportsModernTranslucency = false
