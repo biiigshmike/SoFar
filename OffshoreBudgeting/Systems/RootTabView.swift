@@ -6,17 +6,14 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-import ObjectiveC
-#endif
 
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    #if os(macOS)
     @Environment(\.platformCapabilities) private var platformCapabilities
-    @Environment(\.colorScheme) private var colorScheme
+    #endif
 
-    enum Tab: Hashable {
+    enum Tab: Hashable, CaseIterable {
         case home
         case income
         case cards
@@ -25,69 +22,56 @@ struct RootTabView: View {
     }
 
     @State private var selectedTab: Tab = .home
-#if canImport(UIKit)
-    @State private var lastTabBarAppearanceSignature: TabBarAppearanceSignature?
-    @State private var isUpdatingTabBarAppearance = false
-#endif
 
     var body: some View {
+        #if os(macOS)
+        macBody
+        #else
+        tabViewBody
+        #endif
+    }
+
+    private var tabViewBody: some View {
         TabView(selection: $selectedTab) {
-            navigationContainer { HomeView() }
-                .ub_navigationBackground(
-                    theme: themeManager.selectedTheme,
-                    configuration: themeManager.glassConfiguration
-                )
-                .tabItem { Label("Home", systemImage: "house") }
-                .tag(Tab.home)
-
-            navigationContainer { IncomeView() }
-                .ub_navigationBackground(
-                    theme: themeManager.selectedTheme,
-                    configuration: themeManager.glassConfiguration
-                )
-                .tabItem { Label("Income", systemImage: "calendar") }
-                .tag(Tab.income)
-
-            navigationContainer { CardsView() }
-                .ub_navigationBackground(
-                    theme: themeManager.selectedTheme,
-                    configuration: themeManager.glassConfiguration
-                )
-                .tabItem { Label("Cards", systemImage: "creditcard") }
-                .tag(Tab.cards)
-
-            navigationContainer { PresetsView() }
-                .ub_navigationBackground(
-                    theme: themeManager.selectedTheme,
-                    configuration: themeManager.glassConfiguration
-                )
-                .tabItem { Label("Presets", systemImage: "list.bullet.rectangle") }
-                .tag(Tab.presets)
-
-            navigationContainer { SettingsView() }
-                .ub_navigationBackground(
-                    theme: themeManager.selectedTheme,
-                    configuration: themeManager.glassConfiguration
-                )
-                .tabItem { Label("Settings", systemImage: "gear") }
-                .tag(Tab.settings)
+            tabViewItem(for: .home)
+            tabViewItem(for: .income)
+            tabViewItem(for: .cards)
+            tabViewItem(for: .presets)
+            tabViewItem(for: .settings)
         }
-        // Give the tab chrome its own glass background on macOS 26
-        // while remaining a no-op elsewhere. Classic macOS uses a
-        // flat background (handled inside the modifier implementation).
-        .ub_chromeGlassBackground(
-            baseColor: themeManager.selectedTheme.glassBaseColor,
-            configuration: themeManager.glassConfiguration
-        )
-        .onAppear(perform: updateTabBarAppearance)
-        .ub_onChange(of: themeManager.selectedTheme) {
-            updateTabBarAppearance()
+    }
+
+    @ViewBuilder
+    private func tabViewItem(for tab: Tab) -> some View {
+        navigationContainer {
+            decoratedTabContent(for: tab)
         }
-        .ub_onChange(of: colorScheme) {
-            updateTabBarAppearance()
-        }
-        .ub_onChange(of: platformCapabilities) {
-            updateTabBarAppearance()
+        .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+        .tag(tab)
+    }
+
+    @ViewBuilder
+    private func decoratedTabContent(for tab: Tab) -> some View {
+        tabContent(for: tab)
+            .ub_navigationBackground(
+                theme: themeManager.selectedTheme,
+                configuration: themeManager.glassConfiguration
+            )
+    }
+
+    @ViewBuilder
+    private func tabContent(for tab: Tab) -> some View {
+        switch tab {
+        case .home:
+            HomeView()
+        case .income:
+            IncomeView()
+        case .cards:
+            CardsView()
+        case .presets:
+            PresetsView()
+        case .settings:
+            SettingsView()
         }
     }
 
@@ -103,429 +87,108 @@ struct RootTabView: View {
         }
     }
 
-    /// Ensures the tab bar matches the current theme and hides the default top border.
-    @MainActor private func updateTabBarAppearance() {
-        #if canImport(UIKit)
-        let theme = themeManager.selectedTheme
-        let palette = theme.tabBarPalette
-        let configuration = themeManager.glassConfiguration
-        let capabilities = platformCapabilities
-        let currentColorScheme = colorScheme
-
-        // On OS 26, defer to the system's Liquid Glass-managed tab bar.
-        if capabilities.supportsOS26Translucency {
-            return
-        }
-
-        let newSignature = TabBarAppearanceSignature.make(
-            theme: theme,
-            colorScheme: currentColorScheme,
-            capabilities: capabilities,
-            configuration: configuration,
-            palette: palette,
-            resolveColor: { color, scheme in
-                resolveUIColor(color, for: scheme)
-            }
-        )
-
-        if newSignature == lastTabBarAppearanceSignature {
-            return
-        }
-
-        guard !isUpdatingTabBarAppearance else {
-            return
-        }
-
-        isUpdatingTabBarAppearance = true
-        defer {
-            lastTabBarAppearanceSignature = newSignature
-            isUpdatingTabBarAppearance = false
-        }
-
-        let appearance = UITabBarAppearance()
-
-        if theme.usesGlassMaterials {
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = resolveUIColor(theme.glassBaseColor, for: currentColorScheme)
-        } else {
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundEffect = nil
-            appearance.backgroundColor = resolveUIColor(theme.background, for: currentColorScheme)
-        }
-
-        applyTabItemAppearance(
-            to: appearance,
-            palette: palette,
-            colorScheme: currentColorScheme
-        )
-
-        let inactiveTint = resolveUIColor(palette.inactive, for: currentColorScheme)
-        let activeTint = resolveUIColor(palette.active, for: currentColorScheme)
-
-        appearance.shadowColor = .clear
-
-        let globalAppearance = UITabBar.appearance()
-        globalAppearance.unselectedItemTintColor = inactiveTint
-        globalAppearance.standardAppearance = copyAppearance(appearance)
-        globalAppearance.scrollEdgeAppearance = copyAppearance(appearance)
-        globalAppearance.tintColor = activeTint
-        globalAppearance.isTranslucent = theme.usesGlassMaterials
-
-        applyAppearanceToVisibleTabBars(
-            appearance: appearance,
-            palette: palette,
-            isTranslucent: theme.usesGlassMaterials,
-            colorScheme: currentColorScheme,
-            signature: newSignature
-        )
-        #endif
-    }
-}
-
-#if canImport(UIKit)
-private extension RootTabView {
-    func applyTabItemAppearance(
-        to appearance: UITabBarAppearance,
-        palette: AppTheme.TabBarPalette,
-        colorScheme: ColorScheme
-    ) {
-        appearance.stackedLayoutAppearance = makeTabItemAppearance(
-            style: .stacked,
-            palette: palette,
-            colorScheme: colorScheme
-        )
-        appearance.inlineLayoutAppearance = makeTabItemAppearance(
-            style: .inline,
-            palette: palette,
-            colorScheme: colorScheme
-        )
-        appearance.compactInlineLayoutAppearance = makeTabItemAppearance(
-            style: .compactInline,
-            palette: palette,
-            colorScheme: colorScheme
-        )
-    }
-
-    func makeTabItemAppearance(
-        style: UITabBarItemAppearance.Style,
-        palette: AppTheme.TabBarPalette,
-        colorScheme: ColorScheme
-    ) -> UITabBarItemAppearance {
-        let itemAppearance = UITabBarItemAppearance(style: style)
-        itemAppearance.configureWithDefault(for: style)
-
-        let activeColor = resolveUIColor(palette.active, for: colorScheme)
-        let inactiveColor = resolveUIColor(palette.inactive, for: colorScheme)
-        let disabledColor = resolveUIColor(palette.disabled, for: colorScheme)
-        let badgeBackground = resolveUIColor(palette.badgeBackground, for: colorScheme)
-        let badgeForeground = resolveUIColor(palette.badgeForeground, for: colorScheme)
-
-        configure(
-            state: itemAppearance.normal,
-            iconColor: inactiveColor,
-            titleColor: inactiveColor,
-            badgeBackground: badgeBackground,
-            badgeForeground: badgeForeground
-        )
-        configure(
-            state: itemAppearance.selected,
-            iconColor: activeColor,
-            titleColor: activeColor,
-            badgeBackground: badgeBackground,
-            badgeForeground: badgeForeground
-        )
-        configure(
-            state: itemAppearance.focused,
-            iconColor: activeColor,
-            titleColor: activeColor,
-            badgeBackground: badgeBackground,
-            badgeForeground: badgeForeground
-        )
-        configureDisabledState(
-            itemAppearance.disabled,
-            iconColor: disabledColor,
-            badgeForeground: badgeForeground
-        )
-
-        return itemAppearance
-    }
-
-    func configure(
-        state: UITabBarItemStateAppearance,
-        iconColor: UIColor,
-        titleColor: UIColor,
-        badgeBackground: UIColor,
-        badgeForeground: UIColor
-    ) {
-        state.iconColor = iconColor
-        state.titleTextAttributes = [.foregroundColor: titleColor]
-        state.badgeBackgroundColor = badgeBackground
-        state.badgeTextAttributes = [.foregroundColor: badgeForeground]
-    }
-
-    func configureDisabledState(
-        _ state: UITabBarItemStateAppearance,
-        iconColor: UIColor,
-        badgeForeground: UIColor
-    ) {
-        let disabledBadgeBackground = iconColor.withAlphaComponent(0.28)
-        state.iconColor = iconColor
-        state.titleTextAttributes = [.foregroundColor: iconColor]
-        state.badgeBackgroundColor = disabledBadgeBackground
-        state.badgeTextAttributes = [
-            .foregroundColor: badgeForeground.withAlphaComponent(0.75)
-        ]
-    }
-
-    @MainActor func applyAppearanceToVisibleTabBars(
-        appearance: UITabBarAppearance,
-        palette: AppTheme.TabBarPalette,
-        isTranslucent: Bool,
-        colorScheme: ColorScheme,
-        signature: TabBarAppearanceSignature
-    ) {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .forEach { window in
-                tabBarControllers(in: window.rootViewController).forEach { controller in
-                    let tabBar = controller.tabBar
-                    guard tabBar.ub_cachedAppearanceSignature != signature else {
-                        return
-                    }
-
-                    let standardAppearance = copyAppearance(appearance)
-                    let scrollEdgeAppearance = copyAppearance(appearance)
-                    tabBar.standardAppearance = standardAppearance
-                    tabBar.scrollEdgeAppearance = scrollEdgeAppearance
-                    tabBar.tintColor = resolveUIColor(palette.active, for: colorScheme)
-                    tabBar.unselectedItemTintColor = resolveUIColor(palette.inactive, for: colorScheme)
-                    tabBar.isTranslucent = isTranslucent
-                    tabBar.ub_cachedAppearanceSignature = signature
+    #if os(macOS)
+    private var macBody: some View {
+        Group {
+            if #available(macOS 13.0, *) {
+                NavigationStack {
+                    decoratedTabContent(for: selectedTab)
+                }
+            } else {
+                NavigationView {
+                    decoratedTabContent(for: selectedTab)
                 }
             }
-    }
-
-    func resolveUIColor(_ color: Color, for colorScheme: ColorScheme) -> UIColor {
-        let uiColor = UIColor(color)
-
-        let style: UIUserInterfaceStyle
-        switch colorScheme {
-        case .dark:
-            style = .dark
-        case .light:
-            style = .light
-        @unknown default:
-            style = .unspecified
         }
-
-        let traitCollection = UITraitCollection(userInterfaceStyle: style)
-        return uiColor.resolvedColor(with: traitCollection)
-    }
-
-    func copyAppearance(_ appearance: UITabBarAppearance) -> UITabBarAppearance {
-        // copy() from NSCopying returns the same dynamic type.
-        return appearance.copy()
-    }
-
-    func tabBarControllers(in root: UIViewController?) -> [UITabBarController] {
-        guard let root else { return [] }
-
-        var controllers: [UITabBarController] = []
-
-        if let tabController = root as? UITabBarController {
-            controllers.append(tabController)
+        .toolbar {
+            macToolbar
         }
-
-        controllers.append(contentsOf: root.children.flatMap { child in
-            tabBarControllers(in: child)
-        })
-
-        if let presented = root.presentedViewController {
-            controllers.append(contentsOf: tabBarControllers(in: presented))
-        }
-
-        return controllers
-    }
-}
-
-private final class TabBarAppearanceSignatureBox: NSObject {
-    let signature: TabBarAppearanceSignature
-
-    init(signature: TabBarAppearanceSignature) {
-        self.signature = signature
-    }
-}
-
-private extension UITabBar {
-    private enum AssociatedKeys {
-        static var appearanceSignature: UInt8 = 0
+        .modifier(
+            MacToolbarBackgroundModifier(
+                theme: themeManager.selectedTheme,
+                supportsTranslucency: platformCapabilities.supportsOS26Translucency
+            )
+        )
     }
 
-    var ub_cachedAppearanceSignature: TabBarAppearanceSignature? {
-        get {
-            guard let box = objc_getAssociatedObject(self, &AssociatedKeys.appearanceSignature) as? TabBarAppearanceSignatureBox else {
-                return nil
-            }
-
-            return box.signature
-        }
-        set {
-            if let signature = newValue {
-                let box = TabBarAppearanceSignatureBox(signature: signature)
-                objc_setAssociatedObject(
-                    self,
-                    &AssociatedKeys.appearanceSignature,
-                    box,
-                    .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-                )
-            } else {
-                objc_setAssociatedObject(
-                    self,
-                    &AssociatedKeys.appearanceSignature,
-                    nil,
-                    .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-                )
+    @ToolbarContentBuilder
+    private var macToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigation) {
+            ForEach(Tab.allCases, id: \.self) { tab in
+                macToolbarButton(for: tab)
             }
         }
     }
+
+    @ViewBuilder
+    private func macToolbarButton(for tab: Tab) -> some View {
+        let palette = themeManager.selectedTheme.tabBarPalette
+        let isSelected = selectedTab == tab
+
+        Button {
+            selectedTab = tab
+        } label: {
+            Label(tab.title, systemImage: tab.systemImage)
+                .symbolVariant(isSelected ? .fill : .none)
+                .foregroundStyle(isSelected ? palette.active : palette.inactive)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : AccessibilityTraits())
+    }
+    #endif
 }
 
-private struct ColorComponents: Equatable {
-    let red: Double
-    let green: Double
-    let blue: Double
-    let alpha: Double
+#if os(macOS)
+private struct MacToolbarBackgroundModifier: ViewModifier {
+    let theme: AppTheme
+    let supportsTranslucency: Bool
 
-    init(uiColor: UIColor) {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-
-        if uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
-            self.red = Double(red)
-            self.green = Double(green)
-            self.blue = Double(blue)
-            self.alpha = Double(alpha)
-            return
-        }
-
-        if let components = uiColor.cgColor.components {
-            switch components.count {
-            case 4:
-                red = components[0]
-                green = components[1]
-                blue = components[2]
-                alpha = components[3]
-            case 3:
-                red = components[0]
-                green = components[1]
-                blue = components[2]
-                alpha = uiColor.cgColor.alpha
-            case 2:
-                red = components[0]
-                green = components[0]
-                blue = components[0]
-                alpha = components[1]
-            case 1:
-                red = components[0]
-                green = components[0]
-                blue = components[0]
-                alpha = uiColor.cgColor.alpha
-            default:
-                red = 0
-                green = 0
-                blue = 0
-                alpha = 0
-            }
-        }
-
-        self.red = Double(red)
-        self.green = Double(green)
-        self.blue = Double(blue)
-        self.alpha = Double(alpha)
-    }
-}
-
-private struct TabBarAppearanceSignature: Equatable {
-    struct PaletteSignature: Equatable {
-        let active: ColorComponents
-        let inactive: ColorComponents
-        let disabled: ColorComponents
-        let badgeBackground: ColorComponents
-        let badgeForeground: ColorComponents
-    }
-
-    struct BackgroundSignature: Equatable {
-        let isTranslucent: Bool
-        let supportsTranslucency: Bool
-        let blurStyleRawValue: Int?
-        let backgroundColor: ColorComponents
-    }
-
-    let themeID: String
-    let colorScheme: ColorScheme
-    let capabilities: PlatformCapabilities
-    let background: BackgroundSignature
-    let palette: PaletteSignature
-
-    static func make(
-        theme: AppTheme,
-        colorScheme: ColorScheme,
-        capabilities: PlatformCapabilities,
-        configuration: AppTheme.GlassConfiguration,
-        palette: AppTheme.TabBarPalette,
-        resolveColor: (Color, ColorScheme) -> UIColor
-    ) -> TabBarAppearanceSignature {
-        let activeColor = ColorComponents(uiColor: resolveColor(palette.active, colorScheme))
-        let inactiveColor = ColorComponents(uiColor: resolveColor(palette.inactive, colorScheme))
-        let disabledColor = ColorComponents(uiColor: resolveColor(palette.disabled, colorScheme))
-        let badgeBackground = ColorComponents(uiColor: resolveColor(palette.badgeBackground, colorScheme))
-        let badgeForeground = ColorComponents(uiColor: resolveColor(palette.badgeForeground, colorScheme))
-
-        let usesGlassMaterials = theme.usesGlassMaterials
-        let supportsTranslucency = capabilities.supportsOS26Translucency
-        let blurStyleRawValue: Int?
-
-        let backgroundUIColor: UIColor
-        if usesGlassMaterials && supportsTranslucency {
-            blurStyleRawValue = configuration.glass.material.uiBlurEffectStyle.rawValue
-            let baseColor = resolveColor(theme.glassBaseColor, colorScheme)
-            let opacity = CGFloat(min(configuration.liquid.tintOpacity + 0.08, 0.9))
-            backgroundUIColor = baseColor.withAlphaComponent(opacity)
-        } else if usesGlassMaterials {
-            blurStyleRawValue = nil
-            backgroundUIColor = resolveColor(theme.glassBaseColor, colorScheme)
+    func body(content: Content) -> some View {
+        if supportsTranslucency {
+            content
         } else {
-            blurStyleRawValue = nil
-            backgroundUIColor = resolveColor(theme.background, colorScheme)
+            if #available(macOS 13.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(theme.background, for: .navigationBar)
+            } else {
+                content
+            }
         }
-
-        let paletteSignature = PaletteSignature(
-            active: activeColor,
-            inactive: inactiveColor,
-            disabled: disabledColor,
-            badgeBackground: badgeBackground,
-            badgeForeground: badgeForeground
-        )
-
-        let backgroundSignature = BackgroundSignature(
-            isTranslucent: usesGlassMaterials,
-            supportsTranslucency: supportsTranslucency,
-            blurStyleRawValue: blurStyleRawValue,
-            backgroundColor: ColorComponents(uiColor: backgroundUIColor)
-        )
-
-        return TabBarAppearanceSignature(
-            themeID: theme.id,
-            colorScheme: colorScheme,
-            capabilities: capabilities,
-            background: backgroundSignature,
-            palette: paletteSignature
-        )
     }
 }
 #endif
 
-// (macOS-only custom top tabs were removed per feedback; keeping native TabView chrome)
+private extension RootTabView.Tab {
+    var title: String {
+        switch self {
+        case .home:
+            return "Home"
+        case .income:
+            return "Income"
+        case .cards:
+            return "Cards"
+        case .presets:
+            return "Presets"
+        case .settings:
+            return "Settings"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home:
+            return "house"
+        case .income:
+            return "calendar"
+        case .cards:
+            return "creditcard"
+        case .presets:
+            return "list.bullet.rectangle"
+        case .settings:
+            return "gear"
+        }
+    }
+}
