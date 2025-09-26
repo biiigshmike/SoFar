@@ -628,7 +628,8 @@ private struct UBNavigationGlassModifier: ViewModifier {
             } else {
                 content
             }
-            #elseif os(macOS)
+            #else
+            #if os(macOS)
             if #available(macOS 14.0, *) {
                 #if compiler(>=5.9)
                 content
@@ -656,6 +657,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
             }
             #else
             content
+            #endif
             #endif
         } else {
             content
