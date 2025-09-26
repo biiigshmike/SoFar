@@ -113,29 +113,13 @@ struct RootTabView: View {
 
     @ToolbarContentBuilder
     private var macToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            ForEach(Tab.allCases, id: \.self) { tab in
-                macToolbarButton(for: tab)
-            }
+        ToolbarItem(placement: .principal) {
+            MacRootTabBar(
+                selectedTab: $selectedTab,
+                palette: themeManager.selectedTheme.tabBarPalette
+            )
+            .frame(maxWidth: .infinity)
         }
-    }
-
-    @ViewBuilder
-    private func macToolbarButton(for tab: Tab) -> some View {
-        let palette = themeManager.selectedTheme.tabBarPalette
-        let isSelected = selectedTab == tab
-
-        Button {
-            selectedTab = tab
-        } label: {
-            Label(tab.title, systemImage: tab.systemImage)
-                .symbolVariant(isSelected ? .fill : .none)
-                .foregroundStyle(isSelected ? palette.active : palette.inactive)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(tab.title)
-        .accessibilityAddTraits(isSelected ? .isSelected : AccessibilityTraits())
     }
     #endif
 }
@@ -157,6 +141,77 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
                 content
             }
         }
+    }
+}
+#endif
+
+#if os(macOS)
+private struct MacRootTabBar: View {
+    private let tabs: [RootTabView.Tab]
+    @Binding private var selectedTab: RootTabView.Tab
+    private let palette: AppTheme.TabBarPalette
+
+    init(
+        tabs: [RootTabView.Tab] = RootTabView.Tab.allCases,
+        selectedTab: Binding<RootTabView.Tab>,
+        palette: AppTheme.TabBarPalette
+    ) {
+        self.tabs = tabs
+        self._selectedTab = selectedTab
+        self.palette = palette
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(tabs, id: \.self) { tab in
+                MacTabButton(
+                    tab: tab,
+                    isSelected: selectedTab == tab,
+                    palette: palette
+                ) {
+                    selectedTab = tab
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct MacTabButton: View {
+    let tab: RootTabView.Tab
+    let isSelected: Bool
+    let palette: AppTheme.TabBarPalette
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 10)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : AccessibilityTraits())
+    }
+}
+
+private struct MacTabLabel: View {
+    let tab: RootTabView.Tab
+    let isSelected: Bool
+    let palette: AppTheme.TabBarPalette
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Image(systemName: tab.systemImage)
+                .symbolVariant(isSelected ? .fill : .none)
+                .font(.system(size: 20, weight: .semibold))
+            Text(tab.title)
+                .font(.caption)
+        }
+        .frame(maxWidth: .infinity)
+        .foregroundStyle(isSelected ? palette.active : palette.inactive)
     }
 }
 #endif
