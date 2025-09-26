@@ -1109,7 +1109,7 @@ private struct HomeGlassCapsuleContainer<Content: View>: View {
         if #available(iOS 18.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
-                    .glassEffect(in: capsule)
+                    .glassEffect(.regular.interactive(), in: capsule)
             }
         } else {
             decorated
