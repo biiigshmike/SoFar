@@ -603,25 +603,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
     func body(content: Content) -> some View {
         if capabilities.supportsOS26Translucency {
             #if os(iOS)
-            if #available(iOS 17.0, *) {
-                #if compiler(>=5.9)
-                content
-                    .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(
-                        UBNavigationGlassToolbarBackgroundStyle(
-                            capabilities: capabilities,
-                            baseColor: baseColor,
-                            glassConfiguration: configuration,
-                            ignoredEdges: [.top]
-                        ),
-                        for: .navigationBar
-                    )
-                #else
-                content
-                    .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(gradientStyle, for: .navigationBar)
-                #endif
-            } else if #available(iOS 16.0, *) {
+            if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
                     .toolbarBackground(gradientStyle, for: .navigationBar)
@@ -630,25 +612,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
             }
             #else
             #if os(macOS)
-            if #available(macOS 14.0, *) {
-                #if compiler(>=5.9)
-                content
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(
-                        UBNavigationGlassToolbarBackgroundStyle(
-                            capabilities: capabilities,
-                            baseColor: baseColor,
-                            glassConfiguration: configuration,
-                            ignoredEdges: [.top]
-                        ),
-                        for: .windowToolbar
-                    )
-                #else
-                content
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
-                #endif
-            } else if #available(macOS 13.0, *) {
+            if #available(macOS 13.0, *) {
                 content
                     .toolbarBackground(.visible, for: .windowToolbar)
                     .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
@@ -699,27 +663,6 @@ private struct UBNavigationGlassModifier: ViewModifier {
     }
     #endif
 }
-
-#if compiler(>=5.9)
-#if os(iOS) || os(macOS)
-@available(iOS 17.0, macOS 14.0, *)
-private struct UBNavigationGlassToolbarBackgroundStyle: ToolbarBackgroundStyle {
-    let capabilities: PlatformCapabilities
-    let baseColor: Color
-    let glassConfiguration: AppTheme.GlassConfiguration
-    let ignoredEdges: Edge.Set
-
-    func makeBody(configuration: Configuration) -> some View {
-        UBGlassBackgroundView(
-            capabilities: capabilities,
-            baseColor: baseColor,
-            configuration: glassConfiguration,
-            ignoresSafeAreaEdges: ignoredEdges
-        )
-    }
-}
-#endif
-#endif
 
 private struct UBChromeGlassModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
