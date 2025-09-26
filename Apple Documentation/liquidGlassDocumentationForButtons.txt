@@ -1,0 +1,128 @@
+UITabBar
+A control that displays one or more buttons in a tab bar for selecting between different subtasks, views, or modes in an app.
+iOS 2.0+
+iPadOS 2.0+
+Mac Catalyst 13.1+
+tvOS
+visionOS 1.0+
+@MainActor
+class UITabBar
+Overview
+Typically, you use tab bars in conjunction with a UITabBarController object, but you can also use them as standalone controls in your app. Tab bars always appear across the bottom edge of the screen and display the contents of one or more UITabBarItem objects. A tab bar’s appearance can be customized with a background image or tint color to suit the needs of your interface. Tapping an item selects and highlights that item, and you use the selection of the item to enable the corresponding mode for your app.
+You can configure tab bars programmatically or in Interface Builder. A UITabBarController object provides its own tab bar object and you must configure the object provided to you. When creating a tab bar programmatically, use the init(frame:) method or another view initializer method to set its initial configuration. Use the methods of this class to configure the appearance of the tab bar. For tab bars you create yourself, you also use the methods of this class to specify the items displayed by the tab bar.
+Note
+The UITabBar class and UIToolbar classes have similar appearances but different purposes. Use tab bars to convey and change your app’s mode. Use toolbars to present the user with a set of actions that are relevant to the currently presented content.
+A tab bar reports selections and user customizations to its delegate object. For tab bars you create yourself, use the delegate to respond to selections or to the addition, removal, or reordering of items in the tab bar. (A UITabBarController object acts as the delegate for the tab bar it manages.) For more information on implementing a tab bar delegate, see UITabBarDelegate.
+Configure the tab bar items
+You can configure tab bar items using Interface Builder or create and configure them programmatically in your code. Tab bars in Interface Builder come preconfigured with some initial items and you can add, remove, or reorder items as needed. How you configure items at design time depends on whether your tab bar is associated with a UITabBarController object:
+Configuring your tab bar in Interface Builder:
+When a UITabBarController object is present, add or remove view controllers to your scene and create relationship segues between the tab bar controller and each new view controller. Creating a relationship segue automatically adds a new item to the tab bar, and deleting an existing relationship segue removes the corresponding tab bar item.
+When a tab bar controller isn’t present, drag tab bar items from the library onto your tab bar.
+Configuring your tab bar programmatically:
+To configure the tab bar associated with a UITabBarController object, configure the view controllers associated with the tab bar controller. The tab bar automatically obtains its items from the tabBarItem property of each view controller associated with the tab bar controller.
+To configure tab bar items directly, use the setItems(_:animated:) method of the tab bar itself.
+A tab bar displays all of its tabs onscreen at once, using the itemPositioning property to determine how to position items in the available space. If you have more items than can fit in the available space, display only a subset of them and let the user select which tabs are displayed. The beginCustomizingItems(_:) method displays an interface for selecting which tab bar items to display.
+The contents of each item are stored in a UITabBarItem object. Each item contains a title and an image to display in the tab. You can also use tab bar items to add a badge to the corresponding tab. For more information about creating and configuring items, see UITabBarItem.
+Respond to tab selections
+For tab bars with an associated tab bar controller, the tab bar controller automatically manages selections and displays the appropriate view controller. The only time you have to manage selections yourself is when you create the tab bar without a tab bar controller. The tab bar reports selections to the tabBar(_:didSelect:) method of its delegate object, which you can use to respond to selection changes. For more information about implementing the delegate object, see UITabBarDelegate.
+Configure a tab bar with Interface Builder
+The following table lists the attributes that you configure for tab bars in Interface Builder.
+
+Background: The background image to display for the bar. If you specify a stretchable image, the image is stretched to fit the available space; otherwise, the image is tiled. When you configure a background image, the tab bar ignores the tint color information. To set this attribute programmatically, use the backgroundImage property.
+
+Shadow: The custom shadow image for the tab bar. This attribute is ignored if the tab bar does not also have a custom background image. To set this attribute programmatically, use the shadowImage property.
+
+Selection: The image to use for the selected tab. To set this attribute programmatically, use the selectionIndicatorImage property.
+
+Image Tint: The tint color to apply to the selected item. To set this attribute programmatically, use the tintColor property.
+
+Style: The basic style to apply to the bar. You can configure a tab bar with a dark or light style and the bar can be opaque or translucent. To set the style programmatically, use the barStyle and isTranslucent properties.
+
+Bar Tint: The tint color to apply to the bar. To set this attribute programmatically, use the barTintColor property.
+
+Item Positioning: The positioning scheme to apply to items. Use this attribute to configure how items are spaced across the length of the tab bar. To set this attribute programmatically, use the itemPositioning property.
+
+glassEffect(_:in:)
+Applies the Liquid Glass effect to a view.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+nonisolated
+func glassEffect(
+    _ glass: Glass = .regular,
+    in shape: some Shape = DefaultGlassEffectShape()
+) -> some View
+
+When you use this effect, the system:
+Renders a shape anchored behind a view with the Liquid Glass material.
+Applies the foreground effects of Liquid Glass over a view.
+For example, to add this effect to a Text:
+Text("Hello, World!")
+    .font(.title)
+    .padding()
+    .glassEffect()
+SwiftUI uses the regular variant by default along with a Capsule shape.
+SwiftUI anchors the Liquid Glass to a view’s bounds. For the example above, the material fills the entirety of the Text frame, which includes the padding.
+You typically use this modifier with a GlassEffectContainer to combine multiple Liquid Glass shapes into a single shape that can morph into one another.
+
+func interactive(Bool) -> Glass
+Returns a copy of the structure configured to be interactive.
+struct GlassEffectContainer
+A view that combines multiple Liquid Glass shapes into a single shape that can morph individual shapes into one another.
+struct GlassEffectTransition
+A structure that describes changes to apply when a glass effect is added or removed from the view hierarchy.
+struct GlassButtonStyle
+A button style that applies glass border artwork based on the button’s context.
+struct GlassProminentButtonStyle
+A button style that applies prominent glass border artwork based on the button’s context.
+struct DefaultGlassEffectShape
+The default shape applied by glass effects, a capsule.
+
+interactive(_:)
+Returns a copy of the structure configured to be interactive.
+func interactive(_ isEnabled: Bool = true) -> Glass
+
+GlassEffectContainer
+A view that combines multiple Liquid Glass shapes into a single shape that can morph individual shapes into one another.
+
+@MainActor @preconcurrency
+struct GlassEffectContainer<Content> where Content : View
+
+Use a container with the glassEffect(_:in:) modifier. Each view with a Liquid Glass effect contributes a shape rendered with the effect to a set of shapes. SwiftUI renders the effects together, improving rendering performance and allowing the effects to interact with and morph into one another.
+Configure how shapes interact with one another by customizing the default spacing value of the container. As shapes near one another, their paths start to blend into one another. The higher the spacing, the sooner blending begins as the shapes approach each other.
+
+GlassEffectTransition
+A structure that describes changes to apply when a glass effect is added or removed from the view hierarchy.
+
+struct GlassEffectTransition
+
+GlassButtonStyle
+A button style that applies glass border artwork based on the button’s context.
+
+struct GlassButtonStyle
+
+You can also use glass to construct this style.
+
+Initializers
+init()
+Creates a glass button style.
+Instance Methods
+func makeBody(configuration: GlassButtonStyle.Configuration) -> some View
+Creates a view that represents the body of a button.
+
+GlassProminentButtonStyle
+A button style that applies prominent glass border artwork based on the button’s context.
+
+struct GlassProminentButtonStyle
+
+You can also use glassProminent to construct this style.
+
+DefaultGlassEffectShape
+The default shape applied by glass effects, a capsule.
+
+struct DefaultGlassEffectShape
+
+You do not use this type directly. Instead, SwiftUI creates this shape on your behalf as the default parameter of the glassEffect(_:in:) modifier.
