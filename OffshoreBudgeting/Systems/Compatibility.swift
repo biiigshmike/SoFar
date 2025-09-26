@@ -209,8 +209,9 @@ extension View {
 
     /// Applies a translucent navigation bar treatment that mirrors the
     /// OS 26 surface configuration when supported by the platform.
-    /// Uses the provided base color and configuration to build a subtle
-    /// gradient wash that picks up the current theme's accent tint.
+    /// On the modern OS builds we defer entirely to the system chrome;
+    /// on pre-26 releases we fall back to a subtle gradient wash that
+    /// picks up the current theme's accent tint.
     func ub_navigationGlassBackground(
         baseColor: Color,
         configuration: AppTheme.GlassConfiguration
@@ -602,6 +603,8 @@ private struct UBNavigationGlassModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if capabilities.supportsOS26Translucency {
+            content
+        } else {
             #if os(iOS)
             if #available(iOS 16.0, *) {
                 content
@@ -623,8 +626,6 @@ private struct UBNavigationGlassModifier: ViewModifier {
             content
             #endif
             #endif
-        } else {
-            content
         }
     }
 
