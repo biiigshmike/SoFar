@@ -38,6 +38,7 @@ struct BudgetDetailsView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.platformCapabilities) private var capabilities
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -87,6 +88,10 @@ struct BudgetDetailsView: View {
 #else
         return max(0, headerTopPadding - headerTopPaddingAdjustment)
 #endif
+    }
+
+    private var filterBarBottomPadding: CGFloat {
+        capabilities.supportsOS26Translucency ? DS.Spacing.m : DS.Spacing.s
     }
 
 #if !os(macOS)
@@ -141,11 +146,12 @@ struct BudgetDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // Keep only a small top spacer to align the scrolling list header
-            // with the navigation chrome. The heavy header content has moved
-            // into the list's header so it scrolls with the rows.
-            Color.clear
-                .frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
+            // Keep only a small top spacer to align with nav chrome
+            Color.clear.frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
+
+            // Always render the header above the list so its size/color
+            // remains consistent whether items exist or not.
+            listHeader
 
             // MARK: Lists
             Group {
@@ -161,7 +167,7 @@ struct BudgetDetailsView: View {
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
                             onTotalsChanged: { Task { await vm.refreshRows() } },
-                            header: AnyView(listHeader)
+                            header: nil
                         )
                     } else {
                         placeholderView()
@@ -179,7 +185,7 @@ struct BudgetDetailsView: View {
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
                         onTotalsChanged: { Task { await vm.refreshRows() } },
-                        header: AnyView(listHeader)
+                        header: nil
                     )
                 }
             }
@@ -204,8 +210,9 @@ struct BudgetDetailsView: View {
                 await vm.load()
             }
         }
-        // Pull to refresh to reload expenses with current filters
-        .refreshable { await vm.refreshRows() }
+        // Pull-to-refresh is scoped to the Lists only (Planned/Variable).
+        // Removing it here prevents the header (including the category chips)
+        // from initiating a refresh gesture.
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .budgetDetailsRequestAddPlannedExpense)
@@ -273,6 +280,8 @@ struct BudgetDetailsView: View {
     }
 }
 
+// (removed) Inline list header — Segment Picker and FilterBar now live in the sticky header above the List
+
 // MARK: - Scrolling List Header Content
 private extension BudgetDetailsView {
     @ViewBuilder
@@ -319,26 +328,24 @@ private extension BudgetDetailsView {
                 )
                     .padding(.horizontal, DS.Spacing.l)
                     .padding(.top, summaryTopPadding)
-                if !summary.categoryBreakdown.isEmpty {
-                    CategoryTotalsRow(categories: summary.categoryBreakdown)
+                let cats = vm.selectedSegment == .planned ? summary.plannedCategoryBreakdown : summary.variableCategoryBreakdown
+                if !cats.isEmpty {
+                    CategoryTotalsRow(categories: cats)
                 }
             }
 
-            // Segment Picker
+            // Segment Picker (sticky header)
             GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
                 Picker("", selection: $vm.selectedSegment) {
-                    Text("Planned Expenses")
-                        .segmentedFill()
-                        .tag(BudgetDetailsViewModel.Segment.planned)
-                    Text("Variable Expenses")
-                        .segmentedFill()
-                        .tag(BudgetDetailsViewModel.Segment.variable)
+                    Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                    Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
                 }
                 .pickerStyle(.segmented)
                 .equalWidthSegments()
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
+                .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
             }
             .padding(.horizontal, DS.Spacing.l)
@@ -346,16 +353,16 @@ private extension BudgetDetailsView {
                 onSegmentChange?(newValue)
             }
 
-            // Filters
+            // Filters (sticky header)
             FilterBar(
                 startDate: $vm.startDate,
                 endDate: $vm.endDate,
                 sort: $vm.sort,
-                onChanged: { /* @FetchRequest-driven children auto-refresh */ },
+                onChanged: { /* Fetch-driven children auto-refresh */ },
                 onResetDate: { vm.resetDateWindowToBudget() }
             )
             .padding(.horizontal, DS.Spacing.l)
-            .padding(.bottom, DS.Spacing.m)
+            .padding(.bottom, filterBarBottomPadding)
         }
     }
 }
@@ -659,14 +666,14 @@ private struct CategoryTotalsRow: View {
                     HStack(spacing: DS.Spacing.s) {
                         Circle()
                             .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
-                            .frame(width: 10, height: 10)
+                            .frame(width: chipDotSize, height: chipDotSize)
                         Text(cat.categoryName)
-                            .font(.subheadline.weight(.semibold))
+                            .font(chipFont)
                         Text(CurrencyFormatterHelper.string(for: cat.amount))
-                            .font(.subheadline.weight(.semibold))
+                            .font(chipFont)
                     }
                     .padding(.horizontal, DS.Spacing.m)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, chipVerticalPadding)
                     .background(
                         Capsule().fill(DS.Colors.chipFill)
                     )
@@ -675,8 +682,17 @@ private struct CategoryTotalsRow: View {
             .padding(.horizontal, DS.Spacing.l)
         }
         .ub_hideScrollIndicators()
-        .frame(minHeight: 22)
+        .frame(minHeight: chipRowMinHeight)
     }
+
+    // Slightly larger, easier to read, and fills the row visually.
+    private var chipFont: Font { .footnote.weight(.semibold) }
+
+    private var chipVerticalPadding: CGFloat { 6 }
+
+    private var chipRowMinHeight: CGFloat { 22 }
+
+    private var chipDotSize: CGFloat { 8 }
 }
 
 // MARK: - FilterBar (unchanged API)
@@ -715,6 +731,7 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
+            .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
             .frame(maxWidth: .infinity)
         }
@@ -832,16 +849,12 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         view.alphaValue = 0.0
-        DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: view)
-        }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: nsView)
-        }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
@@ -860,16 +873,28 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // Expand to fill container when possible
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
+        }
         segmented.invalidateIntrinsicContentSize()
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-        var current: NSView? = view
-        while let candidate = current {
-            if let segmented = candidate as? NSSegmentedControl {
-                return segmented
-            }
-            current = candidate.superview
+        guard let root = view.superview else { return nil }
+        return searchSegmented(in: root)
+    }
+
+    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
+        for sub in node.subviews {
+            if let seg = sub as? NSSegmentedControl { return seg }
+            if let found = searchSegmented(in: sub) { return found }
         }
         return nil
     }
@@ -928,42 +953,33 @@ private struct PlannedListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                // MARK: Empty state (scrollable so instructions are accessible on small devices)
-                ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        if let header { header }
-                        UBEmptyState(
-                            iconSystemName: "list.bullet.rectangle",
-                            title: "Planned Expenses",
-                            message: "No planned expenses in this range.",
-                            primaryButtonTitle: "Add Planned Expense",
-                            onPrimaryTap: onAddTapped
-                        )
-                        .padding(.horizontal, DS.Spacing.l)
-                        // Keep a modest bottom cushion only on OS 26 to
-                        // complement the floating tab bar. Older OS versions
-                        // should sit closer to the tab chrome to avoid the
-                        // illusion of clipping.
-                        Color.clear.frame(height: capabilities.supportsOS26Translucency ? 120 : 0)
+                // MARK: Compact empty state (single Add button)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: DS.Spacing.m) {
+                        addActionButton(title: "Add Planned Expense", action: onAddTapped)
+                            .padding(.horizontal, DS.Spacing.l)
+                        Text("No planned expenses in this period.")
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, DS.Spacing.l)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
+                .refreshable { onTotalsChanged() }
                 .ub_ignoreSafeArea(edges: .bottom)
-                .ub_hideScrollIndicators()
         } else {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        Section {
-                            listRows(items: items)
-                        } header: { header }
-                    } else {
-                        listRows(items: items)
+                        headerSection(header)
                     }
+                    listRows(items: items)
                 }
+                .refreshable { onTotalsChanged() }
                 .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
-                .padding(.horizontal, DS.Spacing.l)
+                .applyListHorizontalPadding(capabilities)
         }
         }
         .sheet(item: $editingItem) { expense in
@@ -987,21 +1003,56 @@ private struct PlannedListFR: View {
         }
     }
 
+    // MARK: Local: Add action button with OS-aware styling
+    @ViewBuilder
+    private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+            Button(action: action) {
+                Label(title, systemImage: "plus")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     @ViewBuilder
     private func listRows(items: [PlannedExpense]) -> some View {
         ForEach(items, id: \.objectID) { item in
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.transactionDate ?? Date(), style: .date)
-                    .font(.headline)
-                Text(item.descriptionText ?? "Untitled")
-                    .font(.title3.weight(.semibold))
-                HStack {
-                    Text("Planned:").foregroundStyle(.secondary)
-                    Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+                // Category color indicator, matching Variable expenses
+                Circle()
+                    .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                    .frame(width: 8, height: 8)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.descriptionText ?? "Untitled")
+                        .font(.title3.weight(.semibold))
+                    if let name = item.expenseCategory?.name {
+                        Text(name)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                HStack {
-                    Text("Actual:").foregroundStyle(.secondary)
-                    Text(CurrencyFormatterHelper.string(for: item.actualAmount))
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("Planned:")
+                            .font(.footnote.weight(.bold))
+                        Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
+                    }
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("Actual:")
+                            .font(.footnote.weight(.bold))
+                        Text(CurrencyFormatterHelper.string(for: item.actualAmount))
+                    }
+                    Text(Self.mediumDate(item.transactionDate ?? .distantPast))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.vertical, 6)
@@ -1019,7 +1070,7 @@ private struct PlannedListFR: View {
                     }
                 }
             )
-            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
         .onDelete { indexSet in
             let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
@@ -1030,6 +1081,21 @@ private struct PlannedListFR: View {
                 itemsToDelete.forEach(deletePlanned(_:))
             }
         }
+    }
+
+    // Header row used inside the List. Hide separator and remove extra bottom inset.
+    @ViewBuilder
+    private func headerListRow(_ header: AnyView) -> some View {
+        header
+            .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private func headerSection(_ header: AnyView) -> some View {
+        Section { headerListRow(header) }
+            .ifAvailableContentMarginsZero()
     }
 
     // MARK: Sorting applied after fetch to honor user choice
@@ -1057,6 +1123,12 @@ private struct PlannedListFR: View {
         let e = cal.date(byAdding: DateComponents(day: 1, second: -1),
                          to: cal.startOfDay(for: range.upperBound)) ?? range.upperBound
         return (s, e)
+    }
+
+    private static func mediumDate(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f.string(from: d)
     }
 
     // MARK: Delete helper
@@ -1146,36 +1218,33 @@ private struct VariableListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                // MARK: Empty state (scrollable so instructions are accessible on small devices)
-                ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        if let header { header }
-                        UBEmptyState(
-                            iconSystemName: "creditcard",
-                            title: "Variable Expenses",
-                            message: "No variable expenses in this range.",
-                            primaryButtonTitle: "Add Variable Expense",
-                            onPrimaryTap: onAddTapped
-                        )
-                        .padding(.horizontal, DS.Spacing.l)
-                        Color.clear.frame(height: capabilities.supportsOS26Translucency ? 120 : 0)
+                // MARK: Compact empty state (single Add button)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: DS.Spacing.m) {
+                        addActionButton(title: "Add Variable Expense", action: onAddTapped)
+                            .padding(.horizontal, DS.Spacing.l)
+                        Text("No variable expenses in this period.")
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, DS.Spacing.l)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
+                .refreshable { onTotalsChanged() }
                 .ub_ignoreSafeArea(edges: .bottom)
-                .ub_hideScrollIndicators()
             } else {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        Section { listRows(items: items) } header: { header }
-                    } else {
-                        listRows(items: items)
+                        headerSection(header)
                     }
+                    listRows(items: items)
                 }
+                .refreshable { onTotalsChanged() }
                 .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
-                .padding(.horizontal, DS.Spacing.l)
+                .applyListHorizontalPadding(capabilities)
             }
         }
         .sheet(item: $editingItem) { expense in
@@ -1198,6 +1267,21 @@ private struct VariableListFR: View {
         } message: { _ in
             Text("This will remove the expense.")
         }
+    }
+
+    // MARK: Local: Add action button with OS-aware styling
+    @ViewBuilder
+    private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+            Button(action: action) {
+                Label(title, systemImage: "plus")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -1241,7 +1325,7 @@ private struct VariableListFR: View {
                     }
                 }
             )
-            .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
         .onDelete { indexSet in
             let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
@@ -1252,6 +1336,24 @@ private struct VariableListFR: View {
                 itemsToDelete.forEach(deleteUnplanned(_:))
             }
         }
+    }
+
+    // Top header rendered as a normal list row (not a Section header) to keep
+    // primary text colors and full-width layout.
+    @ViewBuilder
+    private func headerListRow(_ header: AnyView) -> some View {
+        header
+            .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private func headerSection(_ header: AnyView) -> some View {
+        Section {
+            headerListRow(header)
+        }
+        .ifAvailableContentMarginsZero()
     }
 
     // MARK: Sorting
@@ -1321,14 +1423,31 @@ private extension View {
     func styledList() -> some View {
         if #available(iOS 16.0, macOS 13.0, *) {
             self
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
+                .ub_listStyleLiquidAware()
 #if os(iOS)
                 .scrollIndicators(.hidden)
                 .background(UBScrollViewInsetAdjustmentDisabler())
 #endif
         } else {
-            self.listStyle(.plain)
+            self.ub_listStyleLiquidAware()
+        }
+    }
+
+    @ViewBuilder
+    func applyListHorizontalPadding(_ capabilities: PlatformCapabilities) -> some View {
+        if capabilities.supportsOS26Translucency {
+            self
+        } else {
+            self.padding(.horizontal, DS.Spacing.l)
+        }
+    }
+
+    @ViewBuilder
+    func ifAvailableContentMarginsZero() -> some View {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            self.contentMargins(.vertical, 0)
+        } else {
+            self
         }
     }
 }

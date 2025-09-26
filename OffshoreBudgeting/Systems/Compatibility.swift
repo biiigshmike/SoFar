@@ -320,6 +320,135 @@ extension View {
             return self
         }
     }
+
+    // MARK: ub_listStyleLiquidAware()
+    /// Applies OS-aware list styling:
+    /// - On OS 26: use `.automatic` so the system’s Liquid Glass list treatment shows through.
+    /// - On earlier OSes: prefer `.insetGrouped` and hide the scroll background (iOS 16+/macOS 13+)
+    ///   so our app’s surface background remains consistent.
+    func ub_listStyleLiquidAware() -> some View {
+        modifier(UBListStyleLiquidAwareModifier())
+    }
+
+    // MARK: ub_preOS26ListRowBackground(_:) 
+    /// Applies a list row background only on pre‑OS26 systems. On OS26 this is a no-op so
+    /// the system’s default row background (Liquid Glass) can be used.
+    func ub_preOS26ListRowBackground(_ color: Color) -> some View {
+        modifier(UBPreOS26ListRowBackgroundModifier(color: color))
+    }
+}
+
+// MARK: - Internal Modifiers (List Styling)
+private struct UBListStyleLiquidAwareModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    func body(content: Content) -> some View {
+        if capabilities.supportsOS26Translucency {
+            if #available(iOS 16.0, macOS 13.0, *) {
+                content
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .ub_applyListRowSeparators()
+                    .ub_applyZeroRowSpacingIfAvailable()
+                    .ub_applyCompactSectionSpacingIfAvailable()
+            } else {
+                content
+                    .listStyle(.plain)
+                    .ub_applyListRowSeparators()
+            }
+        } else {
+            if #available(iOS 16.0, macOS 13.0, *) {
+#if os(macOS)
+                content
+                    .listStyle(.inset)
+                    .scrollContentBackground(.hidden)
+                    .ub_applyListRowSeparators()
+                    .ub_applyCompactSectionSpacingIfAvailable()
+#else
+                content
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .ub_applyListRowSeparators()
+                    .ub_applyCompactSectionSpacingIfAvailable()
+#endif
+            } else {
+#if os(macOS)
+                content
+                    .listStyle(.inset)
+                    .ub_applyListRowSeparators()
+#else
+                content
+                    .listStyle(.insetGrouped)
+                    .ub_applyListRowSeparators()
+#endif
+            }
+        }
+    }
+}
+
+// MARK: - List Separators Helper
+private extension View {
+    @ViewBuilder
+    func ub_applyListRowSeparators() -> some View {
+        if #available(iOS 15.0, macOS 12.0, *) {
+            self
+                .listRowSeparator(.visible)
+                .listRowSeparatorTint(UBListStyleSeparators.separatorColor)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func ub_applyCompactSectionSpacingIfAvailable() -> some View {
+        #if os(iOS)
+        if #available(iOS 17.0, *) {
+            self.listSectionSpacing(.compact)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func ub_applyZeroRowSpacingIfAvailable() -> some View {
+        #if os(iOS)
+        if #available(iOS 16.0, *) {
+            self.listRowSpacing(0)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+}
+
+private enum UBListStyleSeparators {
+    static var separatorColor: Color {
+        #if os(iOS) || os(tvOS)
+        return Color(uiColor: .separator)
+        #elseif os(macOS)
+        return Color(nsColor: .separatorColor)
+        #else
+        return .secondary
+        #endif
+    }
+}
+
+private struct UBPreOS26ListRowBackgroundModifier: ViewModifier {
+    let color: Color
+    @Environment(\.platformCapabilities) private var capabilities
+
+    func body(content: Content) -> some View {
+        if capabilities.supportsOS26Translucency {
+            content
+        } else {
+            content.listRowBackground(color)
+        }
+    }
 }
 
 // MARK: - Root Tab Navigation Title Styling
@@ -511,12 +640,35 @@ private struct UBNavigationGlassModifier: ViewModifier {
 }
 
 private struct UBChromeGlassModifier: ViewModifier {
-    // Do not paint custom chrome on OS 26 (system-managed) or classic OS
-    // (flat). This modifier becomes a no-op to honor platform aesthetics.
+    @Environment(\.platformCapabilities) private var capabilities
+
     let baseColor: Color
     let configuration: AppTheme.GlassConfiguration
 
-    func body(content: Content) -> some View { content }
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        // On macOS 26, draw a subtle chrome glass layer behind the TabView
+        // control region so the top tab strip carries the Liquid Glass look.
+        // On other platforms or classic macOS, leave the content unchanged.
+        if capabilities.supportsOS26Translucency {
+            #if os(macOS)
+            if #available(macOS 13.0, *) {
+                content.background(
+                    UBMacChromeGlassBackground(
+                        baseColor: baseColor,
+                        configuration: configuration
+                    )
+                )
+            } else {
+                content
+            }
+            #else
+            content
+            #endif
+        } else {
+            content
+        }
+    }
 }
 
 private struct UBChromeBackgroundModifier: ViewModifier {

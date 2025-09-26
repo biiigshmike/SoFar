@@ -138,8 +138,6 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4CDCC34A2E849409002582E5 /* Screenshots */,
-				4CDCC3932E858A24002582E5 /* Apple Documentation */,
 				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 			);
 			name = OffshoreBudgeting;

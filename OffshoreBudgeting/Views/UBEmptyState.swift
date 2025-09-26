@@ -135,12 +135,9 @@ struct UBEmptyState: View {
     private func legacyPrimaryButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             primaryButtonLabel(title: title)
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.vertical, DS.Spacing.m)
-                .background(Color.primary.opacity(0.08))
-                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plain) // flat/plain (no rounded background on legacy)
+        .tint(primaryButtonTint)
     }
 
     @ViewBuilder
@@ -159,13 +156,6 @@ struct UBEmptyState: View {
     ) -> some View {
         if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 18.0, *) {
             glassStyledPrimaryButton(title: title, glassTint: glassTint, action: action)
-        } else if #available(iOS 15.0, *) {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(TranslucentButtonStyle(tint: fallbackTint))
-            .frame(maxWidth: 320)
         } else {
             legacyPrimaryButton(title: title, action: action)
         }
@@ -178,16 +168,22 @@ struct UBEmptyState: View {
         glassTint: Color,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            primaryButtonLabel(title: title)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .frame(maxWidth: .infinity)
+        let capsule = Capsule(style: .continuous)
+        GlassEffectContainer {
+            Button(action: action) {
+                Label(title, systemImage: "plus")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary) // dark, readable text to match header controls
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.vertical, DS.Spacing.m)
+                    .contentShape(capsule)
+            }
+            .tint(glassTint)
+            .buttonStyle(.plain) // we provide the glass surface below
+            .frame(maxWidth: 320)
+            .glassEffect(in: capsule)
         }
-        .tint(glassTint)
-        .buttonStyle(.glass)
-        .buttonBorderShape(.capsule)
-        .controlSize(.large)
-        .frame(maxWidth: 320)
     }
 #else
     @ViewBuilder
@@ -199,13 +195,6 @@ struct UBEmptyState: View {
     ) -> some View {
         if capabilities.supportsOS26Translucency, #available(macOS 26.0, tvOS 26.0, *) {
             glassStyledPrimaryButton(title: title, glassTint: glassTint, action: action)
-        } else if #available(macOS 13.0, tvOS 15.0, *) {
-            Button(action: action) {
-                primaryButtonLabel(title: title)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(TranslucentButtonStyle(tint: fallbackTint))
-            .frame(maxWidth: 320)
         } else {
             legacyPrimaryButton(title: title, action: action)
         }
@@ -218,16 +207,22 @@ struct UBEmptyState: View {
         glassTint: Color,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            primaryButtonLabel(title: title)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .frame(maxWidth: .infinity)
+        let capsule = Capsule(style: .continuous)
+        GlassEffectContainer {
+            Button(action: action) {
+                Label(title, systemImage: "plus")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.vertical, DS.Spacing.m)
+                    .contentShape(capsule)
+            }
+            .tint(glassTint)
+            .buttonStyle(.plain)
+            .frame(maxWidth: 320)
+            .glassEffect(in: capsule)
         }
-        .tint(glassTint)
-        .buttonStyle(.glass)
-        .buttonBorderShape(.capsule)
-        .controlSize(.large)
-        .frame(maxWidth: 320)
     }
 #endif
 

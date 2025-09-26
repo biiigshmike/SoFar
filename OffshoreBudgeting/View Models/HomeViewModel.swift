@@ -56,7 +56,11 @@ struct BudgetSummary: Identifiable, Equatable, Sendable {
         let hexColor: String?
         let amount: Double
     }
+    // Combined (legacy) – kept for backwards compatibility
     let categoryBreakdown: [CategorySpending]
+    // New: per‑segment breakdowns so UI can respect the selected segment
+    let plannedCategoryBreakdown: [CategorySpending]
+    let variableCategoryBreakdown: [CategorySpending]
     let variableExpensesTotal: Double
 
     // MARK: Planned Expenses (line items attached to budget)
@@ -345,15 +349,16 @@ final class HomeViewModel: ObservableObject {
         let potentialIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
         let actualIncomeTotal    = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
 
-        // MARK: Expense Categories (Planned + Variable)
-        var categoryMap: [String: (hex: String?, total: Double)] = [:]
+        // MARK: Expense Categories – separate maps
+        var plannedCatMap: [String: (hex: String?, total: Double)] = [:]
+        var variableCatMap: [String: (hex: String?, total: Double)] = [:]
 
         for e in plannedExpenses {
             let amt = e.plannedAmount
             let name = e.expenseCategory?.name ?? "Uncategorized"
             let hex = e.expenseCategory?.color
-            let existing = categoryMap[name] ?? (hex: hex, total: 0)
-            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+            let existing = plannedCatMap[name] ?? (hex: hex, total: 0)
+            plannedCatMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
         }
 
         let cards = (budget.cards as? Set<Card>) ?? []
@@ -371,14 +376,28 @@ final class HomeViewModel: ObservableObject {
 
                 let catName = e.expenseCategory?.name ?? "Uncategorized"
                 let hex = e.expenseCategory?.color
-                let existing = categoryMap[catName] ?? (hex: hex, total: 0)
-                categoryMap[catName] = (hex: hex ?? existing.hex, total: existing.total + amt)
+                let existing = variableCatMap[catName] ?? (hex: hex, total: 0)
+                variableCatMap[catName] = (hex: hex ?? existing.hex, total: existing.total + amt)
             }
         }
 
-        let categoryBreakdown: [BudgetSummary.CategorySpending] = categoryMap
+        let plannedBreakdown: [BudgetSummary.CategorySpending] = plannedCatMap
             .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
             .sorted(by: { $0.amount > $1.amount })
+
+        let variableBreakdown: [BudgetSummary.CategorySpending] = variableCatMap
+            .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
+            .sorted(by: { $0.amount > $1.amount })
+
+        // Combined (legacy)
+        let categoryBreakdown: [BudgetSummary.CategorySpending] = (plannedBreakdown + variableBreakdown)
+            .reduce(into: [String: BudgetSummary.CategorySpending]()) { dict, item in
+                let existing = dict[item.categoryName]
+                let sum = (existing?.amount ?? 0) + item.amount
+                dict[item.categoryName] = BudgetSummary.CategorySpending(categoryName: item.categoryName, hexColor: existing?.hexColor ?? item.hexColor, amount: sum)
+            }
+            .values
+            .sorted { $0.amount > $1.amount }
 
         return BudgetSummary(
             id: budget.objectID,
@@ -386,6 +405,8 @@ final class HomeViewModel: ObservableObject {
             periodStart: periodStart,
             periodEnd: periodEnd,
             categoryBreakdown: categoryBreakdown,
+            plannedCategoryBreakdown: plannedBreakdown,
+            variableCategoryBreakdown: variableBreakdown,
             variableExpensesTotal: variableTotal,
             plannedExpensesPlannedTotal: plannedExpensesPlannedTotal,
             plannedExpensesActualTotal: plannedExpensesActualTotal,

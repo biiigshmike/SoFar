@@ -16,7 +16,7 @@ struct RootTabView: View {
     @Environment(\.platformCapabilities) private var platformCapabilities
     @Environment(\.colorScheme) private var colorScheme
 
-    private enum Tab: Hashable {
+    enum Tab: Hashable {
         case home
         case income
         case cards
@@ -72,9 +72,11 @@ struct RootTabView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(Tab.settings)
         }
-        // Give the tab chrome its own glass background so macOS matches iOS.
-        .ub_chromeBackground(
-            theme: themeManager.selectedTheme,
+        // Give the tab chrome its own glass background on macOS 26
+        // while remaining a no-op elsewhere. Classic macOS uses a
+        // flat background (handled inside the modifier implementation).
+        .ub_chromeGlassBackground(
+            baseColor: themeManager.selectedTheme.glassBaseColor,
             configuration: themeManager.glassConfiguration
         )
         .onAppear(perform: updateTabBarAppearance)
@@ -525,3 +527,5 @@ private struct TabBarAppearanceSignature: Equatable {
     }
 }
 #endif
+
+// (macOS-only custom top tabs were removed per feedback; keeping native TabView chrome)

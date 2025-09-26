@@ -88,15 +88,18 @@ final class BudgetDetailsViewModel: ObservableObject {
         let plannedPlanned = plannedExpenses.reduce(0) { $0 + $1.plannedAmount }
         let plannedActual  = plannedExpenses.reduce(0) { $0 + $1.actualAmount }
 
-        var categoryMap: [String: (hex: String?, total: Double)] = [:]
         var variableTotal: Double = 0
+
+        // Build per‑segment category breakdowns
+        var plannedCatMap: [String: (hex: String?, total: Double)] = [:]
+        var variableCatMap: [String: (hex: String?, total: Double)] = [:]
 
         for e in plannedExpenses {
             let amt = e.actualAmount
             let name = e.expenseCategory?.name ?? "Uncategorized"
             let hex = e.expenseCategory?.color
-            let existing = categoryMap[name] ?? (hex: hex, total: 0)
-            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+            let existing = plannedCatMap[name] ?? (hex: hex, total: 0)
+            plannedCatMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
         }
 
         for e in unplannedExpenses {
@@ -104,11 +107,26 @@ final class BudgetDetailsViewModel: ObservableObject {
             variableTotal += amt
             let name = e.expenseCategory?.name ?? "Uncategorized"
             let hex = e.expenseCategory?.color
-            let existing = categoryMap[name] ?? (hex: hex, total: 0)
-            categoryMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
+            let existing = variableCatMap[name] ?? (hex: hex, total: 0)
+            variableCatMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
         }
-        let categoryBreakdown = categoryMap
+
+        let plannedBreakdown = plannedCatMap
             .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
+            .sorted { $0.amount > $1.amount }
+
+        let variableBreakdown = variableCatMap
+            .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
+            .sorted { $0.amount > $1.amount }
+
+        // Combined (legacy)
+        let categoryBreakdown = (plannedBreakdown + variableBreakdown)
+            .reduce(into: [String: BudgetSummary.CategorySpending]()) { dict, item in
+                let existing = dict[item.categoryName]
+                let sum = (existing?.amount ?? 0) + item.amount
+                dict[item.categoryName] = BudgetSummary.CategorySpending(categoryName: item.categoryName, hexColor: existing?.hexColor ?? item.hexColor, amount: sum)
+            }
+            .values
             .sorted { $0.amount > $1.amount }
 
         return BudgetSummary(
@@ -117,6 +135,8 @@ final class BudgetDetailsViewModel: ObservableObject {
             periodStart: startDate,
             periodEnd: endDate,
             categoryBreakdown: categoryBreakdown,
+            plannedCategoryBreakdown: plannedBreakdown,
+            variableCategoryBreakdown: variableBreakdown,
             variableExpensesTotal: variableTotal,
             plannedExpensesPlannedTotal: plannedPlanned,
             plannedExpensesActualTotal: plannedActual,

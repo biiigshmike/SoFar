@@ -27,7 +27,10 @@ struct PresetsView: View {
 
     // MARK: Body
     var body: some View {
-        RootTabPageScaffold(spacing: DS.Spacing.s) {
+        // Avoid nesting a List inside an outer ScrollView to prevent
+        // jank/freezes on iOS 26. Let the List own scrolling by disabling
+        // the scaffold's automatic wrapping.
+        RootTabPageScaffold(spacing: DS.Spacing.s, wrapsContentInScrollView: false) {
             RootViewTopPlanes(title: "Presets") {
                 addPresetButton
             }
@@ -59,7 +62,8 @@ struct PresetsView: View {
                     onPrimaryTap: { isPresentingAddSheet = true }
                 )
                 .padding(.horizontal, DS.Spacing.l)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .center)
             } else {
                 // MARK: Non-empty List
                 List {
@@ -71,7 +75,7 @@ struct PresetsView: View {
                             }
                         )
                         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                        .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .unifiedSwipeActions(
                             onEdit: { editingTemplate = item.template },
                             onDelete: {
@@ -92,8 +96,7 @@ struct PresetsView: View {
                         }
                     }
                 }
-                .listStyle(.plain)
-                .applyIfAvailableScrollContentBackgroundHidden()
+                .ub_listStyleLiquidAware()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -105,9 +108,11 @@ struct PresetsView: View {
         )
         // MARK: Data lifecycle
         .onAppear { viewModel.loadTemplates(using: viewContext) }
+        // Refresh when the data store saves. Observing this coalesced event
+        // avoids UI thrash that can occur when listening to
+        // NSManagedObjectContextObjectsDidChange directly on newer OSes.
         .onReceive(
-            NotificationCenter.default
-                .publisher(for: .NSManagedObjectContextObjectsDidChange)
+            NotificationCenter.default.publisher(for: .dataStoreDidChange)
                 .receive(on: RunLoop.main)
         ) { _ in
             viewModel.loadTemplates(using: viewContext)
@@ -253,42 +258,68 @@ final class PresetsViewModel: ObservableObject {
     // MARK: API
     /// Fetches global templates, deriving assignment counts and next dates.
     func loadTemplates(using context: NSManagedObjectContext) {
-        let templates = PlannedExpenseService.shared.fetchGlobalTemplates(in: context)
-
-        let referenceDate = Calendar.current.startOfDay(for: Date())
-
-        var built: [PresetListItem] = []
-        for t in templates {
-            let children = PlannedExpenseService.shared.fetchChildren(of: t, in: context)
-
-            let planned = t.plannedAmount
-            let actual = t.actualAmount
-            let assignedCount = children.count
-
-            // Next upcoming date among the template and children; safely unwrap optionals
-            var upcomingDates: [Date] = children
-                .compactMap { $0.transactionDate }
-                .filter { $0 >= referenceDate }
-
-            if let templateDate = t.transactionDate, templateDate >= referenceDate {
-                upcomingDates.append(templateDate)
+        // Perform fetches off the main thread to avoid UI stalls when the
+        // dataset grows. Results are published back on the main actor.
+        let bg = CoreDataService.shared.newBackgroundContext()
+        Task {
+            // Background outline to avoid crossing thread boundaries with
+            // managed objects.
+            struct Outline {
+                let id: NSManagedObjectID
+                let name: String
+                let planned: Double
+                let actual: Double
+                let assignedCount: Int
+                let nextDate: Date?
             }
 
-            let nextDate = upcomingDates.min()
+            let outlines = await bg.perform { () -> [Outline] in
+                let templates = PlannedExpenseService.shared.fetchGlobalTemplates(in: bg)
 
-            built.append(
-                PresetListItem(
-                    template: t,
-                    plannedAmount: planned,
-                    actualAmount: actual,
-                    assignedCount: assignedCount,
-                    nextDate: nextDate
-                )
-            )
+            let referenceDate = Calendar.current.startOfDay(for: Date())
+
+                var rows: [Outline] = []
+                for t in templates {
+                    let children = PlannedExpenseService.shared.fetchChildren(of: t, in: bg)
+
+                    let planned = t.plannedAmount
+                    let actual = t.actualAmount
+                    let assignedCount = children.count
+
+                    var upcomingDates: [Date] = children
+                        .compactMap { $0.transactionDate }
+                        .filter { $0 >= referenceDate }
+                    if let templateDate = t.transactionDate, templateDate >= referenceDate {
+                        upcomingDates.append(templateDate)
+                    }
+                    let nextDate = upcomingDates.min()
+
+                    let name = t.descriptionText ?? "Untitled"
+                    rows.append(Outline(id: t.objectID, name: name, planned: planned, actual: actual, assignedCount: assignedCount, nextDate: nextDate))
+                }
+                return rows
+            }
+
+            // Map outlines to PresetListItem on the main actor using the
+            // viewContext to re-resolve objects for swipe actions and editing.
+            await MainActor.run {
+                var built: [PresetListItem] = []
+                for o in outlines {
+                    if let template = try? context.existingObject(with: o.id) as? PlannedExpense {
+                        built.append(
+                            PresetListItem(
+                                template: template,
+                                plannedAmount: o.planned,
+                                actualAmount: o.actual,
+                                assignedCount: o.assignedCount,
+                                nextDate: o.nextDate
+                            )
+                        )
+                    }
+                }
+                self.items = built.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            }
         }
-
-        // Stable sort by name
-        items = built.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }
 

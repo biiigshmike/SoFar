@@ -39,6 +39,12 @@ struct HomeView: View {
     @State private var editingBudget: BudgetSummary?
     @State private var isShowingAddExpenseMenu: Bool = false
     @State private var addMenuTargetBudgetID: NSManagedObjectID?
+    // Direct add flows when no budget is active
+    @State private var isPresentingAddPlannedFromHome: Bool = false
+    @State private var isPresentingAddVariableFromHome: Bool = false
+    // Manage sheets
+    @State private var isPresentingManageCards: Bool = false
+    @State private var isPresentingManagePresets: Bool = false
 
     // MARK: Header Layout
     @State private var matchedHeaderControlWidth: CGFloat?
@@ -61,8 +67,7 @@ struct HomeView: View {
     var body: some View {
         // Sticky header; conditionally wrap content in a ScrollView.
         // - When a budget exists, do NOT wrap (BudgetDetailsView has Lists).
-        // - When empty/no budget, wrap and force a ScrollView so pull-to-refresh
-        //   and drag gestures are recognized even if content is shorter than the viewport.
+        // - When empty/no budget, allow the content to manage its own scrolling.
         // Manage scroll per-state; keep header sticky without an outer ScrollView.
         RootTabPageScaffold(
             scrollBehavior: .auto,
@@ -80,7 +85,6 @@ struct HomeView: View {
                 )
         }
         .ub_tabNavigationTitle("Home")
-        .refreshable { await vm.refresh() }
         .task {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
@@ -96,6 +100,36 @@ struct HomeView: View {
         // MARK: ADD SHEET — present new budget UI for the selected period
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
         .sheet(item: $editingBudget, content: makeEditBudgetView)
+        .sheet(isPresented: $isPresentingAddPlannedFromHome) {
+            AddPlannedExpenseView(
+                preselectedBudgetID: nil,
+                defaultSaveAsGlobalPreset: false,
+                showAssignBudgetToggle: true,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
+        .sheet(isPresented: $isPresentingAddVariableFromHome) {
+            AddUnplannedExpenseView(
+                allowedCardIDs: nil,
+                initialDate: vm.selectedDate,
+                onSaved: { Task { await vm.refresh() } }
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
+        .sheet(isPresented: $isPresentingManageCards) {
+            if let budgetID = primarySummary?.id,
+               let budget = try? CoreDataService.shared.viewContext.existingObject(with: budgetID) as? Budget {
+                ManageBudgetCardsSheet(budget: budget) { Task { await vm.refresh() } }
+                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            } else {
+                Text("No budget selected")
+            }
+        }
+        .sheet(isPresented: $isPresentingManagePresets) {
+            PresetsView()
+                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
         .alert(item: $vm.alert, content: alert(for:))
         .confirmationDialog(
             "Add",
@@ -184,10 +218,10 @@ struct HomeView: View {
                         optionsMenuButton(summary: summary)
                     }
                 case .none:
-                    // Three standalone glass buttons (calendar, +, …)
+                    // Show calendar, Add Expense (+), and budget options (…)
                     HStack(spacing: DS.Spacing.s) {
                         calendarMenuButton()
-                        addBudgetIconButton()
+                        addExpenseNoBudgetIconButton()
                         optionsMenuButton()
                     }
                 }
@@ -442,6 +476,23 @@ struct HomeView: View {
         }
     }
 
+    // Add Expense button when no budget is active — presents direct add flows.
+    private func addExpenseNoBudgetIconButton() -> some View {
+        RootHeaderGlassControl {
+            Menu {
+                Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
+                Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
+            } label: {
+                RootHeaderControlIcon(systemImage: "plus")
+                    .accessibilityLabel("Add Expense")
+            }
+            .modifier(HideMenuIndicatorIfPossible())
+#if os(macOS)
+            .menuStyle(.borderlessButton)
+#endif
+        }
+    }
+
     private func addExpenseIconButton(for budgetID: NSManagedObjectID) -> some View {
         RootHeaderGlassControl {
             Group {
@@ -472,6 +523,8 @@ struct HomeView: View {
     private func optionsMenuButton(summary: BudgetSummary) -> some View {
         RootHeaderGlassControl {
             Menu {
+                Button { isPresentingManageCards = true } label: { Label("Manage Cards", systemImage: "creditcard") }
+                Button { isPresentingManagePresets = true } label: { Label("Manage Presets", systemImage: "list.bullet.rectangle") }
                 Button {
                     editingBudget = summary
                 } label: {
@@ -637,6 +690,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
                 }
 
@@ -654,12 +708,27 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
                 }
 
-                // Segment-specific guidance
+                // Always-offer Add button when no budget exists so users can
+                // quickly create an expense for this period.
+                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                    Button(action: addExpenseCTAAction) {
+                        Label(addExpenseCTATitle, systemImage: "plus")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
+                }
+
+                // Segment-specific guidance — centered consistently across platforms
                 Text(emptyShellMessage)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, DS.Spacing.l)
 
                 Spacer(minLength: 0)
@@ -748,6 +817,19 @@ struct HomeView: View {
         }
     }
 
+    // MARK: Empty-period CTA helpers
+    private var addExpenseCTATitle: String {
+        selectedSegment == .planned ? "Add Planned Expense" : "Add Variable Expense"
+    }
+
+    private func addExpenseCTAAction() {
+        if selectedSegment == .planned {
+            isPresentingAddPlannedFromHome = true
+        } else {
+            isPresentingAddVariableFromHome = true
+        }
+    }
+
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
     }
@@ -774,24 +856,14 @@ struct HomeView: View {
 
 // MARK: - Home Header Primary Summary
 private struct HomeHeaderPrimarySummaryView: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
     let summary: BudgetSummary
     let displayTitle: String
     let displayDetail: String
 
     var body: some View {
-        Group {
-            if sizeClass == .compact {
-                VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                    budgetTitleView
-                    incomeSummaryView
-                }
-            } else {
-                HStack(alignment: .top, spacing: DS.Spacing.l) {
-                    budgetTitleView
-                    incomeSummaryView
-                }
-            }
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            budgetTitleView
+            incomeSummaryView
         }
     }
 
@@ -1119,14 +1191,30 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // Pin to fill its container if possible so it expands to max width.
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
+        }
         segmented.invalidateIntrinsicContentSize()
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-        var current: NSView? = view
-        while let candidate = current {
-            if let segmented = candidate as? NSSegmentedControl { return segmented }
-            current = candidate.superview
+        // Prefer searching siblings/descendants of the immediate superview, because
+        // this representable is attached as a background.
+        guard let root = view.superview else { return nil }
+        return searchSegmented(in: root)
+    }
+
+    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
+        for sub in node.subviews {
+            if let seg = sub as? NSSegmentedControl { return seg }
+            if let found = searchSegmented(in: sub) { return found }
         }
         return nil
     }

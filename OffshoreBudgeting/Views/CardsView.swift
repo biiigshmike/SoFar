@@ -133,7 +133,7 @@ struct CardsView: View {
             } else if case .loading = viewModel.state {
                 loadingView(using: proxy)
             } else if case .empty = viewModel.state {
-                emptyView
+                emptyView(using: proxy)
             } else if case .loaded(let cards) = viewModel.state {
                 gridView(cards: cards, using: proxy)
             }
@@ -170,7 +170,7 @@ struct CardsView: View {
     }
 
     // MARK: Empty View
-    private var emptyView: some View {
+    private func emptyView(using proxy: RootTabPageProxy) -> some View {
         UBEmptyState(
             iconSystemName: "creditcard",
             title: "Cards",
@@ -179,6 +179,8 @@ struct CardsView: View {
             onPrimaryTap: { isPresentingAddCard = true }
         )
         .padding(.horizontal, DS.Spacing.l)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .center)
     }
 
     // MARK: Grid View
