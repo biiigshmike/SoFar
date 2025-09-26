@@ -151,8 +151,8 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
         } else {
             if #available(macOS 13.0, *) {
                 content
-                    .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(theme.background, for: .navigationBar)
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(theme.background, for: .windowToolbar)
             } else {
                 content
             }
