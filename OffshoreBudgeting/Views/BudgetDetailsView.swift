@@ -777,7 +777,7 @@ private struct GlassCapsuleContainer<Content: View>: View {
         if #available(iOS 18.0, macOS 15.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
-                    .glassEffect(.regular.interactive(), in: capsule)
+                    .glassEffect(in: capsule)
             }
         } else {
             // Classic OS: render inline with no capsule background
