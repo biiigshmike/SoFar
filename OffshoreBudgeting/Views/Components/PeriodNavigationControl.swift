@@ -62,15 +62,8 @@ struct PeriodNavigationControl: View {
 
     @ViewBuilder
     private var navigationContent: some View {
-        let buttonDimension = RootHeaderActionMetrics.dimension
-
         HStack(spacing: DS.Spacing.s) {
-            Button(action: onPrevious) {
-                Image(systemName: "chevron.left")
-            }
-            .frame(width: buttonDimension, height: buttonDimension)
-            .contentShape(Rectangle())
-            .buttonStyle(.plain)
+            navigationButton(systemName: "chevron.left", action: onPrevious)
 
             Text(title)
                 .font(titleTypography.font)
@@ -81,12 +74,7 @@ struct PeriodNavigationControl: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .layoutPriority(1)
 
-            Button(action: onNext) {
-                Image(systemName: "chevron.right")
-            }
-            .frame(width: buttonDimension, height: buttonDimension)
-            .contentShape(Rectangle())
-            .buttonStyle(.plain)
+            navigationButton(systemName: "chevron.right", action: onNext)
         }
     }
 }
@@ -94,6 +82,20 @@ struct PeriodNavigationControl: View {
 // MARK: - Typography Helpers
 
 private extension PeriodNavigationControl {
+    private var navigationButtonDimension: CGFloat {
+        RootHeaderActionMetrics.dimension
+    }
+
+    @ViewBuilder
+    private func navigationButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+        }
+        .frame(width: navigationButtonDimension, height: navigationButtonDimension)
+        .contentShape(Rectangle())
+        .periodNavigationButtonStyle(capabilities: capabilities)
+    }
+
     struct TitleTypography {
         let font: Font
         let minimumScaleFactor: CGFloat
@@ -106,6 +108,27 @@ private extension PeriodNavigationControl {
         }
 #endif
         return TitleTypography(font: .title2.bold(), minimumScaleFactor: 0.7)
+    }
+}
+
+// MARK: - Button Styling Helpers
+
+private extension View {
+    @ViewBuilder
+    func periodNavigationButtonStyle(capabilities: PlatformCapabilities) -> some View {
+#if swift(>=6.0)
+        if capabilities.supportsOS26Translucency {
+            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, watchOS 11.0, macCatalyst 18.0, *) {
+                buttonStyle(.glass)
+            } else {
+                buttonStyle(.plain)
+            }
+        } else {
+            buttonStyle(.plain)
+        }
+#else
+        buttonStyle(.plain)
+#endif
     }
 }
 
