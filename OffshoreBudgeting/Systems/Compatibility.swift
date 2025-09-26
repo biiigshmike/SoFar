@@ -457,9 +457,15 @@ private struct UBRootTabNavigationTitleModifier: ViewModifier {
     let title: String
 
     func body(content: Content) -> some View {
-        #if os(iOS) || os(tvOS)
+        #if os(iOS)
+        if #available(iOS 16.0, *) {
+            return content.toolbar(.hidden, for: .navigationBar)
+        } else {
+            return content.navigationBarHidden(true)
+        }
+        #elseif os(tvOS)
         let titled = content.navigationTitle("")
-        if #available(iOS 17.0, tvOS 17.0, *) {
+        if #available(tvOS 17.0, *) {
             return titled.toolbarTitleDisplayMode(.inline)
         } else {
             return titled.navigationBarTitleDisplayMode(.inline)
