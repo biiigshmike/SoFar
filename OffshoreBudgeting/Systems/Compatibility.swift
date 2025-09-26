@@ -604,6 +604,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
         if capabilities.supportsOS26Translucency {
             #if os(iOS)
             if #available(iOS 17.0, *) {
+                #if compiler(>=5.9)
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
                     .toolbarBackground(
@@ -615,6 +616,11 @@ private struct UBNavigationGlassModifier: ViewModifier {
                         ),
                         for: .navigationBar
                     )
+                #else
+                content
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbarBackground(gradientStyle, for: .navigationBar)
+                #endif
             } else if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
@@ -624,6 +630,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
             }
             #elseif os(macOS)
             if #available(macOS 14.0, *) {
+                #if compiler(>=5.9)
                 content
                     .toolbarBackground(.visible, for: .windowToolbar)
                     .toolbarBackground(
@@ -635,6 +642,11 @@ private struct UBNavigationGlassModifier: ViewModifier {
                         ),
                         for: .windowToolbar
                     )
+                #else
+                content
+                    .toolbarBackground(.visible, for: .windowToolbar)
+                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
+                #endif
             } else if #available(macOS 13.0, *) {
                 content
                     .toolbarBackground(.visible, for: .windowToolbar)
@@ -686,6 +698,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
     #endif
 }
 
+#if compiler(>=5.9)
 #if os(iOS) || os(macOS)
 @available(iOS 17.0, macOS 14.0, *)
 private struct UBNavigationGlassToolbarBackgroundStyle: ToolbarBackgroundStyle {
@@ -703,6 +716,7 @@ private struct UBNavigationGlassToolbarBackgroundStyle: ToolbarBackgroundStyle {
         )
     }
 }
+#endif
 #endif
 
 private struct UBChromeGlassModifier: ViewModifier {
