@@ -261,11 +261,13 @@ private struct MacRootTabBar: View {
         return Button {
             selectedTab = tab
         } label: {
+            let capsule = Capsule(style: .continuous)
             MacTabLabel(tab: tab, isSelected: isSelected)
                 .padding(.horizontal, metrics.horizontalPadding)
                 .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
-                .glassEffect()
+                .contentShape(capsule)
+                .glassEffect(.regular.interactive(), in: capsule)
         }
         .buttonStyle(.plain)
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
