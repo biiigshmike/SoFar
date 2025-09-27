@@ -116,7 +116,8 @@ struct RootTabView: View {
         ToolbarItem(placement: .principal) {
             MacRootTabBar(
                 selectedTab: $selectedTab,
-                palette: themeManager.selectedTheme.tabBarPalette
+                palette: themeManager.selectedTheme.tabBarPalette,
+                platformCapabilities: platformCapabilities
             )
             .frame(maxWidth: .infinity)
         }
@@ -147,21 +148,22 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
 
 #if os(macOS)
 private struct MacRootTabBar: View {
-    @Environment(\.platformCapabilities) private var platformCapabilities
-
     private let tabs: [RootTabView.Tab]
     @Binding private var selectedTab: RootTabView.Tab
     private let palette: AppTheme.TabBarPalette
+    private let platformCapabilities: PlatformCapabilities
     @Namespace private var glassNamespace
 
     init(
         tabs: [RootTabView.Tab] = RootTabView.Tab.allCases,
         selectedTab: Binding<RootTabView.Tab>,
-        palette: AppTheme.TabBarPalette
+        palette: AppTheme.TabBarPalette,
+        platformCapabilities: PlatformCapabilities = .fallback
     ) {
         self.tabs = tabs
         self._selectedTab = selectedTab
         self.palette = palette
+        self.platformCapabilities = platformCapabilities
     }
 
     private var metrics: TranslucentButtonStyle.Metrics {
