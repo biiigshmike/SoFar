@@ -21,6 +21,8 @@ struct TranslucentButtonStyle: ButtonStyle {
         var font: Font? = nil
         var overridesLabelForeground: Bool = true
 
+        var prefersTransparentFill: Bool = false
+
         static let standard = Metrics()
 
         static let rootActionIcon = Metrics(
@@ -98,7 +100,8 @@ struct TranslucentButtonStyle: ButtonStyle {
                 verticalPadding: 0,
                 pressedScale: 0.97,
                 font: nil,
-                overridesLabelForeground: false
+                overridesLabelForeground: false,
+                prefersTransparentFill: true
             )
         }
     }
@@ -189,6 +192,10 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func fillColor(for theme: AppTheme, isPressed: Bool) -> Color {
+        if metrics.prefersTransparentFill {
+            return .clear
+        }
+
         if theme == .system {
             return Color.white.opacity(isPressed ? 0.38 : 0.30)
         } else {

@@ -242,6 +242,11 @@ private struct MacRootTabBar: View {
         max(metrics.horizontalPadding / 2, 8)
     }
 
+    @available(macOS 26.0, *)
+    private var glassStyle: GlassEffectStyle {
+        .regular.interactive().tint(.clear)
+    }
+
     private func legacyTabButton(for tab: RootTabView.Tab) -> some View {
         Button {
             selectedTab = tab
@@ -272,7 +277,7 @@ private struct MacRootTabBar: View {
                 .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
                 .contentShape(capsule)
-                .glassEffect(.regular.interactive(), in: capsule)
+                .glassEffect(glassStyle, in: capsule)
         }
         .buttonStyle(.plain)
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
