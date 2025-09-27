@@ -92,37 +92,13 @@ struct RootTabView: View {
 
     #if os(macOS)
     private var macBody: some View {
-        Group {
-            if #available(macOS 13.0, *) {
-                NavigationStack {
-                    decoratedTabContent(for: selectedTab)
-                }
-            } else {
-                NavigationView {
-                    decoratedTabContent(for: selectedTab)
-                }
-            }
-        }
-        .toolbar {
-            macToolbar
-        }
-        .modifier(
-            MacToolbarBackgroundModifier(
-                theme: themeManager.selectedTheme,
-                supportsTranslucency: platformCapabilities.supportsOS26Translucency
-            )
-        )
-    }
-
-    @ToolbarContentBuilder
-    private var macToolbar: some ToolbarContent {
-        ToolbarItem(placement: .principal) {
-            MacRootTabBar(
-                selectedTab: $selectedTab,
-                palette: themeManager.selectedTheme.tabBarPalette,
-                platformCapabilities: platformCapabilities
-            )
-            .frame(maxWidth: .infinity)
+        MacLiquidGlassNavigationBar(
+            selectedTab: $selectedTab,
+            theme: themeManager.selectedTheme,
+            palette: themeManager.selectedTheme.tabBarPalette,
+            platformCapabilities: platformCapabilities
+        ) {
+            decoratedTabContent(for: selectedTab)
         }
     }
     #endif
@@ -148,6 +124,83 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
                     .toolbarBackground(theme.background, for: .windowToolbar)
             } else {
                 content
+            }
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+private struct MacLiquidGlassNavigationBar<Content: View>: View {
+    @Binding private var selectedTab: RootTabView.Tab
+    private let theme: AppTheme
+    private let palette: AppTheme.TabBarPalette
+    private let platformCapabilities: PlatformCapabilities
+    private let supportsTranslucency: Bool
+    private let content: () -> Content
+
+    init(
+        selectedTab: Binding<RootTabView.Tab>,
+        theme: AppTheme,
+        palette: AppTheme.TabBarPalette,
+        platformCapabilities: PlatformCapabilities,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self._selectedTab = selectedTab
+        self.theme = theme
+        self.palette = palette
+        self.platformCapabilities = platformCapabilities
+        self.supportsTranslucency = platformCapabilities.supportsOS26Translucency
+        self.content = content
+    }
+
+    var body: some View {
+        navigationContainer
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    MacRootTabBar(
+                        selectedTab: $selectedTab,
+                        palette: palette,
+                        platformCapabilities: platformCapabilities
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .modifier(
+                MacToolbarBackgroundModifier(
+                    theme: theme,
+                    supportsTranslucency: supportsTranslucency
+                )
+            )
+    }
+
+    @ViewBuilder
+    private var navigationContainer: some View {
+        if #available(macOS 13.0, *) {
+            navigationStack
+        } else {
+            NavigationView {
+                content()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var navigationStack: some View {
+        if supportsTranslucency {
+            if #available(macOS 26.0, *) {
+                NavigationStack {
+                    content()
+                }
+                .glassEffect()
+            } else {
+                NavigationStack {
+                    content()
+                }
+            }
+        } else {
+            NavigationStack {
+                content()
             }
         }
     }
@@ -229,11 +282,9 @@ private struct MacRootTabBar: View {
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        GlassEffectContainer(spacing: glassSpacing) {
-            HStack(spacing: glassSpacing) {
-                ForEach(tabs, id: \.self) { tab in
-                    glassTabButton(for: tab)
-                }
+        HStack(spacing: glassSpacing) {
+            ForEach(tabs, id: \.self) { tab in
+                glassTabButton(for: tab)
             }
         }
     }
