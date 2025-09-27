@@ -29,6 +29,7 @@ struct HomeView: View {
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
+    @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
@@ -45,6 +46,16 @@ struct HomeView: View {
     // Manage sheets
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
+
+    // MARK: Glass Effect Coordination
+    @Namespace private var headerGlassNamespace
+
+    private enum HeaderActionSlot: Hashable {
+        case calendar
+        case primary
+        case overflow
+        case periodNavigation
+    }
 
     // MARK: Header Layout
     @State private var matchedHeaderControlWidth: CGFloat?
@@ -259,6 +270,7 @@ struct HomeView: View {
                 }
             }
         }
+        .rootHeaderGlassEffectNamespace(headerGlassNamespace)
         .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
             // Guard against tiny oscillations (e.g., sub‑pixel rounding) that
             // can create an endless measure→set→measure loop.
@@ -302,8 +314,8 @@ struct HomeView: View {
             RootHeaderControlIcon(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
                 .frame(
-                    width: RootHeaderActionMetrics.dimension,
-                    height: RootHeaderActionMetrics.dimension,
+                    width: headerControlDimension,
+                    height: headerControlDimension,
                     alignment: .center
                 )
         }
@@ -329,13 +341,13 @@ struct HomeView: View {
     }
 
     private func trailingControls(for summary: BudgetSummary) -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         return HStack(spacing: 0) {
             addExpenseButton(for: summary.id)
             Rectangle()
                 .fill(RootHeaderLegacyGlass.dividerColor(for: themeManager.selectedTheme))
                 .frame(width: 1, height: dimension)
-                .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+                .padding(.vertical, headerGlassVerticalPadding)
                 .allowsHitTesting(false)
             budgetActionMenu(summary: summary)
         }
@@ -346,7 +358,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         Group {
 #if os(iOS)
             Button {
@@ -407,15 +419,15 @@ struct HomeView: View {
         .menuStyle(.borderlessButton)
 #endif
         .frame(
-            minWidth: RootHeaderActionMetrics.dimension,
+            minWidth: headerControlDimension,
             maxWidth: .infinity,
-            minHeight: RootHeaderActionMetrics.dimension
+            minHeight: headerControlDimension
         )
     }
 
     // MARK: Empty-state: Create budget (+)
     private func addBudgetButton() -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         return Button {
             isPresentingAddBudget = true
         } label: {
@@ -429,7 +441,7 @@ struct HomeView: View {
 
     // MARK: New: Standalone glass buttons for empty state header
     private func calendarMenuButton() -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.calendar) {
             Menu {
                 ForEach(BudgetPeriod.selectableCases) { period in
                     Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
@@ -446,7 +458,7 @@ struct HomeView: View {
     }
 
     private func addBudgetIconButton() -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.primary) {
             Button {
                 isPresentingAddBudget = true
             } label: {
@@ -458,7 +470,7 @@ struct HomeView: View {
     }
 
     private func optionsMenuButton() -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.overflow) {
             Menu {
                 Button {
                     isPresentingAddBudget = true
@@ -478,7 +490,7 @@ struct HomeView: View {
 
     // Add Expense button when no budget is active — presents direct add flows.
     private func addExpenseNoBudgetIconButton() -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.primary) {
             Menu {
                 Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
                 Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
@@ -494,7 +506,7 @@ struct HomeView: View {
     }
 
     private func addExpenseIconButton(for budgetID: NSManagedObjectID) -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.primary) {
             Group {
             #if os(iOS)
                 Button { presentAddExpenseMenu(for: budgetID) } label: {
@@ -521,7 +533,7 @@ struct HomeView: View {
     }
 
     private func optionsMenuButton(summary: BudgetSummary) -> some View {
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: HeaderActionSlot.overflow) {
             Menu {
                 Button { isPresentingManageCards = true } label: { Label("Manage Cards", systemImage: "creditcard") }
                 Button { isPresentingManagePresets = true } label: { Label("Manage Presets", systemImage: "list.bullet.rectangle") }
@@ -750,12 +762,21 @@ struct HomeView: View {
 #endif
     }
 
+    private var headerControlDimension: CGFloat {
+        RootHeaderActionMetrics.dimension(for: capabilities)
+    }
+
+    private var headerGlassVerticalPadding: CGFloat {
+        RootHeaderGlassMetrics.verticalPadding(for: capabilities)
+    }
+
     private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
         PeriodNavigationControl(
             title: title(for: vm.selectedDate),
             style: style,
             onPrevious: { vm.adjustSelectedPeriod(by: -1) },
-            onNext: { vm.adjustSelectedPeriod(by: +1) }
+            onNext: { vm.adjustSelectedPeriod(by: +1) },
+            glassEffectID: HeaderActionSlot.periodNavigation
         )
     }
 
@@ -1255,6 +1276,7 @@ private struct HomeHeaderContextSummary: View {
 private struct HomeHeaderMatchedWidthModifier: ViewModifier {
     let intrinsicWidth: Binding<CGFloat?>
     let matchedWidth: CGFloat?
+    @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
         content
@@ -1265,7 +1287,7 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
     }
 
     private var resolvedWidth: CGFloat? {
-        let minimum = Self.minimumWidth
+        let minimum = minimumWidth
         let intrinsic = intrinsicWidth.wrappedValue ?? 0
 
         if let matchedWidth, matchedWidth > 0 {
@@ -1278,8 +1300,10 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
         return nil
     }
 
-    private static var minimumWidth: CGFloat {
-        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    private var minimumWidth: CGFloat {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let padding = RootHeaderGlassMetrics.horizontalPadding(for: capabilities) * 2
+        return dimension + padding
     }
 }
 
@@ -1363,6 +1387,7 @@ private extension View {
 private struct HomeHeaderMinWidthModifier: ViewModifier {
     let intrinsicWidth: Binding<CGFloat?>
     let matchedWidth: CGFloat?
+    @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
         content
@@ -1373,15 +1398,17 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
     }
 
     private var resolvedMinWidth: CGFloat? {
-        let minimum = Self.minimumWidth
+        let minimum = minimumWidth
         let intrinsic = intrinsicWidth.wrappedValue ?? 0
         let matched = matchedWidth ?? 0
         let base = max(intrinsic, matched, minimum)
         return base > 0 ? base : nil
     }
 
-    private static var minimumWidth: CGFloat {
-        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    private var minimumWidth: CGFloat {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let padding = RootHeaderGlassMetrics.horizontalPadding(for: capabilities) * 2
+        return dimension + padding
     }
 }
 
