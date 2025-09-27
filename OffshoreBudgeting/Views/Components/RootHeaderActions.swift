@@ -40,7 +40,6 @@ enum RootHeaderControlSizing {
 
 // MARK: - Icon Content
 struct RootHeaderControlIcon: View {
-    @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
     /// Optional symbol variant override keeps headers in sync with design
     /// specifications when SF Symbols offer multiple contextual variants.
@@ -50,7 +49,7 @@ struct RootHeaderControlIcon: View {
         configuredImage
             .font(.system(size: 18, weight: .semibold))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .foregroundStyle(foregroundColor)
+            .foregroundStyle(.primary)
     }
 
     @ViewBuilder
@@ -63,9 +62,6 @@ struct RootHeaderControlIcon: View {
         }
     }
 
-    private var foregroundColor: Color {
-        themeManager.selectedTheme == .system ? Color.primary : Color.white
-    }
 }
 
 // MARK: - Action Button Style
