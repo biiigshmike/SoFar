@@ -185,21 +185,33 @@ private struct MacRootTabBar: View {
     }
 
     private var legacyTabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs, id: \.self) { tab in
-                legacyTabButton(for: tab)
+        GeometryReader { proxy in
+            let tabWidth = tabWidth(for: proxy.size.width, spacing: 0)
+
+            HStack(spacing: 0) {
+                ForEach(tabs, id: \.self) { tab in
+                    legacyTabButton(for: tab)
+                        .frame(width: tabWidth)
+                }
             }
+            .frame(width: proxy.size.width, alignment: .leading)
         }
     }
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        GlassEffectContainer(spacing: glassSpacing) {
-            HStack(spacing: glassSpacing) {
-                ForEach(tabs, id: \.self) { tab in
-                    glassTabButton(for: tab)
+        GeometryReader { proxy in
+            let tabWidth = tabWidth(for: proxy.size.width, spacing: glassSpacing)
+
+            GlassEffectContainer(spacing: glassSpacing) {
+                HStack(spacing: glassSpacing) {
+                    ForEach(tabs, id: \.self) { tab in
+                        glassTabButton(for: tab)
+                            .frame(width: tabWidth)
+                    }
                 }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
         }
     }
 
@@ -219,7 +231,6 @@ private struct MacRootTabBar: View {
                 metrics: metrics
             )
         )
-        .frame(maxWidth: .infinity)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
     }
@@ -233,15 +244,25 @@ private struct MacRootTabBar: View {
         } label: {
             MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
                 .padding(.horizontal, metrics.horizontalPadding)
-                .frame(maxWidth: .infinity)
                 .frame(height: metrics.height)
         }
         .buttonStyle(.glass)
         .contentShape(Capsule())
-        .frame(maxWidth: .infinity)
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
+    }
+
+    private func tabWidth(for totalWidth: CGFloat, spacing: CGFloat) -> CGFloat {
+        guard !tabs.isEmpty else { return 0 }
+
+        let tabCount = CGFloat(tabs.count)
+        let totalSpacing = spacing * max(tabCount - 1, 0)
+        let availableWidth = max(totalWidth - totalSpacing, 0)
+        let calculatedWidth = availableWidth / tabCount
+        let minimumWidth = RootHeaderActionMetrics.minimumGlassWidth(for: platformCapabilities)
+
+        return max(calculatedWidth, minimumWidth)
     }
 
     private func accessibilityTraits(for tab: RootTabView.Tab) -> AccessibilityTraits {
@@ -264,9 +285,9 @@ private struct MacTabLabel: View {
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
+                .layoutPriority(1)
                 .foregroundStyle(textForegroundColor)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var iconPrimaryColor: Color {
