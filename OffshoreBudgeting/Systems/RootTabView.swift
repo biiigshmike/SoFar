@@ -168,17 +168,6 @@ private struct MacRootTabBar: View {
         TranslucentButtonStyle.Metrics.macRootTab(for: platformCapabilities)
     }
 
-    private var minimumTabWidth: CGFloat {
-        let height = metrics.height ?? 44
-        let horizontalPadding = metrics.horizontalPadding
-
-        let glyphAllowance = height * 0.85
-        let labelAllowance = height * 1.4
-        let paddedWidth = glyphAllowance + labelAllowance + (horizontalPadding * 2)
-
-        return max(paddedWidth, height * 2.6)
-    }
-
     var body: some View {
         Group {
             if platformCapabilities.supportsOS26Translucency {
@@ -215,7 +204,7 @@ private struct MacRootTabBar: View {
     }
 
     private var glassSpacing: CGFloat {
-        max(metrics.horizontalPadding * 0.75, 10)
+        max(metrics.horizontalPadding / 2, 8)
     }
 
     private func legacyTabButton(for tab: RootTabView.Tab) -> some View {
@@ -230,7 +219,7 @@ private struct MacRootTabBar: View {
                 metrics: metrics
             )
         )
-        .frame(minWidth: minimumTabWidth, maxWidth: .infinity)
+        .frame(maxWidth: .infinity)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
     }
@@ -244,14 +233,12 @@ private struct MacRootTabBar: View {
         } label: {
             MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
                 .padding(.horizontal, metrics.horizontalPadding)
-                .frame(minWidth: minimumTabWidth, maxWidth: .infinity)
+                .frame(maxWidth: .infinity)
                 .frame(height: metrics.height)
         }
-        .controlSize(.large)
-        .buttonStyle(GlassButtonStyle())
-        .tint(palette.active)
+        .buttonStyle(.plain)
         .contentShape(Capsule())
-        .frame(minWidth: minimumTabWidth, maxWidth: .infinity)
+        .frame(maxWidth: .infinity)
         .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
@@ -278,8 +265,6 @@ private struct MacTabLabel: View {
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
-                .layoutPriority(1)
-                .allowsTightening(true)
                 .foregroundStyle(textForegroundColor)
         }
         .frame(maxWidth: .infinity)
