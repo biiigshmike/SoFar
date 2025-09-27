@@ -33,6 +33,11 @@ enum RootHeaderGlassMetrics {
     static let verticalPadding: CGFloat = DS.Spacing.xs * 0.75
 }
 
+enum RootHeaderControlSizing {
+    case automatic
+    case icon
+}
+
 // MARK: - Icon Content
 struct RootHeaderControlIcon: View {
     @EnvironmentObject private var themeManager: ThemeManager
@@ -487,25 +492,37 @@ struct RootHeaderGlassControl<Content: View>: View {
 
     private let content: Content
     private let width: CGFloat?
+    private let sizing: RootHeaderControlSizing
 
-    init(width: CGFloat? = nil, @ViewBuilder content: () -> Content) {
+    init(
+        width: CGFloat? = nil,
+        sizing: RootHeaderControlSizing = .automatic,
+        @ViewBuilder content: () -> Content
+    ) {
         self.content = content()
         self.width = width
+        self.sizing = sizing
     }
 
+    @ViewBuilder
     var body: some View {
         let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
         let theme = themeManager.selectedTheme
 
-        let control = content
-            .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
-            .contentShape(Rectangle())
-            .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
-            .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
-            .contentShape(Capsule(style: .continuous))
-
-        control
-            .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+        if sizing == .icon {
+            content
+                .frame(width: width ?? dimension, height: dimension)
+                .contentShape(Circle())
+                .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+        } else {
+            content
+                .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
+                .contentShape(Rectangle())
+                .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
+                .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+                .contentShape(Capsule(style: .continuous))
+                .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+        }
     }
 }
 
@@ -627,7 +644,12 @@ struct RootHeaderIconActionButton: View {
         // Always use RootHeaderGlassControl to keep consistent sizing and
         // alignment with the title row. Decoration is suppressed on
         // classic OS by RootHeaderGlassControl/rootHeaderGlassDecorated.
-        RootHeaderGlassControl {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(
+            width: dimension,
+            sizing: .icon
+        ) {
             baseButton
                 .buttonStyle(RootHeaderActionButtonStyle())
         }
