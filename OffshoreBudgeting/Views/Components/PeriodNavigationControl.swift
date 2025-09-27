@@ -83,7 +83,7 @@ struct PeriodNavigationControl: View {
 
 private extension PeriodNavigationControl {
     private var navigationButtonDimension: CGFloat {
-        RootHeaderActionMetrics.dimension
+        RootHeaderActionMetrics.dimension(for: capabilities)
     }
 
     @ViewBuilder

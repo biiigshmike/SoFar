@@ -2,9 +2,27 @@ import SwiftUI
 
 // MARK: - Shared Metrics
 enum RootHeaderActionMetrics {
-    /// Base tap target for header controls. Sized using the design system so
-    /// theme updates can scale the control consistently across platforms.
-    static let dimension: CGFloat = DS.Spacing.l + DS.Spacing.m
+    /// Base tap target for header controls on platforms without the refreshed
+    /// Liquid Glass treatments from the OS 26 cycle.
+    private static let legacyDimension: CGFloat = DS.Spacing.l + DS.Spacing.m
+
+    /// Taller control size that mirrors Apple's updated capsule buttons when
+    /// Liquid Glass materials are available.
+    private static let glassDimension: CGFloat = DS.Spacing.xxl + DS.Spacing.m
+
+    /// Returns the appropriate control dimension for the supplied platform
+    /// capabilities, opting into the taller OS 26 appearance when available
+    /// while maintaining the legacy sizing for older systems.
+    static func dimension(for capabilities: PlatformCapabilities) -> CGFloat {
+        capabilities.supportsOS26Translucency ? glassDimension : legacyDimension
+    }
+
+    /// Convenience for computing the minimum width of a glass control, taking
+    /// the shared paddings into account so width-matching helpers stay in sync
+    /// with the resolved control height.
+    static func minimumGlassWidth(for capabilities: PlatformCapabilities) -> CGFloat {
+        dimension(for: capabilities) + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    }
 }
 
 enum RootHeaderGlassMetrics {
@@ -168,6 +186,7 @@ extension View {
 
 @available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionSegment<Content: View>: View {
+    @Environment(\.platformCapabilities) private var capabilities
     @State private var columnCount: Int
     private let content: Content
 
@@ -185,9 +204,11 @@ private struct RootHeaderActionSegment<Content: View>: View {
             }
         }
 
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+
         return content
             .environment(\.rootHeaderActionColumnsWriter, writer)
-            .frame(minWidth: RootHeaderActionMetrics.dimension, minHeight: RootHeaderActionMetrics.dimension)
+            .frame(minWidth: dimension, minHeight: dimension)
             .contentShape(Rectangle())
             .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
@@ -198,6 +219,7 @@ private struct RootHeaderActionSegment<Content: View>: View {
 @available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionRowLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let dimension = RootHeaderActionMetrics.dimension(for: PlatformCapabilities.current)
         let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
         let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
         let proposedSize = ProposedViewSize(width: nil, height: proposal.height)
@@ -212,7 +234,7 @@ private struct RootHeaderActionRowLayout: Layout {
             guard columns > 0 else { return nil }
             return (columns, subview.sizeThatFits(proposedSize))
         }
-        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+        let perColumnMinimum = actionSizes.reduce(CGFloat(dimension)) { result, entry in
             let (columns, size) = entry
             let widthPerColumn = size.width / CGFloat(columns)
             return max(result, widthPerColumn)
@@ -225,12 +247,13 @@ private struct RootHeaderActionRowLayout: Layout {
 
         let resolvedHeight = subviews.map { subview in
             subview.sizeThatFits(proposedSize).height
-        }.max() ?? (RootHeaderActionMetrics.dimension + RootHeaderGlassMetrics.verticalPadding * 2)
+        }.max() ?? (dimension + RootHeaderGlassMetrics.verticalPadding * 2)
 
         return CGSize(width: resolvedWidth, height: resolvedHeight)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let dimension = RootHeaderActionMetrics.dimension(for: PlatformCapabilities.current)
         let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
         let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
         let proposedSize = ProposedViewSize(width: nil, height: bounds.height)
@@ -246,7 +269,7 @@ private struct RootHeaderActionRowLayout: Layout {
             guard columns > 0 else { return nil }
             return (columns, subview.sizeThatFits(proposedSize))
         }
-        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+        let perColumnMinimum = actionSizes.reduce(CGFloat(dimension)) { result, entry in
             let (columns, size) = entry
             let widthPerColumn = size.width / CGFloat(columns)
             return max(result, widthPerColumn)
@@ -338,7 +361,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
     }
 
     var body: some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
         let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
         let verticalPadding = RootHeaderGlassMetrics.verticalPadding
         let theme = themeManager.selectedTheme
@@ -465,17 +488,18 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let content: Content
     private let width: CGFloat?
 
-    init(width: CGFloat? = RootHeaderActionMetrics.dimension, @ViewBuilder content: () -> Content) {
+    init(width: CGFloat? = nil, @ViewBuilder content: () -> Content) {
         self.content = content()
         self.width = width
     }
 
     var body: some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let resolvedWidth = width ?? dimension
         let theme = themeManager.selectedTheme
 
         let control = content
-            .frame(width: width, height: dimension)
+            .frame(width: resolvedWidth, height: dimension)
             .contentShape(Rectangle())
             .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)

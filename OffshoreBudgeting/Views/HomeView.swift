@@ -26,6 +26,7 @@ struct HomeView: View {
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -45,6 +46,10 @@ struct HomeView: View {
     // Manage sheets
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
+
+    private var headerControlDimension: CGFloat {
+        RootHeaderActionMetrics.dimension(for: capabilities)
+    }
 
     // MARK: Header Layout
     @State private var matchedHeaderControlWidth: CGFloat?
@@ -302,8 +307,8 @@ struct HomeView: View {
             RootHeaderControlIcon(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
                 .frame(
-                    width: RootHeaderActionMetrics.dimension,
-                    height: RootHeaderActionMetrics.dimension,
+                    width: headerControlDimension,
+                    height: headerControlDimension,
                     alignment: .center
                 )
         }
@@ -329,7 +334,7 @@ struct HomeView: View {
     }
 
     private func trailingControls(for summary: BudgetSummary) -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         return HStack(spacing: 0) {
             addExpenseButton(for: summary.id)
             Rectangle()
@@ -346,7 +351,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         Group {
 #if os(iOS)
             Button {
@@ -407,15 +412,15 @@ struct HomeView: View {
         .menuStyle(.borderlessButton)
 #endif
         .frame(
-            minWidth: RootHeaderActionMetrics.dimension,
+            minWidth: headerControlDimension,
             maxWidth: .infinity,
-            minHeight: RootHeaderActionMetrics.dimension
+            minHeight: headerControlDimension
         )
     }
 
     // MARK: Empty-state: Create budget (+)
     private func addBudgetButton() -> some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = headerControlDimension
         return Button {
             isPresentingAddBudget = true
         } label: {
@@ -1255,6 +1260,7 @@ private struct HomeHeaderContextSummary: View {
 private struct HomeHeaderMatchedWidthModifier: ViewModifier {
     let intrinsicWidth: Binding<CGFloat?>
     let matchedWidth: CGFloat?
+    @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
         content
@@ -1265,7 +1271,7 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
     }
 
     private var resolvedWidth: CGFloat? {
-        let minimum = Self.minimumWidth
+        let minimum = minimumWidth
         let intrinsic = intrinsicWidth.wrappedValue ?? 0
 
         if let matchedWidth, matchedWidth > 0 {
@@ -1278,8 +1284,8 @@ private struct HomeHeaderMatchedWidthModifier: ViewModifier {
         return nil
     }
 
-    private static var minimumWidth: CGFloat {
-        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    private var minimumWidth: CGFloat {
+        RootHeaderActionMetrics.minimumGlassWidth(for: capabilities)
     }
 }
 
@@ -1363,6 +1369,7 @@ private extension View {
 private struct HomeHeaderMinWidthModifier: ViewModifier {
     let intrinsicWidth: Binding<CGFloat?>
     let matchedWidth: CGFloat?
+    @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
         content
@@ -1373,15 +1380,15 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
     }
 
     private var resolvedMinWidth: CGFloat? {
-        let minimum = Self.minimumWidth
+        let minimum = minimumWidth
         let intrinsic = intrinsicWidth.wrappedValue ?? 0
         let matched = matchedWidth ?? 0
         let base = max(intrinsic, matched, minimum)
         return base > 0 ? base : nil
     }
 
-    private static var minimumWidth: CGFloat {
-        RootHeaderActionMetrics.dimension + (RootHeaderGlassMetrics.horizontalPadding * 2)
+    private var minimumWidth: CGFloat {
+        RootHeaderActionMetrics.minimumGlassWidth(for: capabilities)
     }
 }
 
