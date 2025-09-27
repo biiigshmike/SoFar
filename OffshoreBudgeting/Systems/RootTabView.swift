@@ -135,7 +135,12 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if supportsTranslucency {
-            content
+            if #available(macOS 13.0, *) {
+                content
+                    .toolbarBackground(.hidden, for: .windowToolbar)
+            } else {
+                content
+            }
         } else {
             if #available(macOS 13.0, *) {
                 content
