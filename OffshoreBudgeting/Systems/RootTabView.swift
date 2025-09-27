@@ -229,11 +229,9 @@ private struct MacRootTabBar: View {
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        GlassEffectContainer(spacing: glassSpacing) {
-            HStack(spacing: glassSpacing) {
-                ForEach(tabs, id: \.self) { tab in
-                    glassTabButton(for: tab)
-                }
+        HStack(spacing: glassSpacing) {
+            ForEach(tabs, id: \.self) { tab in
+                glassTabButton(for: tab)
             }
         }
     }
@@ -267,12 +265,11 @@ private struct MacRootTabBar: View {
             selectedTab = tab
         } label: {
             let capsule = Capsule(style: .continuous)
-            MacTabLabel(tab: tab, isSelected: isSelected)
+            MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
                 .padding(.horizontal, metrics.horizontalPadding)
                 .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
                 .contentShape(capsule)
-                .glassEffect(.regular.interactive(), in: capsule)
         }
         .buttonStyle(.plain)
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
@@ -289,6 +286,25 @@ private struct MacRootTabBar: View {
 private struct MacTabLabel: View {
     let tab: RootTabView.Tab
     let isSelected: Bool
+    let palette: AppTheme.TabBarPalette?
+
+    init(
+        tab: RootTabView.Tab,
+        isSelected: Bool,
+        palette: AppTheme.TabBarPalette? = nil
+    ) {
+        self.tab = tab
+        self.isSelected = isSelected
+        self.palette = palette
+    }
+
+    private var foregroundColor: Color {
+        guard let palette else {
+            return .primary
+        }
+
+        return isSelected ? palette.active : palette.inactive
+    }
 
     var body: some View {
         VStack(spacing: 2) {
@@ -302,6 +318,7 @@ private struct MacTabLabel: View {
                 .layoutPriority(1)
         }
         .frame(maxWidth: .infinity)
+        .foregroundStyle(foregroundColor)
         .overlay(alignment: .bottom) {
             if isSelected {
                 selectionIndicator
@@ -313,6 +330,7 @@ private struct MacTabLabel: View {
         RoundedRectangle(cornerRadius: 1.5, style: .continuous)
             .frame(height: 3)
             .padding(.horizontal, 10)
+            .foregroundStyle(palette?.active ?? .primary)
     }
 }
 #endif
