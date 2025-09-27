@@ -120,7 +120,6 @@ struct RootTabView: View {
             MacRootTabBar(
                 selectedTab: $selectedTab,
                 palette: themeManager.selectedTheme.tabBarPalette,
-                glassPalette: themeManager.selectedTheme.glassPalette,
                 platformCapabilities: platformCapabilities
             )
             .frame(maxWidth: .infinity)
@@ -155,7 +154,6 @@ private struct MacRootTabBar: View {
     private let tabs: [RootTabView.Tab]
     @Binding private var selectedTab: RootTabView.Tab
     private let palette: AppTheme.TabBarPalette
-    private let glassPalette: AppTheme.GlassConfiguration.Palette
     private let platformCapabilities: PlatformCapabilities
     @Namespace private var glassNamespace
 
@@ -163,13 +161,11 @@ private struct MacRootTabBar: View {
         tabs: [RootTabView.Tab] = RootTabView.Tab.allCases,
         selectedTab: Binding<RootTabView.Tab>,
         palette: AppTheme.TabBarPalette,
-        glassPalette: AppTheme.GlassConfiguration.Palette,
         platformCapabilities: PlatformCapabilities = .fallback
     ) {
         self.tabs = tabs
         self._selectedTab = selectedTab
         self.palette = palette
-        self.glassPalette = glassPalette
         self.platformCapabilities = platformCapabilities
     }
 
@@ -273,12 +269,7 @@ private struct MacRootTabBar: View {
         .buttonStyle(.plain)
         .contentShape(Capsule())
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
-        .glassEffect(
-            .regular
-                .tint(glassPalette.accent)
-                .interactive(),
-            in: Capsule()
-        )
+        .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
