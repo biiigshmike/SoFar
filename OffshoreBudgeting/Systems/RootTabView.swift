@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct RootTabView: View {
     @EnvironmentObject private var themeManager: ThemeManager
@@ -170,6 +173,29 @@ private struct MacRootTabBar: View {
         TranslucentButtonStyle.Metrics.macRootTab(for: platformCapabilities)
     }
 
+    private var buttonMinWidth: CGFloat {
+        let contentWidth = max(longestTabTitleWidth, metrics.height * 0.55)
+        let paddedWidth = contentWidth + (metrics.horizontalPadding * 2)
+        return ceil(paddedWidth)
+    }
+
+    private var buttonContentMinWidth: CGFloat {
+        max(buttonMinWidth - (metrics.horizontalPadding * 2), 0)
+    }
+
+    private var longestTabTitleWidth: CGFloat {
+        #if canImport(AppKit)
+        let font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        return tabs
+            .map { tab in
+                ceil((tab.title as NSString).size(withAttributes: [.font: font]).width)
+            }
+            .max() ?? 0
+        #else
+        return 0
+        #endif
+    }
+
     var body: some View {
         Group {
             if platformCapabilities.supportsOS26Translucency {
@@ -221,7 +247,7 @@ private struct MacRootTabBar: View {
                 metrics: metrics
             )
         )
-        .frame(maxWidth: .infinity)
+        .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
     }
@@ -235,12 +261,12 @@ private struct MacRootTabBar: View {
         } label: {
             MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
                 .padding(.horizontal, metrics.horizontalPadding)
-                .frame(maxWidth: .infinity)
+                .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
         }
         .buttonStyle(.plain)
         .contentShape(Capsule())
-        .frame(maxWidth: .infinity)
+        .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
         .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
@@ -267,6 +293,7 @@ private struct MacTabLabel: View {
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
+                .layoutPriority(1)
                 .foregroundStyle(textForegroundColor)
         }
         .frame(maxWidth: .infinity)
