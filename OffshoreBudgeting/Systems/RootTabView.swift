@@ -224,9 +224,11 @@ private struct MacRootTabBar: View {
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        HStack(spacing: glassSpacing) {
-            ForEach(tabs, id: \.self) { tab in
-                glassTabButton(for: tab)
+        GlassEffectContainer(spacing: glassSpacing) {
+            HStack(spacing: glassSpacing) {
+                ForEach(tabs, id: \.self) { tab in
+                    glassTabButton(for: tab)
+                }
             }
         }
     }
