@@ -147,6 +147,8 @@ private struct MacToolbarBackgroundModifier: ViewModifier {
 
 #if os(macOS)
 private struct MacRootTabBar: View {
+    @Environment(\.platformCapabilities) private var platformCapabilities
+
     private let tabs: [RootTabView.Tab]
     @Binding private var selectedTab: RootTabView.Tab
     private let palette: AppTheme.TabBarPalette
@@ -159,6 +161,10 @@ private struct MacRootTabBar: View {
         self.tabs = tabs
         self._selectedTab = selectedTab
         self.palette = palette
+    }
+
+    private var metrics: TranslucentButtonStyle.Metrics {
+        TranslucentButtonStyle.Metrics.macRootTab(for: platformCapabilities)
     }
 
     var body: some View {
@@ -175,10 +181,13 @@ private struct MacRootTabBar: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .frame(height: metrics.height)
     }
 }
 
 private struct MacTabButton: View {
+    @Environment(\.platformCapabilities) private var platformCapabilities
+
     let tab: RootTabView.Tab
     let isSelected: Bool
     let palette: AppTheme.TabBarPalette
@@ -191,7 +200,7 @@ private struct MacTabButton: View {
         .buttonStyle(
             TranslucentButtonStyle(
                 tint: palette.active,
-                metrics: .macNavigationControl
+                metrics: .macRootTab(for: platformCapabilities)
             )
         )
         .accessibilityLabel(tab.title)
@@ -210,7 +219,9 @@ private struct MacTabLabel: View {
                 .symbolVariant(isSelected ? .fill : .none)
                 .font(.system(size: 20, weight: .semibold))
             Text(tab.title)
-                .font(.caption)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity)
         .foregroundStyle(isSelected ? palette.active : palette.inactive)
