@@ -231,10 +231,6 @@ struct HomeView: View {
                     }
                 }
             }
-            .homeHeaderMatchedControlWidth(
-                intrinsicWidth: $headerActionPillIntrinsicWidth,
-                matchedWidth: matchedControlWidth
-            )
 
             if showsContextSummary || showsPeriodNavigation {
                 if showsContextSummary, let summary = headerSummary {
@@ -434,7 +430,9 @@ struct HomeView: View {
 
     // MARK: New: Standalone glass buttons for empty state header
     private func calendarMenuButton() -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Menu {
                 ForEach(BudgetPeriod.selectableCases) { period in
                     Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
@@ -451,7 +449,9 @@ struct HomeView: View {
     }
 
     private func addBudgetIconButton() -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Button {
                 isPresentingAddBudget = true
             } label: {
@@ -463,7 +463,9 @@ struct HomeView: View {
     }
 
     private func optionsMenuButton() -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Menu {
                 Button {
                     isPresentingAddBudget = true
@@ -483,7 +485,9 @@ struct HomeView: View {
 
     // Add Expense button when no budget is active — presents direct add flows.
     private func addExpenseNoBudgetIconButton() -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Menu {
                 Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
                 Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
@@ -499,7 +503,9 @@ struct HomeView: View {
     }
 
     private func addExpenseIconButton(for budgetID: NSManagedObjectID) -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Group {
             #if os(iOS)
                 Button { presentAddExpenseMenu(for: budgetID) } label: {
@@ -526,7 +532,9 @@ struct HomeView: View {
     }
 
     private func optionsMenuButton(summary: BudgetSummary) -> some View {
-        RootHeaderGlassControl {
+        let d = RootHeaderActionMetrics.dimension(for: capabilities)
+
+        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Menu {
                 Button { isPresentingManageCards = true } label: { Label("Manage Cards", systemImage: "creditcard") }
                 Button { isPresentingManagePresets = true } label: { Label("Manage Presets", systemImage: "list.bullet.rectangle") }
