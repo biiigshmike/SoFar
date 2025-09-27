@@ -174,7 +174,9 @@ private struct MacRootTabBar: View {
     }
 
     private var buttonMinWidth: CGFloat {
-        let contentWidth = max(longestTabTitleWidth, metrics.height * 0.55)
+        // Resolve optional height; fall back to the diameter implied by the corner radius.
+        let resolvedHeight = metrics.height ?? (metrics.cornerRadius * 2)
+        let contentWidth = max(longestTabTitleWidth, resolvedHeight * 0.55)
         let paddedWidth = contentWidth + (metrics.horizontalPadding * 2)
         return ceil(paddedWidth)
     }
