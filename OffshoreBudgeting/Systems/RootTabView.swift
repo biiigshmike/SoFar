@@ -239,7 +239,7 @@ private struct MacRootTabBar: View {
         Button {
             selectedTab = tab
         } label: {
-            MacTabLabel(tab: tab, isSelected: selectedTab == tab, palette: palette)
+            MacTabLabel(tab: tab, isSelected: selectedTab == tab)
         }
         .buttonStyle(
             TranslucentButtonStyle(
@@ -259,7 +259,7 @@ private struct MacRootTabBar: View {
         return Button {
             selectedTab = tab
         } label: {
-            MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
+            MacTabLabel(tab: tab, isSelected: isSelected)
                 .padding(.horizontal, metrics.horizontalPadding)
                 .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
@@ -280,34 +280,24 @@ private struct MacRootTabBar: View {
 private struct MacTabLabel: View {
     let tab: RootTabView.Tab
     let isSelected: Bool
-    let palette: AppTheme.TabBarPalette
 
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: tab.systemImage)
-                .symbolRenderingMode(.palette)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(iconPrimaryColor, iconSecondaryColor)
             Text(tab.title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
                 .layoutPriority(1)
-                .foregroundStyle(textForegroundColor)
         }
         .frame(maxWidth: .infinity)
+        .foregroundStyle(.primary)
+        .opacity(labelOpacity)
     }
 
-    private var iconPrimaryColor: Color {
-        isSelected ? palette.active : palette.inactive.opacity(0.9)
-    }
-
-    private var iconSecondaryColor: Color {
-        isSelected ? palette.active.opacity(0.45) : palette.inactive.opacity(0.35)
-    }
-
-    private var textForegroundColor: Color {
-        isSelected ? palette.active : palette.inactive
+    private var labelOpacity: Double {
+        isSelected ? 1 : 0.7
     }
 }
 #endif
