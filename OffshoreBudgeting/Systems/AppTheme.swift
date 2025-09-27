@@ -84,7 +84,6 @@ enum CloudSyncPreferences {
 enum AppTheme: String, CaseIterable, Identifiable, Codable {
     struct TabBarPalette {
         let active: Color
-        let glassTint: Color
         let inactive: Color
         let disabled: Color
         let badgeBackground: Color
@@ -557,29 +556,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         let inactive = baseColor.opacity(inactiveAlpha)
         let disabled = baseColor.opacity(disabledAlpha)
 
-        let glassTint: Color
-        if let tintComponents = AppThemeColorUtilities.hsba(from: resolvedTint) {
-            let isLowSaturation = tintComponents.saturation < 0.2
-            let isLowBrightness = tintComponents.brightness < 0.4
-
-            if isLowSaturation || isLowBrightness {
-                let blendAmount: Double
-                if tintComponents.brightness < 0.25 {
-                    blendAmount = 0.6
-                } else if tintComponents.brightness < 0.35 {
-                    blendAmount = 0.5
-                } else {
-                    blendAmount = 0.35
-                }
-
-                glassTint = AppThemeColorUtilities.mix(resolvedTint, Color.white, amount: blendAmount)
-            } else {
-                glassTint = resolvedTint
-            }
-        } else {
-            glassTint = resolvedTint
-        }
-
         let badgeBackground = resolvedTint
         let badgeBrightness = AppThemeColorUtilities.hsba(from: resolvedTint)?.brightness ?? 0.85
         let badgeForeground: Color
@@ -591,7 +567,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         return TabBarPalette(
             active: active,
-            glassTint: glassTint,
             inactive: inactive,
             disabled: disabled,
             badgeBackground: badgeBackground,
@@ -600,7 +575,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         #else
         return TabBarPalette(
             active: resolvedTint,
-            glassTint: resolvedTint,
             inactive: Color.primary.opacity(0.75),
             disabled: Color.primary.opacity(0.34),
             badgeBackground: resolvedTint,
