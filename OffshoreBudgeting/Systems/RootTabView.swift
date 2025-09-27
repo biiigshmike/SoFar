@@ -152,6 +152,7 @@ private struct MacRootTabBar: View {
     private let tabs: [RootTabView.Tab]
     @Binding private var selectedTab: RootTabView.Tab
     private let palette: AppTheme.TabBarPalette
+    @Namespace private var glassNamespace
 
     init(
         tabs: [RootTabView.Tab] = RootTabView.Tab.allCases,
@@ -168,43 +169,84 @@ private struct MacRootTabBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs, id: \.self) { tab in
-                MacTabButton(
-                    tab: tab,
-                    isSelected: selectedTab == tab,
-                    palette: palette
-                ) {
-                    selectedTab = tab
+        Group {
+            if platformCapabilities.supportsOS26Translucency {
+                if #available(macOS 26.0, *) {
+                    glassTabBar
+                } else {
+                    legacyTabBar
                 }
-                .frame(maxWidth: .infinity)
+            } else {
+                legacyTabBar
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: metrics.height)
     }
-}
 
-private struct MacTabButton: View {
-    @Environment(\.platformCapabilities) private var platformCapabilities
+    private var legacyTabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(tabs, id: \.self) { tab in
+                legacyTabButton(for: tab)
+            }
+        }
+    }
 
-    let tab: RootTabView.Tab
-    let isSelected: Bool
-    let palette: AppTheme.TabBarPalette
-    let action: () -> Void
+    @available(macOS 26.0, *)
+    private var glassTabBar: some View {
+        GlassEffectContainer(spacing: glassSpacing) {
+            HStack(spacing: glassSpacing) {
+                ForEach(tabs, id: \.self) { tab in
+                    glassTabButton(for: tab)
+                }
+            }
+        }
+    }
 
-    var body: some View {
-        Button(action: action) {
-            MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
+    private var glassSpacing: CGFloat {
+        max(metrics.horizontalPadding / 2, 8)
+    }
+
+    private func legacyTabButton(for tab: RootTabView.Tab) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            MacTabLabel(tab: tab, isSelected: selectedTab == tab, palette: palette)
         }
         .buttonStyle(
             TranslucentButtonStyle(
                 tint: palette.active,
-                metrics: .macRootTab(for: platformCapabilities)
+                metrics: metrics
             )
         )
+        .frame(maxWidth: .infinity)
         .accessibilityLabel(tab.title)
-        .accessibilityAddTraits(isSelected ? .isSelected : AccessibilityTraits())
+        .accessibilityAddTraits(accessibilityTraits(for: tab))
+    }
+
+    @available(macOS 26.0, *)
+    private func glassTabButton(for tab: RootTabView.Tab) -> some View {
+        let isSelected = selectedTab == tab
+
+        return Button {
+            selectedTab = tab
+        } label: {
+            MacTabLabel(tab: tab, isSelected: isSelected, palette: palette)
+                .padding(.horizontal, metrics.horizontalPadding)
+                .frame(maxWidth: .infinity)
+                .frame(height: metrics.height)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Capsule())
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
+        .glassEffectUnion(id: tab, namespace: glassNamespace)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(accessibilityTraits(for: tab))
+    }
+
+    private func accessibilityTraits(for tab: RootTabView.Tab) -> AccessibilityTraits {
+        selectedTab == tab ? .isSelected : AccessibilityTraits()
     }
 }
 
@@ -216,15 +258,28 @@ private struct MacTabLabel: View {
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: tab.systemImage)
-                .symbolVariant(isSelected ? .fill : .none)
+                .symbolRenderingMode(.palette)
                 .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(iconPrimaryColor, iconSecondaryColor)
             Text(tab.title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
+                .foregroundStyle(textForegroundColor)
         }
         .frame(maxWidth: .infinity)
-        .foregroundStyle(isSelected ? palette.active : palette.inactive)
+    }
+
+    private var iconPrimaryColor: Color {
+        isSelected ? palette.active : palette.inactive.opacity(0.9)
+    }
+
+    private var iconSecondaryColor: Color {
+        isSelected ? palette.active.opacity(0.45) : palette.inactive.opacity(0.35)
+    }
+
+    private var textForegroundColor: Color {
+        isSelected ? palette.active : palette.inactive
     }
 }
 #endif
