@@ -92,17 +92,19 @@ struct RootTabView: View {
 
     #if os(macOS)
     private var macBody: some View {
-        MacLiquidGlassNavigationBar(
-            supportsTranslucency: platformCapabilities.supportsOS26Translucency
-        ) {
-            decoratedTabContent(for: selectedTab)
-        } principal: {
-            MacRootTabBar(
-                selectedTab: $selectedTab,
-                palette: themeManager.selectedTheme.tabBarPalette,
-                platformCapabilities: platformCapabilities
-            )
-            .frame(maxWidth: .infinity)
+        Group {
+            if #available(macOS 13.0, *) {
+                NavigationStack {
+                    decoratedTabContent(for: selectedTab)
+                }
+            } else {
+                NavigationView {
+                    decoratedTabContent(for: selectedTab)
+                }
+            }
+        }
+        .toolbar {
+            macToolbar
         }
         .modifier(
             MacToolbarBackgroundModifier(
@@ -110,6 +112,18 @@ struct RootTabView: View {
                 supportsTranslucency: platformCapabilities.supportsOS26Translucency
             )
         )
+    }
+
+    @ToolbarContentBuilder
+    private var macToolbar: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            MacRootTabBar(
+                selectedTab: $selectedTab,
+                palette: themeManager.selectedTheme.tabBarPalette,
+                platformCapabilities: platformCapabilities
+            )
+            .frame(maxWidth: .infinity)
+        }
     }
     #endif
 }
@@ -215,9 +229,11 @@ private struct MacRootTabBar: View {
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        HStack(spacing: glassSpacing) {
-            ForEach(tabs, id: \.self) { tab in
-                glassTabButton(for: tab)
+        GlassEffectContainer(spacing: glassSpacing) {
+            HStack(spacing: glassSpacing) {
+                ForEach(tabs, id: \.self) { tab in
+                    glassTabButton(for: tab)
+                }
             }
         }
     }
