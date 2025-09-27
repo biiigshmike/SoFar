@@ -286,6 +286,7 @@ private struct MacTabLabel: View {
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: tab.systemImage)
+                .symbolVariant(isSelected ? .fill : .none)
                 .font(.system(size: 20, weight: .semibold))
             Text(tab.title)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -294,12 +295,17 @@ private struct MacTabLabel: View {
                 .layoutPriority(1)
         }
         .frame(maxWidth: .infinity)
-        .foregroundStyle(.primary)
-        .opacity(labelOpacity)
+        .overlay(alignment: .bottom) {
+            if isSelected {
+                selectionIndicator
+            }
+        }
     }
 
-    private var labelOpacity: Double {
-        isSelected ? 1 : 0.7
+    private var selectionIndicator: some View {
+        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+            .frame(height: 3)
+            .padding(.horizontal, 10)
     }
 }
 #endif
