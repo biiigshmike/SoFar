@@ -266,13 +266,13 @@ private struct MacRootTabBar: View {
         return Button {
             selectedTab = tab
         } label: {
-            let capsule = Capsule(style: .continuous)
-            MacTabLabel(tab: tab, isSelected: isSelected)
-                .padding(.horizontal, metrics.horizontalPadding)
-                .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
-                .frame(height: metrics.height)
-                .contentShape(capsule)
-                .glassEffect(.regular.interactive(), in: capsule)
+            MacLiquidGlassTabButton(
+                tab: tab,
+                palette: palette,
+                metrics: metrics,
+                buttonContentMinWidth: buttonContentMinWidth,
+                isSelected: isSelected
+            )
         }
         .buttonStyle(.plain)
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
@@ -283,6 +283,35 @@ private struct MacRootTabBar: View {
 
     private func accessibilityTraits(for tab: RootTabView.Tab) -> AccessibilityTraits {
         selectedTab == tab ? .isSelected : AccessibilityTraits()
+    }
+}
+
+@available(macOS 26.0, *)
+private struct MacLiquidGlassTabButton: View {
+    let tab: RootTabView.Tab
+    let palette: AppTheme.TabBarPalette
+    let metrics: TranslucentButtonStyle.Metrics
+    let buttonContentMinWidth: CGFloat
+    let isSelected: Bool
+
+    var body: some View {
+        let capsule = Capsule(style: .continuous)
+
+        MacTabLabel(tab: tab, isSelected: isSelected)
+            .padding(.horizontal, metrics.horizontalPadding)
+            .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
+            .frame(height: metrics.height)
+            .contentShape(capsule)
+            .foregroundStyle(foregroundStyle)
+            .background {
+                capsule
+                    .fill(.clear)
+                    .glassEffect(.regular.interactive(), in: capsule)
+            }
+    }
+
+    private var foregroundStyle: Color {
+        isSelected ? palette.active : palette.inactive
     }
 }
 
