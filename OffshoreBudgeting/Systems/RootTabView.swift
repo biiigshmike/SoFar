@@ -269,7 +269,7 @@ private struct MacRootTabBar: View {
         .buttonStyle(.plain)
         .contentShape(Capsule())
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
-        .glassEffect(.regular.tint(palette.glassTint).interactive(), in: Capsule())
+        .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
