@@ -91,17 +91,50 @@ struct RootTabView: View {
     }
 
     #if os(macOS)
+    @ViewBuilder
     private var macBody: some View {
-        Group {
-            if #available(macOS 13.0, *) {
-                NavigationStack {
-                    decoratedTabContent(for: selectedTab)
-                }
-            } else {
-                NavigationView {
-                    decoratedTabContent(for: selectedTab)
-                }
+        if #available(macOS 13.0, *) {
+            macNavigationStack
+        } else {
+            macLegacyNavigationView
+        }
+    }
+
+    @ViewBuilder
+    @available(macOS 13.0, *)
+    private var macNavigationStack: some View {
+        if #available(macOS 26.0, *), platformCapabilities.supportsOS26Translucency {
+            NavigationStack {
+                decoratedTabContent(for: selectedTab)
+                    .safeAreaInset(edge: .top, alignment: .center) {
+                        MacLiquidGlassNavigationBar(
+                            selectedTab: $selectedTab,
+                            palette: themeManager.selectedTheme.tabBarPalette,
+                            platformCapabilities: platformCapabilities
+                        )
+                    }
             }
+            .toolbar(.hidden, for: .windowToolbar)
+        } else {
+            NavigationStack {
+                decoratedTabContent(for: selectedTab)
+            }
+            .toolbar {
+                macToolbar
+            }
+            .modifier(
+                MacToolbarBackgroundModifier(
+                    theme: themeManager.selectedTheme,
+                    supportsTranslucency: platformCapabilities.supportsOS26Translucency
+                )
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var macLegacyNavigationView: some View {
+        NavigationView {
+            decoratedTabContent(for: selectedTab)
         }
         .toolbar {
             macToolbar
@@ -129,6 +162,43 @@ struct RootTabView: View {
 }
 
 #if os(macOS)
+@available(macOS 26.0, *)
+private struct MacLiquidGlassNavigationBar: View {
+    @Binding var selectedTab: RootTabView.Tab
+    let palette: AppTheme.TabBarPalette
+    let platformCapabilities: PlatformCapabilities
+    private let contentInsets: EdgeInsets
+
+    init(
+        selectedTab: Binding<RootTabView.Tab>,
+        palette: AppTheme.TabBarPalette,
+        platformCapabilities: PlatformCapabilities,
+        contentInsets: EdgeInsets = EdgeInsets(
+            top: DS.Spacing.s,
+            leading: DS.Spacing.l,
+            bottom: DS.Spacing.s,
+            trailing: DS.Spacing.l
+        )
+    ) {
+        self._selectedTab = selectedTab
+        self.palette = palette
+        self.platformCapabilities = platformCapabilities
+        self.contentInsets = contentInsets
+    }
+
+    var body: some View {
+        GlassEffectContainer {
+            MacRootTabBar(
+                selectedTab: $selectedTab,
+                palette: palette,
+                platformCapabilities: platformCapabilities
+            )
+        }
+        .glassEffect()
+        .padding(contentInsets)
+    }
+}
+
 private struct MacToolbarBackgroundModifier: ViewModifier {
     let theme: AppTheme
     let supportsTranslucency: Bool
