@@ -114,15 +114,13 @@ private extension View {
             if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer { self }
             } else {
-                // Classic fallback: no decoration (plain glyphs)
-                self
+                rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
             }
         } else {
-            // Classic OS: return plain controls (no capsule background)
-            self
+            rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
         }
 #else
-        self
+        rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
 #endif
     }
 }
