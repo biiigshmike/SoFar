@@ -224,11 +224,9 @@ private struct MacRootTabBar: View {
 
     @available(macOS 26.0, *)
     private var glassTabBar: some View {
-        GlassEffectContainer(spacing: glassSpacing) {
-            HStack(spacing: glassSpacing) {
-                ForEach(tabs, id: \.self) { tab in
-                    glassTabButton(for: tab)
-                }
+        HStack(spacing: glassSpacing) {
+            ForEach(tabs, id: \.self) { tab in
+                glassTabButton(for: tab)
             }
         }
     }
@@ -265,11 +263,10 @@ private struct MacRootTabBar: View {
                 .padding(.horizontal, metrics.horizontalPadding)
                 .frame(minWidth: buttonContentMinWidth, maxWidth: .infinity)
                 .frame(height: metrics.height)
+                .glassEffect()
         }
         .buttonStyle(.plain)
-        .contentShape(Capsule())
         .frame(minWidth: buttonMinWidth, maxWidth: .infinity)
-        .glassEffect(.regular.interactive(), in: Capsule())
         .glassEffectUnion(id: tab, namespace: glassNamespace)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(accessibilityTraits(for: tab))
