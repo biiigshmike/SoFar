@@ -495,11 +495,10 @@ struct RootHeaderGlassControl<Content: View>: View {
 
     var body: some View {
         let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
-        let resolvedWidth = width ?? dimension
         let theme = themeManager.selectedTheme
 
         let control = content
-            .frame(width: resolvedWidth, height: dimension)
+            .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
             .contentShape(Rectangle())
             .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
             .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
@@ -507,6 +506,27 @@ struct RootHeaderGlassControl<Content: View>: View {
 
         control
             .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+    }
+}
+
+private struct RootHeaderGlassControlFrameModifier: ViewModifier {
+    let width: CGFloat?
+    let dimension: CGFloat
+
+    func body(content: Content) -> some View {
+        if let width {
+            content
+                .frame(width: width, height: dimension)
+        } else {
+            content
+                .frame(
+                    minWidth: dimension,
+                    idealWidth: dimension,
+                    maxWidth: .infinity,
+                    minHeight: dimension,
+                    maxHeight: dimension
+                )
+        }
     }
 }
 
