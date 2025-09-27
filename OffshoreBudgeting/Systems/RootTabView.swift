@@ -236,7 +236,9 @@ private struct MacRootTabBar: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: metrics.height)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.capsule)
+        .tint(isSelected ? palette.active : palette.inactive)
         .contentShape(Capsule())
         .frame(maxWidth: .infinity)
         .glassEffect(.regular.tint(palette.active).interactive(), in: Capsule())
