@@ -189,15 +189,12 @@ private extension View {
             if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer { self }
             } else {
-                // Classic fallback: reuse the legacy styling so we keep a
-                // consistent visual language even when the translucent glass
-                // container is unavailable at runtime.
-                self.rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+                // Classic fallback: no decoration (plain glyphs)
+                self
             }
         } else {
-            // Classic OS: return the legacy glass styling for a flat look
-            // while preserving tap targets and layout metrics.
-            self.rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
+            // Classic OS: return plain controls (no capsule background)
+            self
         }
 #else
         self
