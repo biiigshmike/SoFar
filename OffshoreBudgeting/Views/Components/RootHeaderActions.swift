@@ -4,15 +4,65 @@ import SwiftUI
 enum RootHeaderActionMetrics {
     /// Base tap target for header controls. Sized using the design system so
     /// theme updates can scale the control consistently across platforms.
-    static let dimension: CGFloat = DS.Spacing.l + DS.Spacing.m
+    private static let legacyDimension: CGFloat = DS.Spacing.l + DS.Spacing.m
+
+    /// Expanded Liquid Glass dimension used on macOS 26.
+    private static let macExpandedDimension: CGFloat = 68
+
+    static func dimension(for capabilities: PlatformCapabilities) -> CGFloat {
+        #if os(macOS)
+        if capabilities.usesExpandedMacRootHeaderMetrics {
+            return Self.macExpandedDimension
+        }
+        #endif
+        return Self.legacyDimension
+    }
+
+    /// Convenience accessor for contexts that do not have environment access.
+    static var dimension: CGFloat { dimension(for: PlatformCapabilities.current) }
 }
 
 enum RootHeaderGlassMetrics {
     /// Horizontal inset around each control segment. A fraction of system
-    /// spacing keeps the pill compact without hard-coded values.
-    static let horizontalPadding: CGFloat = DS.Spacing.s * 0.5
+    /// spacing keeps the pill compact without hard-coded values on legacy OSs.
+    private static let legacyHorizontalPadding: CGFloat = DS.Spacing.s * 0.5
     /// Vertical inset applied to the glass container.
-    static let verticalPadding: CGFloat = DS.Spacing.xs * 0.75
+    private static let legacyVerticalPadding: CGFloat = DS.Spacing.xs * 0.75
+
+    /// Increased breathing room for macOS 26's Liquid Glass treatment.
+    private static let macHorizontalPadding: CGFloat = DS.Spacing.m * 0.75
+    private static let macVerticalPadding: CGFloat = DS.Spacing.s
+    private static let macContainerSpacing: CGFloat = DS.Spacing.s
+
+    static func horizontalPadding(for capabilities: PlatformCapabilities) -> CGFloat {
+        #if os(macOS)
+        if capabilities.usesExpandedMacRootHeaderMetrics {
+            return Self.macHorizontalPadding
+        }
+        #endif
+        return Self.legacyHorizontalPadding
+    }
+
+    static func verticalPadding(for capabilities: PlatformCapabilities) -> CGFloat {
+        #if os(macOS)
+        if capabilities.usesExpandedMacRootHeaderMetrics {
+            return Self.macVerticalPadding
+        }
+        #endif
+        return Self.legacyVerticalPadding
+    }
+
+    static func containerSpacing(for capabilities: PlatformCapabilities) -> CGFloat? {
+        #if os(macOS)
+        if capabilities.usesExpandedMacRootHeaderMetrics {
+            return Self.macContainerSpacing
+        }
+        #endif
+        return nil
+    }
+
+    static var horizontalPadding: CGFloat { horizontalPadding(for: PlatformCapabilities.current) }
+    static var verticalPadding: CGFloat { verticalPadding(for: PlatformCapabilities.current) }
 }
 
 // MARK: - Icon Content
@@ -82,12 +132,30 @@ extension View {
     }
 }
 
+private struct RootHeaderGlassNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
+extension EnvironmentValues {
+    var rootHeaderGlassEffectNamespace: Namespace.ID? {
+        get { self[RootHeaderGlassNamespaceKey.self] }
+        set { self[RootHeaderGlassNamespaceKey.self] = newValue }
+    }
+}
+
+extension View {
+    func rootHeaderGlassEffectNamespace(_ namespace: Namespace.ID?) -> some View {
+        environment(\.rootHeaderGlassEffectNamespace, namespace)
+    }
+}
+
 // MARK: - Header Glass Controls (iOS + macOS)
 #if os(iOS) || os(macOS)
 
 #if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
 @available(iOS 26, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
+    @Environment(\.platformCapabilities) private var capabilities
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -95,9 +163,16 @@ private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     }
 
     var body: some View {
-        GlassEffectContainer {
-            content
-                .glassEffect(in: Capsule(style: .continuous))
+        if let spacing = RootHeaderGlassMetrics.containerSpacing(for: capabilities) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+                    .glassEffect(in: Capsule(style: .continuous))
+            }
+        } else {
+            GlassEffectContainer {
+                content
+                    .glassEffect(in: Capsule(style: .continuous))
+            }
         }
     }
 }
@@ -173,6 +248,7 @@ extension View {
 
 @available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionSegment<Content: View>: View {
+    @Environment(\.platformCapabilities) private var capabilities
     @State private var columnCount: Int
     private let content: Content
 
@@ -192,17 +268,24 @@ private struct RootHeaderActionSegment<Content: View>: View {
 
         return content
             .environment(\.rootHeaderActionColumnsWriter, writer)
-            .frame(minWidth: RootHeaderActionMetrics.dimension, minHeight: RootHeaderActionMetrics.dimension)
+            .frame(
+                minWidth: RootHeaderActionMetrics.dimension(for: capabilities),
+                minHeight: RootHeaderActionMetrics.dimension(for: capabilities)
+            )
             .contentShape(Rectangle())
-            .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
-            .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+            .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding(for: capabilities))
+            .padding(.vertical, RootHeaderGlassMetrics.verticalPadding(for: capabilities))
             .layoutValue(key: RootHeaderActionColumnsKey.self, value: columnCount)
     }
 }
 
 @available(iOS 16.0, macOS 13.0, *)
 private struct RootHeaderActionRowLayout: Layout {
+    @Environment(\.platformCapabilities) private var capabilities
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let verticalPadding = RootHeaderGlassMetrics.verticalPadding(for: capabilities)
         let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
         let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
         let proposedSize = ProposedViewSize(width: nil, height: proposal.height)
@@ -217,7 +300,7 @@ private struct RootHeaderActionRowLayout: Layout {
             guard columns > 0 else { return nil }
             return (columns, subview.sizeThatFits(proposedSize))
         }
-        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+        let perColumnMinimum = actionSizes.reduce(CGFloat(dimension)) { result, entry in
             let (columns, size) = entry
             let widthPerColumn = size.width / CGFloat(columns)
             return max(result, widthPerColumn)
@@ -230,12 +313,13 @@ private struct RootHeaderActionRowLayout: Layout {
 
         let resolvedHeight = subviews.map { subview in
             subview.sizeThatFits(proposedSize).height
-        }.max() ?? (RootHeaderActionMetrics.dimension + RootHeaderGlassMetrics.verticalPadding * 2)
+        }.max() ?? (dimension + verticalPadding * 2)
 
         return CGSize(width: resolvedWidth, height: resolvedHeight)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
         let columnCounts = subviews.map { max(0, $0[RootHeaderActionColumnsKey.self]) }
         let actionColumnCount = columnCounts.filter { $0 > 0 }.reduce(0, +)
         let proposedSize = ProposedViewSize(width: nil, height: bounds.height)
@@ -251,7 +335,7 @@ private struct RootHeaderActionRowLayout: Layout {
             guard columns > 0 else { return nil }
             return (columns, subview.sizeThatFits(proposedSize))
         }
-        let perColumnMinimum = actionSizes.reduce(CGFloat(RootHeaderActionMetrics.dimension)) { result, entry in
+        let perColumnMinimum = actionSizes.reduce(CGFloat(dimension)) { result, entry in
             let (columns, size) = entry
             let widthPerColumn = size.width / CGFloat(columns)
             return max(result, widthPerColumn)
@@ -343,9 +427,9 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
     }
 
     var body: some View {
-        let dimension = RootHeaderActionMetrics.dimension
-        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding
-        let verticalPadding = RootHeaderGlassMetrics.verticalPadding
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding(for: capabilities)
+        let verticalPadding = RootHeaderGlassMetrics.verticalPadding(for: capabilities)
         let theme = themeManager.selectedTheme
 
         let content = VStack(spacing: 0) {
@@ -466,28 +550,58 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
 struct RootHeaderGlassControl<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.rootHeaderGlassEffectNamespace) private var glassEffectNamespace
 
     private let content: Content
     private let width: CGFloat?
+    private let effectID: AnyHashable?
 
-    init(width: CGFloat? = RootHeaderActionMetrics.dimension, @ViewBuilder content: () -> Content) {
+    init(width: CGFloat? = nil, effectID: AnyHashable? = nil, @ViewBuilder content: () -> Content) {
         self.content = content()
         self.width = width
+        self.effectID = effectID
     }
 
     var body: some View {
-        let dimension = RootHeaderActionMetrics.dimension
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        let horizontalPadding = RootHeaderGlassMetrics.horizontalPadding(for: capabilities)
+        let verticalPadding = RootHeaderGlassMetrics.verticalPadding(for: capabilities)
+        let resolvedWidth = width ?? dimension
         let theme = themeManager.selectedTheme
 
         let control = content
-            .frame(width: width, height: dimension)
+            .frame(width: resolvedWidth, height: dimension)
             .contentShape(Rectangle())
-            .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
-            .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .contentShape(Capsule(style: .continuous))
 
         control
+            .rootHeaderApplyGlassEffectID(effectID, namespace: glassEffectNamespace, capabilities: capabilities)
             .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func rootHeaderApplyGlassEffectID(
+        _ effectID: AnyHashable?,
+        namespace: Namespace.ID?,
+        capabilities: PlatformCapabilities
+    ) -> some View {
+        if capabilities.usesExpandedMacRootHeaderMetrics {
+            if let effectID, let namespace {
+                if #available(iOS 18.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
+                    self.glassEffectID(effectID, in: namespace)
+                } else {
+                    self
+                }
+            } else {
+                self
+            }
+        } else {
+            self
+        }
     }
 }
 
@@ -569,18 +683,20 @@ struct RootHeaderIconActionButton: View {
     var systemImage: String
     var accessibilityLabel: String
     var accessibilityIdentifier: String?
+    var glassEffectID: AnyHashable?
     var action: () -> Void
-    @Environment(\.platformCapabilities) private var capabilities
 
     init(
         systemImage: String,
         accessibilityLabel: String,
         accessibilityIdentifier: String? = nil,
+        glassEffectID: AnyHashable? = nil,
         action: @escaping () -> Void
     ) {
         self.systemImage = systemImage
         self.accessibilityLabel = accessibilityLabel
         self.accessibilityIdentifier = accessibilityIdentifier
+        self.glassEffectID = glassEffectID
         self.action = action
     }
 
@@ -588,7 +704,7 @@ struct RootHeaderIconActionButton: View {
         // Always use RootHeaderGlassControl to keep consistent sizing and
         // alignment with the title row. Decoration is suppressed on
         // classic OS by RootHeaderGlassControl/rootHeaderGlassDecorated.
-        RootHeaderGlassControl {
+        RootHeaderGlassControl(effectID: resolvedGlassEffectID) {
             baseButton
                 .buttonStyle(RootHeaderActionButtonStyle())
         }
@@ -604,5 +720,9 @@ struct RootHeaderIconActionButton: View {
         .buttonBorderShape(.circle)
         .contentShape(Circle())
 #endif
+    }
+
+    private var resolvedGlassEffectID: AnyHashable? {
+        glassEffectID ?? systemImage
     }
 }

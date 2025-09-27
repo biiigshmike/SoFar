@@ -43,6 +43,23 @@ extension PlatformCapabilities {
     static let fallback = PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
 }
 
+extension PlatformCapabilities {
+    /// Determines whether the expanded Liquid Glass sizing introduced on macOS
+    /// 26 should be used for root header controls.
+    var usesExpandedMacRootHeaderMetrics: Bool {
+        #if os(macOS)
+        if supportsOS26Translucency {
+            if #available(macOS 26.0, *) {
+                return true
+            }
+        }
+        return false
+        #else
+        return false
+        #endif
+    }
+}
+
 // MARK: - Environment support
 
 private struct PlatformCapabilitiesKey: EnvironmentKey {
