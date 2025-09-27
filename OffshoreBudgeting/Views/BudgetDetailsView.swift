@@ -43,9 +43,6 @@ struct BudgetDetailsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
 
-    // MARK: Glass Effect Coordination
-    @Namespace private var budgetHeaderGlassNamespace
-
     // MARK: UI State
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
@@ -315,13 +312,11 @@ private extension BudgetDetailsView {
                             title: navigation.title,
                             style: .glassIfAvailable,
                             onPrevious: { navigation.onAdjust(-1) },
-                            onNext: { navigation.onAdjust(+1) },
-                            glassEffectID: "budget.periodNavigation"
+                            onNext: { navigation.onAdjust(+1) }
                         )
                         .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
                     }
                 }
-                .rootHeaderGlassEffectNamespace(budgetHeaderGlassNamespace)
                 .padding(.horizontal, DS.Spacing.l)
             }
 

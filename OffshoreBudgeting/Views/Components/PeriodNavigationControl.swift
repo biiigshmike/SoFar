@@ -20,21 +20,18 @@ struct PeriodNavigationControl: View {
     private let style: Style
     private let onPrevious: () -> Void
     private let onNext: () -> Void
-    private let glassEffectID: AnyHashable?
 
     // MARK: - Init
     init(
         title: String,
         style: Style = .plain,
         onPrevious: @escaping () -> Void,
-        onNext: @escaping () -> Void,
-        glassEffectID: AnyHashable? = nil
+        onNext: @escaping () -> Void
     ) {
         self.title = title
         self.style = style
         self.onPrevious = onPrevious
         self.onNext = onNext
-        self.glassEffectID = glassEffectID
     }
 
     // MARK: - Body
@@ -47,7 +44,7 @@ struct PeriodNavigationControl: View {
         case .glass:
 #if os(iOS) || os(macOS)
             if capabilities.supportsOS26Translucency {
-                RootHeaderGlassControl(width: nil, effectID: glassEffectID) {
+                RootHeaderGlassControl(width: nil) {
                     navigationContent
                 }
             } else {
@@ -86,7 +83,7 @@ struct PeriodNavigationControl: View {
 
 private extension PeriodNavigationControl {
     private var navigationButtonDimension: CGFloat {
-        RootHeaderActionMetrics.dimension(for: capabilities)
+        RootHeaderActionMetrics.dimension
     }
 
     @ViewBuilder
