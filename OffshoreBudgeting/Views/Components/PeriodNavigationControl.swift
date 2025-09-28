@@ -57,7 +57,7 @@ struct PeriodNavigationControl: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.primary)
+                //.foregroundStyle(.primary)
                 .frame(width: navigationButtonDimension, height: navigationButtonDimension)
         }
         .buttonStyle(CircularGlassButtonStyle(capabilities: capabilities, style: style))
