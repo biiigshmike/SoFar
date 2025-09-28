@@ -94,7 +94,7 @@ private struct CircularGlassButtonStyle: ButtonStyle {
                     }
                 }
             )
-            .clipShape(Circle())
+            .clipShape(Circle()) // This ensures the button is perfectly round.
             .overlay {
                 if style == .glass && capabilities.supportsOS26Translucency {
                     Circle().stroke(Color.primary.opacity(0.2), lineWidth: 0.5)

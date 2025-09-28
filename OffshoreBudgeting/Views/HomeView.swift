@@ -682,7 +682,6 @@ struct HomeView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
-                    .ub_segmentedControlStyle()
                 }
 
                 // Filter bar (sort options)
@@ -696,7 +695,6 @@ struct HomeView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
-                    .ub_segmentedControlStyle()
                 }
 
                 // Always-offer Add button when no budget exists so users can
