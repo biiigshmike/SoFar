@@ -32,6 +32,10 @@ struct RootTabView: View {
             tabViewItem(for: .presets)
             tabViewItem(for: .settings)
         }
+        .ub_chromeBackground(
+            theme: themeManager.selectedTheme,
+            configuration: themeManager.glassConfiguration
+        )
     }
 
     @ViewBuilder

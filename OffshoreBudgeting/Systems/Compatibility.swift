@@ -14,6 +14,33 @@ import UIKit
 import AppKit
 #endif
 
+// MARK: - Glass Background Policy
+
+/// Centralized policy for deciding when the app should render Liquid Glass
+/// backgrounds versus classic opaque fills. We rely on the combination of the
+/// current theme and the resolved platform capabilities so tests can simulate
+/// OS 26 (glass available) and OS 15.4 (opaque) configurations without
+/// sprinkling conditional logic across individual modifiers.
+struct UBGlassBackgroundPolicy {
+    /// Determines whether surface-level backgrounds (root pages, navigation)
+    /// should adopt the custom glass treatment. Themes like `.system` opt out
+    /// even on modern OS builds to mirror Apple's stock styling.
+    static func shouldUseGlassSurfaces(
+        theme: AppTheme,
+        capabilities: PlatformCapabilities
+    ) -> Bool {
+        capabilities.supportsOS26Translucency && theme.usesGlassMaterials
+    }
+
+    /// Determines whether container chrome (tab bars, navigation bars) should
+    /// defer to the system's built-in glass materials. On legacy OS versions we
+    /// return `false` so modifiers can fall back to opaque backgrounds that
+    /// match the classic design.
+    static func shouldUseSystemChrome(capabilities: PlatformCapabilities) -> Bool {
+        capabilities.supportsOS26Translucency
+    }
+}
+
 // MARK: - View Modifiers (Cross-Platform)
 
 extension View {
@@ -344,7 +371,7 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             if #available(iOS 16.0, macOS 13.0, *) {
                 content
                     .listStyle(.plain)
@@ -444,7 +471,7 @@ private struct UBPreOS26ListRowBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
 
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             content
         } else {
             content.listRowBackground(color)
@@ -586,7 +613,7 @@ private struct UBSurfaceBackgroundModifier: ViewModifier {
     let ignoresSafeAreaEdges: Edge.Set
 
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency && theme.usesGlassMaterials {
+        if UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: theme, capabilities: capabilities) {
             content.ub_glassBackground(
                 theme.glassBaseColor,
                 configuration: configuration,
@@ -608,7 +635,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             content
         } else {
             #if os(iOS)
@@ -682,7 +709,7 @@ private struct UBChromeGlassModifier: ViewModifier {
         // On macOS 26, draw a subtle chrome glass layer behind the TabView
         // control region so the top tab strip carries the Liquid Glass look.
         // On other platforms or classic macOS, leave the content unchanged.
-        if capabilities.supportsOS26Translucency {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             #if os(macOS)
             if #available(macOS 13.0, *) {
                 content.background(
@@ -711,7 +738,7 @@ private struct UBChromeBackgroundModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         // On OS 26, defer to system chrome; on classic, use a flat background.
-        if capabilities.supportsOS26Translucency {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             content
         } else {
             content.background(theme.background)
@@ -727,7 +754,7 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency && theme.usesGlassMaterials {
+        if UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: theme, capabilities: capabilities) {
             content.modifier(
                 UBNavigationGlassModifier(
                     baseColor: theme.glassBaseColor,

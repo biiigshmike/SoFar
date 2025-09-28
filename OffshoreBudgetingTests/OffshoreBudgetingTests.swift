@@ -434,6 +434,29 @@ struct OffshoreBudgetingTests {
         #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue) == false)
     }
+
+    // MARK: - Glass Background Policy
+
+    @Test
+    func glassBackgroundPolicy_usesGlassOnlyWhenThemeAndOSAllow() {
+        let modern = PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: true)
+        let legacy = PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
+
+        // OS 26 devices (modern) render Liquid Glass for glass-enabled themes.
+        #expect(UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: .sunrise, capabilities: modern))
+        #expect(!UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: .sunrise, capabilities: legacy))
+        #expect(!UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: .system, capabilities: modern))
+    }
+
+    @Test
+    func glassBackgroundPolicy_chromeFallsBackOnLegacyOS() {
+        let modern = PlatformCapabilities(supportsOS26Translucency: true, supportsAdaptiveKeypad: true)
+        let legacy = PlatformCapabilities(supportsOS26Translucency: false, supportsAdaptiveKeypad: false)
+
+        // Chrome (tab bars/toolbars) stays opaque on OS 15.4 and earlier builds.
+        #expect(UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: modern))
+        #expect(!UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: legacy))
+    }
 }
 
 // MARK: - Test Doubles
