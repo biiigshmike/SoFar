@@ -5,12 +5,9 @@ enum SegmentedControlEqualWidthCoordinator {
     static func enforceEqualWidth(for segmented: NSSegmentedControl) {
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        segmented.apportionsSegmentWidthsByContent = false
 
         if #available(macOS 26, *) {
-            if #available(macOS 13.0, *) {
-                segmented.segmentDistribution = .fillEqually
-            }
+            segmented.segmentDistribution = .fillEqually
             segmented.invalidateIntrinsicContentSize()
             return
         }
@@ -18,7 +15,6 @@ enum SegmentedControlEqualWidthCoordinator {
         enforceLegacyEqualWidth(for: segmented)
     }
 
-    @available(macOS, obsoleted: 26)
     private static func enforceLegacyEqualWidth(for segmented: NSSegmentedControl) {
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
@@ -58,7 +54,6 @@ enum SegmentedControlEqualWidthCoordinator {
         segmented.invalidateIntrinsicContentSize()
     }
 
-    @available(macOS, obsoleted: 26)
     private static func applyManualEqualWidthDistribution(to segmented: NSSegmentedControl) {
         let count = segmented.segmentCount
         guard count > 0 else { return }
