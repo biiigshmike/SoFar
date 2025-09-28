@@ -703,10 +703,9 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .macLegacyAccentTintIfNeeded(
-                        capabilities: capabilities,
-                        accentColor: themeManager.selectedTheme.glassPalette.accent
-                    )
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
                 }
 
@@ -724,10 +723,9 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .macLegacyAccentTintIfNeeded(
-                        capabilities: capabilities,
-                        accentColor: themeManager.selectedTheme.glassPalette.accent
-                    )
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
                 }
 
