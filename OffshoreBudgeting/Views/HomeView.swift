@@ -683,7 +683,7 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-                    .modifier(homeSegmentedControlStyling)
+                    .modifier(UBSegmentedControlStyleModifier())
                 }
 
                 // Filter bar (sort options)
@@ -698,7 +698,7 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-                    .modifier(homeSegmentedControlStyling)
+                    .modifier(UBSegmentedControlStyleModifier())
                 }
 
                 // Always-offer Add button when no budget exists so users can
@@ -730,12 +730,6 @@ struct HomeView: View {
         .ub_hideScrollIndicators()
     }
 
-    private var homeSegmentedControlStyling: HomeSegmentedControlModifier {
-        HomeSegmentedControlModifier(
-            capabilities: capabilities,
-            accentColor: themeManager.selectedTheme.glassPalette.accent
-        )
-    }
 
     private var headerSectionSpacing: CGFloat {
         let hasPrimarySummary = primarySummary != nil
@@ -1320,24 +1314,6 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
     }
 }
 
-private struct HomeSegmentedControlModifier: ViewModifier {
-    let capabilities: PlatformCapabilities
-    let accentColor: Color
-
-    func body(content: Content) -> some View {
-#if os(macOS)
-        if capabilities.supportsOS26Translucency {
-            content
-        } else {
-            content
-                .controlSize(.large)
-                .tint(accentColor)
-        }
-#else
-        content
-#endif
-    }
-}
 
 // MARK: - Header Action Helpers
 #if os(iOS) || os(macOS)
