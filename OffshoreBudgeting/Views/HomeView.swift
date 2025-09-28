@@ -695,7 +695,8 @@ struct HomeView: View {
                         Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
                     }
                     .pickerStyle(.segmented)
-                    .macOSSegmentedControlStyle()
+                    .frame(maxWidth: .infinity)
+                    .ub_segmentedControlStyle()
                 }
 
                 // Always-offer Add button when no budget exists so users can
@@ -1345,3 +1346,4 @@ private extension View {
         .onPreferenceChange(ViewHeightKey.self) { binding.wrappedValue = $0 }
     }
 }
+#endif
