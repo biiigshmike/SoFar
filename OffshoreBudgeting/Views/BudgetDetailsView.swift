@@ -12,7 +12,6 @@ import CoreData
 import Combine
 #if os(macOS)
 import AppKit
-import ObjectiveC
 #endif
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
@@ -874,11 +873,7 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard
-            let segmented = findSegmentedControl(from: view),
-            let container = findCapsuleContainer(for: segmented)
-        else { return }
-
+        guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
         } else {
@@ -891,48 +886,19 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
                 segmented.setWidth(equalWidth, forSegment: index)
             }
         }
-
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        container.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        container.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        segmented.translatesAutoresizingMaskIntoConstraints = false
-        activateConstraintsIfNeeded(for: segmented, in: container)
-
-        container.layoutSubtreeIfNeeded()
+        // Expand to fill container when possible
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
+        }
         segmented.invalidateIntrinsicContentSize()
-    }
-
-    private func activateConstraintsIfNeeded(for segmented: NSSegmentedControl, in container: NSView) {
-        let cache = constraintCache(for: segmented)
-        if cache.container !== container {
-            cache.deactivateAll()
-            cache.container = container
-        }
-
-        if cache.leading == nil {
-            let constraint = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-            constraint.identifier = "EqualWidthLeading"
-            cache.leading = constraint
-        }
-
-        if cache.trailing == nil {
-            let constraint = container.trailingAnchor.constraint(equalTo: segmented.trailingAnchor)
-            constraint.identifier = "EqualWidthTrailing"
-            cache.trailing = constraint
-        }
-
-        if cache.width == nil {
-            let constraint = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
-            constraint.identifier = "EqualWidthMatchWidth"
-            cache.width = constraint
-        }
-
-        let constraintsToActivate = [cache.leading, cache.trailing, cache.width].compactMap { $0 }.filter { $0.isActive == false }
-        if constraintsToActivate.isEmpty == false {
-            NSLayoutConstraint.activate(constraintsToActivate)
-        }
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
@@ -946,56 +912,6 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
             if let found = searchSegmented(in: sub) { return found }
         }
         return nil
-    }
-
-    private func findCapsuleContainer(for segmented: NSSegmentedControl) -> NSView? {
-        var current: NSView? = segmented.superview
-        var encounteredHostingAncestor = false
-
-        while let candidate = current {
-            if isHostingView(candidate) {
-                encounteredHostingAncestor = true
-            } else if encounteredHostingAncestor {
-                return candidate
-            }
-            current = candidate.superview
-        }
-
-        return segmented.superview
-    }
-
-    private func isHostingView(_ view: NSView) -> Bool {
-        let className = NSStringFromClass(type(of: view))
-        return className.contains("NSHostingView") || className.contains("ViewHost") || className.contains("HostingView")
-    }
-
-    private func constraintCache(for segmented: NSSegmentedControl) -> ConstraintCache {
-        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCache) as? ConstraintCache {
-            return existing
-        }
-        let storage = ConstraintCache()
-        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCache, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        return storage
-    }
-
-    private final class ConstraintCache {
-        var container: NSView?
-        var leading: NSLayoutConstraint?
-        var trailing: NSLayoutConstraint?
-        var width: NSLayoutConstraint?
-
-        func deactivateAll() {
-            [leading, trailing, width].forEach { constraint in
-                constraint?.isActive = false
-            }
-            leading = nil
-            trailing = nil
-            width = nil
-        }
-    }
-
-    private enum AssociatedKeys {
-        static var constraintCache = "BudgetDetailsEqualWidthCache"
     }
 }
 #endif
