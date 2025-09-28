@@ -1071,11 +1071,22 @@ private extension View {
 }
 
 private struct HomeEqualWidthSegmentsModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    @ViewBuilder
     func body(content: Content) -> some View {
 #if os(iOS)
-        content.background(HomeEqualWidthSegmentApplier())
+        if #available(iOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
+            content
+        } else {
+            content.background(HomeEqualWidthSegmentApplier())
+        }
 #elseif os(macOS)
-        content.background(HomeEqualWidthSegmentApplier())
+        if #available(macOS 26.0, *), capabilities.supportsOS26Translucency {
+            content
+        } else {
+            content.background(HomeEqualWidthSegmentApplier())
+        }
 #else
         content
 #endif
