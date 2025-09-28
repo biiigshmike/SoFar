@@ -1,3 +1,5 @@
+// OffshoreBudgeting/Views/Components/UBSegmentedControlStyleModifier.swift
+
 import SwiftUI
 
 // MARK: - UBSegmentedControlStyleModifier
@@ -17,4 +19,8 @@ extension View {
     func ub_segmentedControlStyle() -> some View {
         modifier(UBSegmentedControlStyleModifier())
     }
+}
+
+extension AppTheme {
+    var primaryAccent: Color { glassPalette.accent }
 }
