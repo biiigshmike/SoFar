@@ -701,6 +701,12 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
+#if os(macOS)
+                    .controlSize(.large)
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
+#endif
                 }
 
                 // Filter bar (sort options)
@@ -715,6 +721,12 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
+#if os(macOS)
+                    .controlSize(.large)
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
+#endif
                 }
 
                 // Always-offer Add button when no budget exists so users can
