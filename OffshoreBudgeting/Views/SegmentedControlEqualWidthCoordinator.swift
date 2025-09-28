@@ -7,8 +7,9 @@ enum SegmentedControlEqualWidthCoordinator {
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         if #available(macOS 26, *) {
-            segmented.segmentStyle = .capsule
-            segmented.controlSize = .large
+            segmented.segmentDistribution = .fillEqually
+            segmented.invalidateIntrinsicContentSize()
+            return
         }
 
         enforceLegacyEqualWidth(for: segmented)
