@@ -28,91 +28,69 @@ enum SegmentedControlEqualWidthCoordinator {
 
     private static func applyContainerConstraints(to segmented: NSSegmentedControl) {
         let cache = constraintCache(for: segmented)
-        cache.deactivateAll()
+        let container = findCapsuleContainer(for: segmented)
 
-        guard let container = findCapsuleContainer(for: segmented) else { return }
+        if cache.container !== container {
+            cache.deactivateAll()
+            cache.container = container
+        }
+
+        guard let container else { return }
 
         segmented.translatesAutoresizingMaskIntoConstraints = false
 
-        var constraints: [NSLayoutConstraint] = []
-
-        let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-        leading.priority = .defaultHigh
-        constraints.append(leading)
-
-        let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        trailing.priority = .defaultHigh
-        constraints.append(trailing)
-
-        if container !== segmented.superview {
-            let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
-            width.priority = .defaultHigh
-            constraints.append(width)
+        if let leading = cache.leading {
+            leading.isActive = true
+        } else {
+            let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+            leading.priority = .defaultHigh
+            leading.isActive = true
+            cache.leading = leading
         }
 
-        cache.store(constraints)
+        if let trailing = cache.trailing {
+            trailing.isActive = true
+        } else {
+            let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            trailing.priority = .defaultHigh
+            trailing.isActive = true
+            cache.trailing = trailing
+        }
+
+        if container !== segmented.superview {
+            if let width = cache.width {
+                width.isActive = true
+            } else {
+                let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
+                width.priority = .defaultHigh
+                width.isActive = true
+                cache.width = width
+            }
+        } else if let width = cache.width {
+            width.isActive = false
+            cache.width = nil
+        }
     }
 
     private static func findCapsuleContainer(for segmented: NSSegmentedControl) -> NSView? {
         var current: NSView? = segmented.superview
-        var ancestorsBeforeHosting: [NSView] = []
-        var ancestorsAfterHosting: [NSView] = []
         var encounteredHostingAncestor = false
 
         while let candidate = current {
             if isHostingView(candidate) {
                 encounteredHostingAncestor = true
             } else if encounteredHostingAncestor {
-                ancestorsAfterHosting.append(candidate)
-            } else {
-                ancestorsBeforeHosting.append(candidate)
+                return candidate
             }
             current = candidate.superview
         }
 
-        for candidate in ancestorsAfterHosting {
-            if isCapsuleContainer(candidate) {
-                return candidate
-            }
-        }
-
-        if let fallback = ancestorsAfterHosting.first {
-            return fallback
-        }
-
-        for candidate in ancestorsBeforeHosting.reversed() {
-            if isCapsuleContainer(candidate) {
-                return candidate
-            }
-        }
-
-        return ancestorsBeforeHosting.last ?? segmented.superview
+        return segmented.superview
     }
 
     private static func isHostingView(_ view: NSView) -> Bool {
         let className = NSStringFromClass(type(of: view))
         return className.contains("NSHostingView") || className.contains("ViewHost") || className.contains("HostingView")
-    }
-
-    private static func isCapsuleContainer(_ view: NSView) -> Bool {
-        if view is NSVisualEffectView {
-            return true
-        }
-
-        let className = NSStringFromClass(type(of: view))
-        if className.contains("GlassEffectContainer") || className.contains("GlassEffectView") {
-            return true
-        }
-
-        if className.contains("NSVisualEffectView") {
-            return true
-        }
-
-        if className.contains("Capsule") {
-            return true
-        }
-
-        return false
     }
 
     private static func constraintCache(for segmented: NSSegmentedControl) -> ConstraintCache {
@@ -125,16 +103,18 @@ enum SegmentedControlEqualWidthCoordinator {
     }
 
     private final class ConstraintCache {
-        private var constraints: [NSLayoutConstraint] = []
-
-        func store(_ constraints: [NSLayoutConstraint]) {
-            self.constraints = constraints
-            NSLayoutConstraint.activate(constraints)
-        }
+        weak var container: NSView?
+        var leading: NSLayoutConstraint?
+        var trailing: NSLayoutConstraint?
+        var width: NSLayoutConstraint?
 
         func deactivateAll() {
-            NSLayoutConstraint.deactivate(constraints)
-            constraints.removeAll()
+            [leading, trailing, width].forEach { constraint in
+                constraint?.isActive = false
+            }
+            leading = nil
+            trailing = nil
+            width = nil
         }
     }
 
