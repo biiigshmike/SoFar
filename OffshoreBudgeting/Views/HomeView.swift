@@ -710,12 +710,6 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .macSegmentedControlStyle(
-                        capabilities: capabilities,
-                        colorScheme: colorScheme,
-                        accentColor: themeManager.selectedTheme.glassPalette.accent,
-                        legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-                    )
 #endif
                 }
 
@@ -733,12 +727,6 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .macSegmentedControlStyle(
-                        capabilities: capabilities,
-                        colorScheme: colorScheme,
-                        accentColor: themeManager.selectedTheme.glassPalette.accent,
-                        legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-                    )
 #endif
                 }
 
@@ -1302,11 +1290,11 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func constraintCache(for segmented: NSSegmentedControl) -> ConstraintCache {
-        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCache) as? ConstraintCache {
+        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey) as? ConstraintCache {
             return existing
         }
         let storage = ConstraintCache()
-        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCache, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         return storage
     }
 
@@ -1327,7 +1315,7 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private enum AssociatedKeys {
-        static var constraintCache = "HomeEqualWidthCache"
+        static var constraintCacheKey: UInt8 = 0
     }
 }
 #endif

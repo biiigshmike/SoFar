@@ -40,9 +40,7 @@ struct BudgetDetailsView: View {
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
-#if os(macOS)
-    @Environment(\.colorScheme) private var colorScheme
-#endif
+    
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -349,12 +347,7 @@ private extension BudgetDetailsView {
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
-                .macSegmentedControlStyle(
-                    capabilities: capabilities,
-                    colorScheme: colorScheme,
-                    accentColor: themeManager.selectedTheme.glassPalette.accent,
-                    legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-                )
+                
 #endif
             }
             .padding(.horizontal, DS.Spacing.l)
@@ -742,12 +735,6 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
-            .macSegmentedControlStyle(
-                capabilities: capabilities,
-                colorScheme: colorScheme,
-                accentColor: themeManager.selectedTheme.glassPalette.accent,
-                legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-            )
 #endif
             .frame(maxWidth: .infinity)
         }
@@ -970,11 +957,11 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func constraintCache(for segmented: NSSegmentedControl) -> ConstraintCache {
-        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCache) as? ConstraintCache {
+        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey) as? ConstraintCache {
             return existing
         }
         let storage = ConstraintCache()
-        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCache, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         return storage
     }
 
@@ -995,7 +982,8 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private enum AssociatedKeys {
-        static var constraintCache = "BudgetDetailsEqualWidthCache"
+        // Use a stable, addressable byte as the associated-object key.
+        static var constraintCacheKey: UInt8 = 0
     }
 }
 #endif
