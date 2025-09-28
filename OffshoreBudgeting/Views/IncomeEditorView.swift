@@ -123,6 +123,7 @@ struct IncomeEditorView: View {
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
+                .modifier(UBSegmentedControlStyleModifier())
             } header: {
                 Text("Details")
             }
