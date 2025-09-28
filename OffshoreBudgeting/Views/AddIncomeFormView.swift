@@ -1,34 +1,21 @@
+// OffshoreBudgeting/Views/AddIncomeFormView.swift
+
 import SwiftUI
 import CoreData
 
 // MARK: - AddIncomeFormView
-/// A standardized add/edit sheet for Planned or Actual income entries.
-/// Mirrors the visual chrome and labeling of AddBudgetFormView / AddCardView.
-/// Usage:
-///     - Provide an optional `incomeObjectID` to edit an existing Income; otherwise a new record is created.
-///     - Optionally pass `budgetObjectID` to associate the income to a specific budget on save.
-///     - The Save button is enabled when Source is non-empty and Amount > 0.
 struct AddIncomeFormView: View {
-    // MARK: Environment
-    @Environment(\.managedObjectContext) var viewContext   // internal so lifecycle extension can access
+    @Environment(\.managedObjectContext) var viewContext
     @Environment(\.dismiss) private var dismiss
 
-    // MARK: Inputs
-    /// If non-nil, loads and edits an existing Income object.
     let incomeObjectID: NSManagedObjectID?
-    /// Optional Budget to attach this income to on save (currently unused by the model).
     let budgetObjectID: NSManagedObjectID?
-    /// If provided (from calendar or + button), pre-fills the 'First Date' field when adding.
-    /// Must be internal so the lifecycle extension in a separate file can read it.
     let initialDate: Date?
 
-    // MARK: State
-    /// Must be internal so the lifecycle extension in a separate file can call into it.
-    @StateObject var viewModel: AddIncomeFormViewModel = AddIncomeFormViewModel(incomeObjectID: nil, budgetObjectID: nil)
+    @StateObject var viewModel: AddIncomeFormViewModel
     @State private var error: SaveError?
     @State private var showEditScopeOptions: Bool = false
 
-    // MARK: Init
     init(incomeObjectID: NSManagedObjectID? = nil,
          budgetObjectID: NSManagedObjectID? = nil,
          initialDate: Date? = nil) {
@@ -41,18 +28,14 @@ struct AddIncomeFormView: View {
         ))
     }
 
-    // MARK: Body
     var body: some View {
         EditSheetScaffold(
-            // MARK: Standardized Sheet Chrome
             title: viewModel.isEditing ? "Edit Income" : "Add Income",
             detents: [.medium, .large],
             saveButtonTitle: viewModel.isEditing ? "Save Changes" : "Add Income",
             isSaveEnabled: viewModel.canSave,
-            onSave: { saveTapped() } // return true to dismiss
+            onSave: { saveTapped() }
         ) {
-            // MARK: Form Content
-            // Wrap in Group to help the scaffold infer its generic Content on macOS
             Group {
                 if viewModel.isEditing && viewModel.isPartOfSeries {
                     Text("Editing a recurring income. Choosing \"Edit this and all future instances\" will create a new series. Changes from this point forward will be treated as a new series.")
@@ -74,8 +57,7 @@ struct AddIncomeFormView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-        // MARK: Eager load (edit) / Prefill date (add)
-        _eagerLoadHook
+        ._eagerLoadHook
         .ub_onChange(of: viewModel.isPresentingCustomRecurrenceEditor) { newValue in
             if newValue {
                 if case .custom(let raw, _) = viewModel.recurrenceRule {
@@ -108,35 +90,19 @@ struct AddIncomeFormView: View {
     }
 
     // MARK: Sections
-
-    // MARK: Type
-    /// Segmented control to switch between Planned (true) and Actual (false).
-    /// Fills the entire row on macOS/iOS.
     @ViewBuilder
     private var typeSection: some View {
         UBFormSection("Type", isUppercased: true) {
-            // A stretching container ensures the row uses the full available width.
-            HStack {
-                Picker("", selection: $viewModel.isPlanned) {
-                    Text("Planned").tag(true)
-                    Text("Actual").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
-                .ub_segmentedControlStyle()
-.accessibilityIdentifier("incomeTypeSegmentedControl")
+            // CORRECTED: Use the new PlatformAwareSegmentedPicker
+            PlatformAwareSegmentedPicker(selection: $viewModel.isPlanned) {
+                Text("Planned").tag(true)
+                Text("Actual").tag(false)
             }
-            .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("incomeTypeSegmentedControl")
         }
     }
-
-
-    // MARK: Source
-    /// Source of income, such as "Paycheck" or "Gift".  The section
-    /// header appears outside the text field to match the Add Card and
-    /// expense views.  The text field expands to fill the row and aligns
-    /// the content to the leading edge.
+    
+    // ... (rest of AddIncomeFormView.swift is unchanged)
     @ViewBuilder
     private var sourceSection: some View {
         UBFormSection("Source", isUppercased: true) {
@@ -158,9 +124,6 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Amount
-    /// Monetary amount for the income.  The field uses the cross‑platform
-    /// decimal keyboard helper and aligns its contents to the leading edge.
     @ViewBuilder
     private var amountSection: some View {
         UBFormSection("Amount", isUppercased: true) {
@@ -182,10 +145,6 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: First Date
-    /// The first date when this income is received.  The date picker label
-    /// is hidden so the section header provides the context.  We use
-    /// `.ub_compactDatePickerStyle()` for a consistent cross‑platform look.
     @ViewBuilder
     private var firstDateSection: some View {
         UBFormSection("Entry Date", isUppercased: true) {
@@ -197,7 +156,6 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Recurrence
     @ViewBuilder
     private var recurrenceSection: some View {
         UBFormSection("Recurrence", isUppercased: true) {
@@ -206,8 +164,6 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Save
-    /// Validates and persists. Returns `true` to dismiss the sheet.
     private func saveTapped() -> Bool {
         if viewModel.isEditing && viewModel.isPartOfSeries {
             showEditScopeOptions = true
@@ -231,8 +187,6 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Utilities
-    /// Uniform section header style.
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.caption)
