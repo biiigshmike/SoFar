@@ -115,22 +115,19 @@ struct AddIncomeFormView: View {
     @ViewBuilder
     private var typeSection: some View {
         UBFormSection("Type", isUppercased: true) {
-            UBFormRow {
+            // A stretching container ensures the row uses the full available width.
+            HStack {
                 Picker("", selection: $viewModel.isPlanned) {
-                    Text("Planned")
-                        .segmentedFill()
-                        .tag(true)
-                    Text("Actual")
-                        .segmentedFill()
-                        .tag(false)
+                    Text("Planned").tag(true)
+                    Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .equalWidthSegments()
                 .labelsHidden()                         // no inline label column
-                .frame(maxWidth: .infinity)             // ensure the control stretches
+                .frame(maxWidth: .infinity)             // <- make the control stretch
                 .modifier(UBSegmentedControlStyleModifier())            // unified styling for segmented control
                 .accessibilityIdentifier("incomeTypeSegmentedControl")
             }
+            .frame(maxWidth: .infinity)                 // <- make the row stretch
         }
     }
 
