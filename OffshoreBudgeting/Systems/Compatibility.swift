@@ -10,7 +10,7 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 import AppKit
 #endif
 
@@ -358,7 +358,7 @@ extension View {
         modifier(UBListStyleLiquidAwareModifier())
     }
 
-    // MARK: ub_preOS26ListRowBackground(_:) 
+    // MARK: ub_preOS26ListRowBackground(_:)
     /// Applies a list row background only on pre‑OS26 systems. On OS26 this is a no-op so
     /// the system’s default row background (Liquid Glass) can be used.
     func ub_preOS26ListRowBackground(_ color: Color) -> some View {
@@ -710,7 +710,7 @@ private struct UBChromeGlassModifier: ViewModifier {
         // control region so the top tab strip carries the Liquid Glass look.
         // On other platforms or classic macOS, leave the content unchanged.
         if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
-            #if os(macOS)
+            #if os(macOS) && !targetEnvironment(macCatalyst)
             if #available(macOS 13.0, *) {
                 content.background(
                     UBMacChromeGlassBackground(
@@ -808,7 +808,7 @@ private struct UBGlassBackgroundView: View {
     private var baseLayer: some View {
         if capabilities.supportsOS26Translucency {
             if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                #if os(iOS) || os(tvOS) || os(macOS)
+                #if os(iOS) || os(tvOS) || (os(macOS) && !targetEnvironment(macCatalyst))
                 decoratedGlass
                     .background(configuration.glass.material.shapeStyle)
                 #else
@@ -942,7 +942,7 @@ private struct UBGlassBackgroundView: View {
     }
 }
 
-#if os(macOS)
+#if os(macOS) && !targetEnvironment(macCatalyst)
 /// A macOS-only background view that uses NSVisualEffectView to supply the chrome blur
 /// matching the desired AppTheme.GlassConfiguration material, and overlays a subtle
 /// tint wash derived from baseColor so the tab/tool chrome matches iOS OS26 aesthetics.
@@ -1057,7 +1057,7 @@ enum UBColor {
     static var cardNeutralTop: Color {
         #if canImport(UIKit)
         return Color(UIColor.secondarySystemBackground) // iOS
-        #elseif canImport(AppKit)
+        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
         if #available(macOS 11.0, *) {
             return Color(nsColor: NSColor.windowBackgroundColor) // macOS
         } else {
@@ -1072,7 +1072,7 @@ enum UBColor {
     static var cardNeutralBottom: Color {
         #if canImport(UIKit)
         return Color(UIColor.tertiarySystemBackground) // iOS
-        #elseif canImport(AppKit)
+        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
         if #available(macOS 11.0, *) {
             return Color(nsColor: NSColor.controlBackgroundColor) // macOS
         } else {
@@ -1092,7 +1092,7 @@ enum UBTypography {
     static var cardTitleStatic: Color {
         #if canImport(UIKit)
         return Color(UIColor.label).opacity(0.92)              // iOS: dark, dynamic
-        #elseif canImport(AppKit)
+        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
         if #available(macOS 11.0, *) {
             return Color(nsColor: NSColor.labelColor).opacity(0.88) // macOS: dark, dynamic
         } else {
