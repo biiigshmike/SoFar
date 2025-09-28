@@ -344,12 +344,8 @@ private extension BudgetDetailsView {
                 .pickerStyle(.segmented)
                 .equalWidthSegments()
                 .frame(maxWidth: .infinity)
-#if os(macOS)
                 .controlSize(.large)
-
                 .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -734,12 +730,8 @@ private struct FilterBar: View {
             }
             .pickerStyle(.segmented)
             .equalWidthSegments()
-#if os(macOS)
             .controlSize(.large)
-
             .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
