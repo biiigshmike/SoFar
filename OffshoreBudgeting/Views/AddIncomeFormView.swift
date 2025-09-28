@@ -12,7 +12,6 @@ struct AddIncomeFormView: View {
     // MARK: Environment
     @Environment(\.managedObjectContext) var viewContext   // internal so lifecycle extension can access
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Inputs
     /// If non-nil, loads and edits an existing Income object.
@@ -125,7 +124,7 @@ struct AddIncomeFormView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()                         // no inline label column
                 .frame(maxWidth: .infinity)             // <- make the control stretch
-                .liquidAwareSegmentedControlStyle(accentColor: themeManager.selectedTheme.glassPalette.accent)
+                .controlSize(.large)                    // (optional) nicer tap targets
                 .accessibilityIdentifier("incomeTypeSegmentedControl")
             }
             .frame(maxWidth: .infinity)                 // <- make the row stretch

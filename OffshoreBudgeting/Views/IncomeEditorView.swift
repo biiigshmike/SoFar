@@ -81,8 +81,6 @@ struct IncomeEditorView: View {
     let seedIncome: Income?
     let onCommit: (IncomeEditorAction) -> Bool   // return true to dismiss
     
-    @EnvironmentObject private var themeManager: ThemeManager
-
     // MARK: State
     @State private var form: IncomeEditorForm = .init()
     
@@ -125,7 +123,6 @@ struct IncomeEditorView: View {
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .liquidAwareSegmentedControlStyle(accentColor: themeManager.selectedTheme.glassPalette.accent)
             } header: {
                 Text("Details")
             }
