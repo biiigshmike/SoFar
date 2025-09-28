@@ -31,7 +31,6 @@ struct PeriodNavigationControl: View {
         self.onNext = onNext
     }
 
-    @ViewBuilder
     var body: some View {
         HStack(spacing: DS.Spacing.s) {
             navigationButton(systemName: "chevron.left", action: onPrevious)
@@ -95,13 +94,13 @@ private struct CircularGlassButtonStyle: ButtonStyle {
                     }
                 }
             )
-            .clipShape(Circle()) // This ensures the button is perfectly round.
+            .clipShape(Circle())
             .overlay {
                 if style == .glass && capabilities.supportsOS26Translucency {
                     Circle().stroke(Color.primary.opacity(0.2), lineWidth: 0.5)
                 }
             }
-            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

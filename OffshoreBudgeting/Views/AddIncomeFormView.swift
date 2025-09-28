@@ -50,6 +50,14 @@ struct AddIncomeFormView: View {
                 recurrenceSection
             }
         }
+        .onAppear {
+             // This is the correct place for the lifecycle hook.
+            do { try viewModel.loadIfNeeded(from: viewContext) }
+            catch { /* ignore */ }
+            if !viewModel.isEditing, let prefill = initialDate {
+                viewModel.firstDate = prefill
+            }
+        }
         .alert(item: $error) { err in
             Alert(
                 title: Text("Couldn’t Save"),
@@ -57,7 +65,6 @@ struct AddIncomeFormView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-        ._eagerLoadHook
         .ub_onChange(of: viewModel.isPresentingCustomRecurrenceEditor) { newValue in
             if newValue {
                 if case .custom(let raw, _) = viewModel.recurrenceRule {
@@ -78,7 +85,7 @@ struct AddIncomeFormView: View {
         .confirmationDialog(
             "Update Recurring Income",
             isPresented: $showEditScopeOptions,
-            titleVisibility: .visible
+            titleVisibility: .visible // CORRECTED: Explicitly use Visibility.visible
         ) {
             Button("Edit only this instance") { _ = performSave(scope: .instance) }
             Button("Edit this and all future instances (creates a new series)") { _ = performSave(scope: .future) }
@@ -92,7 +99,8 @@ struct AddIncomeFormView: View {
     @ViewBuilder
     private var typeSection: some View {
         UBFormSection("Type", isUppercased: true) {
-            PlatformAwareSegmentedPicker(selection: $viewModel.isPlanned) {
+            // USE THE NEW CUSTOM PICKER
+            PillSegmentedControl(selection: $viewModel.isPlanned) {
                 Text("Planned").tag(true)
                 Text("Actual").tag(false)
             }
@@ -121,7 +129,6 @@ struct AddIncomeFormView: View {
             }
         }
     }
-
     @ViewBuilder
     private var amountSection: some View {
         UBFormSection("Amount", isUppercased: true) {
@@ -142,7 +149,6 @@ struct AddIncomeFormView: View {
             }
         }
     }
-
     @ViewBuilder
     private var firstDateSection: some View {
         UBFormSection("Entry Date", isUppercased: true) {
@@ -153,7 +159,6 @@ struct AddIncomeFormView: View {
                 .accessibilityLabel("Entry Date")
         }
     }
-
     @ViewBuilder
     private var recurrenceSection: some View {
         UBFormSection("Recurrence", isUppercased: true) {
@@ -161,7 +166,6 @@ struct AddIncomeFormView: View {
                                  isPresentingCustomEditor: $viewModel.isPresentingCustomRecurrenceEditor)
         }
     }
-
     private func saveTapped() -> Bool {
         if viewModel.isEditing && viewModel.isPartOfSeries {
             showEditScopeOptions = true
@@ -169,7 +173,6 @@ struct AddIncomeFormView: View {
         }
         return performSave(scope: .all)
     }
-
     private func performSave(scope: RecurrenceScope) -> Bool {
         do {
             try viewModel.save(in: viewContext, scope: scope)
@@ -184,7 +187,6 @@ struct AddIncomeFormView: View {
             return false
         }
     }
-
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.caption)
