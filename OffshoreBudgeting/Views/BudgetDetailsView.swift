@@ -848,83 +848,44 @@ private struct EqualWidthSegmentApplier: UIViewRepresentable {
 }
 #elseif os(macOS)
 private struct EqualWidthSegmentApplier: NSViewRepresentable {
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         view.alphaValue = 0.0
-        DispatchQueue.main.async { self.applyEqualWidthIfNeeded(from: view, coordinator: context.coordinator) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { self.applyEqualWidthIfNeeded(from: nsView, coordinator: context.coordinator) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
     }
 
-    private func applyEqualWidthIfNeeded(from view: NSView, coordinator: Coordinator) {
-        guard let segmented = findSegmentedControl(from: view) else {
-            coordinator.reset()
-            return
-        }
-        guard let hostingView = findHostingView(for: segmented) ?? segmented.superview else {
-            coordinator.reset()
-            return
-        }
-
-        configure(segmented: segmented, hostingView: hostingView, rootView: view, coordinator: coordinator)
-    }
-
-    private func configure(segmented: NSSegmentedControl, hostingView: NSView, rootView: NSView, coordinator: Coordinator) {
+    private func applyEqualWidthIfNeeded(from view: NSView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
         } else {
             let count = segmented.segmentCount
             guard count > 0 else { return }
-            segmented.layoutSubtreeIfNeeded()
             let totalWidth = segmented.bounds.width
             guard totalWidth > 0 else { return }
             let equalWidth = totalWidth / CGFloat(count)
-            for index in 0..<count { segmented.setWidth(equalWidth, forSegment: index) }
+            for index in 0..<count {
+                segmented.setWidth(equalWidth, forSegment: index)
+            }
         }
-
-        segmented.translatesAutoresizingMaskIntoConstraints = false
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        hostingView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        coordinator.activate(&coordinator.leadingConstraint, first: segmented, second: hostingView) {
-            segmented.leadingAnchor.constraint(equalTo: hostingView.leadingAnchor)
-        }
-
-        coordinator.activate(&coordinator.trailingConstraint, first: segmented, second: hostingView) {
-            segmented.trailingAnchor.constraint(equalTo: hostingView.trailingAnchor)
-        }
-
-        if let container = hostingView.superview {
-            coordinator.activate(&coordinator.hostingWidthConstraint, first: hostingView, second: container) {
-                let constraint = hostingView.widthAnchor.constraint(equalTo: container.widthAnchor)
-                constraint.priority = NSLayoutConstraint.Priority(999)
-                return constraint
+        // Expand to fill container when possible
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
             }
-        } else {
-            coordinator.hostingWidthConstraint?.isActive = false
-            coordinator.hostingWidthConstraint = nil
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
         }
-
-        coordinator.rootView = rootView
-        coordinator.observeBounds(of: hostingView, rootView: rootView) { [applier = self, weak coordinator] in
-            guard let coordinator = coordinator, let rootView = coordinator.rootView else { return }
-            applier.scheduleReapply(from: rootView, coordinator: coordinator)
-        }
-
         segmented.invalidateIntrinsicContentSize()
-    }
-
-    private func scheduleReapply(from view: NSView, coordinator: Coordinator) {
-        DispatchQueue.main.async { self.applyEqualWidthIfNeeded(from: view, coordinator: coordinator) }
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
@@ -938,88 +899,6 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
             if let found = searchSegmented(in: sub) { return found }
         }
         return nil
-    }
-
-    private func findHostingView(for segmented: NSView) -> NSView? {
-        var current = segmented.superview
-        while let candidate = current {
-            if !candidate.translatesAutoresizingMaskIntoConstraints || isHostingView(candidate) {
-                return candidate
-            }
-            current = candidate.superview
-        }
-        return nil
-    }
-
-    private func isHostingView(_ view: NSView) -> Bool {
-        let className = NSStringFromClass(type(of: view))
-        return className.contains("NSHostingView")
-    }
-
-    final class Coordinator {
-        weak var rootView: NSView?
-        var leadingConstraint: NSLayoutConstraint?
-        var trailingConstraint: NSLayoutConstraint?
-        var hostingWidthConstraint: NSLayoutConstraint?
-        private var boundsObserver: NSObjectProtocol?
-        private weak var observedView: NSView?
-
-        deinit { tearDownObservation() }
-
-        func reset() {
-            leadingConstraint?.isActive = false
-            trailingConstraint?.isActive = false
-            hostingWidthConstraint?.isActive = false
-            leadingConstraint = nil
-            trailingConstraint = nil
-            hostingWidthConstraint = nil
-            rootView = nil
-            tearDownObservation()
-        }
-
-        func activate(
-            _ storage: inout NSLayoutConstraint?,
-            first expectedFirst: NSView,
-            second expectedSecond: NSView,
-            builder: () -> NSLayoutConstraint
-        ) {
-            if let existing = storage {
-                if (existing.firstItem as? NSView) === expectedFirst,
-                   (existing.secondItem as? NSView) === expectedSecond {
-                    if existing.isActive == false { existing.isActive = true }
-                    return
-                }
-                existing.isActive = false
-            }
-
-            let constraint = builder()
-            constraint.isActive = true
-            storage = constraint
-        }
-
-        func observeBounds(of hostingView: NSView, rootView: NSView, action: @escaping () -> Void) {
-            if observedView !== hostingView {
-                tearDownObservation()
-                hostingView.postsBoundsChangedNotifications = true
-                observedView = hostingView
-                boundsObserver = NotificationCenter.default.addObserver(
-                    forName: NSView.boundsDidChangeNotification,
-                    object: hostingView,
-                    queue: nil
-                ) { _ in action() }
-            }
-
-            self.rootView = rootView
-        }
-
-        private func tearDownObservation() {
-            if let observer = boundsObserver {
-                NotificationCenter.default.removeObserver(observer)
-            }
-            boundsObserver = nil
-            observedView?.postsBoundsChangedNotifications = false
-            observedView = nil
-        }
     }
 }
 #endif
