@@ -5,6 +5,13 @@
 //  Created by Michael Brown on 9/28/25.
 //
 
+//
+//  MacSegmentedControlStyler.swift
+//  Offshore
+//
+//  Created by Michael Brown on 9/28/25.
+//
+
 import SwiftUI
 
 #if os(macOS)
@@ -47,21 +54,16 @@ private struct SegmentedControlConfigurator: NSViewRepresentable {
     private func applyStyle(from view: NSView) {
         guard let segmentedControl = findSegmentedControl(from: view) else { return }
 
-        // 1. Apply the modern capsule style for macOS 26+
+        // 1. Apply the modern capsule style
         if #available(macOS 13.0, *) {
              // This is the key to making the segments expand to fill the control's bounds.
             segmentedControl.segmentDistribution = .fillEqually
         }
         
-        // This makes each segment pill-shaped, creating the desired look.
+        // This makes each segment pill-shaped.
         segmentedControl.segmentStyle = .texturedRounded
 
-        // 2. Make the background transparent for the Liquid Glass effect.
-        segmentedControl.wantsLayer = true
-        segmentedControl.layer?.backgroundColor = NSColor.clear.cgColor
-        
-        // 3. Make the control itself expand to fill its container horizontally.
-        // This is the missing piece that prevents the control from staying small and centered.
+        // 2. Ensure the control expands to fill its container horizontally
         segmentedControl.translatesAutoresizingMaskIntoConstraints = false
         guard let container = segmentedControl.superview else { return }
 
