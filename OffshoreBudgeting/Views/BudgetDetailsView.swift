@@ -346,8 +346,10 @@ private extension BudgetDetailsView {
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
+
+                .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
-                .macSegmentedAppearance()
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -734,9 +736,11 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
+
+            .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
             .frame(maxWidth: .infinity)
-            .macSegmentedAppearance()
         }
         .frame(maxWidth: .infinity)
         .ub_onChange(of: startDate) { onChanged() }
@@ -849,22 +853,18 @@ private struct EqualWidthSegmentApplier: UIViewRepresentable {
 }
 #elseif os(macOS)
 private struct EqualWidthSegmentApplier: NSViewRepresentable {
-    @Environment(\.macSegmentedAppearanceConfiguration) private var segmentedAppearanceConfiguration
-
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         view.alphaValue = 0.0
-        let configuration = segmentedAppearanceConfiguration
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view, configuration: configuration) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        let configuration = segmentedAppearanceConfiguration
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView, configuration: configuration) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
     }
 
-    private func applyEqualWidthIfNeeded(from view: NSView, configuration: MacSegmentedAppearanceConfiguration) {
+    private func applyEqualWidthIfNeeded(from view: NSView) {
         guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
@@ -926,7 +926,6 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
             container.layoutSubtreeIfNeeded()
         }
 
-        MacSegmentedControlStyler.applyStyle(configuration, to: segmented)
         segmented.invalidateIntrinsicContentSize()
     }
 

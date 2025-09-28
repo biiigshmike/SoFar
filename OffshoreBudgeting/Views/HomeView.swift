@@ -19,9 +19,6 @@ import SwiftUI
 import CoreData
 import Foundation
 import Combine
-#if os(macOS)
-import AppKit
-#endif
 
 // MARK: - HomeView
 struct HomeView: View {
@@ -706,8 +703,10 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
-                    .macSegmentedAppearance()
                 }
 
                 // Filter bar (sort options)
@@ -724,8 +723,10 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
+
+                    .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
-                    .macSegmentedAppearance()
                 }
 
                 // Always-offer Add button when no budget exists so users can
@@ -1182,22 +1183,18 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
 }
 #elseif os(macOS)
 private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
-    @Environment(\.macSegmentedAppearanceConfiguration) private var segmentedAppearanceConfiguration
-
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         view.alphaValue = 0.0
-        let configuration = segmentedAppearanceConfiguration
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view, configuration: configuration) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        let configuration = segmentedAppearanceConfiguration
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView, configuration: configuration) }
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
     }
 
-    private func applyEqualWidthIfNeeded(from view: NSView, configuration: MacSegmentedAppearanceConfiguration) {
+    private func applyEqualWidthIfNeeded(from view: NSView) {
         guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
@@ -1257,7 +1254,6 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
             container.layoutSubtreeIfNeeded()
         }
 
-        MacSegmentedControlStyler.applyStyle(configuration, to: segmented)
         segmented.invalidateIntrinsicContentSize()
     }
 
@@ -1328,146 +1324,7 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
     }
 
 }
-#if os(macOS)
-// MARK: - macOS Segmented Appearance Support
-
-struct MacSegmentedAppearanceConfiguration {
-    enum Style {
-        case liquidGlass(accent: Color?)
-        case legacy(contentTint: Color, background: Color, divider: Color)
-    }
-
-    let style: Style
-
-    static var legacyDefault: MacSegmentedAppearanceConfiguration {
-        MacSegmentedAppearanceConfiguration(
-            style: .legacy(
-                contentTint: Color(nsColor: .secondaryLabelColor),
-                background: Color(nsColor: .controlBackgroundColor),
-                divider: Color(nsColor: .separatorColor)
-            )
-        )
-    }
-
-    var usesLiquidGlass: Bool {
-        if case .liquidGlass = style { return true }
-        return false
-    }
-
-    var contentTintColor: Color? {
-        switch style {
-        case .liquidGlass(let accent):
-            return accent
-        case .legacy(let tint, _, _):
-            return tint
-        }
-    }
-
-    var backgroundColor: Color? {
-        switch style {
-        case .liquidGlass:
-            return nil
-        case .legacy(_, let background, _):
-            return background
-        }
-    }
-
-    var dividerColor: Color? {
-        switch style {
-        case .liquidGlass:
-            return nil
-        case .legacy(_, _, let divider):
-            return divider
-        }
-    }
-}
-
-private struct MacSegmentedAppearanceConfigurationKey: EnvironmentKey {
-    static let defaultValue: MacSegmentedAppearanceConfiguration = .legacyDefault
-}
-
-extension EnvironmentValues {
-    var macSegmentedAppearanceConfiguration: MacSegmentedAppearanceConfiguration {
-        get { self[MacSegmentedAppearanceConfigurationKey.self] }
-        set { self[MacSegmentedAppearanceConfigurationKey.self] = newValue }
-    }
-}
-
-struct MacSegmentedAppearanceModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var capabilities
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var themeManager: ThemeManager
-
-    func body(content: Content) -> some View {
-        content.environment(\.macSegmentedAppearanceConfiguration, resolvedConfiguration)
-    }
-
-    private var resolvedConfiguration: MacSegmentedAppearanceConfiguration {
-        if capabilities.supportsOS26Translucency {
-            let accent: Color?
-            if colorScheme == .dark {
-                accent = themeManager.selectedTheme.glassPalette.accent
-            } else {
-                accent = nil
-            }
-            return MacSegmentedAppearanceConfiguration(style: .liquidGlass(accent: accent))
-        } else {
-            return MacSegmentedAppearanceConfiguration.legacyDefault
-        }
-    }
-}
-
-extension View {
-    func macSegmentedAppearance() -> some View { modifier(MacSegmentedAppearanceModifier()) }
-}
-
-enum MacSegmentedControlStyler {
-    static func applyStyle(_ configuration: MacSegmentedAppearanceConfiguration, to segmented: NSSegmentedControl) {
-        segmented.contentTintColor = nsColor(from: configuration.contentTintColor)
-
-        if configuration.usesLiquidGlass {
-            segmented.drawsBackground = false
-            segmented.wantsLayer = false
-            segmented.layer?.backgroundColor = nil
-            segmented.layer?.cornerRadius = 0
-            segmented.layer?.masksToBounds = false
-            applyDividerColor(nil, to: segmented)
-        } else {
-            segmented.drawsBackground = true
-            segmented.wantsLayer = true
-            segmented.layer?.masksToBounds = true
-            segmented.layer?.cornerRadius = segmented.bounds.height / 2
-            segmented.layer?.backgroundColor = cgColor(from: configuration.backgroundColor)
-            applyDividerColor(configuration.dividerColor, to: segmented)
-        }
-    }
-
-    private static func applyDividerColor(_ color: Color?, to segmented: NSSegmentedControl) {
-        let dividerColor = nsColor(from: color)
-        let segmentCount = segmented.segmentCount
-        guard segmentCount > 1 else { return }
-        for index in 0..<(segmentCount - 1) {
-            segmented.setDividerColor(dividerColor, forSegment: index)
-        }
-    }
-
-    private static func nsColor(from color: Color?) -> NSColor? {
-        guard let color else { return nil }
-        let platformColor = NSColor(color)
-        return platformColor.usingColorSpace(.deviceRGB) ?? platformColor
-    }
-
-    private static func cgColor(from color: Color?) -> CGColor? {
-        guard let nsColor = nsColor(from: color) else { return nil }
-        return nsColor.cgColor
-    }
-}
-#else
-extension View {
-    func macSegmentedAppearance() -> some View { self }
-}
 #endif
-
 
 // MARK: - Home Header Summary
 private struct HomeHeaderContextSummary: View {
