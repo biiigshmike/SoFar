@@ -123,7 +123,9 @@ struct IncomeEditorView: View {
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .modifier(UBSegmentedControlStyleModifier())
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .macOSSegmentedControlStyle()
             } header: {
                 Text("Details")
             }
