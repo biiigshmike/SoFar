@@ -880,52 +880,16 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        guard let container = segmented.superview else {
-            segmented.invalidateIntrinsicContentSize()
-            return
-        }
-
-        segmented.translatesAutoresizingMaskIntoConstraints = false
-
-        let cache = constraintCache(for: segmented)
-        if let cachedContainer = cache.container, cachedContainer !== container {
-            cache.deactivateAll()
-        }
-        cache.container = container
-
-        if let leading = cache.leading {
-            let matches = (leading.firstItem as? NSView) === segmented && (leading.secondItem as? NSView) === container
-            if !matches {
-                leading.isActive = false
-                cache.leading = nil
+        // Expand to fill container when possible
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
             }
         }
-
-        if let trailing = cache.trailing {
-            let matches = (trailing.firstItem as? NSView) === segmented && (trailing.secondItem as? NSView) === container
-            if !matches {
-                trailing.isActive = false
-                cache.trailing = nil
-            }
-        }
-
-        if cache.leading == nil {
-            let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-            leading.isActive = true
-            cache.leading = leading
-        } else {
-            cache.leading?.isActive = true
-        }
-
-        if cache.trailing == nil {
-            let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-            trailing.isActive = true
-            cache.trailing = trailing
-        } else {
-            cache.trailing?.isActive = true
-        }
-
         segmented.invalidateIntrinsicContentSize()
     }
 
