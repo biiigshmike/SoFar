@@ -103,22 +103,26 @@ private struct SegmentedControlEqualWidthApplier: UIViewRepresentable {
 }
 #elseif os(macOS)
 private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         view.alphaValue = 0.0
         DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: view)
+            applyEqualWidthIfNeeded(from: view, context: context)
         }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: nsView)
+            applyEqualWidthIfNeeded(from: nsView, context: context)
         }
     }
 
-    private func applyEqualWidthIfNeeded(from view: NSView) {
+    private func applyEqualWidthIfNeeded(from view: NSView, context: Context) {
         guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
@@ -134,15 +138,7 @@ private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        if let superview = segmented.superview {
-            segmented.translatesAutoresizingMaskIntoConstraints = false
-            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
-                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
-            }
-            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
-                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
-            }
-        }
+        applyCapsulePinning(to: segmented, context: context)
         segmented.invalidateIntrinsicContentSize()
     }
 
@@ -161,6 +157,107 @@ private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
             }
         }
         return nil
+    }
+
+    private func applyCapsulePinning(to segmented: NSSegmentedControl, context: Context) {
+        let cache = context.coordinator.constraintCache
+        guard let container = findCapsuleContainer(for: segmented) ?? segmented.superview else {
+            cache.deactivateAll()
+            return
+        }
+
+        segmented.translatesAutoresizingMaskIntoConstraints = false
+        cache.activate(
+            key: ConstraintCache.Key.leading,
+            segmented: segmented,
+            container: container
+        ) {
+            segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+        }
+
+        cache.activate(
+            key: ConstraintCache.Key.trailing,
+            segmented: segmented,
+            container: container
+        ) {
+            segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        }
+
+        cache.removeAll(except: [ConstraintCache.Key.leading, ConstraintCache.Key.trailing])
+    }
+
+    private func findCapsuleContainer(for segmented: NSSegmentedControl) -> NSView? {
+        var candidate = segmented.superview
+        while let view = candidate {
+            if isCapsuleContainer(view) {
+                return view
+            }
+            candidate = view.superview
+        }
+        return nil
+    }
+
+    private func isCapsuleContainer(_ view: NSView) -> Bool {
+        if view is NSSegmentedControl { return false }
+        if view is NSVisualEffectView { return true }
+        if let layer = view.layer {
+            if layer.cornerRadius > 0 { return true }
+            if layer.mask != nil { return true }
+        }
+        return false
+    }
+
+    final class Coordinator {
+        let constraintCache = ConstraintCache()
+    }
+
+    final class ConstraintCache {
+        enum Key: Hashable {
+            case leading
+            case trailing
+        }
+
+        private var constraints: [Key: NSLayoutConstraint] = [:]
+
+        func activate(
+            key: Key,
+            segmented: NSSegmentedControl,
+            container: NSView,
+            builder: () -> NSLayoutConstraint
+        ) {
+            if let existing = constraints[key],
+               existing.firstItem === segmented,
+               existing.secondItem === container {
+                if !existing.isActive {
+                    existing.isActive = true
+                }
+                return
+            }
+
+            if let existing = constraints[key] {
+                existing.isActive = false
+            }
+
+            let constraint = builder()
+            constraint.isActive = true
+            constraints[key] = constraint
+        }
+
+        func removeAll(except keys: [Key]) {
+            let keep = Set(keys)
+            let removable = constraints.filter { !keep.contains($0.key) }
+            for (key, constraint) in removable {
+                constraint.isActive = false
+                constraints.removeValue(forKey: key)
+            }
+        }
+
+        func deactivateAll() {
+            for (_, constraint) in constraints {
+                constraint.isActive = false
+            }
+            constraints.removeAll()
+        }
     }
 }
 #endif
