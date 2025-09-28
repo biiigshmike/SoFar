@@ -19,6 +19,9 @@ import SwiftUI
 import CoreData
 import Foundation
 import Combine
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - HomeView
 struct HomeView: View {
