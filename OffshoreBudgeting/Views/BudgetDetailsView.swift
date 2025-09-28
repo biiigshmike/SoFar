@@ -281,7 +281,7 @@ struct BudgetDetailsView: View {
     }
 }
 
-// (removed) Inline list header — Segment Picker and FilterBar now live in the sticky header above the List
+// (removed) Inline list header — Segment Picker and BudgetDetailsFilterBar now live in the sticky header above the List
 
 // MARK: - Scrolling List Header Content
 private extension BudgetDetailsView {
@@ -352,7 +352,7 @@ private extension BudgetDetailsView {
             }
 
             // Filters (sticky header)
-            FilterBar(
+            BudgetDetailsFilterBar(
                 startDate: $vm.startDate,
                 endDate: $vm.endDate,
                 sort: $vm.sort,
@@ -693,8 +693,8 @@ private struct CategoryTotalsRow: View {
     private var chipDotSize: CGFloat { 8 }
 }
 
-// MARK: - FilterBar (unchanged API)
-private struct FilterBar: View {
+// MARK: - BudgetDetailsFilterBar (unchanged API)
+private struct BudgetDetailsFilterBar: View {
     @Binding var startDate: Date
     @Binding var endDate: Date
     @Binding var sort: BudgetDetailsViewModel.SortOption
