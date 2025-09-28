@@ -27,6 +27,9 @@ struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
+#if os(macOS)
+    @Environment(\.colorScheme) private var colorScheme
+#endif
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -703,7 +706,12 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .tint(themeManager.selectedTheme.glassPalette.accent)
+                    .macSegmentedControlStyle(
+                        capabilities: capabilities,
+                        colorScheme: colorScheme,
+                        accentColor: themeManager.selectedTheme.glassPalette.accent,
+                        legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
+                    )
 #endif
                 }
 
@@ -721,7 +729,12 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
 #if os(macOS)
                     .controlSize(.large)
-                    .tint(themeManager.selectedTheme.glassPalette.accent)
+                    .macSegmentedControlStyle(
+                        capabilities: capabilities,
+                        colorScheme: colorScheme,
+                        accentColor: themeManager.selectedTheme.glassPalette.accent,
+                        legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
+                    )
 #endif
                 }
 
