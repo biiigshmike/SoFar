@@ -880,16 +880,52 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        // Expand to fill container when possible
-        if let superview = segmented.superview {
-            segmented.translatesAutoresizingMaskIntoConstraints = false
-            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
-                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
-            }
-            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
-                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
-            }
+        let cache = constraintCache(for: segmented)
+        let container = findCapsuleContainer(for: segmented) ?? segmented.superview
+
+        if cache.container !== container {
+            cache.deactivateAll()
+            cache.container = container
         }
+
+        if let container {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+
+            if cache.leading == nil {
+                let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+                leading.priority = .required
+                leading.isActive = true
+                cache.leading = leading
+            } else {
+                cache.leading?.isActive = true
+            }
+
+            if cache.trailing == nil {
+                let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+                trailing.priority = .required
+                trailing.isActive = true
+                cache.trailing = trailing
+            } else {
+                cache.trailing?.isActive = true
+            }
+
+            if container !== segmented.superview {
+                if cache.width == nil {
+                    let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
+                    width.priority = .required
+                    width.isActive = true
+                    cache.width = width
+                } else {
+                    cache.width?.isActive = true
+                }
+            } else if let width = cache.width {
+                width.isActive = false
+                cache.width = nil
+            }
+
+            container.layoutSubtreeIfNeeded()
+        }
+
         segmented.invalidateIntrinsicContentSize()
     }
 
