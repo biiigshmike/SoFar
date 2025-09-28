@@ -12,7 +12,6 @@ import CoreData
 import Combine
 #if os(macOS)
 import AppKit
-import ObjectiveC
 #endif
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
@@ -40,7 +39,7 @@ struct BudgetDetailsView: View {
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
-    
+
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -347,7 +346,9 @@ private extension BudgetDetailsView {
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
-                
+
+                .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
             }
             .padding(.horizontal, DS.Spacing.l)
@@ -735,6 +736,9 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
+
+            .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
             .frame(maxWidth: .infinity)
         }
@@ -861,11 +865,7 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard
-            let segmented = findSegmentedControl(from: view),
-            let container = findCapsuleContainer(for: segmented)
-        else { return }
-
+        guard let segmented = findSegmentedControl(from: view) else { return }
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
         } else {
@@ -878,48 +878,19 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
                 segmented.setWidth(equalWidth, forSegment: index)
             }
         }
-
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        container.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        container.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        segmented.translatesAutoresizingMaskIntoConstraints = false
-        activateConstraintsIfNeeded(for: segmented, in: container)
-
-        container.layoutSubtreeIfNeeded()
+        // Expand to fill container when possible
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
+        }
         segmented.invalidateIntrinsicContentSize()
-    }
-
-    private func activateConstraintsIfNeeded(for segmented: NSSegmentedControl, in container: NSView) {
-        let cache = constraintCache(for: segmented)
-        if cache.container !== container {
-            cache.deactivateAll()
-            cache.container = container
-        }
-
-        if cache.leading == nil {
-            let constraint = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-            constraint.identifier = "EqualWidthLeading"
-            cache.leading = constraint
-        }
-
-        if cache.trailing == nil {
-            let constraint = container.trailingAnchor.constraint(equalTo: segmented.trailingAnchor)
-            constraint.identifier = "EqualWidthTrailing"
-            cache.trailing = constraint
-        }
-
-        if cache.width == nil {
-            let constraint = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
-            constraint.identifier = "EqualWidthMatchWidth"
-            cache.width = constraint
-        }
-
-        let constraintsToActivate = [cache.leading, cache.trailing, cache.width].compactMap { $0 }.filter { $0.isActive == false }
-        if constraintsToActivate.isEmpty == false {
-            NSLayoutConstraint.activate(constraintsToActivate)
-        }
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
@@ -934,6 +905,7 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
         }
         return nil
     }
+
 
     private func findCapsuleContainer(for segmented: NSSegmentedControl) -> NSView? {
         var current: NSView? = segmented.superview
@@ -985,6 +957,7 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
         // Use a stable, addressable byte as the associated-object key.
         static var constraintCacheKey: UInt8 = 0
     }
+
 }
 #endif
 
