@@ -1,14 +1,10 @@
 #if os(macOS)
 import AppKit
 import ObjectiveC
-import SwiftUI
 
 enum SegmentedControlEqualWidthCoordinator {
     static func enforceEqualWidth(for segmented: NSSegmentedControl) {
         applyDistributionIfNeeded(to: segmented)
-        if #available(macOS 26.0, *), PlatformCapabilities.current.supportsOS26Translucency {
-            return
-        }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         applyContainerConstraints(to: segmented)
