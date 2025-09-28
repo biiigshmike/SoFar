@@ -36,7 +36,6 @@ struct BudgetDetailsView: View {
 
     // MARK: Theme
     @EnvironmentObject private var themeManager: ThemeManager
-
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
@@ -347,10 +346,9 @@ private extension BudgetDetailsView {
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
-                .macLegacyAccentTintIfNeeded(
-                    capabilities: capabilities,
-                    accentColor: themeManager.selectedTheme.glassPalette.accent
-                )
+
+                .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
             }
             .padding(.horizontal, DS.Spacing.l)
@@ -710,7 +708,6 @@ private struct FilterBar: View {
     let onResetDate: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.platformCapabilities) private var capabilities
 
     var body: some View {
         GlassCapsuleContainer(
@@ -739,10 +736,9 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
-            .macLegacyAccentTintIfNeeded(
-                capabilities: capabilities,
-                accentColor: themeManager.selectedTheme.glassPalette.accent
-            )
+
+            .tint(themeManager.selectedTheme.glassPalette.accent)
+
 #endif
             .frame(maxWidth: .infinity)
         }
