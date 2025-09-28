@@ -122,12 +122,14 @@ struct AddIncomeFormView: View {
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
-                .labelsHidden()                         // no inline label column
-                .frame(maxWidth: .infinity)             // <- make the control stretch
-                .modifier(UBSegmentedControlStyleModifier())            // unified styling for segmented control
-                .accessibilityIdentifier("incomeTypeSegmentedControl")
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+#if os(macOS)
+.macOSSegmentedControlGlassStyle() 
+#endif
+.accessibilityIdentifier("incomeTypeSegmentedControl")
             }
-            .frame(maxWidth: .infinity)                 // <- make the row stretch
+            .frame(maxWidth: .infinity)
         }
     }
 

@@ -342,9 +342,10 @@ private extension BudgetDetailsView {
                     Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
                 }
                 .pickerStyle(.segmented)
-                .equalWidthSegments()
                 .frame(maxWidth: .infinity)
-                .modifier(UBSegmentedControlStyleModifier())
+#if os(macOS)
+.macOSSegmentedControlGlassStyle()
+#endif
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -728,9 +729,10 @@ private struct FilterBar: View {
                     .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
             .pickerStyle(.segmented)
-            .equalWidthSegments()
-            .modifier(UBSegmentedControlStyleModifier())
             .frame(maxWidth: .infinity)
+#if os(macOS)
+.macOSSegmentedControlGlassStyle() // ADD THIS
+#endif
         }
         .frame(maxWidth: .infinity)
         .ub_onChange(of: startDate) { onChanged() }

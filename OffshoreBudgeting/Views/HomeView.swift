@@ -681,9 +681,10 @@ struct HomeView: View {
                         Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
                     }
                     .pickerStyle(.segmented)
-                    .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-                    .modifier(UBSegmentedControlStyleModifier())
+#if os(macOS)
+.macOSSegmentedControlGlassStyle()
+#endif
                 }
 
                 // Filter bar (sort options)
@@ -696,9 +697,10 @@ struct HomeView: View {
                         Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
                     }
                     .pickerStyle(.segmented)
-                    .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-                    .modifier(UBSegmentedControlStyleModifier())
+#if os(macOS)
+.macOSSegmentedControlGlassStyle() 
+#endif
                 }
 
                 // Always-offer Add button when no budget exists so users can
