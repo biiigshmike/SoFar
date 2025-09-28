@@ -203,6 +203,7 @@ struct RecurrencePickerView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .modifier(UBSegmentedControlStyleModifier())
             }
         }
 
