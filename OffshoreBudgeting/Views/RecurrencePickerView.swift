@@ -193,6 +193,7 @@ struct RecurrencePickerView: View {
     /// Weekday segmented control in a compact horizontal layout.
     private struct WeekdayPicker: View {
         @Binding var selected: Weekday
+        @EnvironmentObject private var themeManager: ThemeManager
 
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -203,6 +204,7 @@ struct RecurrencePickerView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .liquidAwareSegmentedControlStyle(accentColor: themeManager.selectedTheme.glassPalette.accent)
             }
         }
 
