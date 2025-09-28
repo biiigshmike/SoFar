@@ -675,7 +675,7 @@ struct HomeView: View {
                 HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
 
                 // Segment control in content
-                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
                     Picker("", selection: $selectedSegment) {
                         Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
                         Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
@@ -687,7 +687,7 @@ struct HomeView: View {
                 }
 
                 // Filter bar (sort options)
-                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
                     Picker("Sort", selection: $homeSort) {
                         Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
                         Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
@@ -703,7 +703,7 @@ struct HomeView: View {
 
                 // Always-offer Add button when no budget exists so users can
                 // quickly create an expense for this period.
-                HomeGlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
                     Button(action: addExpenseCTAAction) {
                         Label(addExpenseCTATitle, systemImage: "plus")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
@@ -1071,48 +1071,7 @@ private struct HomeSegmentTotalsRowView: View {
     }
 }
 
-// MARK: - Empty shell helpers (glass capsule + segmented sizing)
-private struct HomeGlassCapsuleContainer<Content: View>: View {
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.responsiveLayoutContext) private var layoutContext
-    @Environment(\.platformCapabilities) private var capabilities
-
-    private let content: Content
-    private let horizontalPadding: CGFloat
-    private let verticalPadding: CGFloat
-    private let contentAlignment: Alignment
-
-    init(
-        horizontalPadding: CGFloat = DS.Spacing.l,
-        verticalPadding: CGFloat = DS.Spacing.m,
-        alignment: Alignment = .leading,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.content = content()
-        self.horizontalPadding = horizontalPadding
-        self.verticalPadding = verticalPadding
-        self.contentAlignment = alignment
-    }
-
-    var body: some View {
-        let capsule = Capsule(style: .continuous)
-        let decorated = content
-            .frame(maxWidth: .infinity, alignment: contentAlignment)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .contentShape(capsule)
-
-        if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
-            GlassEffectContainer {
-                decorated
-                    .glassEffect(.regular.interactive(), in: capsule)
-            }
-        } else {
-            decorated
-        }
-    }
-}
-
+// MARK: - Segmented control sizing helpers
 private extension View {
     func segmentedFill() -> some View { frame(maxWidth: .infinity) }
     func equalWidthSegments() -> some View { modifier(HomeEqualWidthSegmentsModifier()) }
