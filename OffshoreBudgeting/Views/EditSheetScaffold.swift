@@ -24,7 +24,7 @@ enum UBPresentationDetent: Equatable, Hashable {
     case large
     case fraction(Double)
 
-    #if os(iOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
     @available(iOS 16.0, *)
     var systemDetent: PresentationDetent {
         switch self {
@@ -33,7 +33,7 @@ enum UBPresentationDetent: Equatable, Hashable {
         case .fraction(let v): return .fraction(v)
         }
     }
-    #endif
+#endif
 }
 
 // MARK: - EditSheetScaffold
@@ -53,11 +53,12 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: Environment
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var platformCapabilities
 
     // Selection state for detents (compat type)
-    #if os(iOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
     @State private var detentSelection: UBPresentationDetent
-    #endif
+#endif
 
     // MARK: Init
     init(
@@ -80,9 +81,25 @@ struct EditSheetScaffold<Content: View>: View {
         self.onCancel = onCancel
         self.onSave = onSave
         self.content = content()
-        #if os(iOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
         _detentSelection = State(initialValue: initialDetent ?? detents.last ?? .medium)
-        #endif
+#endif
+    }
+
+    private var shouldApplyThemeTint: Bool {
+#if os(macOS)
+        return !platformCapabilities.supportsOS26Translucency
+#else
+        return true
+#endif
+    }
+
+    private var shouldNeutralizeSegmentedTint: Bool {
+#if os(macOS)
+        return platformCapabilities.supportsOS26Translucency
+#else
+        return false
+#endif
     }
 
     // MARK: body
@@ -97,14 +114,14 @@ struct EditSheetScaffold<Content: View>: View {
                             onCancel?()
                             dismiss()
                         }
-                        .tint(themeManager.selectedTheme.resolvedTint)
+                        .ub_themeTint(themeManager.selectedTheme.resolvedTint, when: shouldApplyThemeTint)
                     }
                     // Save
                     ToolbarItem(placement: .confirmationAction) {
                         Button(saveButtonTitle) {
                             if onSave() { dismiss() }
                         }
-                        .tint(themeManager.selectedTheme.resolvedTint)
+                        .ub_themeTint(themeManager.selectedTheme.resolvedTint, when: shouldApplyThemeTint)
                         .disabled(!isSaveEnabled)
                     }
                 }
@@ -113,17 +130,16 @@ struct EditSheetScaffold<Content: View>: View {
             theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
-        .accentColor(themeManager.selectedTheme.resolvedTint)
-        .tint(themeManager.selectedTheme.resolvedTint)
+        .ub_themeAccentColor(themeManager.selectedTheme.resolvedTint, when: shouldApplyThemeTint)
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
         // MARK: Standard sheet behavior (platform-aware)
         .applyDetentsIfAvailable(detents: detents, selection: detentSelectionBinding)
-        #if os(macOS)
+#if os(macOS)
         .frame(minWidth: 680)
-        #endif
+#endif
         .ub_sheetPadding()
     }
 
@@ -153,6 +169,7 @@ struct EditSheetScaffold<Content: View>: View {
                 .ub_formStyleGrouped()
                 .ub_hideScrollIndicators()
                 .multilineTextAlignment(.leading)
+                .background(segmentedTintResetOverlay)
         } else {
             Form { content }
                 .listRowBackground(rowBackground)
@@ -163,7 +180,21 @@ struct EditSheetScaffold<Content: View>: View {
                 .ub_formStyleGrouped()
                 .ub_hideScrollIndicators()
                 .multilineTextAlignment(.leading)
+                .background(segmentedTintResetOverlay)
         }
+    }
+
+    @ViewBuilder
+    private var segmentedTintResetOverlay: some View {
+#if os(macOS)
+        if shouldNeutralizeSegmentedTint {
+            MacOS26SegmentedTintDisabler()
+        } else {
+            EmptyView()
+        }
+#else
+        EmptyView()
+#endif
     }
 
     // MARK: Row Background
@@ -177,26 +208,82 @@ struct EditSheetScaffold<Content: View>: View {
     }
 
     private var separatorColor: Color {
-        #if canImport(UIKit)
+#if canImport(UIKit)
         return Color(uiColor: .separator)
-        #elseif canImport(AppKit)
+#elseif canImport(AppKit)
         if #available(macOS 10.14, *) {
             return Color(nsColor: .separatorColor)
         } else {
             return Color.primary.opacity(0.2)
         }
-        #else
+#else
         return Color.primary.opacity(0.2)
-        #endif
+#endif
     }
 
     // MARK: Detent selection binding (iOS only)
-    #if os(iOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
     private var detentSelectionBinding: Binding<UBPresentationDetent>? { $detentSelection }
-    #else
+#else
     private var detentSelectionBinding: Binding<UBPresentationDetent>? { nil }
-    #endif
+#endif
 }
+
+#if os(macOS)
+private struct MacOS26SegmentedTintDisabler: NSViewRepresentable {
+    func makeNSView(context: Context) -> TintResetView {
+        let view = TintResetView()
+        view.isHidden = true
+        return view
+    }
+
+    func updateNSView(_ nsView: TintResetView, context: Context) {
+        nsView.resetIfNeeded()
+    }
+
+    final class TintResetView: NSView {
+        override func viewDidMoveToSuperview() {
+            super.viewDidMoveToSuperview()
+            resetIfNeeded()
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            resetIfNeeded()
+        }
+
+        override func layout() {
+            super.layout()
+            resetIfNeeded()
+        }
+
+        func resetIfNeeded() {
+            guard #available(macOS 26.0, *), let root = deepestRoot(for: self) else { return }
+            clearTint(in: root)
+        }
+
+        private func deepestRoot(for view: NSView) -> NSView? {
+            var current: NSView? = view
+            var lastSeen: NSView?
+            while let candidate = current {
+                lastSeen = candidate
+                current = candidate.superview
+            }
+            return lastSeen
+        }
+
+        private func clearTint(in view: NSView) {
+            if let segmented = view as? NSSegmentedControl {
+                segmented.contentTintColor = nil
+            }
+
+            for child in view.subviews {
+                clearTint(in: child)
+            }
+        }
+    }
+}
+#endif
 
 // MARK: - Detents application helper
 extension View {
