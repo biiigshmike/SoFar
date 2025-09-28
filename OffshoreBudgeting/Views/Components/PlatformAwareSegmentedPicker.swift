@@ -29,28 +29,27 @@ struct PlatformAwareSegmentedPicker<SelectionValue, Content>: View where Selecti
 }
 
 #if os(macOS)
-import AppKit
-
 /// A fully custom segmented control for macOS, built in SwiftUI to mimic the iOS "Liquid Glass" style.
 private struct CustomMacSegmentedPicker<SelectionValue, Content>: View where SelectionValue: Hashable, Content: View {
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
     @Binding var selection: SelectionValue
-    private let content: () -> Content
-
+    
     // We need to extract the tags and labels from the content closure.
     private let segments: [(tag: SelectionValue, label: AnyView)]
 
     init(selection: Binding<SelectionValue>, @ViewBuilder content: @escaping () -> Content) {
         self._selection = selection
-        self.content = content
         
-        // This is a helper to extract the necessary info from the Picker content.
-        let views = Mirror(reflecting: content()).children.compactMap { $0.value as? Content.Body }
+        // This is a helper to extract the necessary info from the Picker's content.
+        let views = Mirror(reflecting: content()).children.compactMap { $0.value as? TupleView<(some View)> }
         var extractedSegments: [(tag: SelectionValue, label: AnyView)] = []
-        for view in views {
-            if let taggedView = view as? any TaggedView, let tag = taggedView.tag as? SelectionValue {
-                extractedSegments.append((tag, AnyView(taggedView.label)))
+        for viewTuple in views {
+            let viewMirror = Mirror(reflecting: viewTuple.value)
+            for child in viewMirror.children {
+                if let taggedView = child.value as? any TaggedView, let tag = taggedView.tag as? SelectionValue {
+                    extractedSegments.append((tag, AnyView(taggedView.label)))
+                }
             }
         }
         self.segments = extractedSegments
@@ -75,7 +74,7 @@ private struct CustomMacSegmentedPicker<SelectionValue, Content>: View where Sel
                     if selection == segment.tag {
                         Capsule()
                             .fill(selectionIndicatorColor)
-                            .matchedGeometryEffect(id: "selection", in: namespace)
+                            .matchedGeometryEffect(id: "selectionIndicator", in: namespace)
                     }
                 }
             }
@@ -102,11 +101,11 @@ private struct CustomMacSegmentedPicker<SelectionValue, Content>: View where Sel
     }
 }
 
-// Helpers to extract tag and label from SwiftUI's internal view structure.
+// Helper protocols to extract tag and label from SwiftUI's internal view structure.
 private protocol TaggedView {
     var tag: AnyHashable { get }
-    var label: Any { get }
+    var label: any View { get }
 }
-
 extension Tagged: TaggedView {}
+
 #endif

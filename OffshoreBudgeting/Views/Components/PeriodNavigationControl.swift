@@ -5,9 +5,10 @@ import SwiftUI
 /// Chevron-based navigation control for traversing budgeting periods.
 struct PeriodNavigationControl: View {
     @Environment(\.platformCapabilities) private var capabilities
-#if os(iOS)
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-#endif
+    #endif
+    
     enum Style {
         case plain
         case glass
@@ -32,21 +33,6 @@ struct PeriodNavigationControl: View {
 
     @ViewBuilder
     var body: some View {
-        switch style {
-        case .plain:
-            navigationContent
-        case .glass:
-            if capabilities.supportsOS26Translucency {
-                RootHeaderGlassControl(width: nil) {
-                    navigationContent
-                }
-            } else {
-                navigationContent
-            }
-        }
-    }
-
-    private var navigationContent: some View {
         HStack(spacing: DS.Spacing.s) {
             navigationButton(systemName: "chevron.left", action: onPrevious)
 
@@ -62,9 +48,7 @@ struct PeriodNavigationControl: View {
             navigationButton(systemName: "chevron.right", action: onNext)
         }
     }
-}
 
-private extension PeriodNavigationControl {
     private var navigationButtonDimension: CGFloat {
         RootHeaderActionMetrics.dimension(for: capabilities)
     }
@@ -77,15 +61,15 @@ private extension PeriodNavigationControl {
                 .foregroundStyle(.primary)
                 .frame(width: navigationButtonDimension, height: navigationButtonDimension)
         }
-        .buttonStyle(PeriodNavigationButtonStyle(capabilities: capabilities))
+        .buttonStyle(CircularGlassButtonStyle(capabilities: capabilities, style: style))
     }
 
-    struct TitleTypography {
+    private struct TitleTypography {
         let font: Font
         let minimumScaleFactor: CGFloat
     }
 
-    var titleTypography: TitleTypography {
+    private var titleTypography: TitleTypography {
         #if os(iOS)
         if horizontalSizeClass == .compact {
             return TitleTypography(font: .title3.bold(), minimumScaleFactor: 0.6)
@@ -95,23 +79,28 @@ private extension PeriodNavigationControl {
     }
 }
 
-/// A custom button style to create circular, glass-like buttons on modern macOS.
-private struct PeriodNavigationButtonStyle: ButtonStyle {
+/// A custom button style to create circular, glass-like buttons.
+private struct CircularGlassButtonStyle: ButtonStyle {
     let capabilities: PlatformCapabilities
-
+    let style: PeriodNavigationControl.Style
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(
-                // Use the modern glass material on supported OS, otherwise a legacy fill.
                 Group {
-                    if capabilities.supportsOS26Translucency {
+                    if style == .glass && capabilities.supportsOS26Translucency {
                         Circle().fill(.ultraThinMaterial)
                     } else {
-                        Circle().fill(Color.primary.opacity(0.1))
+                        Circle().fill(Color.primary.opacity(0.08))
                     }
                 }
             )
             .clipShape(Circle()) // This ensures the button is perfectly round.
+            .overlay {
+                if style == .glass && capabilities.supportsOS26Translucency {
+                    Circle().stroke(Color.primary.opacity(0.2), lineWidth: 0.5)
+                }
+            }
             .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }

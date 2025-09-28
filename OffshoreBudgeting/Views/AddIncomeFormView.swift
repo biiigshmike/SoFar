@@ -89,11 +89,9 @@ struct AddIncomeFormView: View {
         }
     }
 
-    // MARK: Sections
     @ViewBuilder
     private var typeSection: some View {
         UBFormSection("Type", isUppercased: true) {
-            // CORRECTED: Use the new PlatformAwareSegmentedPicker
             PlatformAwareSegmentedPicker(selection: $viewModel.isPlanned) {
                 Text("Planned").tag(true)
                 Text("Actual").tag(false)
@@ -102,7 +100,7 @@ struct AddIncomeFormView: View {
         }
     }
     
-    // ... (rest of AddIncomeFormView.swift is unchanged)
+    // ... (Rest of file is unchanged)
     @ViewBuilder
     private var sourceSection: some View {
         UBFormSection("Source", isUppercased: true) {
