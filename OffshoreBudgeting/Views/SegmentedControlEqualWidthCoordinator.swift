@@ -1,32 +1,23 @@
 #if os(macOS)
 import AppKit
+import ObjectiveC
 
 enum SegmentedControlEqualWidthCoordinator {
     static func enforceEqualWidth(for segmented: NSSegmentedControl) {
+        applyDistributionIfNeeded(to: segmented)
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        guard let container = resolveContainer(for: segmented) else {
-            if #available(macOS 13.0, *) {
-                segmented.segmentDistribution = .fillEqually
-            }
-            segmented.invalidateIntrinsicContentSize()
-            return
-        }
-
-        container.layoutSubtreeIfNeeded()
-        applyDistribution(for: segmented, in: container)
-        applyLayoutConstraints(for: segmented, in: container)
+        applyContainerConstraints(to: segmented)
         segmented.invalidateIntrinsicContentSize()
     }
 
-    private static func applyDistribution(for segmented: NSSegmentedControl, in container: NSView) {
+    private static func applyDistributionIfNeeded(to segmented: NSSegmentedControl) {
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
         } else {
             let count = segmented.segmentCount
             guard count > 0 else { return }
-            let totalWidth = container.bounds.width
+            let totalWidth = segmented.bounds.width
             guard totalWidth > 0 else { return }
             let equalWidth = totalWidth / CGFloat(count)
             for index in 0..<count {
@@ -35,54 +26,53 @@ enum SegmentedControlEqualWidthCoordinator {
         }
     }
 
-    private static func applyLayoutConstraints(for segmented: NSSegmentedControl, in container: NSView) {
+    private static func applyContainerConstraints(to segmented: NSSegmentedControl) {
+        let cache = constraintCache(for: segmented)
+        let container = findCapsuleContainer(for: segmented)
+
+        if cache.container !== container {
+            cache.deactivateAll()
+            cache.container = container
+        }
+
+        guard let container else { return }
+
         segmented.translatesAutoresizingMaskIntoConstraints = false
 
-        deactivateEqualWidthConstraints(for: segmented, in: container)
+        if let leading = cache.leading {
+            leading.isActive = true
+        } else {
+            let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+            leading.priority = .defaultHigh
+            leading.isActive = true
+            cache.leading = leading
+        }
 
-        var constraints: [NSLayoutConstraint] = []
-
-        let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-        leading.priority = .defaultHigh
-        constraints.append(leading)
-
-        let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        trailing.priority = .defaultHigh
-        constraints.append(trailing)
+        if let trailing = cache.trailing {
+            trailing.isActive = true
+        } else {
+            let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            trailing.priority = .defaultHigh
+            trailing.isActive = true
+            cache.trailing = trailing
+        }
 
         if container !== segmented.superview {
-            let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
-            width.priority = .defaultHigh
-            constraints.append(width)
-        }
-
-        NSLayoutConstraint.activate(constraints)
-    }
-
-    private static func deactivateEqualWidthConstraints(for segmented: NSSegmentedControl, in container: NSView) {
-        let candidates = container.constraints + segmented.constraints
-
-        let toDeactivate = candidates.filter { constraint in
-            guard let firstView = constraint.firstItem as? NSView else { return false }
-            let secondView = constraint.secondItem as? NSView
-
-            switch (firstView, constraint.firstAttribute, secondView, constraint.secondAttribute) {
-            case (segmented, .leading, container, .leading),
-                 (segmented, .trailing, container, .trailing),
-                 (segmented, .width, container, .width),
-                 (container, .leading, segmented, .leading),
-                 (container, .trailing, segmented, .trailing),
-                 (container, .width, segmented, .width):
-                return true
-            default:
-                return false
+            if let width = cache.width {
+                width.isActive = true
+            } else {
+                let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
+                width.priority = .defaultHigh
+                width.isActive = true
+                cache.width = width
             }
+        } else if let width = cache.width {
+            width.isActive = false
+            cache.width = nil
         }
-
-        NSLayoutConstraint.deactivate(toDeactivate)
     }
 
-    private static func resolveContainer(for segmented: NSSegmentedControl) -> NSView? {
+    private static func findCapsuleContainer(for segmented: NSSegmentedControl) -> NSView? {
         var current: NSView? = segmented.superview
         var encounteredHostingAncestor = false
 
@@ -102,19 +92,34 @@ enum SegmentedControlEqualWidthCoordinator {
         let className = NSStringFromClass(type(of: view))
         return className.contains("NSHostingView") || className.contains("ViewHost") || className.contains("HostingView")
     }
-}
 
-final class SegmentedControlLayoutObserverView: NSView {
-    var onLayout: (() -> Void)?
-
-    override func layout() {
-        super.layout()
-        onLayout?()
+    private static func constraintCache(for segmented: NSSegmentedControl) -> ConstraintCache {
+        if let existing = objc_getAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey) as? ConstraintCache {
+            return existing
+        }
+        let storage = ConstraintCache()
+        objc_setAssociatedObject(segmented, &AssociatedKeys.constraintCacheKey, storage, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return storage
     }
 
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        onLayout?()
+    private final class ConstraintCache {
+        weak var container: NSView?
+        var leading: NSLayoutConstraint?
+        var trailing: NSLayoutConstraint?
+        var width: NSLayoutConstraint?
+
+        func deactivateAll() {
+            [leading, trailing, width].forEach { constraint in
+                constraint?.isActive = false
+            }
+            leading = nil
+            trailing = nil
+            width = nil
+        }
+    }
+
+    private enum AssociatedKeys {
+        static var constraintCacheKey: UInt8 = 0
     }
 }
 #endif
