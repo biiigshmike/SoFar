@@ -21,11 +21,11 @@ struct OffshoreBudgetingApp: App {
 #if os(macOS)
     @Environment(\.openWindow) private var openWindow
 #endif
-
+    
     // MARK: Onboarding State
     /// Persisted flag indicating whether the intro flow has been completed.
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
-
+    
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
@@ -40,15 +40,7 @@ struct OffshoreBudgetingApp: App {
         labelAppearance.lineBreakMode = .byClipping
 #endif
     }
-
-    private var shouldApplyThemeTint: Bool {
-#if os(macOS)
-        return !platformCapabilities.supportsOS26Translucency
-#else
-        return true
-#endif
-    }
-
+    
     var body: some Scene {
         WindowGroup {
             ResponsiveLayoutReader { _ in
@@ -64,9 +56,12 @@ struct OffshoreBudgetingApp: App {
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                 .environmentObject(themeManager)
                 .environment(\.platformCapabilities, platformCapabilities)
-                // Apply the selected theme's accent color to all controls only
-                // when the platform still relies on explicit tint overrides.
-                .ub_themeAccentColor(themeManager.selectedTheme.resolvedTint, when: shouldApplyThemeTint)
+                // Apply the selected theme's accent color to all controls.
+                // `tint` covers most modern SwiftUI controls, while `accentColor`
+                // is still required for some AppKit-backed macOS components
+                // (e.g., checkboxes, date pickers) to respect the theme.
+                .accentColor(themeManager.selectedTheme.resolvedTint)
+                .tint(themeManager.selectedTheme.resolvedTint)
                 .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
                 .onAppear {
                     themeManager.refreshSystemAppearance(systemColorScheme)
