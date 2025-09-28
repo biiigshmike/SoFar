@@ -80,10 +80,27 @@ private struct MacSegmentedControlStyler: NSViewRepresentable {
 
     private func applyTint(to control: NSSegmentedControl) {
         let tint = NSColor(accentColor)
-        control.contentTintColor = tint
         control.layer?.backgroundColor = tint.withAlphaComponent(0.16).cgColor
         control.layer?.borderColor = tint.withAlphaComponent(0.25).cgColor
         control.layer?.borderWidth = 0.5
+        updateSegmentLabels(for: control, tint: tint)
+    }
+
+    private func updateSegmentLabels(for control: NSSegmentedControl, tint: NSColor) {
+        let font = control.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        let selectedColor = NSColor.white
+        let normalColor = tint.withAlphaComponent(0.75)
+
+        for index in 0..<control.segmentCount {
+            guard let label = control.label(forSegment: index), !label.isEmpty else { continue }
+            let textColor = control.selectedSegment == index ? selectedColor : normalColor
+            let attributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: textColor,
+                .font: font
+            ]
+
+            control.setAttributedLabel(NSAttributedString(string: label, attributes: attributes), forSegment: index)
+        }
     }
 }
 
