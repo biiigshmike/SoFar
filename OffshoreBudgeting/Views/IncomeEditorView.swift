@@ -81,6 +81,10 @@ struct IncomeEditorView: View {
     let seedIncome: Income?
     let onCommit: (IncomeEditorAction) -> Bool   // return true to dismiss
     
+    // MARK: Environment
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
+
     // MARK: State
     @State private var form: IncomeEditorForm = .init()
     
@@ -123,6 +127,10 @@ struct IncomeEditorView: View {
                     Text("Actual").tag(false)
                 }
                 .pickerStyle(.segmented)
+                .ubSegmentedControlStyle(
+                    capabilities: capabilities,
+                    accentColor: themeManager.selectedTheme.glassPalette.accent
+                )
             } header: {
                 Text("Details")
             }

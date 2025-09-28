@@ -194,6 +194,9 @@ struct RecurrencePickerView: View {
     private struct WeekdayPicker: View {
         @Binding var selected: Weekday
 
+        @EnvironmentObject private var themeManager: ThemeManager
+        @Environment(\.platformCapabilities) private var capabilities
+
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Weekday").font(.subheadline).foregroundStyle(.secondary)
@@ -203,6 +206,10 @@ struct RecurrencePickerView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .ubSegmentedControlStyle(
+                    capabilities: capabilities,
+                    accentColor: themeManager.selectedTheme.glassPalette.accent
+                )
             }
         }
 
