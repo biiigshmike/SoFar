@@ -1114,15 +1114,26 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
 }
 #elseif os(macOS)
 private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
+    func makeNSView(context: Context) -> SegmentedControlLayoutObserverView {
+        let view = SegmentedControlLayoutObserverView(frame: .zero)
         view.alphaValue = 0.0
+        configureObserver(view)
         DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
+    func updateNSView(_ nsView: SegmentedControlLayoutObserverView, context: Context) {
+        configureObserver(nsView)
         DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
+    }
+
+    private func configureObserver(_ view: SegmentedControlLayoutObserverView) {
+        view.onLayout = { [weak view] in
+            guard let view else { return }
+            DispatchQueue.main.async {
+                applyEqualWidthIfNeeded(from: view)
+            }
+        }
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
