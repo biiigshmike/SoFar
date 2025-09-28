@@ -5,6 +5,20 @@
 //  Created by Michael Brown on 9/28/25.
 //
 
+//
+//  MacSegmentedControlGlassStyle.swift
+//  Offshore
+//
+//  Created by Michael Brown on 9/28/25.
+//
+
+//
+//  MacSegmentedControlGlassStyle.swift
+//  Offshore
+//
+//  Created by Michael Brown on 9/28/25.
+//
+
 import SwiftUI
 
 #if os(macOS)
@@ -48,13 +62,13 @@ private struct MacSegmentedControlStyler: NSViewRepresentable {
     private func applyStyle(from view: NSView) {
         guard let segmentedControl = findSegmentedControl(from: view) else { return }
 
-        // 1. Apply the modern capsule style for macOS 26
+        // 1. Apply the modern capsule style
         if #available(macOS 13.0, *) {
              // Forcing .fillEqually is key to making the segments expand.
             segmentedControl.segmentDistribution = .fillEqually
         }
         
-        // This makes each segment pill-shaped, creating the desired look
+        // This makes each segment pill-shaped.
         segmentedControl.segmentStyle = .texturedRounded
 
         // 2. Ensure the control expands to fill its container horizontally
