@@ -39,9 +39,6 @@ struct BudgetDetailsView: View {
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
-#if os(macOS)
-    @Environment(\.colorScheme) private var colorScheme
-#endif
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
@@ -348,12 +345,7 @@ private extension BudgetDetailsView {
                 .frame(maxWidth: .infinity)
 #if os(macOS)
                 .controlSize(.large)
-                .macSegmentedControlStyle(
-                    capabilities: capabilities,
-                    colorScheme: colorScheme,
-                    accentColor: themeManager.selectedTheme.glassPalette.accent,
-                    legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-                )
+                .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
             }
             .padding(.horizontal, DS.Spacing.l)
@@ -741,12 +733,7 @@ private struct FilterBar: View {
             .equalWidthSegments()
 #if os(macOS)
             .controlSize(.large)
-            .macSegmentedControlStyle(
-                capabilities: capabilities,
-                colorScheme: colorScheme,
-                accentColor: themeManager.selectedTheme.glassPalette.accent,
-                legacyBackgroundColor: MacSegmentedControlStyleDefaults.legacyBackground
-            )
+            .tint(themeManager.selectedTheme.glassPalette.accent)
 #endif
             .frame(maxWidth: .infinity)
         }
