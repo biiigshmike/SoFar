@@ -1196,13 +1196,6 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
         guard let segmented = findSegmentedControl(from: view) else { return }
-
-        let containerCandidate = findCapsuleContainer(for: segmented) ?? segmented.superview
-        let cache = constraintCache(for: segmented)
-        cache.deactivateAll()
-        cache.container = nil
-
-        var requiresWidthForLegacy = false
         if #available(macOS 13.0, *) {
             segmented.segmentDistribution = .fillEqually
         } else {
@@ -1212,34 +1205,19 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
             guard totalWidth > 0 else { return }
             let equalWidth = totalWidth / CGFloat(count)
             for index in 0..<count { segmented.setWidth(equalWidth, forSegment: index) }
-            requiresWidthForLegacy = true
         }
-
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        guard let container = containerCandidate else {
-            segmented.invalidateIntrinsicContentSize()
-            return
+        // Pin to fill its container if possible so it expands to max width.
+        if let superview = segmented.superview {
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
+                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            }
+            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
+                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
         }
-
-        let needsWidthConstraint = requiresWidthForLegacy || (container !== segmented.superview)
-
-        segmented.translatesAutoresizingMaskIntoConstraints = false
-        let leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
-        let trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        leading.isActive = true
-        trailing.isActive = true
-        cache.leading = leading
-        cache.trailing = trailing
-
-        if needsWidthConstraint {
-            let width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
-            width.isActive = true
-            cache.width = width
-        }
-
-        cache.container = container
         segmented.invalidateIntrinsicContentSize()
     }
 
