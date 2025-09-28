@@ -121,7 +121,6 @@ struct BudgetDetailsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
-            listHeader
             Group {
                 if vm.selectedSegment == .planned {
                     let resolvedBudget = (try? viewContext.existingObject(with: vm.budgetObjectID) as? Budget) ?? vm.budget
@@ -133,7 +132,7 @@ struct BudgetDetailsView: View {
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
                             onTotalsChanged: { Task { await vm.refreshRows() } },
-                            header: nil
+                            header: AnyView(listHeader)
                         )
                     } else {
                         placeholderView()
@@ -147,7 +146,7 @@ struct BudgetDetailsView: View {
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
                         onTotalsChanged: { Task { await vm.refreshRows() } },
-                        header: nil
+                        header: AnyView(listHeader)
                     )
                 }
             }
@@ -261,8 +260,6 @@ private extension BudgetDetailsView {
                 .padding(.horizontal, DS.Spacing.l)
             }
 
-            // The summary grid is only shown when there is an active budget.
-            // This was causing the layout issue.
             if let summary = vm.summary {
                 CombinedBudgetHeaderGrid(
                     summary: summary,
@@ -277,8 +274,6 @@ private extension BudgetDetailsView {
                 }
             }
             
-            // This FilterBar now contains the pickers and is ALWAYS displayed,
-            // regardless of whether `vm.summary` is nil or not.
             FilterBar(
                 sort: $vm.sort,
                 segment: $vm.selectedSegment,
@@ -290,7 +285,6 @@ private extension BudgetDetailsView {
     }
 }
 
-// A new, simplified FilterBar that holds both pickers.
 private struct FilterBar: View {
     @Binding var sort: BudgetDetailsViewModel.SortOption
     @Binding var segment: BudgetDetailsViewModel.Segment
@@ -316,7 +310,6 @@ private struct FilterBar: View {
         }
     }
 }
-
 
 // ... (The rest of BudgetDetailsView and its subviews are unchanged)
 private struct CombinedBudgetHeaderGrid: View {
@@ -685,6 +678,7 @@ private struct PlannedListFR: View {
             if items.isEmpty {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: DS.Spacing.m) {
+                        if let header { header }
                         addActionButton(title: "Add Planned Expense", action: onAddTapped)
                             .padding(.horizontal, DS.Spacing.l)
                         Text("No planned expenses in this period.")
@@ -928,6 +922,7 @@ private struct VariableListFR: View {
             if items.isEmpty {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: DS.Spacing.m) {
+                        if let header { header }
                         addActionButton(title: "Add Variable Expense", action: onAddTapped)
                             .padding(.horizontal, DS.Spacing.l)
                         Text("No variable expenses in this period.")

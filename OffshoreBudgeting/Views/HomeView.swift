@@ -663,42 +663,21 @@ struct HomeView: View {
     }
 
     // MARK: Empty Period Shell (replaces generic empty state)
+    // Replace this private view inside OffshoreBudgeting/Views/HomeView.swift
+
     @ViewBuilder
     private func emptyPeriodShell(proxy: RootTabPageProxy) -> some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                // Period navigation in content (original position)
                 periodNavigationControl(style: .glassIfAvailable)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Section header + running total for the current segment
-                HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
+                FilterBar(
+                    sort: $homeSort,
+                    segment: $selectedSegment,
+                    onSegmentChanged: { _ in }
+                )
 
-                // Segment control in content
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
-                    Picker("", selection: $selectedSegment) {
-                        Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
-                        Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                }
-
-                // Filter bar (sort options)
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
-                    Picker("Sort", selection: $homeSort) {
-                        Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                        Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                        Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                        Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                        Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                }
-
-                // Always-offer Add button when no budget exists so users can
-                // quickly create an expense for this period.
                 GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
                     Button(action: addExpenseCTAAction) {
                         Label(addExpenseCTATitle, systemImage: "plus")
@@ -709,7 +688,6 @@ struct HomeView: View {
                     .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                 }
 
-                // Segment-specific guidance — centered consistently across platforms
                 Text(emptyShellMessage)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
