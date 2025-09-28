@@ -51,9 +51,8 @@ struct AddIncomeFormView: View {
             }
         }
         .onAppear {
-             // This is the correct place for the lifecycle hook.
             do { try viewModel.loadIfNeeded(from: viewContext) }
-            catch { /* ignore */ }
+            catch { /* This error is handled at save time */ }
             if !viewModel.isEditing, let prefill = initialDate {
                 viewModel.firstDate = prefill
             }
@@ -85,7 +84,7 @@ struct AddIncomeFormView: View {
         .confirmationDialog(
             "Update Recurring Income",
             isPresented: $showEditScopeOptions,
-            titleVisibility: .visible // CORRECTED: Explicitly use Visibility.visible
+            titleVisibility: .visible
         ) {
             Button("Edit only this instance") { _ = performSave(scope: .instance) }
             Button("Edit this and all future instances (creates a new series)") { _ = performSave(scope: .future) }
@@ -99,7 +98,6 @@ struct AddIncomeFormView: View {
     @ViewBuilder
     private var typeSection: some View {
         UBFormSection("Type", isUppercased: true) {
-            // USE THE NEW CUSTOM PICKER
             PillSegmentedControl(selection: $viewModel.isPlanned) {
                 Text("Planned").tag(true)
                 Text("Actual").tag(false)

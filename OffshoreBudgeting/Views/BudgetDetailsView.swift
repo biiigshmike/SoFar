@@ -261,6 +261,8 @@ private extension BudgetDetailsView {
                 .padding(.horizontal, DS.Spacing.l)
             }
 
+            // The summary grid is only shown when there is an active budget.
+            // This was causing the layout issue.
             if let summary = vm.summary {
                 CombinedBudgetHeaderGrid(
                     summary: summary,
@@ -274,27 +276,43 @@ private extension BudgetDetailsView {
                     CategoryTotalsRow(categories: cats)
                 }
             }
+            
+            // This FilterBar now contains the pickers and is ALWAYS displayed,
+            // regardless of whether `vm.summary` is nil or not.
+            FilterBar(
+                sort: $vm.sort,
+                segment: $vm.selectedSegment,
+                onSegmentChanged: { onSegmentChange?($0) }
+            )
+            .padding(.horizontal, DS.Spacing.l)
+            .padding(.bottom, filterBarBottomPadding)
+        }
+    }
+}
 
-            // USE THE NEW CUSTOM PICKER
-            PillSegmentedControl(selection: $vm.selectedSegment) {
+// A new, simplified FilterBar that holds both pickers.
+private struct FilterBar: View {
+    @Binding var sort: BudgetDetailsViewModel.SortOption
+    @Binding var segment: BudgetDetailsViewModel.Segment
+    let onSegmentChanged: (BudgetDetailsViewModel.Segment) -> Void
+    
+    var body: some View {
+        VStack(spacing: DS.Spacing.s) {
+            PillSegmentedControl(selection: $segment) {
                 Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
                 Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
             }
-            .padding(.horizontal, DS.Spacing.l)
-            .ub_onChange(of: vm.selectedSegment) { newValue in
-                onSegmentChange?(newValue)
+            .ub_onChange(of: segment) { newValue in
+                onSegmentChanged(newValue)
             }
-
-            // USE THE NEW CUSTOM PICKER
-            PillSegmentedControl(selection: $vm.sort) {
+            
+            PillSegmentedControl(selection: $sort) {
                 Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓").tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
                 Text("$↑").tag(BudgetDetailsViewModel.SortOption.amountHighLow)
                 Text("Date ↑").tag(BudgetDetailsViewModel.SortOption.dateOldNew)
                 Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
-            .padding(.horizontal, DS.Spacing.l)
-            .padding(.bottom, filterBarBottomPadding)
         }
     }
 }
@@ -614,147 +632,10 @@ private struct CategoryTotalsRow: View {
     }
 
     private var chipFont: Font { .footnote.weight(.semibold) }
-
     private var chipVerticalPadding: CGFloat { 6 }
-
     private var chipRowMinHeight: CGFloat { 22 }
-
     private var chipDotSize: CGFloat { 8 }
 }
-
-private struct FilterBar: View {
-    @Binding var startDate: Date
-    @Binding var endDate: Date
-    @Binding var sort: BudgetDetailsViewModel.SortOption
-
-    let onChanged: () -> Void
-    let onResetDate: () -> Void
-
-    @EnvironmentObject private var themeManager: ThemeManager
-
-    var body: some View {
-        GlassCapsuleContainer(
-            horizontalPadding: DS.Spacing.l,
-            verticalPadding: DS.Spacing.s,
-            alignment: .center
-        ) {
-            Picker("Sort", selection: $sort) {
-                Text("A–Z")
-                    .segmentedFill()
-                    .tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                Text("$↓")
-                    .segmentedFill()
-                    .tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                Text("$↑")
-                    .segmentedFill()
-                    .tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                Text("Date ↑")
-                    .segmentedFill()
-                    .tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                Text("Date ↓")
-                    .segmentedFill()
-                    .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
-            }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity)
-        .ub_onChange(of: startDate) { onChanged() }
-        .ub_onChange(of: endDate) { onChanged() }
-        .ub_onChange(of: sort) { onChanged() }
-    }
-}
-
-private extension View {
-    func segmentedFill() -> some View {
-        frame(maxWidth: .infinity)
-    }
-
-    func equalWidthSegments() -> some View {
-        modifier(EqualWidthSegmentsModifier())
-    }
-}
-
-private struct EqualWidthSegmentsModifier: ViewModifier {
-    func body(content: Content) -> some View {
-#if os(iOS)
-        content.background(EqualWidthSegmentApplier())
-#elseif os(macOS)
-        content.background(EqualWidthSegmentApplier())
-#else
-        content
-#endif
-    }
-}
-
-#if os(iOS)
-private struct EqualWidthSegmentApplier: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.isUserInteractionEnabled = false
-        DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: view)
-        }
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            applyEqualWidthIfNeeded(from: view)
-        }
-    }
-
-    private func applyEqualWidthIfNeeded(from view: UIView) {
-        guard let segmented = findSegmentedControl(from: view) else { return }
-        segmented.apportionsSegmentWidthsByContent = false
-        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        segmented.invalidateIntrinsicContentSize()
-    }
-
-    private func findSegmentedControl(from view: UIView) -> UISegmentedControl? {
-        var current: UIView? = view
-        while let candidate = current {
-            if let segmented = candidate as? UISegmentedControl {
-                return segmented
-            }
-            current = candidate.superview
-        }
-        return nil
-    }
-}
-#elseif os(macOS)
-private struct EqualWidthSegmentApplier: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        view.alphaValue = 0.0
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
-    }
-
-    private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard findSegmentedControl(from: view) != nil else { return }
-    }
-
-    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-        guard let root = view.superview else { return nil }
-        return searchSegmented(in: root)
-    }
-
-    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
-        for sub in node.subviews {
-            if let seg = sub as? NSSegmentedControl { return seg }
-            if let found = searchSegmented(in: sub) { return found }
-        }
-        return nil
-    }
-}
-#endif
-
 private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
