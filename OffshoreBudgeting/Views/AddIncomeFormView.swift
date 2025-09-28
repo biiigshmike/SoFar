@@ -124,7 +124,7 @@ struct AddIncomeFormView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()                         // no inline label column
                 .frame(maxWidth: .infinity)             // <- make the control stretch
-                .controlSize(.large)                    // (optional) nicer tap targets
+                .modifier(UBSegmentedControlStyleModifier())            // unified styling for segmented control
                 .accessibilityIdentifier("incomeTypeSegmentedControl")
             }
             .frame(maxWidth: .infinity)                 // <- make the row stretch
