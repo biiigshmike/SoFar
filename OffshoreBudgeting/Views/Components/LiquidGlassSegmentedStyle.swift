@@ -88,8 +88,11 @@ private struct MacSegmentedControlStyler: NSViewRepresentable {
 
     private func updateSegmentLabels(for control: NSSegmentedControl, tint: NSColor) {
         let font = control.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        control.font = font
+
         let selectedColor = NSColor.white
         let normalColor = tint.withAlphaComponent(0.75)
+        let selector = Selector(("setAttributedLabel:forSegment:"))
 
         for index in 0..<control.segmentCount {
             guard let label = control.label(forSegment: index), !label.isEmpty else { continue }
@@ -99,7 +102,13 @@ private struct MacSegmentedControlStyler: NSViewRepresentable {
                 .font: font
             ]
 
-            control.setAttributedLabel(NSAttributedString(string: label, attributes: attributes), forSegment: index)
+            let attributedLabel = NSAttributedString(string: label, attributes: attributes)
+
+            if control.responds(to: selector) {
+                control.perform(selector, with: attributedLabel, with: NSNumber(value: index))
+            } else {
+                control.setLabel(label, forSegment: index)
+            }
         }
     }
 }
