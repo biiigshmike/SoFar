@@ -54,17 +54,11 @@ extension View {
 }
 
 private struct SegmentedControlEqualWidthModifier: ViewModifier {
-    @EnvironmentObject private var themeManager: ThemeManager
-
     func body(content: Content) -> some View {
 #if os(iOS)
-        content.background(
-            SegmentedControlEqualWidthApplier(palette: themeManager.selectedTheme.glassPalette)
-        )
+        content.background(SegmentedControlEqualWidthApplier())
 #elif os(macOS)
-        content.background(
-            SegmentedControlEqualWidthApplier(palette: themeManager.selectedTheme.glassPalette)
-        )
+        content.background(SegmentedControlEqualWidthApplier())
 #else
         content
 #endif
@@ -73,8 +67,6 @@ private struct SegmentedControlEqualWidthModifier: ViewModifier {
 
 #if os(iOS)
 private struct SegmentedControlEqualWidthApplier: UIViewRepresentable {
-    let palette: AppTheme.GlassConfiguration.Palette
-
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         view.isUserInteractionEnabled = false
@@ -95,7 +87,6 @@ private struct SegmentedControlEqualWidthApplier: UIViewRepresentable {
         segmented.apportionsSegmentWidthsByContent = false
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        applyMacCatalystLiquidGlassIfNeeded(to: segmented)
         segmented.invalidateIntrinsicContentSize()
     }
 
@@ -109,21 +100,9 @@ private struct SegmentedControlEqualWidthApplier: UIViewRepresentable {
         }
         return nil
     }
-
-    private func applyMacCatalystLiquidGlassIfNeeded(to segmented: UISegmentedControl) {
-#if targetEnvironment(macCatalyst)
-        if #available(macCatalyst 26.0, *) {
-            segmented.selectedSegmentTintColor = UIColor(palette.accent)
-            segmented.tintColor = UIColor(palette.accent)
-            segmented.backgroundColor = UIColor(palette.shadow).withAlphaComponent(0.12)
-        }
-#endif
-    }
 }
-#elif os(macOS)
+#elseif os(macOS)
 private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
-    let palette: AppTheme.GlassConfiguration.Palette
-
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
@@ -160,7 +139,6 @@ private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         applyCapsulePinning(to: segmented, context: context)
-        applyLiquidGlassAppearanceIfNeeded(to: segmented)
         segmented.invalidateIntrinsicContentSize()
     }
 
@@ -227,20 +205,6 @@ private struct SegmentedControlEqualWidthApplier: NSViewRepresentable {
             if layer.mask != nil { return true }
         }
         return false
-    }
-
-    private func applyLiquidGlassAppearanceIfNeeded(to segmented: NSSegmentedControl) {
-        guard #available(macOS 26.0, *) else { return }
-        segmented.segmentStyle = .capsule
-        segmented.bezelStyle = .rounded
-        segmented.contentTintColor = NSColor(palette.accent)
-
-        if segmented.responds(to: Selector(("setContentBorderColor:forSegment:"))) {
-            let rimColor = NSColor(palette.rim).withAlphaComponent(0.30)
-            for index in 0..<segmented.segmentCount {
-                segmented.setContentBorderColor(rimColor, forSegment: index)
-            }
-        }
     }
 
     final class Coordinator {
