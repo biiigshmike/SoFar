@@ -347,9 +347,8 @@ private extension BudgetDetailsView {
 #if os(macOS)
                 .controlSize(.large)
 
-                .tint(themeManager.selectedTheme.glassPalette.accent)
-
 #endif
+                .ub_segmentedControlTint(for: capabilities)
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -708,6 +707,7 @@ private struct FilterBar: View {
     let onResetDate: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     var body: some View {
         GlassCapsuleContainer(
@@ -737,15 +737,29 @@ private struct FilterBar: View {
 #if os(macOS)
             .controlSize(.large)
 
-            .tint(themeManager.selectedTheme.glassPalette.accent)
-
 #endif
+            .ub_segmentedControlTint(for: capabilities)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
         .ub_onChange(of: startDate) { onChanged() }
         .ub_onChange(of: endDate) { onChanged() }
         .ub_onChange(of: sort) { onChanged() }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func ub_segmentedControlTint(for capabilities: PlatformCapabilities) -> some View {
+#if os(macOS)
+        if #available(macOS 26.0, *), capabilities.supportsOS26Translucency {
+            self
+        } else {
+            self.tint(Color(nsColor: NSColor.controlAccentColor))
+        }
+#else
+        self
+#endif
     }
 }
 
