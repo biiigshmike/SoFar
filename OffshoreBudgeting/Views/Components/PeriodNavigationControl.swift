@@ -1,3 +1,5 @@
+// OffshoreBudgeting/Views/Components/PeriodNavigationControl.swift
+
 import SwiftUI
 
 /// Chevron-based navigation control for traversing budgeting periods.
@@ -42,7 +44,7 @@ struct PeriodNavigationControl: View {
             plainContent
 
         case .glass:
-#if os(iOS) || os(macOS)
+            // CORRECTED: Use capabilities flag instead of #available
             if capabilities.supportsOS26Translucency {
                 RootHeaderGlassControl(width: nil) {
                     navigationContent
@@ -50,9 +52,6 @@ struct PeriodNavigationControl: View {
             } else {
                 plainContent
             }
-#else
-            plainContent
-#endif
         }
     }
 
@@ -116,28 +115,20 @@ private extension PeriodNavigationControl {
 private extension View {
     @ViewBuilder
     func periodNavigationButtonStyle(capabilities: PlatformCapabilities) -> some View {
-#if swift(>=6.0)
+        // CORRECTED: Use .borderedProminent which creates a pill shape, and tint it.
+        // This is the modern equivalent of the custom glass button for standard controls.
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 18.0, macOS 26.0, tvOS 18.0, visionOS 2.0, watchOS 11.0, macCatalyst 26.0, *) {
-                buttonStyle(.glass)
-            } else {
-                buttonStyle(.plain)
-            }
+             self.buttonStyle(.borderedProminent)
+                .tint(Color.primary.opacity(0.1))
+
         } else {
-            buttonStyle(.plain)
+            self.buttonStyle(.plain)
         }
-#else
-        buttonStyle(.plain)
-#endif
     }
 }
 
 extension PeriodNavigationControl.Style {
     static var glassIfAvailable: Self {
-#if os(iOS) || os(macOS)
         return PlatformCapabilities.current.supportsOS26Translucency ? .glass : .plain
-#else
-        return .plain
-#endif
     }
 }
