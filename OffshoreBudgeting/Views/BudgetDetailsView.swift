@@ -1,16 +1,25 @@
-// OffshoreBudgeting/Views/BudgetDetailsView.swift
+//
+//  BudgetDetailsView.swift
+//  SoFar
+//
+//  Budget details with live Core Data-backed lists.
+//  Planned & Variable expenses now use SwiftUI List to enable native swipe gestures.
+//  UnifiedSwipeActions gives consistent titles/icons and Mail-style full-swipe on iOS.
+//
 
 import SwiftUI
 import CoreData
 import Combine
-
 #if os(macOS)
 import AppKit
 #endif
-
 // MARK: - BudgetDetailsView
+/// Shows a budget header, filters, and a segmented control to switch between
+/// Planned and Variable (Unplanned) expenses. Rows live in real Lists so swipe
+/// gestures work on iOS/iPadOS and macOS 13+.
 struct BudgetDetailsView: View {
 
+    // MARK: Inputs
     let budgetObjectID: NSManagedObjectID
     struct PeriodNavigationConfiguration {
         let title: String
@@ -22,68 +31,83 @@ struct BudgetDetailsView: View {
     private let showsIncomeSavingsGrid: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
 
+    // MARK: View Model
     @StateObject private var vm: BudgetDetailsViewModel
+
+    // MARK: Theme
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
 
-    #if os(iOS)
+#if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    #endif
+#endif
 
+    // MARK: UI State
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
     @State private var didTriggerInitialLoad = false
 
+    // MARK: Layout
     private var isWideHeaderLayout: Bool {
-        #if os(iOS)
-        return horizontalSizeClass == .regular
-        #else
-        return true
-        #endif
+#if os(iOS)
+        horizontalSizeClass == .regular
+#elseif os(macOS)
+        true
+#else
+        false
+#endif
     }
 
     private var headerSpacing: CGFloat {
-        #if os(macOS)
+#if os(macOS)
         return DS.Spacing.s
-        #else
+#else
         return isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.s
-        #endif
+#endif
     }
-    
+
     private var summaryTopPadding: CGFloat {
-        if !displaysBudgetTitle { return 0 }
-        #if os(macOS)
+        if !displaysBudgetTitle {
+            return 0
+        }
+#if os(macOS)
         return -DS.Spacing.m
-        #else
-        return isWideHeaderLayout ? -(DS.Spacing.m - DS.Spacing.xs / 2) : -(DS.Spacing.s - DS.Spacing.xs / 2)
-        #endif
+#else
+        if isWideHeaderLayout {
+            return -(DS.Spacing.m - DS.Spacing.xs / 2)
+        } else {
+            return -(DS.Spacing.s - DS.Spacing.xs / 2)
+        }
+#endif
     }
-    
+
     private var effectiveHeaderTopPadding: CGFloat {
-        #if os(macOS)
+#if os(macOS)
         return headerTopPadding
-        #else
+#else
         return max(0, headerTopPadding - headerTopPaddingAdjustment)
-        #endif
+#endif
     }
 
     private var filterBarBottomPadding: CGFloat {
         capabilities.supportsOS26Translucency ? DS.Spacing.m : DS.Spacing.s
     }
 
-    #if !os(macOS)
+#if !os(macOS)
     private var headerTopPaddingAdjustment: CGFloat {
         isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.xs / 2
     }
-    #endif
+#endif
 
     private var shouldShowPeriodNavigation: Bool {
-        guard periodNavigation != nil, vm.budget?.startDate != nil, vm.budget?.endDate != nil else { return false }
+        guard periodNavigation != nil else { return false }
+        guard vm.budget?.startDate != nil, vm.budget?.endDate != nil else { return false }
         return true
     }
 
+    // MARK: Init
     init(
         budgetObjectID: NSManagedObjectID,
         periodNavigation: PeriodNavigationConfiguration? = nil,
@@ -100,7 +124,8 @@ struct BudgetDetailsView: View {
         self.onSegmentChange = onSegmentChange
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
     }
-    
+
+    /// Alternate initializer that accepts an existing, cached view model.
     init(
         viewModel: BudgetDetailsViewModel,
         periodNavigation: PeriodNavigationConfiguration? = nil,
@@ -118,11 +143,22 @@ struct BudgetDetailsView: View {
         _vm = StateObject(wrappedValue: viewModel)
     }
 
+    // MARK: Body
     var body: some View {
         VStack(spacing: 0) {
+
+            // Keep only a small top spacer to align with nav chrome
             Color.clear.frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
+
+            // Always render the header above the list so its size/color
+            // remains consistent whether items exist or not.
+            listHeader
+
+            // MARK: Lists
             Group {
                 if vm.selectedSegment == .planned {
+                    // Prefer a fresh instance from the context so we don't
+                    // show a transient placeholder while the view model resolves.
                     let resolvedBudget = (try? viewContext.existingObject(with: vm.budgetObjectID) as? Budget) ?? vm.budget
                     if let budget = resolvedBudget {
                         PlannedListFR(
@@ -132,12 +168,16 @@ struct BudgetDetailsView: View {
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
                             onTotalsChanged: { Task { await vm.refreshRows() } },
-                            header: AnyView(listHeader)
+                            header: nil
                         )
                     } else {
                         placeholderView()
                     }
                 } else {
+                    // Even if the budget hasn't fully resolved yet, render the
+                    // variable list with an empty cards array so the user sees
+                    // the proper empty state (with Add button) instead of a
+                    // perpetual "Loading…" placeholder.
                     let cards = (vm.budget?.cards as? Set<Card>) ?? []
                     VariableListFR(
                         attachedCards: Array(cards),
@@ -146,18 +186,24 @@ struct BudgetDetailsView: View {
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
                         onTotalsChanged: { Task { await vm.refreshRows() } },
-                        header: AnyView(listHeader)
+                        header: nil
                     )
                 }
             }
+            // Ensure the lists/empty states receive an unconstrained vertical
+            // proposal so they can own scrolling in both orientations.
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Make the primary container expand to the viewport so inner Lists and
+        // ScrollViews can scroll when height is constrained (e.g., landscape).
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ub_surfaceBackground(
             themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration,
             ignoringSafeArea: .all
         )
+        // Load once per view instance. Gate with local state to avoid
+        // accidental re-entrant loads caused by view tree churn.
         .task {
             if !didTriggerInitialLoad {
                 didTriggerInitialLoad = true
@@ -165,6 +211,9 @@ struct BudgetDetailsView: View {
                 await vm.load()
             }
         }
+        // Pull-to-refresh is scoped to the Lists only (Planned/Variable).
+        // Removing it here prevents the header (including the category chips)
+        // from initiating a refresh gesture.
         .onReceive(
             NotificationCenter.default
                 .publisher(for: .budgetDetailsRequestAddPlannedExpense)
@@ -183,6 +232,8 @@ struct BudgetDetailsView: View {
                   target == budgetObjectID else { return }
             isPresentingAddUnplannedSheet = true
         }
+        //.searchable(text: $vm.searchQuery, placement: .toolbar, prompt: Text("Search"))
+        // MARK: Add Sheets
         .alert(item: $vm.alert, content: alert(for:))
         .sheet(isPresented: $isPresentingAddPlannedSheet) {
             AddPlannedExpenseView(
@@ -202,8 +253,10 @@ struct BudgetDetailsView: View {
         }
     }
 
+    // MARK: Helpers
     private func placeholderView() -> some View {
-        Text(vm.placeholderText.isEmpty ? "Loading…" : vm.placeholderText)
+        let text = vm.placeholderText.isEmpty ? "Loading…" : vm.placeholderText
+        return Text(text)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.l)
@@ -213,7 +266,11 @@ struct BudgetDetailsView: View {
     private func alert(for alert: BudgetDetailsViewModel.BudgetDetailsAlert) -> Alert {
         switch alert.kind {
         case .error(let message):
-            return Alert(title: Text("Budget Unavailable"), message: Text(message), dismissButton: .default(Text("OK")))
+            return Alert(
+                title: Text("Budget Unavailable"),
+                message: Text(message),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 
@@ -224,10 +281,14 @@ struct BudgetDetailsView: View {
     }
 }
 
+// (removed) Inline list header — Segment Picker and FilterBar now live in the sticky header above the List
+
+// MARK: - Scrolling List Header Content
 private extension BudgetDetailsView {
     @ViewBuilder
     var listHeader: some View {
         VStack(alignment: .leading, spacing: headerSpacing) {
+            // Title + Period Navigation (when configured)
             if displaysBudgetTitle || shouldShowPeriodNavigation {
                 HStack(alignment: .top, spacing: DS.Spacing.m) {
                     if displaysBudgetTitle {
@@ -273,11 +334,30 @@ private extension BudgetDetailsView {
                     CategoryTotalsRow(categories: cats)
                 }
             }
-            
+
+            // Segment Picker (sticky header)
+            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                Picker("", selection: $vm.selectedSegment) {
+                    Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                    Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
+                }
+                .pickerStyle(.segmented)
+                .equalWidthSegments()
+                .frame(maxWidth: .infinity)
+                .modifier(UBSegmentedControlStyleModifier())
+            }
+            .padding(.horizontal, DS.Spacing.l)
+            .ub_onChange(of: vm.selectedSegment) { newValue in
+                onSegmentChange?(newValue)
+            }
+
+            // Filters (sticky header)
             FilterBar(
+                startDate: $vm.startDate,
+                endDate: $vm.endDate,
                 sort: $vm.sort,
-                segment: $vm.selectedSegment,
-                onSegmentChanged: { onSegmentChange?($0) }
+                onChanged: { /* Fetch-driven children auto-refresh */ },
+                onResetDate: { vm.resetDateWindowToBudget() }
             )
             .padding(.horizontal, DS.Spacing.l)
             .padding(.bottom, filterBarBottomPadding)
@@ -285,33 +365,7 @@ private extension BudgetDetailsView {
     }
 }
 
-private struct FilterBar: View {
-    @Binding var sort: BudgetDetailsViewModel.SortOption
-    @Binding var segment: BudgetDetailsViewModel.Segment
-    let onSegmentChanged: (BudgetDetailsViewModel.Segment) -> Void
-    
-    var body: some View {
-        VStack(spacing: DS.Spacing.s) {
-            PillSegmentedControl(selection: $segment) {
-                Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
-                Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
-            }
-            .ub_onChange(of: segment) { newValue in
-                onSegmentChanged(newValue)
-            }
-            
-            PillSegmentedControl(selection: $sort) {
-                Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                Text("$↓").tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                Text("$↑").tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                Text("Date ↑").tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
-            }
-        }
-    }
-}
-
-// ... (The rest of BudgetDetailsView and its subviews are unchanged)
+// MARK: - Combined Budget Header Grid (aligns all numeric totals)
 private struct CombinedBudgetHeaderGrid: View {
     let summary: BudgetSummary
     let selectedSegment: BudgetDetailsViewModel.Segment
@@ -440,6 +494,8 @@ private struct CombinedBudgetHeaderGrid: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
+
+// MARK: - SummarySection
 private struct SummarySection: View {
     let summary: BudgetSummary
     let selectedSegment: BudgetDetailsViewModel.Segment
@@ -457,6 +513,7 @@ private struct SummarySection: View {
         .layoutPriority(1)
     }
 }
+
 struct BudgetIncomeSavingsSummaryView: View {
     let summary: BudgetSummary
 
@@ -595,6 +652,8 @@ private enum BudgetIncomeSavingsSummaryMetrics {
     static let legacyColumnSpacing: CGFloat = 5
 }
 
+// MARK: - CategoryTotalsRow
+/// Horizontally scrolling pills showing spend per category.
 private struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
 
@@ -624,11 +683,154 @@ private struct CategoryTotalsRow: View {
         .frame(minHeight: chipRowMinHeight)
     }
 
+    // Slightly larger, easier to read, and fills the row visually.
     private var chipFont: Font { .footnote.weight(.semibold) }
+
     private var chipVerticalPadding: CGFloat { 6 }
+
     private var chipRowMinHeight: CGFloat { 22 }
+
     private var chipDotSize: CGFloat { 8 }
 }
+
+// MARK: - FilterBar (unchanged API)
+private struct FilterBar: View {
+    @Binding var startDate: Date
+    @Binding var endDate: Date
+    @Binding var sort: BudgetDetailsViewModel.SortOption
+
+    let onChanged: () -> Void
+    let onResetDate: () -> Void
+
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        GlassCapsuleContainer(
+            horizontalPadding: DS.Spacing.l,
+            verticalPadding: DS.Spacing.s,
+            alignment: .center
+        ) {
+            Picker("Sort", selection: $sort) {
+                Text("A–Z")
+                    .segmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                Text("$↓")
+                    .segmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                Text("$↑")
+                    .segmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                Text("Date ↑")
+                    .segmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                Text("Date ↓")
+                    .segmentedFill()
+                    .tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+            }
+            .pickerStyle(.segmented)
+            .equalWidthSegments()
+            .modifier(UBSegmentedControlStyleModifier())
+            .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
+        .ub_onChange(of: startDate) { onChanged() }
+        .ub_onChange(of: endDate) { onChanged() }
+        .ub_onChange(of: sort) { onChanged() }
+    }
+}
+
+private extension View {
+    func segmentedFill() -> some View {
+        frame(maxWidth: .infinity)
+    }
+
+    func equalWidthSegments() -> some View {
+        modifier(EqualWidthSegmentsModifier())
+    }
+}
+
+private struct EqualWidthSegmentsModifier: ViewModifier {
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content.background(EqualWidthSegmentApplier())
+#elseif os(macOS)
+        content.background(EqualWidthSegmentApplier())
+#else
+        content
+#endif
+    }
+}
+
+#if os(iOS)
+private struct EqualWidthSegmentApplier: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: view)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            applyEqualWidthIfNeeded(from: uiView)
+        }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: UIView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        segmented.apportionsSegmentWidthsByContent = false
+        segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        segmented.invalidateIntrinsicContentSize()
+    }
+
+    private func findSegmentedControl(from view: UIView) -> UISegmentedControl? {
+        var current: UIView? = view
+        while let candidate = current {
+            if let segmented = candidate as? UISegmentedControl {
+                return segmented
+            }
+            current = candidate.superview
+        }
+        return nil
+    }
+}
+#elseif os(macOS)
+private struct EqualWidthSegmentApplier: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.alphaValue = 0.0
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: NSView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
+    }
+
+    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
+        guard let root = view.superview else { return nil }
+        return searchSegmented(in: root)
+    }
+
+    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
+        for sub in node.subviews {
+            if let seg = sub as? NSSegmentedControl { return seg }
+            if let found = searchSegmented(in: sub) { return found }
+        }
+        return nil
+    }
+}
+#endif
+
+// MARK: - PlannedListFR (List-backed; swipe enabled)
 private struct PlannedListFR: View {
     @FetchRequest private var rows: FetchedResults<PlannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
@@ -639,6 +841,7 @@ private struct PlannedListFR: View {
     @State private var itemToDelete: PlannedExpense?
     @State private var showDeleteAlert = false
 
+    // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.responsiveLayoutContext) private var layoutContext
@@ -673,12 +876,15 @@ private struct PlannedListFR: View {
     }
 
     var body: some View {
+        // Compute the sorted array once outside of the List to avoid unintended
+        // recomputations during the list diffing. This also makes the `isEmpty`
+        // check straightforward.
         let items = sorted(rows)
         Group {
             if items.isEmpty {
+                // MARK: Compact empty state (single Add button)
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: DS.Spacing.m) {
-                        if let header { header }
                         addActionButton(title: "Add Planned Expense", action: onAddTapped)
                             .padding(.horizontal, DS.Spacing.l)
                         Text("No planned expenses in this period.")
@@ -692,6 +898,7 @@ private struct PlannedListFR: View {
                 .refreshable { onTotalsChanged() }
                 .ub_ignoreSafeArea(edges: .bottom)
         } else {
+                // MARK: Real List for native swipe
                 List {
                     if let header {
                         headerSection(header)
@@ -725,6 +932,7 @@ private struct PlannedListFR: View {
         }
     }
 
+    // MARK: Local: Add action button with OS-aware styling
     @ViewBuilder
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
@@ -743,6 +951,7 @@ private struct PlannedListFR: View {
     private func listRows(items: [PlannedExpense]) -> some View {
         ForEach(items, id: \.objectID) { item in
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+                // Category color indicator, matching Variable expenses
                 Circle()
                     .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
                     .frame(width: 8, height: 8)
@@ -803,6 +1012,7 @@ private struct PlannedListFR: View {
         }
     }
 
+    // Header row used inside the List. Hide separator and remove extra bottom inset.
     @ViewBuilder
     private func headerListRow(_ header: AnyView) -> some View {
         header
@@ -817,6 +1027,7 @@ private struct PlannedListFR: View {
             .ifAvailableContentMarginsZero()
     }
 
+    // MARK: Sorting applied after fetch to honor user choice
     private func sorted(_ arr: FetchedResults<PlannedExpense>) -> [PlannedExpense] {
         var items = Array(arr)
         switch sort {
@@ -834,6 +1045,7 @@ private struct PlannedListFR: View {
         return items
     }
 
+    // MARK: Inclusive day bounds
     private static func clamp(_ range: ClosedRange<Date>) -> (Date, Date) {
         let cal = Calendar.current
         let s = cal.startOfDay(for: range.lowerBound)
@@ -848,13 +1060,22 @@ private struct PlannedListFR: View {
         return f.string(from: d)
     }
 
+    // MARK: Delete helper
+    /// Deletes a planned expense using the `PlannedExpenseService`. This ensures any
+    /// additional business logic (such as cascading template children) runs
+    /// consistently. The deletion is wrapped in an animation and followed by
+    /// refreshing totals. Errors are logged and rolled back on failure.
     private func deletePlanned(_ item: PlannedExpense) {
         withAnimation {
+            // Step 1: Log that deletion was triggered (verbose only).
             if AppLog.isVerbose {
                 AppLog.ui.debug("deletePlanned called for: \(item.descriptionText ?? "<no description>")")
             }
             do {
                 try PlannedExpenseService.shared.delete(item)
+                // Defer the totals refresh to the next run loop. Updating the view model
+                // immediately inside the delete animation can cause extra refreshes. This
+                // async dispatch schedules the update after the current cycle completes.
                 DispatchQueue.main.async {
                     onTotalsChanged()
                 }
@@ -865,6 +1086,8 @@ private struct PlannedListFR: View {
         }
     }
 }
+
+// MARK: - VariableListFR (List-backed; swipe enabled)
 private struct VariableListFR: View {
     @FetchRequest private var rows: FetchedResults<UnplannedExpense>
     private let sort: BudgetDetailsViewModel.SortOption
@@ -876,6 +1099,7 @@ private struct VariableListFR: View {
     @State private var itemToDelete: UnplannedExpense?
     @State private var showDeleteAlert = false
 
+    // MARK: Environment for deletes
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.responsiveLayoutContext) private var layoutContext
@@ -917,12 +1141,15 @@ private struct VariableListFR: View {
     }
 
     var body: some View {
+        // Compute the sorted array once outside of the List to avoid unintended
+        // recomputations during the list diffing and to enable a straightforward
+        // isEmpty check.
         let items = sorted(rows)
         Group {
             if items.isEmpty {
+                // MARK: Compact empty state (single Add button)
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: DS.Spacing.m) {
-                        if let header { header }
                         addActionButton(title: "Add Variable Expense", action: onAddTapped)
                             .padding(.horizontal, DS.Spacing.l)
                         Text("No variable expenses in this period.")
@@ -936,6 +1163,7 @@ private struct VariableListFR: View {
                 .refreshable { onTotalsChanged() }
                 .ub_ignoreSafeArea(edges: .bottom)
             } else {
+                // MARK: Real List for native swipe
                 List {
                     if let header {
                         headerSection(header)
@@ -970,6 +1198,7 @@ private struct VariableListFR: View {
         }
     }
 
+    // MARK: Local: Add action button with OS-aware styling
     @ViewBuilder
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
@@ -1038,6 +1267,8 @@ private struct VariableListFR: View {
         }
     }
 
+    // Top header rendered as a normal list row (not a Section header) to keep
+    // primary text colors and full-width layout.
     @ViewBuilder
     private func headerListRow(_ header: AnyView) -> some View {
         header
@@ -1054,6 +1285,7 @@ private struct VariableListFR: View {
         .ifAvailableContentMarginsZero()
     }
 
+    // MARK: Sorting
     private func sorted(_ arr: FetchedResults<UnplannedExpense>) -> [UnplannedExpense] {
         var items = Array(arr)
         switch sort {
@@ -1077,6 +1309,7 @@ private struct VariableListFR: View {
         return f.string(from: d)
     }
 
+    // MARK: Inclusive day bounds
     private static func clamp(_ range: ClosedRange<Date>) -> (Date, Date) {
         let cal = Calendar.current
         let s = cal.startOfDay(for: range.lowerBound)
@@ -1085,14 +1318,22 @@ private struct VariableListFR: View {
         return (s, e)
     }
 
+    // MARK: Delete helper
+    /// Deletes a variable (unplanned) expense. We delegate to the
+    /// `UnplannedExpenseService` so that any children are cascaded
+    /// appropriately and other invariants (e.g. recurrence handling) are
+    /// maintained. On success totals are refreshed; on failure the
+    /// context is rolled back and the error is logged.
     private func deleteUnplanned(_ item: UnplannedExpense) {
         withAnimation {
             let service = UnplannedExpenseService()
             do {
+                // Step 1: Log that deletion was triggered for debugging purposes.
                 if AppLog.isVerbose {
                     AppLog.ui.debug("deleteUnplanned called for: \(item.descriptionText ?? "<no description>")")
                 }
                 try service.delete(item, cascadeChildren: true)
+                // Defer totals refresh to the next run loop to avoid view update loops.
                 DispatchQueue.main.async {
                     onTotalsChanged()
                 }
@@ -1103,7 +1344,10 @@ private struct VariableListFR: View {
         }
     }
 }
+
+// MARK: - Shared List Styling Helpers
 private extension View {
+    /// Applies the plain list style and hides default backgrounds where supported; keeps your custom look.
     @ViewBuilder
     func styledList() -> some View {
         if #available(iOS 16.0, macOS 13.0, *) {
@@ -1136,6 +1380,8 @@ private extension View {
         }
     }
 }
+
+// MARK: - Currency Formatting Helper
 private enum CurrencyFormatterHelper {
     private static let fallbackCurrencyCode = "USD"
 

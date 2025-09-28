@@ -170,3 +170,29 @@ struct HideMenuIndicatorIfPossible: ViewModifier {
     }
 }
 #endif
+
+struct FilterBar: View {
+    @Binding var sort: BudgetDetailsViewModel.SortOption
+    @Binding var segment: BudgetDetailsViewModel.Segment
+    let onSegmentChanged: (BudgetDetailsViewModel.Segment) -> Void
+    
+    var body: some View {
+        VStack(spacing: DS.Spacing.s) {
+            PillSegmentedControl(selection: $segment) {
+                Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
+                Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
+            }
+            .ub_onChange(of: segment) { newValue in
+                onSegmentChanged(newValue)
+            }
+            
+            PillSegmentedControl(selection: $sort) {
+                Text("A–Z").tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                Text("$↓").tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                Text("$↑").tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                Text("Date ↑").tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+            }
+        }
+    }
+}

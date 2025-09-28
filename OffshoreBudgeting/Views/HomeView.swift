@@ -663,21 +663,46 @@ struct HomeView: View {
     }
 
     // MARK: Empty Period Shell (replaces generic empty state)
-    // Replace this private view inside OffshoreBudgeting/Views/HomeView.swift
-
     @ViewBuilder
     private func emptyPeriodShell(proxy: RootTabPageProxy) -> some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                // Period navigation in content (original position)
                 periodNavigationControl(style: .glassIfAvailable)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                FilterBar(
-                    sort: $homeSort,
-                    segment: $selectedSegment,
-                    onSegmentChanged: { _ in }
-                )
+                // Section header + running total for the current segment
+                HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
 
+                // Segment control in content
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                    Picker("", selection: $selectedSegment) {
+                        Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                        Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
+                    }
+                    .pickerStyle(.segmented)
+                    .equalWidthSegments()
+                    .frame(maxWidth: .infinity)
+                    .modifier(UBSegmentedControlStyleModifier())
+                }
+
+                // Filter bar (sort options)
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                    Picker("Sort", selection: $homeSort) {
+                        Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                        Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                        Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                        Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                        Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+                    }
+                    .pickerStyle(.segmented)
+                    .equalWidthSegments()
+                    .frame(maxWidth: .infinity)
+                    .modifier(UBSegmentedControlStyleModifier())
+                }
+
+                // Always-offer Add button when no budget exists so users can
+                // quickly create an expense for this period.
                 GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
                     Button(action: addExpenseCTAAction) {
                         Label(addExpenseCTATitle, systemImage: "plus")
@@ -688,6 +713,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                 }
 
+                // Segment-specific guidance — centered consistently across platforms
                 Text(emptyShellMessage)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -1042,20 +1068,20 @@ private struct HomeSegmentTotalsRowView: View {
 // MARK: - Segmented control sizing helpers
 private extension View {
     func segmentedFill() -> some View { frame(maxWidth: .infinity) }
-    //func equalWidthSegments() -> some View { modifier(HomeEqualWidthSegmentsModifier()) }
+    func equalWidthSegments() -> some View { modifier(HomeEqualWidthSegmentsModifier()) }
 }
 
-//private struct HomeEqualWidthSegmentsModifier: ViewModifier {
-//    func body(content: Content) -> some View {
-//#if os(iOS)
-//        content.background(HomeEqualWidthSegmentApplier())
-//#elseif os(macOS)
-//        content.background(HomeEqualWidthSegmentApplier())
-//#else
-//        content
-//#endif
-//    }
-//}
+private struct HomeEqualWidthSegmentsModifier: ViewModifier {
+    func body(content: Content) -> some View {
+#if os(iOS)
+        content.background(HomeEqualWidthSegmentApplier())
+#elseif os(macOS)
+        content.background(HomeEqualWidthSegmentApplier())
+#else
+        content
+#endif
+    }
+}
 
 #if os(iOS)
 private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
@@ -1087,40 +1113,40 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
         return nil
     }
 }
-//#elseif os(macOS)
-//private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
-//    func makeNSView(context: Context) -> NSView {
-//        let view = NSView(frame: .zero)
-//        view.alphaValue = 0.0
-//        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
-//        return view
-//    }
-//
-//    func updateNSView(_ nsView: NSView, context: Context) {
-//        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
-//    }
-//
-//    private func applyEqualWidthIfNeeded(from view: NSView) {
-//        guard findSegmentedControl(from: view) != nil else { return }
-//        //SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
-//    }
-//
-//    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-//        // Prefer searching siblings/descendants of the immediate superview, because
-//        // this representable is attached as a background.
-//        guard let root = view.superview else { return nil }
-//        return searchSegmented(in: root)
-//    }
-//
-//    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
-//        for sub in node.subviews {
-//            if let seg = sub as? NSSegmentedControl { return seg }
-//            if let found = searchSegmented(in: sub) { return found }
-//        }
-//        return nil
-//    }
-//}
-//#endif
+#elseif os(macOS)
+private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.alphaValue = 0.0
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
+    }
+
+    private func applyEqualWidthIfNeeded(from view: NSView) {
+        guard let segmented = findSegmentedControl(from: view) else { return }
+        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
+    }
+
+    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
+        // Prefer searching siblings/descendants of the immediate superview, because
+        // this representable is attached as a background.
+        guard let root = view.superview else { return nil }
+        return searchSegmented(in: root)
+    }
+
+    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
+        for sub in node.subviews {
+            if let seg = sub as? NSSegmentedControl { return seg }
+            if let found = searchSegmented(in: sub) { return found }
+        }
+        return nil
+    }
+}
+#endif
 
 // MARK: - Home Header Summary
 private struct HomeHeaderContextSummary: View {
@@ -1322,4 +1348,3 @@ private extension View {
         .onPreferenceChange(ViewHeightKey.self) { binding.wrappedValue = $0 }
     }
 }
-#endif
