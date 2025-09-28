@@ -639,23 +639,6 @@ struct HomeView: View {
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-#if os(macOS)
-                    BudgetDetailsView(
-                        budgetObjectID: first.id,
-                        periodNavigation: .init(
-                            title: title(for: vm.selectedDate),
-                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
-                        ),
-                        displaysBudgetTitle: false,
-                        showsIncomeSavingsGrid: false,
-                        onSegmentChange: { newSegment in
-                            self.selectedSegment = newSegment
-                        }
-                    )
-                    .id(first.id)
-                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-#else
                     BudgetDetailsView(
                         budgetObjectID: first.id,
                         periodNavigation: .init(
@@ -672,7 +655,6 @@ struct HomeView: View {
                     .id(first.id)
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-#endif
                 } else {
                     emptyPeriodShell(proxy: proxy)
                 }
