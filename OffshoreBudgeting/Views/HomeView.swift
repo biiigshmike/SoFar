@@ -682,9 +682,7 @@ struct HomeView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
-#if os(macOS)
-.macOSSegmentedControlGlassStyle()
-#endif
+                    .ub_segmentedControlStyle()
                 }
 
                 // Filter bar (sort options)
@@ -698,9 +696,7 @@ struct HomeView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: .infinity)
-#if os(macOS)
-.macOSSegmentedControlGlassStyle() 
-#endif
+                    .ub_segmentedControlStyle()
                 }
 
                 // Always-offer Add button when no budget exists so users can
@@ -1129,8 +1125,8 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard let segmented = findSegmentedControl(from: view) else { return }
-        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
+        guard findSegmentedControl(from: view) != nil else { return }
+        //SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {

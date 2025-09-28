@@ -124,9 +124,7 @@ struct AddIncomeFormView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
-#if os(macOS)
-.macOSSegmentedControlGlassStyle() 
-#endif
+                .ub_segmentedControlStyle()
 .accessibilityIdentifier("incomeTypeSegmentedControl")
             }
             .frame(maxWidth: .infinity)

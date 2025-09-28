@@ -343,9 +343,7 @@ private extension BudgetDetailsView {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: .infinity)
-#if os(macOS)
-.macOSSegmentedControlGlassStyle()
-#endif
+                .ub_segmentedControlStyle()
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -730,9 +728,7 @@ private struct FilterBar: View {
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: .infinity)
-#if os(macOS)
-.macOSSegmentedControlGlassStyle() // ADD THIS
-#endif
+            .ub_segmentedControlStyle()
         }
         .frame(maxWidth: .infinity)
         .ub_onChange(of: startDate) { onChanged() }
@@ -813,8 +809,8 @@ private struct EqualWidthSegmentApplier: NSViewRepresentable {
     }
 
     private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard let segmented = findSegmentedControl(from: view) else { return }
-        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
+        guard findSegmentedControl(from: view) != nil else { return }
+        //SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
