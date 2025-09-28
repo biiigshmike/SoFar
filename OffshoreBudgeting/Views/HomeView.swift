@@ -1208,17 +1208,35 @@ private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
         }
         segmented.setContentHuggingPriority(.defaultLow, for: .horizontal)
         segmented.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        // Pin to fill its container if possible so it expands to max width.
-        if let superview = segmented.superview {
-            segmented.translatesAutoresizingMaskIntoConstraints = false
-            if segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive == false {
-                segmented.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
-            }
-            if segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive == false {
-                segmented.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
-            }
+
+        let container = findCapsuleContainer(for: segmented)
+        let cache = constraintCache(for: segmented)
+
+        if cache.container !== container {
+            cache.deactivateAll()
+            cache.container = container
         }
+
+        guard let container else {
+            segmented.invalidateIntrinsicContentSize()
+            return
+        }
+
+        segmented.translatesAutoresizingMaskIntoConstraints = false
+
+        if cache.leading == nil || cache.trailing == nil || cache.width == nil {
+            cache.deactivateAll()
+            cache.leading = segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+            cache.trailing = segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+            cache.width = segmented.widthAnchor.constraint(equalTo: container.widthAnchor)
+        }
+
+        cache.leading?.isActive = true
+        cache.trailing?.isActive = true
+        cache.width?.isActive = true
+
         segmented.invalidateIntrinsicContentSize()
+        container.layoutSubtreeIfNeeded()
     }
 
     private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
