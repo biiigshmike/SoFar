@@ -639,23 +639,6 @@ struct HomeView: View {
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-#if os(macOS)
-                    BudgetDetailsView(
-                        budgetObjectID: first.id,
-                        periodNavigation: .init(
-                            title: title(for: vm.selectedDate),
-                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
-                        ),
-                        displaysBudgetTitle: false,
-                        showsIncomeSavingsGrid: false,
-                        onSegmentChange: { newSegment in
-                            self.selectedSegment = newSegment
-                        }
-                    )
-                    .id(first.id)
-                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-#else
                     BudgetDetailsView(
                         budgetObjectID: first.id,
                         periodNavigation: .init(
@@ -672,7 +655,6 @@ struct HomeView: View {
                     .id(first.id)
                     .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-#endif
                 } else {
                     emptyPeriodShell(proxy: proxy)
                 }
@@ -701,12 +683,7 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-#if os(macOS)
-                    .controlSize(.large)
-
-                    .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
+                    .modifier(homeSegmentedControlStyling)
                 }
 
                 // Filter bar (sort options)
@@ -721,12 +698,7 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .equalWidthSegments()
                     .frame(maxWidth: .infinity)
-#if os(macOS)
-                    .controlSize(.large)
-
-                    .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
+                    .modifier(homeSegmentedControlStyling)
                 }
 
                 // Always-offer Add button when no budget exists so users can
@@ -756,6 +728,13 @@ struct HomeView: View {
         }
         .ub_ignoreSafeArea(edges: .bottom)
         .ub_hideScrollIndicators()
+    }
+
+    private var homeSegmentedControlStyling: HomeSegmentedControlModifier {
+        HomeSegmentedControlModifier(
+            capabilities: capabilities,
+            accentColor: themeManager.selectedTheme.glassPalette.accent
+        )
     }
 
     private var headerSectionSpacing: CGFloat {
@@ -1453,6 +1432,25 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
 
     private var minimumWidth: CGFloat {
         RootHeaderActionMetrics.minimumGlassWidth(for: capabilities)
+    }
+}
+
+private struct HomeSegmentedControlModifier: ViewModifier {
+    let capabilities: PlatformCapabilities
+    let accentColor: Color
+
+    func body(content: Content) -> some View {
+#if os(macOS)
+        if capabilities.supportsOS26Translucency {
+            content
+        } else {
+            content
+                .controlSize(.large)
+                .tint(accentColor)
+        }
+#else
+        content
+#endif
     }
 }
 
