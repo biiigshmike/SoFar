@@ -344,12 +344,7 @@ private extension BudgetDetailsView {
                 .pickerStyle(.segmented)
                 .equalWidthSegments()
                 .frame(maxWidth: .infinity)
-#if os(macOS)
-                .controlSize(.large)
-
-                .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
+                .liquidGlassSegmentedStyle()
             }
             .padding(.horizontal, DS.Spacing.l)
             .ub_onChange(of: vm.selectedSegment) { newValue in
@@ -707,8 +702,6 @@ private struct FilterBar: View {
     let onChanged: () -> Void
     let onResetDate: () -> Void
 
-    @EnvironmentObject private var themeManager: ThemeManager
-
     var body: some View {
         GlassCapsuleContainer(
             horizontalPadding: DS.Spacing.l,
@@ -734,12 +727,7 @@ private struct FilterBar: View {
             }
             .pickerStyle(.segmented)
             .equalWidthSegments()
-#if os(macOS)
-            .controlSize(.large)
-
-            .tint(themeManager.selectedTheme.glassPalette.accent)
-
-#endif
+            .liquidGlassSegmentedStyle()
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
