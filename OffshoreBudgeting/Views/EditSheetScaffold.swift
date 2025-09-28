@@ -274,13 +274,21 @@ private struct MacOS26SegmentedTintDisabler: NSViewRepresentable {
 
         private func clearTint(in view: NSView) {
             if let segmented = view as? NSSegmentedControl {
-                segmented.contentTintColor = nil
+                segmented.ub_clearContentTintColorIfAvailable()
             }
 
             for child in view.subviews {
                 clearTint(in: child)
             }
         }
+    }
+}
+
+private extension NSSegmentedControl {
+    func ub_clearContentTintColorIfAvailable() {
+        let selector = NSSelectorFromString("setContentTintColor:")
+        guard responds(to: selector) else { return }
+        perform(selector, with: nil)
     }
 }
 #endif
