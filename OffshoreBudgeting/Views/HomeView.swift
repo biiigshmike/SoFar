@@ -29,6 +29,7 @@ struct HomeView: View {
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
     @State private var homeSort: BudgetDetailsViewModel.SortOption = .dateNewOld
+    @State private var headerContentHeight: CGFloat = 0
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -48,17 +49,27 @@ struct HomeView: View {
         //   control of vertical scrolling without nested scroll views.
         RootTabPageScaffold(
             scrollBehavior: .auto,
-            spacing: DS.Spacing.s
+            spacing: headerContentSpacing
         ) {
-            headerSection
+            EmptyView()
         } content: { proxy in
-            contentContainer(proxy: proxy)
-                .rootTabContentPadding(
-                    proxy,
-                    horizontal: 0,
-                    includeSafeArea: false,
-                    tabBarGutter: proxy.compactAwareTabBarGutter
+            let availableContentHeight = resolvedAvailableContentHeight(using: proxy)
+
+            VStack(alignment: .leading, spacing: headerContentSpacing) {
+                headerSection
+                contentContainer(
+                    proxy: proxy,
+                    availableContentHeight: availableContentHeight
                 )
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .onPreferenceChange(HomeHeaderHeightPreferenceKey.self) { headerContentHeight = $0 }
+            .rootTabContentPadding(
+                proxy,
+                horizontal: 0,
+                includeSafeArea: false,
+                tabBarGutter: proxy.compactAwareTabBarGutter
+            )
         }
         .ub_tabNavigationTitle("Home")
         .toolbar {
@@ -123,31 +134,25 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: headerSectionSpacing) {
-            if let summary = primarySummary {
-                HomeHeaderPrimarySummaryView(
-                    summary: summary,
-                    displayTitle: periodHeaderTitle,
-                    displayDetail: periodRangeDetail
-                )
-                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-            } else {
-                // Sticky header fallback when no budget is loaded for the period.
-                HomeHeaderFallbackTitleView(
-                    displayTitle: periodHeaderTitle,
-                    displayDetail: periodRangeDetail
-                )
-                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-
-                // Show the income/savings grid with zero values so the header
-                // remains informative even before a budget exists for this
-                // period. This mirrors the look when a budget is present.
-                HomeIncomeSavingsZeroSummaryView()
-                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-
-                // Keep the dynamic header concise; segment control appears in content below.
+        HomeHeaderOverviewTable(
+            summary: primarySummary,
+            displayTitle: periodHeaderTitle,
+            displayDetail: periodRangeDetail,
+            selectedSegment: $selectedSegment,
+            sort: $homeSort,
+            periodNavigationTitle: title(for: vm.selectedDate),
+            onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
+        )
+        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(
+                        key: HomeHeaderHeightPreferenceKey.self,
+                        value: proxy.size.height
+                    )
             }
-        }
+        )
     }
 
     // MARK: Toolbar Actions
@@ -288,7 +293,7 @@ struct HomeView: View {
     }
 
     // MARK: Content Container
-    private func contentContainer(proxy: RootTabPageProxy) -> some View {
+    private func contentContainer(proxy: RootTabPageProxy, availableContentHeight: CGFloat) -> some View {
         Group {
             switch vm.state {
             case .initial:
@@ -301,13 +306,17 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
             case .empty:
-                emptyPeriodContent(proxy: proxy)
+                emptyPeriodContent(availableContentHeight: availableContentHeight)
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-                    loadedBudgetContent(for: first, proxy: proxy)
+                    loadedBudgetContent(
+                        for: first,
+                        proxy: proxy,
+                        availableContentHeight: availableContentHeight
+                    )
                 } else {
-                    emptyPeriodContent(proxy: proxy)
+                    emptyPeriodContent(availableContentHeight: availableContentHeight)
                 }
             }
         }
@@ -315,42 +324,8 @@ struct HomeView: View {
 
     // MARK: Empty Period Content (replaces generic empty state)
     @ViewBuilder
-    private func emptyPeriodContent(proxy: RootTabPageProxy) -> some View {
+    private func emptyPeriodContent(availableContentHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            // Period navigation in content (original position)
-            periodNavigationControl()
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Section header + running total for the current segment
-            HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
-
-            // Segment control in content
-            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
-                Picker("", selection: $selectedSegment) {
-                    Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
-                    Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
-                }
-                .pickerStyle(.segmented)
-                .equalWidthSegments()
-                .frame(maxWidth: .infinity)
-                .modifier(UBSegmentedControlStyleModifier())
-            }
-
-            // Filter bar (sort options)
-            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
-                Picker("Sort", selection: $homeSort) {
-                    Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                    Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                    Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                    Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                    Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
-                }
-                .pickerStyle(.segmented)
-                .equalWidthSegments()
-                .frame(maxWidth: .infinity)
-                .modifier(UBSegmentedControlStyleModifier())
-            }
-
             // Always-offer Add button when no budget exists so users can
             // quickly create an expense for this period.
             GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
@@ -374,25 +349,26 @@ struct HomeView: View {
         }
         .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
+        .frame(minHeight: availableContentHeight, alignment: .top)
     }
 
     @ViewBuilder
-    private func loadedBudgetContent(for summary: BudgetSummary, proxy: RootTabPageProxy) -> some View {
-        let baseHeight = proxy.availableHeightBelowHeader
+    private func loadedBudgetContent(
+        for summary: BudgetSummary,
+        proxy: RootTabPageProxy,
+        availableContentHeight: CGFloat
+    ) -> some View {
         let fallbackHeight = proxy.availableHeight - proxy.headerHeight
-        let resolvedHeight = max(baseHeight > 0 ? baseHeight : fallbackHeight, 1)
+        let resolvedHeight = max(availableContentHeight > 0 ? availableContentHeight : fallbackHeight, 1)
 
         RootTabListHostingContainer(height: resolvedHeight) {
             BudgetDetailsView(
                 budgetObjectID: summary.id,
-                periodNavigation: .init(
-                    title: title(for: vm.selectedDate),
-                    onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
-                ),
+                periodNavigation: nil,
                 displaysBudgetTitle: false,
                 headerTopPadding: DS.Spacing.xs,
-                showsIncomeSavingsGrid: false,
+                selectedSegment: $selectedSegment,
+                sort: $homeSort,
                 onSegmentChange: { newSegment in
                     self.selectedSegment = newSegment
                 }
@@ -404,14 +380,6 @@ struct HomeView: View {
 
 
     private var headerSectionSpacing: CGFloat { DS.Spacing.xs / 2 }
-
-    private func periodNavigationControl() -> PeriodNavigationControl {
-        PeriodNavigationControl(
-            title: title(for: vm.selectedDate),
-            onPrevious: { vm.adjustSelectedPeriod(by: -1) },
-            onNext: { vm.adjustSelectedPeriod(by: +1) }
-        )
-    }
 
     // MARK: Helpers
     private func title(for date: Date) -> String {
@@ -429,6 +397,13 @@ struct HomeView: View {
         let f = DateFormatter()
         f.dateStyle = .medium
         return "\(f.string(from: start)) through \(f.string(from: end))"
+    }
+
+    private var headerContentSpacing: CGFloat { DS.Spacing.s }
+
+    private func resolvedAvailableContentHeight(using proxy: RootTabPageProxy) -> CGFloat {
+        let spacingContribution = headerContentHeight > 0 ? headerContentSpacing : 0
+        return max(proxy.availableHeight - headerContentHeight - spacingContribution, 0)
     }
 
     private var primarySummary: BudgetSummary? {
@@ -489,224 +464,288 @@ private struct RootTabListHostingContainer<Content: View>: View {
     }
 }
 
-// MARK: - Home Header Primary Summary
-private struct HomeHeaderPrimarySummaryView: View {
-    let summary: BudgetSummary
+// MARK: - Home Header Overview Table
+private struct HomeHeaderOverviewTable: View {
+    let summary: BudgetSummary?
     let displayTitle: String
     let displayDetail: String
+    @Binding var selectedSegment: BudgetDetailsViewModel.Segment
+    @Binding var sort: BudgetDetailsViewModel.SortOption
+    let periodNavigationTitle: String
+    let onAdjustPeriod: (Int) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            budgetTitleView
-            incomeSummaryView
+        VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
+            tableContent
+            segmentPicker
+            sortPicker
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var tableContent: some View {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
+            Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: HomeHeaderOverviewMetrics.gridRowSpacing) {
+                GridRow(alignment: .top) {
+                    leadingGridCell { titleStack }
+                    trailingGridCell { periodNavigationControlView }
+                }
+
+                incomeHeaderRow(title: "POTENTIAL INCOME", trailingTitle: "POTENTIAL SAVINGS")
+                incomeValuesRow(
+                    firstValue: potentialIncome,
+                    firstColor: DS.Colors.plannedIncome,
+                    secondValue: potentialSavings,
+                    secondColor: DS.Colors.savingsGood
+                )
+                incomeHeaderRow(title: "ACTUAL INCOME", trailingTitle: "ACTUAL SAVINGS")
+                incomeValuesRow(
+                    firstValue: actualIncome,
+                    firstColor: DS.Colors.actualIncome,
+                    secondValue: actualSavings,
+                    secondColor: DS.Colors.savingsGood
+                )
+
+                GridRow(alignment: .lastTextBaseline) {
+                    leadingGridCell { totalLabelView }
+                    trailingGridCell { totalValueView }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        } else {
+            legacyTable
         }
     }
 
-    private var budgetTitleView: some View {
-        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
+    private var titleStack: some View {
+        VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.titleSpacing) {
             Text(displayTitle)
-                .font(HomeHeaderPrimarySummaryStyle.titleFont)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
+                .font(HomeHeaderOverviewMetrics.titleFont)
+                .lineLimit(HomeHeaderOverviewMetrics.titleLineLimit)
+                .minimumScaleFactor(HomeHeaderOverviewMetrics.titleMinimumScaleFactor)
 
             Text(displayDetail)
-                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
+                .font(HomeHeaderOverviewMetrics.subtitleFont)
                 .foregroundStyle(.secondary)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
+                .lineLimit(HomeHeaderOverviewMetrics.subtitleLineLimit)
+                .minimumScaleFactor(HomeHeaderOverviewMetrics.subtitleMinimumScaleFactor)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
     }
 
-    private var incomeSummaryView: some View {
-        BudgetIncomeSavingsSummaryView(summary: summary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    private var periodNavigationControlView: some View {
+        PeriodNavigationControl(
+            title: periodNavigationTitle,
+            onPrevious: { onAdjustPeriod(-1) },
+            onNext: { onAdjustPeriod(+1) }
+        )
+        .padding(.top, HomeHeaderOverviewMetrics.periodNavigationTopPadding)
+    }
+
+    @available(iOS 16.0, macCatalyst 16.0, *)
+    @ViewBuilder
+    private func incomeHeaderRow(title: String, trailingTitle: String) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell {
+                Text(title)
+                    .font(HomeHeaderOverviewMetrics.labelFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            trailingGridCell {
+                Text(trailingTitle)
+                    .font(HomeHeaderOverviewMetrics.labelFont)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @available(iOS 16.0, macCatalyst 16.0, *)
+    @ViewBuilder
+    private func incomeValuesRow(
+        firstValue: Double,
+        firstColor: Color,
+        secondValue: Double,
+        secondColor: Color
+    ) -> some View {
+        GridRow(alignment: .lastTextBaseline) {
+            leadingGridCell {
+                Text(formatCurrency(firstValue))
+                    .font(HomeHeaderOverviewMetrics.valueFont)
+                    .foregroundStyle(firstColor)
+                    .lineLimit(1)
+            }
+            trailingGridCell {
+                Text(formatCurrency(secondValue))
+                    .font(HomeHeaderOverviewMetrics.valueFont)
+                    .foregroundStyle(secondColor)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @available(iOS 16.0, macCatalyst 16.0, *)
+    private func leadingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            content()
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 16.0, macCatalyst 16.0, *)
+    private func trailingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private var totalLabelView: some View {
+        Text(selectedSegment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
+            .font(HomeHeaderOverviewMetrics.labelFont)
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .lineLimit(1)
+    }
+
+    private var totalValueView: some View {
+        Text(formatCurrency(selectedSegmentTotal))
+            .font(HomeHeaderOverviewMetrics.totalValueFont)
+            .lineLimit(1)
+    }
+
+    private var legacyTable: some View {
+        VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
+            HStack(alignment: .top, spacing: HomeHeaderOverviewMetrics.legacyColumnSpacing) {
+                titleStack
+                Spacer(minLength: 0)
+                periodNavigationControlView
+            }
+
+            HStack(alignment: .top, spacing: HomeHeaderOverviewMetrics.legacyColumnSpacing) {
+                VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.legacyRowSpacing) {
+                    legacyHeader("POTENTIAL INCOME")
+                    legacyValue(potentialIncome, color: DS.Colors.plannedIncome)
+                    legacyHeader("ACTUAL INCOME")
+                    legacyValue(actualIncome, color: DS.Colors.actualIncome)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .trailing, spacing: HomeHeaderOverviewMetrics.legacyRowSpacing) {
+                    legacyHeader("POTENTIAL SAVINGS")
+                    legacyValue(potentialSavings, color: DS.Colors.savingsGood)
+                    legacyHeader("ACTUAL SAVINGS")
+                    legacyValue(actualSavings, color: DS.Colors.savingsGood)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            HStack(alignment: .firstTextBaseline) {
+                totalLabelView
+                Spacer()
+                totalValueView
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var segmentPicker: some View {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+            Picker("", selection: $selectedSegment) {
+                Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
+            }
+            .pickerStyle(.segmented)
+            .equalWidthSegments()
+            .frame(maxWidth: .infinity)
+            .modifier(UBSegmentedControlStyleModifier())
+        }
+    }
+
+    private var sortPicker: some View {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+            Picker("Sort", selection: $sort) {
+                Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+            }
+            .pickerStyle(.segmented)
+            .equalWidthSegments()
+            .frame(maxWidth: .infinity)
+            .modifier(UBSegmentedControlStyleModifier())
+        }
+    }
+
+    private func legacyHeader(_ title: String) -> some View {
+        Text(title)
+            .font(HomeHeaderOverviewMetrics.labelFont)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+    }
+
+    private func legacyValue(_ amount: Double, color: Color) -> some View {
+        Text(formatCurrency(amount))
+            .font(HomeHeaderOverviewMetrics.valueFont)
+            .foregroundStyle(color)
+            .lineLimit(1)
+    }
+
+    private var potentialIncome: Double { summary?.potentialIncomeTotal ?? 0 }
+    private var potentialSavings: Double { summary?.potentialSavingsTotal ?? 0 }
+    private var actualIncome: Double { summary?.actualIncomeTotal ?? 0 }
+    private var actualSavings: Double { summary?.actualSavingsTotal ?? 0 }
+    private var plannedExpensesTotal: Double { summary?.plannedExpensesActualTotal ?? 0 }
+    private var variableExpensesTotal: Double { summary?.variableExpensesTotal ?? 0 }
+    private var selectedSegmentTotal: Double { selectedSegment == .planned ? plannedExpensesTotal : variableExpensesTotal }
+
+    private func formatCurrency(_ amount: Double) -> String {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
+            let currencyCode: String
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
+                currencyCode = Locale.current.currency?.identifier ?? HomeHeaderOverviewMetrics.fallbackCurrencyCode
+            } else {
+                currencyCode = Locale.current.currencyCode ?? HomeHeaderOverviewMetrics.fallbackCurrencyCode
+            }
+            return amount.formatted(.currency(code: currencyCode))
+        } else {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.currencyCode = Locale.current.currencyCode ?? HomeHeaderOverviewMetrics.fallbackCurrencyCode
+            return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
+        }
     }
 }
 
-private enum HomeHeaderPrimarySummaryStyle {
-    static let verticalSpacing: CGFloat = DS.Spacing.xs / 2
+private enum HomeHeaderOverviewMetrics {
+    static let sectionSpacing: CGFloat = DS.Spacing.m
+    static let gridRowSpacing: CGFloat = DS.Spacing.xs
+    static let titleSpacing: CGFloat = DS.Spacing.xs / 2
+    static let legacyColumnSpacing: CGFloat = DS.Spacing.m
+    static let legacyRowSpacing: CGFloat = 5
+    static let periodNavigationTopPadding: CGFloat = DS.Spacing.xs / 2
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 2
     static let titleMinimumScaleFactor: CGFloat = 0.75
     static let subtitleFont: Font = .callout
     static let subtitleLineLimit: Int = 1
     static let subtitleMinimumScaleFactor: CGFloat = 0.85
-}
-
-// MARK: - Fallback header when no budget exists
-private struct HomeHeaderFallbackTitleView: View {
-    let displayTitle: String
-    let displayDetail: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: HomeHeaderPrimarySummaryStyle.verticalSpacing) {
-            Text(displayTitle)
-                .font(HomeHeaderPrimarySummaryStyle.titleFont)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.titleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.titleMinimumScaleFactor)
-
-            Text(displayDetail)
-                .font(HomeHeaderPrimarySummaryStyle.subtitleFont)
-                .foregroundStyle(.secondary)
-                .lineLimit(HomeHeaderPrimarySummaryStyle.subtitleLineLimit)
-                .minimumScaleFactor(HomeHeaderPrimarySummaryStyle.subtitleMinimumScaleFactor)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-// MARK: - Zero summary grid for empty periods
-private struct HomeIncomeSavingsZeroSummaryView: View {
-    var body: some View {
-        Group {
-            if #available(iOS 16.0, macCatalyst 16.0, *) {
-                Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: HomeIncomeSavingsMetrics.rowSpacing) {
-                    headerRow("POTENTIAL INCOME", "POTENTIAL SAVINGS")
-                    valuesRow(0, DS.Colors.plannedIncome, 0, DS.Colors.savingsGood)
-                    headerRow("ACTUAL INCOME", "ACTUAL SAVINGS")
-                    valuesRow(0, DS.Colors.actualIncome, 0, DS.Colors.savingsGood)
-                }
-                .frame(maxWidth: .infinity)
-            } else {
-                HStack(alignment: .top, spacing: DS.Spacing.m) {
-                    VStack(alignment: .leading, spacing: HomeIncomeSavingsMetrics.rowSpacing) {
-                        VStack(alignment: .leading) {
-                            header("POTENTIAL INCOME")
-                            value(0, DS.Colors.plannedIncome)
-                        }
-                        VStack(alignment: .leading) {
-                            header("ACTUAL INCOME")
-                            value(0, DS.Colors.actualIncome)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    VStack(alignment: .trailing, spacing: HomeIncomeSavingsMetrics.rowSpacing) {
-                        VStack(alignment: .trailing) {
-                            header("POTENTIAL SAVINGS")
-                            value(0, DS.Colors.savingsGood)
-                        }
-                        VStack(alignment: .trailing) {
-                            header("ACTUAL SAVINGS")
-                            value(0, DS.Colors.savingsGood)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    @available(iOS 16.0, macCatalyst 16.0, *)
-    @ViewBuilder
-    private func headerRow(_ left: String, _ right: String) -> some View {
-        GridRow(alignment: .lastTextBaseline) {
-            leadingGridCell { header(left) }
-            trailingGridCell { header(right) }
-        }
-    }
-
-    @available(iOS 16.0, macCatalyst 16.0, *)
-    @ViewBuilder
-    private func valuesRow(_ leftValue: Double, _ leftColor: Color, _ rightValue: Double, _ rightColor: Color) -> some View {
-        GridRow(alignment: .lastTextBaseline) {
-            leadingGridCell { value(leftValue, leftColor) }
-            trailingGridCell { value(rightValue, rightColor) }
-        }
-    }
-
-    @available(iOS 16.0, macCatalyst 16.0, *)
-    @ViewBuilder
-    private func leadingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        HStack(spacing: 0) { content(); Spacer(minLength: 0) }
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @available(iOS 16.0, macCatalyst 16.0, *)
-    @ViewBuilder
-    private func trailingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        HStack(spacing: 0) { Spacer(minLength: 0); content().multilineTextAlignment(.trailing) }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-    }
-
-    @ViewBuilder
-    private func header(_ title: String) -> some View {
-        Text(title)
-            .font(HomeIncomeSavingsMetrics.labelFont)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-    }
-
-    @ViewBuilder
-    private func value(_ amount: Double, _ color: Color) -> some View {
-        Text(formatCurrency(amount))
-            .font(HomeIncomeSavingsMetrics.valueFont)
-            .foregroundStyle(color)
-            .lineLimit(1)
-    }
-
-    private func formatCurrency(_ amount: Double) -> String {
-        if #available(iOS 15.0, macCatalyst 15.0, *) {
-            let code: String
-            if #available(iOS 16.0, macCatalyst 16.0, *) {
-                code = Locale.current.currency?.identifier ?? "USD"
-            } else {
-                code = Locale.current.currencyCode ?? "USD"
-            }
-            return amount.formatted(.currency(code: code))
-        } else {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .currency
-            formatter.currencyCode = Locale.current.currencyCode ?? "USD"
-            return formatter.string(from: amount as NSNumber) ?? String(format: "%.2f", amount)
-        }
-    }
-}
-
-private enum HomeIncomeSavingsMetrics {
     static let labelFont: Font = .caption.weight(.semibold)
     static let valueFont: Font = .body.weight(.semibold)
-    static let rowSpacing: CGFloat = 5
+    static let totalValueFont: Font = .title3.weight(.semibold)
+    static let fallbackCurrencyCode = "USD"
 }
 
-// MARK: - Section header + total row
-private struct HomeSegmentTotalsRowView: View {
-    let segment: BudgetDetailsViewModel.Segment
-    let total: Double
+private struct HomeHeaderHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(segment == .planned ? "PLANNED EXPENSES" : "VARIABLE EXPENSES")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            Spacer()
-            Text(totalString)
-                .font(.title3.weight(.semibold))
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var totalString: String {
-        // Lightweight currency formatting; mirrors the helper used elsewhere
-        if #available(iOS 15.0, macCatalyst 15.0, *) {
-            let code: String
-            if #available(iOS 16.0, macCatalyst 16.0, *) {
-                code = Locale.current.currency?.identifier ?? "USD"
-            } else {
-                code = Locale.current.currencyCode ?? "USD"
-            }
-            return total.formatted(.currency(code: code))
-        } else {
-            let f = NumberFormatter()
-            f.numberStyle = .currency
-            f.currencyCode = Locale.current.currencyCode ?? "USD"
-            return f.string(from: total as NSNumber) ?? String(format: "%.2f", total)
-        }
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(0, nextValue())
     }
 }
 
@@ -749,25 +788,5 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
             current = candidate.superview
         }
         return nil
-    }
-}
-
-// MARK: - Utility: Height measurement helper
-private struct ViewHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
-private extension View {
-    func measureHeight(_ binding: Binding<CGFloat>) -> some View {
-        background(
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(key: ViewHeightKey.self, value: proxy.size.height)
-            }
-        )
-        .onPreferenceChange(ViewHeightKey.self) { binding.wrappedValue = $0 }
     }
 }
