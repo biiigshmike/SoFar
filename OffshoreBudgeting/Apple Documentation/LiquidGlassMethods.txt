@@ -1,0 +1,153 @@
+glassEffect(_:in:)
+Applies the Liquid Glass effect to a view.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+
+nonisolated
+func glassEffect(
+    _ glass: Glass = .regular,
+    in shape: some Shape = DefaultGlassEffectShape()
+) -> some View
+
+Discussion
+When you use this effect, the system:
+Renders a shape anchored behind a view with the Liquid Glass material.
+Applies the foreground effects of Liquid Glass over a view.
+For example, to add this effect to a Text:
+Text("Hello, World!")
+    .font(.title)
+    .padding()
+    .glassEffect()
+SwiftUI uses the regular variant by default along with a Capsule shape.
+SwiftUI anchors the Liquid Glass to a view’s bounds. For the example above, the material fills the entirety of the Text frame, which includes the padding.
+You typically use this modifier with a GlassEffectContainer to combine multiple Liquid Glass shapes into a single shape that can morph into one another.
+
+interactive(_:)
+Returns a copy of the structure configured to be interactive.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+
+func interactive(_ isEnabled: Bool = true) -> Glass
+
+GlassEffectContainer
+A view that combines multiple Liquid Glass shapes into a single shape that can morph individual shapes into one another.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+@MainActor @preconcurrency
+struct GlassEffectContainer<Content> where Content : View
+
+Overview
+Use a container with the glassEffect(_:in:) modifier. Each view with a Liquid Glass effect contributes a shape rendered with the effect to a set of shapes. SwiftUI renders the effects together, improving rendering performance and allowing the effects to interact with and morph into one another.
+Configure how shapes interact with one another by customizing the default spacing value of the container. As shapes near one another, their paths start to blend into one another. The higher the spacing, the sooner blending begins as the shapes approach each other.
+
+Initializers
+init(spacing: CGFloat?, content: () -> Content)
+Creates a glass effect container with the provided spacing, extracting glass shapes from the provided content.
+
+Relationships
+Conforms To
+	Sendable
+	SendableMetatype
+	View
+
+GlassEffectTransition
+A structure that describes changes to apply when a glass effect is added or removed from the view hierarchy.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+struct GlassEffectTransition
+
+Type Properties
+static var identity: GlassEffectTransition
+The identity transition specifying no changes.
+static var matchedGeometry: GlassEffectTransition
+Returns the matched geometry glass effect transition.
+static var materialize: GlassEffectTransition
+The materialize glass effect transition which will fade in content and animate in or out the glass material but will not attempt to match the geometry of any other glass effects.
+
+Relationships
+Conforms To
+	Sendable
+	SendableMetatype
+
+GlassButtonStyle
+A button style that applies glass border artwork based on the button’s context.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+struct GlassButtonStyle
+Overview
+You can also use glass to construct this style.
+Topics
+Initializers
+init()
+Creates a glass button style.
+Instance Methods
+func makeBody(configuration: GlassButtonStyle.Configuration) -> some View
+Creates a view that represents the body of a button.
+Relationships
+Conforms To
+PrimitiveButtonStyle
+
+GlassProminentButtonStyle
+A button style that applies prominent glass border artwork based on the button’s context.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+struct GlassProminentButtonStyle
+Overview
+You can also use glassProminent to construct this style.
+Topics
+Initializers
+init()
+Creates a prominent glass button style.
+Instance Methods
+func makeBody(configuration: GlassProminentButtonStyle.Configuration) -> some View
+Creates a view that represents the body of a button.
+Relationships
+Conforms To
+PrimitiveButtonStyle
+
+
+DefaultGlassEffectShape
+The default shape applied by glass effects, a capsule.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+struct DefaultGlassEffectShape
+Overview
+You do not use this type directly. Instead, SwiftUI creates this shape on your behalf as the default parameter of the glassEffect(_:in:) modifier.
+Topics
+Initializers
+init()
+Relationships
+Conforms To
+	Animatable
+	Sendable
+	SendableMetatype
+	Shape
+	View
