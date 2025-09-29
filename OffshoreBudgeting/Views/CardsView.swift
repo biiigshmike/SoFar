@@ -47,9 +47,7 @@ struct CardsView: View {
     // MARK: Body
     var body: some View {
         RootTabPageScaffold(scrollBehavior: .always, spacing: DS.Spacing.s) {
-            RootViewTopPlanes(title: "Cards", titleDisplayMode: .hidden) {
-                addCardButton
-            }
+            EmptyView()
         } content: { proxy in
             contentView(using: proxy)
         }
@@ -59,6 +57,11 @@ struct CardsView: View {
         .refreshable { await viewModel.refresh() }
         // MARK: App Toolbar
         .ub_tabNavigationTitle("Cards")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                addActionToolbarButton
+            }
+        }
         // MARK: Add Sheet
         .sheet(isPresented: $isPresentingAddCard) {
             AddCardFormView { newName, selectedTheme in
@@ -108,16 +111,31 @@ struct CardsView: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
-    private var addCardButton: some View {
-        RootHeaderIconActionButton(
-            systemImage: "plus",
-            accessibilityLabel: selectedCardStableID == nil ? "Add Card" : "Add Expense"
-        ) {
+    private var addActionToolbarButton: some View {
+        Menu {
+            Button {
+                isPresentingAddCard = true
+            } label: {
+                Label("Add Card", systemImage: "creditcard")
+            }
+
+            Button {
+                isPresentingAddExpense = true
+            } label: {
+                Label("Add Expense", systemImage: "plus.forwardslash.minus")
+            }
+            .disabled(selectedCardStableID == nil)
+        } primaryAction: {
             if selectedCardStableID == nil {
                 isPresentingAddCard = true
             } else {
                 isPresentingAddExpense = true
             }
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .symbolRenderingMode(.hierarchical)
+                .font(.title3)
+                .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
         }
     }
 
