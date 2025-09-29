@@ -106,7 +106,7 @@ struct UBEmptyState: View {
     }
 
     private var resolvedVerticalPadding: CGFloat {
-        #if os(iOS)
+        #if canImport(UIKit)
         return verticalSizeClass == .compact ? DS.Spacing.s : DS.Spacing.m
         #else
         return DS.Spacing.m
@@ -146,7 +146,7 @@ struct UBEmptyState: View {
             .labelStyle(.titleAndIcon)
     }
 
-#if os(iOS)
+#if canImport(UIKit)
     @ViewBuilder
     private func glassPrimaryButton(
         title: String,
@@ -193,14 +193,14 @@ struct UBEmptyState: View {
         glassTint: Color,
         action: @escaping () -> Void
     ) -> some View {
-        if capabilities.supportsOS26Translucency, #available(macOS 26.0, tvOS 18.0, *) {
+        if capabilities.supportsOS26Translucency, #available(macCatalyst 26.0, *) {
             glassStyledPrimaryButton(title: title, glassTint: glassTint, action: action)
         } else {
             legacyPrimaryButton(title: title, action: action)
         }
     }
 
-    @available(macOS 26.0, tvOS 18.0, *)
+    @available(macCatalyst 26.0, *)
     @ViewBuilder
     private func glassStyledPrimaryButton(
         title: String,
@@ -226,7 +226,7 @@ struct UBEmptyState: View {
     }
 #endif
 
-    #if os(iOS)
+    #if canImport(UIKit)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     #endif
     private var primaryButtonTint: Color {

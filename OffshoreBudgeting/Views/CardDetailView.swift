@@ -118,7 +118,7 @@ struct CardDetailView: View {
     }
 
     private var currencyCode: String {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             return Locale.current.currency?.identifier ?? "USD"
         } else {
             return Locale.current.currencyCode ?? "USD"
@@ -128,7 +128,7 @@ struct CardDetailView: View {
     // MARK: navigationContainer
     @ViewBuilder
     private var navigationContainer: some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             NavigationStack {
                 navigationContent
             }

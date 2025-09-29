@@ -95,7 +95,7 @@ struct CustomRecurrenceEditorView: View {
     // MARK: Body
     var body: some View {
         Group {
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 NavigationStack {
                     content
                         .navigationTitle("Custom Recurrence")
@@ -136,7 +136,7 @@ struct CustomRecurrenceEditorView: View {
                         }
                 }
                 // Stack style is not available on macOS; apply only on platforms that support it.
-                #if os(iOS) || os(tvOS) || os(watchOS)
+                #if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
                 #endif
             }
@@ -178,7 +178,7 @@ struct CustomRecurrenceEditorView: View {
             Section {
                 Text("Preview")
                     .font(.subheadline).foregroundStyle(.secondary)
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                if #available(iOS 16.0, macCatalyst 16.0, *) {
                     Text(draft.toRRULE())
                         .font(.callout).monospaced()
                         .textSelection(.enabled)

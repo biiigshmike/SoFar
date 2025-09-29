@@ -348,21 +348,21 @@ private struct CardsStep: View {
     // MARK: - Navigation container compatibility
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             navigationStack(content: content)
         } else {
             navigationView(content: content)
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, tvOS 16.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     private func navigationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationStack { content() }
     }
 
     private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationView { content() }
-        #if os(iOS)
+        #if canImport(UIKit)
             .navigationViewStyle(.stack)
         #endif
     }
@@ -641,21 +641,21 @@ private struct CategoriesStep: View {
     // MARK: - Navigation container compatibility
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             navigationStack(content: content)
         } else {
             navigationView(content: content)
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, tvOS 16.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     private func navigationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationStack { content() }
     }
 
     private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationView { content() }
-        #if os(iOS)
+        #if canImport(UIKit)
             .navigationViewStyle(.stack)
         #endif
     }
@@ -787,7 +787,7 @@ private struct OnboardingSecondaryButtonStyle: ButtonStyle {
 
     @ViewBuilder
     private func background(isPressed: Bool, radius: CGFloat) -> some View {
-        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macCatalyst 16.0, *) {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(tint.opacity(isPressed ? 0.2 : 0.14))
                 .background(
@@ -874,7 +874,7 @@ private struct OnboardingGlassBackground: View {
 
     var body: some View {
         Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 15.0, macCatalyst 16.0, *) {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(tint.opacity(0.16))
                     .background(
@@ -934,7 +934,7 @@ private struct CloudOptionToggle: View {
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .disabled(!isEnabled)
-#if os(iOS) || os(macOS)
+#if canImport(UIKit)
                 .controlSize(.large)
 #endif
         }

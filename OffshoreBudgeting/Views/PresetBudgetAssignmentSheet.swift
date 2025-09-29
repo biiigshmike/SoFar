@@ -94,7 +94,7 @@ struct PresetBudgetAssignmentSheet: View {
     // MARK: - Navigation container (iOS 16+/macOS 13+ NavigationStack; older NavigationView)
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             NavigationStack { content() }
         } else {
             NavigationView { content() }

@@ -191,7 +191,7 @@ struct IncomeView: View {
         if proxy.layoutContext.isLandscape,
            proxy.layoutContext.containerSize.width >= landscapeLayoutMinimumWidth {
             landscapeLayout(using: proxy, availableHeight: availableHeight)
-        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *) {
+        } else if #available(iOS 16.0, macCatalyst 16.0, *) {
             ViewThatFits(in: .vertical) {
                 nonScrollingLayout(using: proxy, availableHeight: availableHeight)
                 scrollingLayout(using: proxy)
@@ -360,7 +360,7 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: CalendarSectionMetrics.headerSpacing) {
             HStack(spacing: DS.Spacing.s) {
-                if #available(iOS 18.0, tvOS 18.0, macCatalyst 18.0, *), capabilities.supportsOS26Translucency {
+                if #available(iOS 18.0, macCatalyst 18.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .incomeCalendarGlassButtonStyle(role: .icon)
@@ -793,7 +793,7 @@ private extension View {
     /// Hides list background on supported OS versions; no-ops on older targets.
     @ViewBuilder
     func applyIfAvailableScrollContentBackgroundHidden() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             scrollContentBackground(.hidden)
         } else {
             self
@@ -816,7 +816,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
         Group {
             #if swift(>=6.0)
             if capabilities.supportsOS26Translucency {
-                if #available(iOS 18.0, macOS 26.0, tvOS 18.0, visionOS 2.0, macCatalyst 26.0, *) {
+                if #available(iOS 18.0, macCatalyst 26.0, visionOS 2.0, *) {
                     content.buttonStyle(.glass)
                 } else {
                     content.buttonStyle(.plain)

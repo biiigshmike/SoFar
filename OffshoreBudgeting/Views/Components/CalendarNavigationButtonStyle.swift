@@ -36,7 +36,7 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
     @ViewBuilder
     private func background(for theme: AppTheme, radius: CGFloat, isPressed: Bool) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 15.0, macCatalyst 16.0, *) {
             shape
                 .fill(.ultraThinMaterial)
                 .overlay(

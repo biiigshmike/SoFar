@@ -170,7 +170,7 @@ struct TranslucentButtonStyle: ButtonStyle {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
         if capabilities.supportsOS26Translucency,
-           #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+           #available(iOS 15.0, macCatalyst 16.0, *) {
             shape
                 .fill(.ultraThinMaterial)
                 .overlay(shape.fill(fillColor(for: theme, isPressed: isPressed)))

@@ -219,7 +219,7 @@ private extension View {
     /// Hides list background on supported OS versions; no-ops on older targets.
     @ViewBuilder
     func applyIfAvailableScrollContentBackgroundHidden() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             scrollContentBackground(.hidden)
         } else {
             self
@@ -312,15 +312,11 @@ struct ExpenseCategoryEditorSheet: View {
         let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
         return String(format: "#%02X%02X%02X", ri, gi, bi)
         #elseif canImport(AppKit)
-        if #available(macOS 11.0, *) {
-            guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return nil }
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            sRGB.getRed(&r, green: &g, blue: &b, alpha: &a)
-            let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
-            return String(format: "#%02X%02X%02X", ri, gi, bi)
-        } else {
-            return nil
-        }
+        guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return nil }
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        sRGB.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
+        return String(format: "#%02X%02X%02X", ri, gi, bi)
         #endif
     }
 }

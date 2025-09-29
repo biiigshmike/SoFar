@@ -111,7 +111,7 @@ struct AddIncomeFormView: View {
     private var sourceSection: some View {
         UBFormSection("Source", isUppercased: true) {
             UBFormRow {
-                if #available(iOS 15.0, macOS 12.0, *) {
+                if #available(iOS 15.0, macCatalyst 15.0, *) {
                     TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
                         .ub_noAutoCapsAndCorrection()
                         .multilineTextAlignment(.leading)
@@ -131,7 +131,7 @@ struct AddIncomeFormView: View {
     private var amountSection: some View {
         UBFormSection("Amount", isUppercased: true) {
             UBFormRow {
-                if #available(iOS 15.0, macOS 12.0, *) {
+                if #available(iOS 15.0, macCatalyst 15.0, *) {
                     TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
                         .ub_decimalKeyboard()
                         .multilineTextAlignment(.leading)

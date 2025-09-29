@@ -90,7 +90,7 @@ struct AddUnplannedExpenseView: View {
             // Expense Description
             UBFormSection("Expense Description", isUppercased: false) {
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
+                    if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.descriptionText, prompt: Text("Apple Store"))
                             .ub_noAutoCapsAndCorrection()
                             .multilineTextAlignment(.leading)
@@ -109,7 +109,7 @@ struct AddUnplannedExpenseView: View {
             // Amount
             UBFormSection("Amount", isUppercased: false) {
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
+                    if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.amountString, prompt: Text("299.99"))
                             .ub_decimalKeyboard()
                             .multilineTextAlignment(.leading)

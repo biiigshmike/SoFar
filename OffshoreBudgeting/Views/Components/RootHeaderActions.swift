@@ -105,7 +105,7 @@ extension View {
 #if os(iOS)
 
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
-@available(iOS 26, tvOS 18.0, macCatalyst 26.0, *)
+@available(iOS 26, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     private let content: Content
 
@@ -130,7 +130,7 @@ private extension View {
     ) -> some View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
+            if #available(iOS 26.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)

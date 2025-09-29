@@ -74,11 +74,11 @@ struct RootTabView: View {
 
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             NavigationStack { content() }
         } else {
             NavigationView { content() }
-                #if os(iOS)
+                #if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
                 #endif
         }

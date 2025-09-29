@@ -8,7 +8,7 @@ struct HelpView: View {
 
     var body: some View {
         Group {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 NavigationStack {
                     helpMenu
                         .navigationTitle("Help")
@@ -18,7 +18,7 @@ struct HelpView: View {
                     helpMenu
                         .navigationBarTitle("Help")
                 }
-#if os(iOS)
+#if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
 #endif
             }
