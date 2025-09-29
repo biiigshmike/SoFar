@@ -1021,17 +1021,15 @@ private extension View {
 
 private struct HomeEqualWidthSegmentsModifier: ViewModifier {
     func body(content: Content) -> some View {
-#if os(iOS)
+        #if canImport(UIKit)
         content.background(HomeEqualWidthSegmentApplier())
-#elseif os(macOS)
-        content.background(HomeEqualWidthSegmentApplier())
-#else
+        #else
         content
-#endif
+        #endif
     }
 }
 
-#if os(iOS)
+#if canImport(UIKit)
 private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -1061,40 +1059,8 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
         return nil
     }
 }
-#elseif os(macOS)
-private struct HomeEqualWidthSegmentApplier: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        view.alphaValue = 0.0
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
-    }
-
-    private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard let segmented = findSegmentedControl(from: view) else { return }
-        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
-    }
-
-    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-        // Prefer searching siblings/descendants of the immediate superview, because
-        // this representable is attached as a background.
-        guard let root = view.superview else { return nil }
-        return searchSegmented(in: root)
-    }
-
-    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
-        for sub in node.subviews {
-            if let seg = sub as? NSSegmentedControl { return seg }
-            if let found = searchSegmented(in: sub) { return found }
-        }
-        return nil
-    }
-}
 #endif
+
 // MARK: - Utility: Height measurement helper
 private struct ViewHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
