@@ -19,16 +19,10 @@ struct PillSegmentedControl<SelectionValue, Content>: View where SelectionValue:
     }
 
     var body: some View {
-        #if os(macOS)
-        // On macOS, we always use our custom-built picker to achieve the desired look.
-        CustomMacPillPicker(selection: $selection, segments: segments)
-        #else
-        // On iOS, the native picker already looks perfect, so we'll use that.
         Picker("", selection: $selection) {
             content()
         }
         .pickerStyle(.segmented)
-        #endif
     }
     
     /// A robust method to extract tag and label information from the ViewBuilder content
@@ -72,61 +66,3 @@ struct PillSegmentedControl<SelectionValue, Content>: View where SelectionValue:
         return segments
     }
 }
-
-#if os(macOS)
-/// The custom SwiftUI implementation for the pill-style picker on macOS.
-private struct CustomMacPillPicker<SelectionValue: Hashable>: View {
-    @Environment(\.platformCapabilities) private var capabilities
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Binding var selection: SelectionValue
-    
-    let segments: [(tag: SelectionValue, label: AnyView)]
-    
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(segments, id: \.tag) { segment in
-                Button(action: {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        selection = segment.tag
-                    }
-                }) {
-                    segment.label
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
-                .background {
-                    // This creates the sliding pill effect for the selected item.
-                    if selection == segment.tag {
-                        Capsule()
-                            .fill(selectionIndicatorColor)
-                            .matchedGeometryEffect(id: "selectionIndicator", in: namespace)
-                    }
-                }
-                .clipShape(Capsule())
-            }
-        }
-        .padding(2)
-        .background(backgroundMaterial, in: Capsule())
-    }
-
-    @Namespace private var namespace
-
-    private var backgroundMaterial: some ShapeStyle {
-        if capabilities.supportsOS26Translucency {
-            return AnyShapeStyle(.ultraThinMaterial)
-        } else {
-            return AnyShapeStyle(themeManager.selectedTheme.secondaryBackground.opacity(0.5))
-        }
-    }
-    
-    private var selectionIndicatorColor: Color {
-        if capabilities.supportsOS26Translucency {
-            return .primary.opacity(0.12)
-        } else {
-            return .primary.opacity(0.08)
-        }
-    }
-}
-#endif
