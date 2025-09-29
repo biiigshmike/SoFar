@@ -6,13 +6,12 @@
 //  shows the full BudgetDetailsView inline. Otherwise an empty state encourages
 //  creating a budget.
 //
-//  Empty-state centering:
-//  - We place a ZStack as the content container *below the header*.
-//  - When there are no budgets, we show UBEmptyState inside that ZStack.
-//  - UBEmptyState uses maxWidth/maxHeight = .infinity, so it centers itself
-//    within the ZStack's available area (i.e., the viewport minus the header).
-//  - When budgets exist, we show BudgetDetailsView in the same ZStack,
-//    so there’s no layout jump switching between states.
+//  Scroll behaviour:
+//  - RootTabPageScaffold owns the primary scroll host so large titles collapse.
+//  - RootTabListHostingContainer constrains BudgetDetailsView to the available
+//    viewport height, letting its Lists own vertical scrolling without nesting.
+//  - The empty state uses a VStack sized to the available height so the
+//    scaffold’s scroll view can manage reachability on compact devices.
 //
 
 import SwiftUI
@@ -43,14 +42,13 @@ struct HomeView: View {
 
     // MARK: Body
     var body: some View {
-        // Sticky header; conditionally wrap content in a ScrollView.
-        // - When a budget exists, do NOT wrap (BudgetDetailsView has Lists).
-        // - When empty/no budget, allow the content to manage its own scrolling.
-        // Manage scroll per-state; keep header sticky without an outer ScrollView.
+        // Sticky header is managed by RootTabPageScaffold.
+        // - Empty states leverage the scaffold's scroll view for reachability.
+        // - Loaded budgets run through RootTabListHostingContainer so Lists keep
+        //   control of vertical scrolling without nested scroll views.
         RootTabPageScaffold(
             scrollBehavior: .auto,
-            spacing: DS.Spacing.s,
-            wrapsContentInScrollView: false
+            spacing: DS.Spacing.s
         ) {
             headerSection
         } content: { proxy in
@@ -303,99 +301,105 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
             case .empty:
-                emptyPeriodShell(proxy: proxy)
+                emptyPeriodContent(proxy: proxy)
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-                    BudgetDetailsView(
-                        budgetObjectID: first.id,
-                        periodNavigation: .init(
-                            title: title(for: vm.selectedDate),
-                            onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
-                        ),
-                        displaysBudgetTitle: false,
-                        headerTopPadding: DS.Spacing.xs,
-                        showsIncomeSavingsGrid: false,
-                        onSegmentChange: { newSegment in
-                            self.selectedSegment = newSegment
-                        }
-                    )
-                    .id(first.id)
-                    .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    loadedBudgetContent(for: first, proxy: proxy)
                 } else {
-                    emptyPeriodShell(proxy: proxy)
+                    emptyPeriodContent(proxy: proxy)
                 }
             }
         }
     }
 
-    // MARK: Empty Period Shell (replaces generic empty state)
+    // MARK: Empty Period Content (replaces generic empty state)
     @ViewBuilder
-    private func emptyPeriodShell(proxy: RootTabPageProxy) -> some View {
-        ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: DS.Spacing.m) {
-                // Period navigation in content (original position)
-                periodNavigationControl()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    private func emptyPeriodContent(proxy: RootTabPageProxy) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.m) {
+            // Period navigation in content (original position)
+            periodNavigationControl()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Section header + running total for the current segment
-                HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
+            // Section header + running total for the current segment
+            HomeSegmentTotalsRowView(segment: selectedSegment, total: 0)
 
-                // Segment control in content
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
-                    Picker("", selection: $selectedSegment) {
-                        Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
-                        Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
-                    }
-                    .pickerStyle(.segmented)
-                    .equalWidthSegments()
-                    .frame(maxWidth: .infinity)
-                    .modifier(UBSegmentedControlStyleModifier())
+            // Segment control in content
+            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+                Picker("", selection: $selectedSegment) {
+                    Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
+                    Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
                 }
-
-                // Filter bar (sort options)
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
-                    Picker("Sort", selection: $homeSort) {
-                        Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
-                        Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
-                        Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
-                        Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
-                        Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
-                    }
-                    .pickerStyle(.segmented)
-                    .equalWidthSegments()
-                    .frame(maxWidth: .infinity)
-                    .modifier(UBSegmentedControlStyleModifier())
-                }
-
-                // Always-offer Add button when no budget exists so users can
-                // quickly create an expense for this period.
-                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
-                    Button(action: addExpenseCTAAction) {
-                        Label(addExpenseCTATitle, systemImage: "plus")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
-                }
-
-                // Segment-specific guidance — centered consistently across platforms
-                Text(emptyShellMessage)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, DS.Spacing.l)
-
-                Spacer(minLength: 0)
+                .pickerStyle(.segmented)
+                .equalWidthSegments()
+                .frame(maxWidth: .infinity)
+                .modifier(UBSegmentedControlStyleModifier())
             }
-            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
+
+            // Filter bar (sort options)
+            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                Picker("Sort", selection: $homeSort) {
+                    Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
+                    Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
+                    Text("$↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountHighLow)
+                    Text("Date ↑").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateOldNew)
+                    Text("Date ↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.dateNewOld)
+                }
+                .pickerStyle(.segmented)
+                .equalWidthSegments()
+                .frame(maxWidth: .infinity)
+                .modifier(UBSegmentedControlStyleModifier())
+            }
+
+            // Always-offer Add button when no budget exists so users can
+            // quickly create an expense for this period.
+            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                Button(action: addExpenseCTAAction) {
+                    Label(addExpenseCTATitle, systemImage: "plus")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
+            }
+
+            // Segment-specific guidance — centered consistently across platforms
+            Text(emptyShellMessage)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, DS.Spacing.l)
+
+            Spacer(minLength: 0)
         }
-        .ub_ignoreSafeArea(edges: .bottom)
-        .ub_hideScrollIndicators()
+        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .top)
+    }
+
+    @ViewBuilder
+    private func loadedBudgetContent(for summary: BudgetSummary, proxy: RootTabPageProxy) -> some View {
+        let baseHeight = proxy.availableHeightBelowHeader
+        let fallbackHeight = proxy.availableHeight - proxy.headerHeight
+        let resolvedHeight = max(baseHeight > 0 ? baseHeight : fallbackHeight, 1)
+
+        RootTabListHostingContainer(height: resolvedHeight) {
+            BudgetDetailsView(
+                budgetObjectID: summary.id,
+                periodNavigation: .init(
+                    title: title(for: vm.selectedDate),
+                    onAdjust: { delta in vm.adjustSelectedPeriod(by: delta) }
+                ),
+                displaysBudgetTitle: false,
+                headerTopPadding: DS.Spacing.xs,
+                showsIncomeSavingsGrid: false,
+                onSegmentChange: { newSegment in
+                    self.selectedSegment = newSegment
+                }
+            )
+            .id(summary.id)
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
     }
 
 
@@ -458,6 +462,30 @@ struct HomeView: View {
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
+    }
+}
+
+// MARK: - RootTab Independent List Container
+/// Bridges RootTabPageScaffold with child views that manage their own scrolling
+/// (e.g., List) by constraining them to the available viewport height.
+private struct RootTabListHostingContainer<Content: View>: View {
+    private let height: CGFloat
+    private let content: Content
+
+    init(height: CGFloat, @ViewBuilder content: () -> Content) {
+        self.height = max(height, 1)
+        self.content = content()
+    }
+
+    var body: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: height, alignment: .top)
+            .overlay(alignment: .top) {
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(height: height, alignment: .top)
+            }
     }
 }
 
