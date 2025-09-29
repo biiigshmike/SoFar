@@ -786,8 +786,7 @@ private extension View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .shadow(radius: 1, y: 1)
     }
-
-
+}
 
 // MARK: - Availability Helpers
 private extension View {
@@ -827,6 +826,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
             }
             #else
             content.buttonStyle(.plain)
+            #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
