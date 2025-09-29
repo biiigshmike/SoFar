@@ -4,130 +4,58 @@ import SwiftUI
 /// Each section pulls from `// MARK:` comments across the codebase so users can
 /// explore the same hierarchy developers see.
 struct HelpView: View {
-    /// Selection used for macOS split view navigation
-    @State private var selection: HelpPage? = .intro
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-#if os(macOS)
-        NavigationSplitView {
-            List(selection: $selection) {
-                // MARK: Getting Started
-                Section("Getting Started") {
-                    Text("Introduction").tag(HelpPage.intro)
-                    Text("Onboarding").tag(HelpPage.onboarding)
-                }
-
-                // MARK: Core Screens
-                Section("Core Screens") {
-                    Text("Home").tag(HelpPage.home)
-                    Text("Income").tag(HelpPage.income)
-                    Text("Cards").tag(HelpPage.cards)
-                    Text("Presets").tag(HelpPage.presets)
-                    Text("Settings").tag(HelpPage.settings)
-                }
-
-                // MARK: Tips & Tricks
-                Section("Tips & Tricks") {
-                    Text("Shortcuts & Gestures").tag(HelpPage.tips)
-                }
-            }
-        } detail: {
-            if let selection {
-                page(for: selection)
-            } else {
-                Text("Select a topic")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .navigationTitle("Help")
-            }
-        }
-        .ub_navigationBackground(
-            theme: themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration
-        )
-        .frame(minWidth: 400, minHeight: 500)
-#else
         Group {
-            if #available(iOS 16.0, *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 NavigationStack {
-                    List {
-                        // MARK: Getting Started
-                        Section("Getting Started") {
-                            NavigationLink("Introduction") { intro }
-                            NavigationLink("Onboarding") { onboarding }
-                        }
-
-                        // MARK: Core Screens
-                        Section("Core Screens") {
-                            NavigationLink("Home") { home }
-                            NavigationLink("Income") { income }
-                            NavigationLink("Cards") { cards }
-                            NavigationLink("Presets") { presets }
-                            NavigationLink("Settings") { settings }
-                        }
-
-                        // MARK: Tips & Tricks
-                        Section("Tips & Tricks") {
-                            NavigationLink("Shortcuts & Gestures") { tips }
-                        }
-                    }
-                    .navigationTitle("Help")
+                    helpMenu
+                        .navigationTitle("Help")
                 }
             } else {
                 NavigationView {
-                    List {
-                        // MARK: Getting Started
-                        Section("Getting Started") {
-                            NavigationLink("Introduction") { intro }
-                            NavigationLink("Onboarding") { onboarding }
-                        }
-
-                        // MARK: Core Screens
-                        Section("Core Screens") {
-                            NavigationLink("Home") { home }
-                            NavigationLink("Income") { income }
-                            NavigationLink("Cards") { cards }
-                            NavigationLink("Presets") { presets }
-                            NavigationLink("Settings") { settings }
-                        }
-
-                        // MARK: Tips & Tricks
-                        Section("Tips & Tricks") {
-                            NavigationLink("Shortcuts & Gestures") { tips }
-                        }
-                    }
-                    .navigationBarTitle("Help")
-                    #if os(iOS)
-                    .navigationViewStyle(StackNavigationViewStyle())
-                    #endif
+                    helpMenu
+                        .navigationBarTitle("Help")
                 }
+#if os(iOS)
+                .navigationViewStyle(StackNavigationViewStyle())
+#endif
             }
         }
         .ub_navigationBackground(
             theme: themeManager.selectedTheme,
             configuration: themeManager.glassConfiguration
         )
+#if targetEnvironment(macCatalyst)
         .frame(minWidth: 400, minHeight: 500)
 #endif
     }
 
-    /// Routes selections to the correct page content on macOS
-    @ViewBuilder private func page(for page: HelpPage) -> some View {
-        switch page {
-        case .intro: intro
-        case .onboarding: onboarding
-        case .home: home
-        case .income: income
-        case .cards: cards
-        case .presets: presets
-        case .settings: settings
-        case .tips: tips
-        }
-    }
+    // MARK: - Menu
+    @ViewBuilder
+    private var helpMenu: some View {
+        List {
+            // MARK: Getting Started
+            Section("Getting Started") {
+                NavigationLink("Introduction") { intro }
+                NavigationLink("Onboarding") { onboarding }
+            }
 
-    /// Identifiers for each help topic used in the macOS sidebar
-    private enum HelpPage: Hashable {
-        case intro, onboarding, home, income, cards, presets, settings, tips
+            // MARK: Core Screens
+            Section("Core Screens") {
+                NavigationLink("Home") { home }
+                NavigationLink("Income") { income }
+                NavigationLink("Cards") { cards }
+                NavigationLink("Presets") { presets }
+                NavigationLink("Settings") { settings }
+            }
+
+            // MARK: Tips & Tricks
+            Section("Tips & Tricks") {
+                NavigationLink("Shortcuts & Gestures") { tips }
+            }
+        }
     }
 
     // MARK: - Pages
@@ -252,5 +180,6 @@ struct HelpView: View {
 struct HelpView_Previews: PreviewProvider {
     static var previews: some View {
         HelpView()
+            .environmentObject(ThemeManager())
     }
 }
