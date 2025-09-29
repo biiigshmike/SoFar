@@ -124,13 +124,12 @@ struct IncomeView: View {
     }
 
     private var addIncomeButton: some View {
-        RootHeaderIconActionButton(
-            systemImage: "plus",
-            accessibilityLabel: "Add Income",
-            accessibilityIdentifier: "add_income_button"
-        ) {
-            beginAddingIncome()
+        Button(action: { beginAddingIncome() }) {
+            Image(systemName: "plus")
+                .imageScale(.medium)
         }
+        .accessibilityLabel("Add Income")
+        .accessibilityIdentifier("add_income_button")
     }
 
     // MARK: Calendar
@@ -144,9 +143,7 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         RootTabPageScaffold(spacing: DS.Spacing.s) {
-            RootViewTopPlanes(title: "Income", titleDisplayMode: .hidden) {
-                addIncomeButton
-            }
+            EmptyView()
         } content: { proxy in
             content(using: proxy)
         }
@@ -182,6 +179,11 @@ struct IncomeView: View {
             navigate(to: initial)
         }
         .ub_tabNavigationTitle("Income")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                addIncomeButton
+            }
+        }
     }
 
     @ViewBuilder
