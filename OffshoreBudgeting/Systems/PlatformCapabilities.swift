@@ -6,12 +6,12 @@ import SwiftUI
 /// truth when opting into newer system behaviours.
 struct PlatformCapabilities: Equatable {
     /// Whether the current OS supports the refreshed translucent chrome
-    /// treatments Apple shipped alongside the OS 26 cycle (iOS/iPadOS/tvOS 18,
-    /// macOS 26, visionOS 2, etc.).
+    /// treatments Apple shipped alongside the OS 26 cycle (iOS/iPadOS,
+    /// macCatalyst, visionOS 2, etc.).
     let supportsOS26Translucency: Bool
 
     /// Whether the adaptive numeric keyboard layout from OS 26 is available on
-    /// this device. Only meaningful on iOS/iPadOS builds.
+    /// this device. Only meaningful on iOS builds.
     let supportsAdaptiveKeypad: Bool
 }
 
@@ -21,14 +21,18 @@ extension PlatformCapabilities {
     static var current: PlatformCapabilities {
         let supportsModernTranslucency: Bool
         // Liquid Glass is available starting with the OS 26 system releases.
-        if #available(iOS 18.0, tvOS 18.0, macOS 26.0, macCatalyst 26.0, watchOS 11.0, visionOS 2.0, *) {
+        if #available(iOS 18.0, macCatalyst 18.0, *) {
             supportsModernTranslucency = true
         } else {
             supportsModernTranslucency = false
         }
 
-        #if os(iOS) || os(tvOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        let supportsAdaptiveKeypad = false
+        #else
         let supportsAdaptiveKeypad = supportsModernTranslucency
+        #endif
         #else
         let supportsAdaptiveKeypad = false
         #endif
