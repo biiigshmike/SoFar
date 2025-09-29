@@ -126,6 +126,18 @@ extension View {
         modifier(UBRootTabNavigationTitleModifier(title: title))
     }
 
+    // MARK: ub_rootNavigationChrome()
+    /// Hides the navigation bar background for root-level navigation stacks on modern OS releases.
+    /// Earlier platforms ignore the call so they retain their default opaque chrome.
+    @ViewBuilder
+    func ub_rootNavigationChrome() -> some View {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
+            self.toolbarBackground(.hidden, for: .navigationBar)
+        } else {
+            self
+        }
+    }
+
     // MARK: ub_cardTitleShadow()
     /// Tight, offset shadow for card titles (small 3D lift). Softer gray tone, not harsh black.
     /// Use on text layers: `.ub_cardTitleShadow()`
