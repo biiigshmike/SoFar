@@ -750,17 +750,15 @@ private extension View {
 
 private struct EqualWidthSegmentsModifier: ViewModifier {
     func body(content: Content) -> some View {
-#if os(iOS)
+        #if canImport(UIKit)
         content.background(EqualWidthSegmentApplier())
-#elseif os(macOS)
-        content.background(EqualWidthSegmentApplier())
-#else
+        #else
         content
-#endif
+        #endif
     }
 }
 
-#if os(iOS)
+#if canImport(UIKit)
 private struct EqualWidthSegmentApplier: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -792,37 +790,6 @@ private struct EqualWidthSegmentApplier: UIViewRepresentable {
                 return segmented
             }
             current = candidate.superview
-        }
-        return nil
-    }
-}
-#elseif os(macOS)
-private struct EqualWidthSegmentApplier: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        view.alphaValue = 0.0
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: view) }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { applyEqualWidthIfNeeded(from: nsView) }
-    }
-
-    private func applyEqualWidthIfNeeded(from view: NSView) {
-        guard let segmented = findSegmentedControl(from: view) else { return }
-        SegmentedControlEqualWidthCoordinator.enforceEqualWidth(for: segmented)
-    }
-
-    private func findSegmentedControl(from view: NSView) -> NSSegmentedControl? {
-        guard let root = view.superview else { return nil }
-        return searchSegmented(in: root)
-    }
-
-    private func searchSegmented(in node: NSView) -> NSSegmentedControl? {
-        for sub in node.subviews {
-            if let seg = sub as? NSSegmentedControl { return seg }
-            if let found = searchSegmented(in: sub) { return found }
         }
         return nil
     }
