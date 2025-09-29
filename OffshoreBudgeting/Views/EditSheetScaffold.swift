@@ -11,9 +11,7 @@
 //
 
 import SwiftUI
-#if canImport(AppKit)
-import AppKit
-#endif
+import UIKit
 
 // MARK: - UBPresentationDetent (compat wrapper)
 // On iOS 16+ / macOS 13+, this bridges to SwiftUI.PresentationDetent.
@@ -24,7 +22,6 @@ enum UBPresentationDetent: Equatable, Hashable {
     case large
     case fraction(Double)
 
-    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     @available(iOS 16.0, *)
     var systemDetent: PresentationDetent {
         switch self {
@@ -33,7 +30,6 @@ enum UBPresentationDetent: Equatable, Hashable {
         case .fraction(let v): return .fraction(v)
         }
     }
-    #endif
 }
 
 // MARK: - EditSheetScaffold
@@ -55,9 +51,7 @@ struct EditSheetScaffold<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     // Selection state for detents (compat type)
-    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     @State private var detentSelection: UBPresentationDetent
-    #endif
 
     // MARK: Init
     init(
@@ -80,9 +74,7 @@ struct EditSheetScaffold<Content: View>: View {
         self.onCancel = onCancel
         self.onSave = onSave
         self.content = content()
-        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         _detentSelection = State(initialValue: initialDetent ?? detents.last ?? .medium)
-        #endif
     }
 
     // MARK: body
@@ -174,21 +166,11 @@ struct EditSheetScaffold<Content: View>: View {
     }
 
     private var separatorColor: Color {
-        #if canImport(UIKit)
         return Color(uiColor: .separator)
-        #elseif canImport(AppKit)
-        return Color(nsColor: .separatorColor)
-        #else
-        return Color.primary.opacity(0.2)
-        #endif
     }
 
     // MARK: Detent selection binding (iOS only)
-    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     private var detentSelectionBinding: Binding<UBPresentationDetent>? { $detentSelection }
-    #else
-    private var detentSelectionBinding: Binding<UBPresentationDetent>? { nil }
-    #endif
 }
 
 // MARK: - Detents application helper
@@ -198,7 +180,6 @@ extension View {
         detents: [UBPresentationDetent],
         selection: Binding<UBPresentationDetent>?
     ) -> some View {
-        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         if #available(iOS 16.0, *) {
             // Map compat detents to system detents
             let systemDetents = Set(detents.map { $0.systemDetent })
@@ -234,8 +215,5 @@ extension View {
         } else {
             return AnyView(self)
         }
-        #else
-        return self
-        #endif
     }
 }

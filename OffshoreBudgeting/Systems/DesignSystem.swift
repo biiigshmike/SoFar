@@ -6,9 +6,7 @@
 
 import SwiftUI
 // MARK: Platform Color Imports
-#if canImport(UIKit)
 import UIKit
-#endif
 
 // MARK: - DesignSystem (Tokens)
 /// Centralized design tokens and tiny helpers for spacing, radius, shadows, and colors.
@@ -58,15 +56,11 @@ enum DesignSystem {
         // MARK: System‑Aware Container Background
         /// A dynamic background color that adapts to light/dark mode across UIKit platforms.
         static var containerBackground: Color {
-            #if canImport(UIKit)
             if #available(iOS 13.0, macCatalyst 13.0, *) {
                 return Color(UIColor.secondarySystemBackground)
             } else {
                 return Color(UIColor(white: 0.92, alpha: 1.0))
             }
-            #else
-            return Color.gray.opacity(0.12)
-            #endif
         }
 
         // MARK: Chip and Pill Fills

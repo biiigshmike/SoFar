@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Combine
 
 // MARK: - OnboardingView
@@ -362,9 +363,7 @@ private struct CardsStep: View {
 
     private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationView { content() }
-        #if canImport(UIKit)
             .navigationViewStyle(.stack)
-        #endif
     }
 }
 
@@ -655,9 +654,7 @@ private struct CategoriesStep: View {
 
     private func navigationView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         NavigationView { content() }
-        #if canImport(UIKit)
             .navigationViewStyle(.stack)
-        #endif
     }
 }
 
@@ -934,9 +931,7 @@ private struct CloudOptionToggle: View {
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .disabled(!isEnabled)
-#if canImport(UIKit)
                 .controlSize(.large)
-#endif
         }
         .padding(.vertical, DS.Spacing.s)
         .opacity(isEnabled ? 1 : 0.45)

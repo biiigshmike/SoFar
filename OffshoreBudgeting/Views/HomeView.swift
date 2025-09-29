@@ -16,6 +16,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreData
 import Foundation
 import Combine
@@ -27,9 +28,7 @@ struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
-#if canImport(UIKit)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-#endif
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
@@ -62,9 +61,7 @@ struct HomeView: View {
     // Reset header width matching on trait changes (e.g., rotation) to avoid
     // stale measurements forcing an oversized minWidth when returning from
     // landscape → portrait. This keeps the period navigation rendering stable.
-#if canImport(UIKit)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-#endif
 
     // MARK: Body
     var body: some View {
@@ -136,10 +133,8 @@ struct HomeView: View {
         .alert(item: $vm.alert, content: alert(for:))
         // Clear cached/matched widths when key traits change so controls can
         // re-measure for the new size class/orientation.
-#if canImport(UIKit)
         .ub_onChange(of: horizontalSizeClass) { _ in resetHeaderWidthMatching() }
         .ub_onChange(of: verticalSizeClass) { _ in resetHeaderWidthMatching() }
-#endif
     }
 
     private var headerSection: some View {
@@ -976,15 +971,10 @@ private extension View {
 
 private struct HomeEqualWidthSegmentsModifier: ViewModifier {
     func body(content: Content) -> some View {
-        #if canImport(UIKit)
         content.background(HomeEqualWidthSegmentApplier())
-        #else
-        content
-        #endif
     }
 }
 
-#if canImport(UIKit)
 private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -1014,7 +1004,6 @@ private struct HomeEqualWidthSegmentApplier: UIViewRepresentable {
         return nil
     }
 }
-#endif
 
 // MARK: - Utility: Height measurement helper
 private struct ViewHeightKey: PreferenceKey {

@@ -78,9 +78,7 @@ struct RootTabView: View {
             NavigationStack { content() }
         } else {
             NavigationView { content() }
-                #if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
-                #endif
         }
     }
 }

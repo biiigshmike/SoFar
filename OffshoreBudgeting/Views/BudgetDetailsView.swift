@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreData
 import Combine
 // MARK: - BudgetDetailsView
@@ -733,15 +734,10 @@ private extension View {
 
 private struct EqualWidthSegmentsModifier: ViewModifier {
     func body(content: Content) -> some View {
-        #if canImport(UIKit)
         content.background(EqualWidthSegmentApplier())
-        #else
-        content
-        #endif
     }
 }
 
-#if canImport(UIKit)
 private struct EqualWidthSegmentApplier: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -777,7 +773,6 @@ private struct EqualWidthSegmentApplier: UIViewRepresentable {
         return nil
     }
 }
-#endif
 
 // MARK: - PlannedListFR (List-backed; swipe enabled)
 private struct PlannedListFR: View {

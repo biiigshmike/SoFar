@@ -1,7 +1,5 @@
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 /// Aggregates the environmental data points that influence how a layout should
 /// respond to changing device characteristics. Inject a single instance high in
@@ -20,28 +18,8 @@ struct ResponsiveLayoutContext: Equatable {
         case unspecified
 
         static var current: Idiom {
-            #if canImport(UIKit)
             #if targetEnvironment(macCatalyst)
             return .mac
-            #else
-            switch UIDevice.current.userInterfaceIdiom {
-            case .phone:
-                return .phone
-            case .pad:
-                return .pad
-            case .mac:
-                return .mac
-            case .carPlay:
-                return .car
-            default:
-                if #available(iOS 17.0, *) {
-                    if UIDevice.current.userInterfaceIdiom == .vision {
-                        return .vision
-                    }
-                }
-                return .unspecified
-            }
-            #endif
             #else
             return .unspecified
             #endif
@@ -141,7 +119,7 @@ struct ResponsiveLayoutReader<Content: View>: View {
     }
 
     private func resolvedSafeAreaInsets(from proxy: GeometryProxy) -> EdgeInsets {
-        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             return proxy.safeAreaInsets
         } else {
             return legacySafeAreaInsets
@@ -151,7 +129,7 @@ struct ResponsiveLayoutReader<Content: View>: View {
 
 private struct LegacySafeAreaCapture: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             content
         } else {
             content.ub_captureSafeAreaInsets()

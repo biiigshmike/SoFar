@@ -7,9 +7,7 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 // MARK: - UnifiedSwipeConfig
 public struct UnifiedSwipeConfig {
@@ -56,16 +54,11 @@ public struct UnifiedSwipeConfig {
 
     // MARK: Platform Defaults
     public static var defaultDeleteTint: Color {
-        #if canImport(UIKit)
-        return Color(UIColor.systemRed)
-        #else
-        return .red
-        #endif
+        Color(UIColor.systemRed)
     }
 
     public static var defaultEditTint: Color {
-        #if canImport(UIKit)
-        return Color(UIColor { trait in
+        Color(UIColor { trait in
             switch trait.userInterfaceStyle {
             case .dark:
                 return UIColor(white: 0.28, alpha: 1.0)
@@ -73,9 +66,6 @@ public struct UnifiedSwipeConfig {
                 return UIColor(white: 0.92, alpha: 1.0)
             }
         })
-        #else
-        return Color.gray.opacity(0.35)
-        #endif
     }
 }
 
@@ -98,7 +88,7 @@ public struct UnifiedSwipeCustomAction: Identifiable {
         action: @escaping () -> Void
     ) {
         self.title = title
-               self.systemImageName = systemImageName
+        self.systemImageName = systemImageName
         self.tint = tint
         self.role = role
         self.accessibilityID = accessibilityID
@@ -141,7 +131,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
         }
 
-        #if canImport(UIKit)
         if #available(iOS 15.0, macCatalyst 15.0, *) {
             base.swipeActions(edge: .trailing, allowsFullSwipe: config.allowsFullSwipeToDelete) {
                 deleteButton()
@@ -151,9 +140,6 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         } else {
             base
         }
-        #else
-        base
-        #endif
     }
 
     // MARK: Buttons
@@ -216,7 +202,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
         let title: String
         let systemImageName: String
         let iconOverride: Color?
-               let textOverride: Color?
+        let textOverride: Color?
 
         var body: some View {
             Label {
@@ -238,12 +224,10 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
     // MARK: - Helpers
     private func triggerDelete() {
-        #if canImport(UIKit)
         if config.playHapticOnDelete {
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
         }
-        #endif
         onDelete()
     }
 
@@ -271,11 +255,7 @@ private extension View {
     @ViewBuilder
     func accessibilityIdentifierIfAvailable(_ identifier: String?) -> some View {
         if let identifier {
-            #if canImport(UIKit)
             self.accessibilityIdentifier(identifier)
-            #else
-            self
-            #endif
         } else {
             self
         }
@@ -299,18 +279,14 @@ private extension View {
 // MARK: - Color Helpers
 private extension Color {
     var ub_contrastingForegroundColor: Color {
-        #if canImport(UIKit)
         let uiColor = UIColor(self)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
         return Color.contrastingColor(red: r, green: g, blue: b)
-        #else
-        return .white
-        #endif
     }
 
     static func contrastingColor(red: CGFloat, green: CGFloat, blue: CGFloat) -> Color {
-        let brightness = 0.299*red + 0.587*green + 0.114*blue
+        let brightness = 0.299 * red + 0.587 * green + 0.114 * blue
         return brightness < 0.6 ? .white : .black
     }
 }

@@ -27,14 +27,10 @@ extension PlatformCapabilities {
             supportsModernTranslucency = false
         }
 
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         let supportsAdaptiveKeypad = false
         #else
         let supportsAdaptiveKeypad = supportsModernTranslucency
-        #endif
-        #else
-        let supportsAdaptiveKeypad = false
         #endif
 
         return PlatformCapabilities(
