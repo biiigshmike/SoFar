@@ -10,7 +10,7 @@ enum SystemThemeAdapter {
     enum Flavor { case liquid, classic }
 
     static var currentFlavor: Flavor {
-        if #available(iOS 18.0, tvOS 18.0, macOS 26.0, macCatalyst 26.0, watchOS 11.0, visionOS 2.0, *) {
+        if #available(iOS 18.0, macCatalyst 18.0, *) {
             return .liquid
         } else {
             return .classic

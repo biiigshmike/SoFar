@@ -88,7 +88,10 @@ extension View {
     /// Disables auto-capitalization and autocorrection where supported (iOS/iPadOS).
     /// On other platforms this is a no-op, allowing a single code path.
     func ub_noAutoCapsAndCorrection() -> some View {
-        #if os(iOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        return self
+        #else
         if #available(iOS 15.0, *) {
             return self
                 .textInputAutocapitalization(.never)
@@ -96,6 +99,7 @@ extension View {
         } else {
             return self.disableAutocorrection(true)
         }
+        #endif
         #else
         return self
         #endif
@@ -105,12 +109,16 @@ extension View {
     /// Sets the navigation/toolbar title to inline across platforms.
     /// Uses the best available API per OS version and is a no-op if unavailable.
     func ub_toolbarTitleInline() -> some View {
-        #if os(iOS) || os(tvOS)
-        if #available(iOS 17.0, tvOS 17.0, *) {
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        return self
+        #else
+        if #available(iOS 17.0, *) {
             return self.toolbarTitleDisplayMode(.inline)
         } else {
             return self.navigationBarTitleDisplayMode(.inline)
         }
+        #endif
         #else
         return self
         #endif
@@ -122,7 +130,10 @@ extension View {
     /// that do not expose the API.
     @ViewBuilder
     func ub_toolbarTitleLarge() -> some View {
-        #if os(iOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        self
+        #else
         if #available(iOS 17.0, *) {
             self
                 .toolbarTitleDisplayMode(.large)
@@ -130,12 +141,7 @@ extension View {
         } else {
             self.navigationBarTitleDisplayMode(.large)
         }
-        #elseif os(tvOS)
-        if #available(tvOS 17.0, *) {
-            self.toolbarTitleDisplayMode(.large)
-        } else {
-            self
-        }
+        #endif
         #else
         self
         #endif
@@ -165,8 +171,12 @@ extension View {
     // MARK: ub_compactDatePickerStyle()
     /// Applies `.compact` date picker style where available (iPhone/iPad), no-op elsewhere.
     func ub_compactDatePickerStyle() -> some View {
-        #if os(iOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        return self
+        #else
         return self.datePickerStyle(.compact)
+        #endif
         #else
         return self
         #endif
@@ -373,7 +383,7 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
 private extension View {
     @ViewBuilder
     func ub_applyListRowSeparators() -> some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
             self
                 .listRowSeparator(.visible)
                 .listRowSeparatorTint(UBListStyleSeparators.separatorColor)
@@ -411,7 +421,7 @@ private extension View {
 
 private enum UBListStyleSeparators {
     static var separatorColor: Color {
-        #if os(iOS) || os(tvOS)
+        #if canImport(UIKit)
         return Color(uiColor: .separator)
         #else
         return .secondary
@@ -437,19 +447,16 @@ private struct UBRootTabNavigationTitleModifier: ViewModifier {
     let title: String
 
     func body(content: Content) -> some View {
-        #if os(iOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        return content.navigationTitle(title)
+        #else
         if #available(iOS 16.0, *) {
             return content.toolbar(.hidden, for: .navigationBar)
         } else {
             return content.navigationBarHidden(true)
         }
-        #elseif os(tvOS)
-        let titled = content.navigationTitle("")
-        if #available(tvOS 17.0, *) {
-            return titled.toolbarTitleDisplayMode(.inline)
-        } else {
-            return titled.navigationBarTitleDisplayMode(.inline)
-        }
+        #endif
         #else
         return content.navigationTitle(title)
         #endif
@@ -466,7 +473,7 @@ private struct UBOnChangeWithoutValueModifier<Value: Equatable>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macCatalyst 17.0, macOS 14.0, *) {
             content.onChange(of: value, initial: initial, action)
         } else {
             content.task(id: value) {
@@ -493,7 +500,7 @@ private struct UBOnChangeWithValueModifier<Value: Equatable>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macCatalyst 17.0, macOS 14.0, *) {
             content.onChange(of: value, initial: initial) { _, newValue in
                 action(newValue)
             }
@@ -519,7 +526,10 @@ private struct UBDecimalKeyboardModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        #if os(iOS)
+        #if canImport(UIKit)
+        #if targetEnvironment(macCatalyst)
+        content
+        #else
         if platformCapabilities.supportsAdaptiveKeypad {
             if #available(iOS 18.0, *) {
                 content
@@ -531,6 +541,7 @@ private struct UBDecimalKeyboardModifier: ViewModifier {
         } else {
             content.keyboardType(.decimalPad)
         }
+        #endif
         #else
         content
         #endif
@@ -692,8 +703,8 @@ private struct UBGlassBackgroundView: View {
     @ViewBuilder
     private var baseLayer: some View {
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                #if os(iOS) || os(tvOS)
+            if #available(iOS 15.0, macCatalyst 15.0, macOS 13.0, *) {
+                #if canImport(UIKit)
                 decoratedGlass
                     .background(configuration.glass.material.shapeStyle)
                 #else
@@ -835,8 +846,14 @@ private extension Edge.Set {
 extension View {
     @ViewBuilder
     func ub_ignoreSafeArea(edges: Edge.Set) -> some View {
-        #if os(iOS) || os(tvOS) || os(macOS) || os(watchOS)
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        #if canImport(UIKit)
+        if #available(iOS 17.0, macCatalyst 17.0, *) {
+            self.ignoresSafeArea(.container, edges: edges)
+        } else {
+            self.edgesIgnoringSafeArea(edges)
+        }
+        #elseif os(macOS)
+        if #available(macOS 14.0, *) {
             self.ignoresSafeArea(.container, edges: edges)
         } else {
             self.edgesIgnoringSafeArea(edges)

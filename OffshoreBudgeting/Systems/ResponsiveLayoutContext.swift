@@ -15,16 +15,15 @@ struct ResponsiveLayoutContext: Equatable {
         case phone
         case pad
         case mac
-        case tv
-        case watch
         case car
         case vision
         case unspecified
 
         static var current: Idiom {
-            #if os(watchOS)
-            return .watch
-            #elseif canImport(UIKit)
+            #if canImport(UIKit)
+            #if targetEnvironment(macCatalyst)
+            return .mac
+            #else
             switch UIDevice.current.userInterfaceIdiom {
             case .phone:
                 return .phone
@@ -32,20 +31,17 @@ struct ResponsiveLayoutContext: Equatable {
                 return .pad
             case .mac:
                 return .mac
-            case .tv:
-                return .tv
             case .carPlay:
                 return .car
             default:
-                if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
+                if #available(iOS 17.0, *) {
                     if UIDevice.current.userInterfaceIdiom == .vision {
                         return .vision
                     }
                 }
                 return .unspecified
             }
-            #elseif os(macOS)
-            return .mac
+            #endif
             #else
             return .unspecified
             #endif
@@ -145,7 +141,7 @@ struct ResponsiveLayoutReader<Content: View>: View {
     }
 
     private func resolvedSafeAreaInsets(from proxy: GeometryProxy) -> EdgeInsets {
-        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
             return proxy.safeAreaInsets
         } else {
             return legacySafeAreaInsets
@@ -155,7 +151,7 @@ struct ResponsiveLayoutReader<Content: View>: View {
 
 private struct LegacySafeAreaCapture: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
             content
         } else {
             content.ub_captureSafeAreaInsets()
