@@ -738,8 +738,8 @@ private enum HomeHeaderOverviewMetrics {
     static let titleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs / 2
     static let legacyTitleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs
     static let titleFont: Font = .largeTitle.bold()
-    static let titleLineLimit: Int = 2
-    static let titleMinimumScaleFactor: CGFloat = 0.75
+    static let titleLineLimit: Int = 1
+    static let titleMinimumScaleFactor: CGFloat = 0.65
     static let subtitleFont: Font = .callout
     static let subtitleLineLimit: Int = 1
     static let subtitleMinimumScaleFactor: CGFloat = 0.85
