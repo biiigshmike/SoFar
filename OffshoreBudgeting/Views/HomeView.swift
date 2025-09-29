@@ -41,8 +41,6 @@ struct HomeView: View {
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
     @State private var editingBudget: BudgetSummary?
-    @State private var isShowingAddExpenseMenu: Bool = false
-    @State private var addMenuTargetBudgetID: NSManagedObjectID?
     // Direct add flows when no budget is active
     @State private var isPresentingAddPlannedFromHome: Bool = false
     @State private var isPresentingAddVariableFromHome: Bool = false
@@ -139,23 +137,6 @@ struct HomeView: View {
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
         .alert(item: $vm.alert, content: alert(for:))
-        .confirmationDialog(
-            "Add",
-            isPresented: $isShowingAddExpenseMenu,
-            titleVisibility: .visible
-        ) {
-            Button("Add Planned Expense") {
-                triggerAddExpenseFromMenu(.budgetDetailsRequestAddPlannedExpense)
-            }
-            Button("Add Variable Expense") {
-                triggerAddExpenseFromMenu(.budgetDetailsRequestAddVariableExpense)
-            }
-        }
-        .ub_onChange(of: isShowingAddExpenseMenu) { newValue in
-            if !newValue {
-                addMenuTargetBudgetID = nil
-            }
-        }
         // Clear cached/matched widths when key traits change so controls can
         // re-measure for the new size class/orientation.
 #if os(iOS)
@@ -351,29 +332,20 @@ struct HomeView: View {
     @ViewBuilder
     private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
         let dimension = headerControlDimension
-        Group {
-#if os(iOS)
-            Button {
-                presentAddExpenseMenu(for: budgetID)
-            } label: {
-                RootHeaderControlIcon(systemImage: "plus")
+        Menu {
+            Button("Add Planned Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
             }
-            .buttonStyle(RootHeaderActionButtonStyle())
-#else
-            Menu {
-                Button("Add Planned Expense") {
-                    triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
-                }
-                Button("Add Variable Expense") {
-                    triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
-                }
-            } label: {
-                RootHeaderControlIcon(systemImage: "plus")
+            Button("Add Variable Expense") {
+                triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
             }
-            .modifier(HideMenuIndicatorIfPossible())
-            .menuStyle(.borderlessButton)
-#endif
+        } label: {
+            RootHeaderControlIcon(systemImage: "plus")
         }
+        .modifier(HideMenuIndicatorIfPossible())
+#if os(macOS)
+        .menuStyle(.borderlessButton)
+#endif
         .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
         .contentShape(Rectangle())
         .accessibilityLabel("Add Expense")
@@ -509,28 +481,21 @@ struct HomeView: View {
         let d = RootHeaderActionMetrics.dimension(for: capabilities)
 
         return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Group {
-            #if os(iOS)
-                Button { presentAddExpenseMenu(for: budgetID) } label: {
-                    RootHeaderControlIcon(systemImage: "plus")
+            Menu {
+                Button("Add Planned Expense") {
+                    triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
                 }
-                .buttonStyle(RootHeaderActionButtonStyle())
-                .accessibilityLabel("Add Expense")
-            #else
-                Menu {
-                    Button("Add Planned Expense") {
-                        triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
-                    }
-                    Button("Add Variable Expense") {
-                        triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
-                    }
-                } label: {
-                    RootHeaderControlIcon(systemImage: "plus")
+                Button("Add Variable Expense") {
+                    triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
                 }
-                .modifier(HideMenuIndicatorIfPossible())
-                .menuStyle(.borderlessButton)
-            #endif
+            } label: {
+                RootHeaderControlIcon(systemImage: "plus")
             }
+            .modifier(HideMenuIndicatorIfPossible())
+            .accessibilityLabel("Add Expense")
+            #if os(macOS)
+            .menuStyle(.borderlessButton)
+            #endif
         }
     }
 
@@ -825,25 +790,6 @@ struct HomeView: View {
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
-    }
-
-    private func triggerAddExpenseFromMenu(_ notificationName: Notification.Name) {
-        guard let budgetID = activeAddExpenseTarget else { return }
-        isShowingAddExpenseMenu = false
-        triggerAddExpense(notificationName, budgetID: budgetID)
-    }
-
-    private func presentAddExpenseMenu(for budgetID: NSManagedObjectID) {
-        addMenuTargetBudgetID = budgetID
-        isShowingAddExpenseMenu = true
-    }
-
-    private var activeAddExpenseTarget: NSManagedObjectID? {
-        if let explicitTarget = addMenuTargetBudgetID {
-            return explicitTarget
-        }
-        guard case let .loaded(summaries) = vm.state else { return nil }
-        return summaries.first?.id
     }
 }
 
