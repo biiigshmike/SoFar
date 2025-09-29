@@ -10,9 +10,6 @@
 import SwiftUI
 import CoreData
 import Combine
-#if os(macOS)
-import AppKit
-#endif
 // MARK: - BudgetDetailsView
 /// Shows a budget header, filters, and a segmented control to switch between
 /// Planned and Variable (Unplanned) expenses. Rows live in real Lists so swipe
@@ -52,54 +49,40 @@ struct BudgetDetailsView: View {
     // MARK: Layout
     private var isWideHeaderLayout: Bool {
 #if os(iOS)
-        horizontalSizeClass == .regular
-#elseif os(macOS)
-        true
+    #if targetEnvironment(macCatalyst)
+        return true
+    #else
+        return horizontalSizeClass == .regular
+    #endif
 #else
-        false
+        return false
 #endif
     }
 
     private var headerSpacing: CGFloat {
-#if os(macOS)
-        return DS.Spacing.s
-#else
         return isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.s
-#endif
     }
 
     private var summaryTopPadding: CGFloat {
-        if !displaysBudgetTitle {
-            return 0
-        }
-#if os(macOS)
-        return -DS.Spacing.m
-#else
+        guard displaysBudgetTitle else { return 0 }
         if isWideHeaderLayout {
             return -(DS.Spacing.m - DS.Spacing.xs / 2)
         } else {
             return -(DS.Spacing.s - DS.Spacing.xs / 2)
         }
-#endif
     }
 
     private var effectiveHeaderTopPadding: CGFloat {
-#if os(macOS)
-        return headerTopPadding
-#else
         return max(0, headerTopPadding - headerTopPaddingAdjustment)
-#endif
     }
 
     private var filterBarBottomPadding: CGFloat {
         capabilities.supportsOS26Translucency ? DS.Spacing.m : DS.Spacing.s
     }
 
-#if !os(macOS)
     private var headerTopPaddingAdjustment: CGFloat {
-        isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.xs / 2
+        return isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.xs / 2
     }
-#endif
 
     private var shouldShowPeriodNavigation: Bool {
         guard periodNavigation != nil else { return false }

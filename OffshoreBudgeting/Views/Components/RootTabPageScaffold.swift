@@ -175,7 +175,6 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
                                 #endif
                         }
                         .frame(maxWidth: .infinity, alignment: stackAlignment)
-                        #if os(macOS)
                         .frame(
                             minWidth: widthLimits.minimum,
                             idealWidth: widthLimits.ideal,
@@ -183,7 +182,6 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
                             alignment: stackAlignment
                         )
                         .frame(maxWidth: .infinity, alignment: stackAlignment)
-                        #endif
                     }
                     .ub_hideScrollIndicators()
                     // On classic OS, allow content under the tab bar and control
@@ -221,7 +219,6 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
                 .background(sectionHeightReader(for: .content))
         }
         .frame(maxWidth: .infinity, alignment: stackAlignment)
-        #if os(macOS)
         .frame(
             minWidth: widthLimits.minimum,
             idealWidth: widthLimits.ideal,
@@ -229,7 +226,6 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
             alignment: stackAlignment
         )
         .frame(maxWidth: .infinity, alignment: stackAlignment)
-        #endif
     }
 
     private var stackAlignment: Alignment {

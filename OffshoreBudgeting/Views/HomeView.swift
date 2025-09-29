@@ -19,9 +19,6 @@ import SwiftUI
 import CoreData
 import Foundation
 import Combine
-#if os(macOS)
-import AppKit
-#endif
 
 // MARK: - HomeView
 struct HomeView: View {
@@ -292,9 +289,6 @@ struct HomeView: View {
                     alignment: .center
                 )
         }
-#if os(macOS)
-        .menuStyle(.borderlessButton)
-#endif
         .modifier(HideMenuIndicatorIfPossible())
     }
 
@@ -343,9 +337,6 @@ struct HomeView: View {
             RootHeaderControlIcon(systemImage: "plus")
         }
         .modifier(HideMenuIndicatorIfPossible())
-#if os(macOS)
-        .menuStyle(.borderlessButton)
-#endif
         .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
         .contentShape(Rectangle())
         .accessibilityLabel("Add Expense")
@@ -379,9 +370,6 @@ struct HomeView: View {
                 .accessibilityLabel(summary == nil ? "Budget Options" : "Budget Actions")
         }
         .modifier(HideMenuIndicatorIfPossible())
-#if os(macOS)
-        .menuStyle(.borderlessButton)
-#endif
         .frame(
             minWidth: headerControlDimension,
             maxWidth: .infinity,
@@ -416,9 +404,6 @@ struct HomeView: View {
                 RootHeaderControlIcon(systemImage: "calendar")
                     .accessibilityLabel(budgetPeriod.displayName)
             }
-#if os(macOS)
-            .menuStyle(.borderlessButton)
-#endif
             .modifier(HideMenuIndicatorIfPossible())
         }
     }
@@ -452,9 +437,6 @@ struct HomeView: View {
                     .accessibilityLabel("Budget Options")
             }
             .modifier(HideMenuIndicatorIfPossible())
-#if os(macOS)
-            .menuStyle(.borderlessButton)
-#endif
         }
     }
 
@@ -471,9 +453,6 @@ struct HomeView: View {
                     .accessibilityLabel("Add Expense")
             }
             .modifier(HideMenuIndicatorIfPossible())
-#if os(macOS)
-            .menuStyle(.borderlessButton)
-#endif
         }
     }
 
@@ -493,9 +472,6 @@ struct HomeView: View {
             }
             .modifier(HideMenuIndicatorIfPossible())
             .accessibilityLabel("Add Expense")
-            #if os(macOS)
-            .menuStyle(.borderlessButton)
-            #endif
         }
     }
 
@@ -521,9 +497,6 @@ struct HomeView: View {
                     .accessibilityLabel("Budget Actions")
             }
             .modifier(HideMenuIndicatorIfPossible())
-        #if os(macOS)
-            .menuStyle(.borderlessButton)
-        #endif
         }
     }
 
@@ -699,14 +672,7 @@ struct HomeView: View {
     }
 
 
-    private var headerSectionSpacing: CGFloat {
-        let hasPrimarySummary = primarySummary != nil
-#if os(macOS)
-        return hasPrimarySummary ? 0 : DS.Spacing.xs / 2
-#else
-        return hasPrimarySummary ? DS.Spacing.xs / 2 : DS.Spacing.xs / 2
-#endif
-    }
+    private var headerSectionSpacing: CGFloat { DS.Spacing.xs / 2 }
 
     private func periodNavigationControl() -> PeriodNavigationControl {
         PeriodNavigationControl(
@@ -716,18 +682,7 @@ struct HomeView: View {
         )
     }
 
-    private var showsHeaderSummary: Bool {
-#if os(macOS)
-        return false
-#elseif os(iOS)
-        // Keep the Home header compact on iOS in all size classes to avoid
-        // duplication next to the period navigation and to reduce height in
-        // landscape.
-        return false
-#else
-        return false
-#endif
-    }
+    private var showsHeaderSummary: Bool { false }
 
     // MARK: Helpers
     private func title(for date: Date) -> String {
