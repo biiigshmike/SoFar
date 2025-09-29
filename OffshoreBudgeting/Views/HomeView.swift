@@ -26,9 +26,6 @@ struct HomeView: View {
 
     // MARK: State & ViewModel
     @StateObject private var vm = HomeViewModel()
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.platformCapabilities) private var capabilities
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
@@ -43,25 +40,6 @@ struct HomeView: View {
     // Manage sheets
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
-
-    private var headerControlDimension: CGFloat {
-        RootHeaderActionMetrics.dimension(for: capabilities)
-    }
-
-    // MARK: Header Layout
-    @State private var matchedHeaderControlWidth: CGFloat?
-    @State private var cachedHeaderControlWidth: CGFloat?
-    @State private var headerActionPillIntrinsicWidth: CGFloat?
-    @State private var periodNavigationIntrinsicWidth: CGFloat?
-    // Tracks the last measured header control width to avoid micro-update loops
-    // that can cause continuous layout thrash and block interactions.
-    @State private var lastMeasuredHeaderControlPrefWidth: CGFloat?
-    // Track measured height of the empty-state content to size the bottom filler precisely.
-    @State private var emptyStateMeasuredHeight: CGFloat = 0
-    // Reset header width matching on trait changes (e.g., rotation) to avoid
-    // stale measurements forcing an oversized minWidth when returning from
-    // landscape → portrait. This keeps the period navigation rendering stable.
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     // MARK: Body
     var body: some View {
@@ -85,6 +63,19 @@ struct HomeView: View {
                 )
         }
         .ub_tabNavigationTitle("Home")
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                calendarToolbarMenu()
+
+                if let summary = primarySummary {
+                    addExpenseToolbarMenu(for: summary.id)
+                    optionsToolbarMenu(summary: summary)
+                } else {
+                    addExpenseToolbarMenu()
+                    optionsToolbarMenu()
+                }
+            }
+        }
         .task {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
@@ -131,23 +122,10 @@ struct HomeView: View {
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
         .alert(item: $vm.alert, content: alert(for:))
-        // Clear cached/matched widths when key traits change so controls can
-        // re-measure for the new size class/orientation.
-        .ub_onChange(of: horizontalSizeClass) { _ in resetHeaderWidthMatching() }
-        .ub_onChange(of: verticalSizeClass) { _ in resetHeaderWidthMatching() }
     }
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: headerSectionSpacing) {
-            RootViewTopPlanes(
-                title: "Home",
-                titleDisplayMode: .hidden,
-                topPaddingStyle: .navigationBarAligned,
-                trailingPlacement: .right
-            ) {
-                headerActions
-            }
-
             if let summary = primarySummary {
                 HomeHeaderPrimarySummaryView(
                     summary: summary,
@@ -174,104 +152,8 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var headerActions: some View {
-        let headerSummary = primarySummary
-        let hasBudget = hasActiveBudget
-        let showsContextSummary = hasBudget && headerSummary != nil && showsHeaderSummary
-        // Move the period navigation into BudgetDetailsView when a budget is
-        // loaded so it scrolls with content. Keep it in the Home header only
-        // when no budget exists for the selected period.
-        // Period navigation should render in the content area for both states
-        // to match the prior design. Keep it out of the sticky header.
-        let showsPeriodNavigation = false
-        let matchedControlWidth = hasBudget
-            ? matchedHeaderControlWidth
-            : cachedHeaderControlWidth
-
-        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-            Group {
-                switch headerSummary {
-                case .some(let summary):
-                    // Always three standalone glass buttons when a budget exists.
-                    HStack(spacing: DS.Spacing.s) {
-                        calendarMenuButton()
-                        addExpenseIconButton(for: summary.id)
-                        optionsMenuButton(summary: summary)
-                    }
-                case .none:
-                    // Show calendar, Add Expense (+), and budget options (…)
-                    HStack(spacing: DS.Spacing.s) {
-                        calendarMenuButton()
-                        addExpenseNoBudgetIconButton()
-                        optionsMenuButton()
-                    }
-                }
-            }
-
-            if showsContextSummary || showsPeriodNavigation {
-                if showsContextSummary, let summary = headerSummary {
-                    HStack(spacing: DS.Spacing.s) {
-                        HomeHeaderContextSummary(summary: summary)
-                            .layoutPriority(0)
-
-                        Spacer(minLength: 0)
-
-                        if showsPeriodNavigation {
-                            periodNavigationControl()
-                                .layoutPriority(1)
-                                .homeHeaderMinMatchedWidth(
-                                    intrinsicWidth: $periodNavigationIntrinsicWidth,
-                                    matchedWidth: matchedControlWidth
-                                )
-                        }
-                    }
-                } else if showsPeriodNavigation {
-                    periodNavigationControl()
-                        .layoutPriority(1)
-                        .homeHeaderMinMatchedWidth(
-                            intrinsicWidth: $periodNavigationIntrinsicWidth,
-                            matchedWidth: matchedControlWidth
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-        .onPreferenceChange(HomeHeaderControlWidthKey.self) { width in
-            // Guard against tiny oscillations (e.g., sub‑pixel rounding) that
-            // can create an endless measure→set→measure loop.
-            let newWidth = (width * 2).rounded() / 2 // quantize to 0.5pt
-            guard newWidth > 0 else { return }
-
-            let previous = lastMeasuredHeaderControlPrefWidth ?? 0
-            let tolerance: CGFloat = 0.5
-            guard abs(newWidth - previous) > tolerance else { return }
-
-            lastMeasuredHeaderControlPrefWidth = newWidth
-
-            if hasBudget {
-                matchedHeaderControlWidth = newWidth
-            }
-            cachedHeaderControlWidth = newWidth
-        }
-        .ub_onChange(of: hasBudget) { newValue in
-            guard !newValue else { return }
-            matchedHeaderControlWidth = nil
-            headerActionPillIntrinsicWidth = nil
-            periodNavigationIntrinsicWidth = nil
-        }
-    }
-
-    private func resetHeaderWidthMatching() {
-        matchedHeaderControlWidth = nil
-        cachedHeaderControlWidth = nil
-        headerActionPillIntrinsicWidth = nil
-        periodNavigationIntrinsicWidth = nil
-        lastMeasuredHeaderControlPrefWidth = nil
-    }
-
-    @ViewBuilder
-    private var periodPickerControl: some View {
+    // MARK: Toolbar Actions
+    private func calendarToolbarMenu() -> some View {
         Menu {
             ForEach(BudgetPeriod.selectableCases) { period in
                 Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
@@ -279,49 +161,23 @@ struct HomeView: View {
         } label: {
             RootHeaderControlIcon(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
-                .frame(
-                    width: headerControlDimension,
-                    height: headerControlDimension,
-                    alignment: .center
-                )
         }
         .modifier(HideMenuIndicatorIfPossible())
+        .accessibilityLabel(budgetPeriod.displayName)
     }
 
-    private var trailingActionControl: AnyView? {
-        switch vm.state {
-        case .empty:
-            return AnyView(emptyStateTrailingControls)
-        case .loaded(let summaries):
-            if let first = summaries.first {
-                return AnyView(trailingControls(for: first))
-            } else {
-                return AnyView(emptyStateTrailingControls)
-            }
-        default:
-            return nil
+    private func addExpenseToolbarMenu() -> some View {
+        Menu {
+            Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
+            Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
+        } label: {
+            RootHeaderControlIcon(systemImage: "plus")
         }
+        .modifier(HideMenuIndicatorIfPossible())
+        .accessibilityLabel("Add Expense")
     }
 
-    private func trailingControls(for summary: BudgetSummary) -> some View {
-        let dimension = headerControlDimension
-        return HStack(spacing: 0) {
-            addExpenseButton(for: summary.id)
-            Rectangle()
-                .fill(RootHeaderLegacyGlass.dividerColor(for: themeManager.selectedTheme))
-                .frame(width: 1, height: dimension)
-                .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
-                .allowsHitTesting(false)
-            budgetActionMenu(summary: summary)
-        }
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
-        .rootHeaderActionColumns(2)
-    }
-
-    @ViewBuilder
-    private func addExpenseButton(for budgetID: NSManagedObjectID) -> some View {
-        let dimension = headerControlDimension
+    private func addExpenseToolbarMenu(for budgetID: NSManagedObjectID) -> some View {
         Menu {
             Button("Add Planned Expense") {
                 triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
@@ -333,167 +189,42 @@ struct HomeView: View {
             RootHeaderControlIcon(systemImage: "plus")
         }
         .modifier(HideMenuIndicatorIfPossible())
-        .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
-        .contentShape(Rectangle())
         .accessibilityLabel("Add Expense")
     }
 
-    private var emptyStateTrailingControls: some View { EmptyView() }
-
-    private func budgetActionMenu(summary: BudgetSummary?) -> some View {
+    private func optionsToolbarMenu() -> some View {
         Menu {
-            if let summary {
-                Button {
-                    editingBudget = summary
-                } label: {
-                    Label("Edit Budget", systemImage: "pencil")
-                }
-                Button(role: .destructive) {
-                    vm.requestDelete(budgetID: summary.id)
-                } label: {
-                    Label("Delete Budget", systemImage: "trash")
-                }
-            } else {
-                Button {
-                    isPresentingAddBudget = true
-                } label: {
-                    Label("Create Budget", systemImage: "plus")
-                }
-            }
-        } label: {
-            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
-                // Keep overflow menu glyph horizontal per header controls design.
-                .accessibilityLabel(summary == nil ? "Budget Options" : "Budget Actions")
-        }
-        .modifier(HideMenuIndicatorIfPossible())
-        .frame(
-            minWidth: headerControlDimension,
-            maxWidth: .infinity,
-            minHeight: headerControlDimension
-        )
-    }
-
-    // MARK: Empty-state: Create budget (+)
-    private func addBudgetButton() -> some View {
-        let dimension = headerControlDimension
-        return Button {
-            isPresentingAddBudget = true
-        } label: {
-            RootHeaderControlIcon(systemImage: "plus")
-        }
-        .buttonStyle(RootHeaderActionButtonStyle())
-        .frame(minWidth: dimension, maxWidth: .infinity, minHeight: dimension)
-        .contentShape(Rectangle())
-        .accessibilityLabel("Create Budget")
-    }
-
-    // MARK: New: Standalone glass buttons for empty state header
-    private func calendarMenuButton() -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Menu {
-                ForEach(BudgetPeriod.selectableCases) { period in
-                    Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
-                }
-            } label: {
-                RootHeaderControlIcon(systemImage: "calendar")
-                    .accessibilityLabel(budgetPeriod.displayName)
-            }
-            .modifier(HideMenuIndicatorIfPossible())
-        }
-    }
-
-    private func addBudgetIconButton() -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
             Button {
                 isPresentingAddBudget = true
             } label: {
-                RootHeaderControlIcon(systemImage: "plus")
+                Label("Create Budget", systemImage: "plus")
             }
-            .buttonStyle(RootHeaderActionButtonStyle())
-            .accessibilityLabel("Create Budget")
+        } label: {
+            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
         }
+        .modifier(HideMenuIndicatorIfPossible())
+        .accessibilityLabel("Budget Options")
     }
 
-    private func optionsMenuButton() -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Menu {
-                Button {
-                    isPresentingAddBudget = true
-                } label: {
-                    Label("Create Budget", systemImage: "plus")
-                }
+    private func optionsToolbarMenu(summary: BudgetSummary) -> some View {
+        Menu {
+            Button { isPresentingManageCards = true } label: { Label("Manage Cards", systemImage: "creditcard") }
+            Button { isPresentingManagePresets = true } label: { Label("Manage Presets", systemImage: "list.bullet.rectangle") }
+            Button {
+                editingBudget = summary
             } label: {
-                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
-                    .accessibilityLabel("Budget Options")
+                Label("Edit Budget", systemImage: "pencil")
             }
-            .modifier(HideMenuIndicatorIfPossible())
-        }
-    }
-
-    // Add Expense button when no budget is active — presents direct add flows.
-    private func addExpenseNoBudgetIconButton() -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Menu {
-                Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
-                Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
+            Button(role: .destructive) {
+                vm.requestDelete(budgetID: summary.id)
             } label: {
-                RootHeaderControlIcon(systemImage: "plus")
-                    .accessibilityLabel("Add Expense")
+                Label("Delete Budget", systemImage: "trash")
             }
-            .modifier(HideMenuIndicatorIfPossible())
+        } label: {
+            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
         }
-    }
-
-    private func addExpenseIconButton(for budgetID: NSManagedObjectID) -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Menu {
-                Button("Add Planned Expense") {
-                    triggerAddExpense(.budgetDetailsRequestAddPlannedExpense, budgetID: budgetID)
-                }
-                Button("Add Variable Expense") {
-                    triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
-                }
-            } label: {
-                RootHeaderControlIcon(systemImage: "plus")
-            }
-            .modifier(HideMenuIndicatorIfPossible())
-            .accessibilityLabel("Add Expense")
-        }
-    }
-
-    private func optionsMenuButton(summary: BudgetSummary) -> some View {
-        let d = RootHeaderActionMetrics.dimension(for: capabilities)
-
-        return RootHeaderGlassControl(width: d, sizing: .icon) {
-            Menu {
-                Button { isPresentingManageCards = true } label: { Label("Manage Cards", systemImage: "creditcard") }
-                Button { isPresentingManagePresets = true } label: { Label("Manage Presets", systemImage: "list.bullet.rectangle") }
-                Button {
-                    editingBudget = summary
-                } label: {
-                    Label("Edit Budget", systemImage: "pencil")
-                }
-                Button(role: .destructive) {
-                    vm.requestDelete(budgetID: summary.id)
-                } label: {
-                    Label("Delete Budget", systemImage: "trash")
-                }
-            } label: {
-                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
-                    .accessibilityLabel("Budget Actions")
-            }
-            .modifier(HideMenuIndicatorIfPossible())
-        }
+        .modifier(HideMenuIndicatorIfPossible())
+        .accessibilityLabel("Budget Actions")
     }
 
     // MARK: Sheets & Alerts
@@ -678,8 +409,6 @@ struct HomeView: View {
         )
     }
 
-    private var showsHeaderSummary: Bool { false }
-
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
@@ -703,17 +432,6 @@ struct HomeView: View {
             return summaries.first
         }
         return nil
-    }
-
-    private var hasActiveBudget: Bool {
-        if case .loaded(let summaries) = vm.state {
-            return !summaries.isEmpty
-        }
-        return false
-    }
-
-    private var emptyStateMessage: String {
-        "No budget found for \(title(for: vm.selectedDate)). Use Create a budget to set one up for this period."
     }
 
     private var emptyShellMessage: String {
