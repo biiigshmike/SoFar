@@ -64,9 +64,6 @@ struct CardDetailView: View {
                     Task { await viewModel.load() }
                 }
             )
-            #if os(macOS)
-            .presentationSizing(.fitted)   // <- ensures the sheet respects the view’s ideal size
-            #endif
         }
         .ub_surfaceBackground(
             themeManager.selectedTheme,
@@ -149,8 +146,6 @@ struct CardDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
             .toolbar {
-            #if os(iOS)
-                // iOS placements
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { onDone() }
                         .keyboardShortcut(.escape, modifiers: [])
@@ -178,36 +173,6 @@ struct CardDetailView: View {
                         }
                     }
                 }
-            #else
-                // macOS placements
-                ToolbarItem(placement: .automatic) {
-                    Button("Done") { onDone() }
-                        .keyboardShortcut(.escape, modifiers: [])
-                }
-                ToolbarItemGroup(placement: .automatic) {
-                    if isSearchActive {
-                        TextField("Search expenses", text: $viewModel.searchText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 200)
-                            .focused($isSearchFieldFocused)
-                        Button("Cancel") {
-                            withAnimation {
-                                isSearchActive = false
-                                viewModel.searchText = ""
-                                isSearchFieldFocused = false
-                            }
-                        }
-                    } else {
-                        IconOnlyButton(systemName: "magnifyingglass") {
-                            withAnimation { isSearchActive = true }
-                            isSearchFieldFocused = true
-                        }
-                        IconOnlyButton(systemName: "pencil") {
-                            onEdit()
-                        }
-                    }
-                }
-            #endif
             }
     }
 

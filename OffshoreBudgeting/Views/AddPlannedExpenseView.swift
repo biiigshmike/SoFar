@@ -40,11 +40,8 @@ struct AddPlannedExpenseView: View {
     }
 
     // MARK: Layout
-    #if os(macOS)
-    private let cardRowHeight: CGFloat = 150
-    #else
+    /// Shared card picker height to align with `CardPickerRow`.
     private let cardRowHeight: CGFloat = 160
-    #endif
 
     // MARK: Init
     /// Designated initializer.

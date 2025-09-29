@@ -28,14 +28,8 @@ struct AddUnplannedExpenseView: View {
     
     // MARK: - Layout
     /// Height of the card picker row.  This matches the tile height defined in
-    /// `CardPickerRow`.  We reduce the height on macOS so the picker doesn’t
-    /// overwhelm the form.  Adjust here rather than directly inside
-    /// `CardPickerRow` for centralized control.
-    #if os(macOS)
-    private let cardRowHeight: CGFloat = 150
-    #else
+    /// `CardPickerRow` so adjustments remain centralized.
     private let cardRowHeight: CGFloat = 160
-    #endif
 
 
     // MARK: Init
