@@ -1,9 +1,7 @@
 import SwiftUI
 import Combine
 import Foundation
-#if canImport(UIKit)
 import UIKit
-#endif
 
 // MARK: - Cloud Sync Infrastructure
 // This file's cloud-sync components require the iCloud Key-Value storage
@@ -105,7 +103,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     /// UI-facing list of selectable themes.
     static var selectableCases: [AppTheme] { allCases }
 
-    #if canImport(UIKit)
     /// Dynamic neutral accent that mirrors the system's black text in light mode
     /// and white text in dark mode without relying on an asset catalog color.
     private static var systemNeutralAccent: Color {
@@ -115,7 +112,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
                 : UIColor(white: 0.0, alpha: 1.0)
         })
     }
-    #endif
 
     /// Human readable name shown in pickers.
     var displayName: String {
@@ -138,11 +134,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var accent: Color {
         switch self {
         case .system:
-            #if canImport(UIKit)
             return AppTheme.systemNeutralAccent
-            #else
-            return Color.primary
-            #endif
         case .classic: return .blue
         case .midnight: return .purple
         case .forest: return .green
@@ -166,11 +158,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var tint: Color? {
         switch self {
         case .system:
-            #if canImport(UIKit)
             return AppTheme.systemNeutralAccent
-            #else
-            return Color.primary
-            #endif
         default:
             return accent
         }
@@ -186,11 +174,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var toggleTint: Color {
         switch self {
         case .system:
-#if canImport(UIKit)
             return Color(UIColor.systemGreen)
-#else
-            return Color.green
-#endif
         default:
             return resolvedTint
         }
@@ -198,31 +182,19 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Secondary accent color derived from the primary accent.
     var secondaryAccent: Color {
-        #if canImport(UIKit)
         let uiColor = UIColor(accent)
         var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
         return Color(hue: Double(h), saturation: Double(s * 0.5), brightness: Double(min(b * 1.2, 1.0)))
-        #else
-        return accent
-        #endif
     }
 
     /// Primary background color for views.
     var background: Color {
         switch self {
         case .system:
-            #if canImport(UIKit)
             return Color(UIColor.systemBackground)
-            #else
-            return Color.white
-            #endif
         case .classic:
-            #if canImport(UIKit)
             return Color(UIColor.systemGroupedBackground)
-            #else
-            return Color.white
-            #endif
         case .midnight:
             return Color.black
         case .forest:
@@ -248,17 +220,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var secondaryBackground: Color {
         switch self {
         case .system:
-            #if canImport(UIKit)
             return Color(UIColor.secondarySystemBackground)
-            #else
-            return Color.white.opacity(0.9)
-            #endif
         case .classic:
-            #if canImport(UIKit)
             return Color(UIColor.secondarySystemGroupedBackground)
-            #else
-            return Color.gray.opacity(0.1)
-            #endif
         case .midnight:
             return Color(red: 0.15, green: 0.15, blue: 0.18)
         case .forest:
@@ -284,17 +248,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var tertiaryBackground: Color {
         switch self {
         case .system:
-            #if canImport(UIKit)
             return Color(UIColor.tertiarySystemBackground)
-            #else
-            return Color.white.opacity(0.85)
-            #endif
         case .classic:
-            #if canImport(UIKit)
             return Color(UIColor.tertiarySystemGroupedBackground)
-            #else
-            return Color.gray.opacity(0.15)
-            #endif
         case .midnight:
             return Color(red: 0.12, green: 0.12, blue: 0.15)
         case .forest:
@@ -359,7 +315,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Theme-aware base color used when rendering OS 26 translucent surfaces.
     var glassBaseColor: Color {
-        #if canImport(UIKit)
         let accentWash = AppThemeColorUtilities.adjust(
             resolvedTint,
             saturationMultiplier: 0.45,
@@ -386,14 +341,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         default:
             return AppThemeColorUtilities.mix(background, accentWash, amount: blendAmount)
         }
-        #else
-        return background
-        #endif
     }
 
     /// Palette used when rendering OS 26 translucent surfaces.
     var glassPalette: GlassConfiguration.Palette {
-        #if canImport(UIKit)
         let accent: Color
         let shadow: Color
         let specular: Color
@@ -471,14 +422,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
 
         return GlassConfiguration.Palette(accent: accent, shadow: shadow, specular: specular, rim: rim)
-        #else
-        return GlassConfiguration.Palette(accent: resolvedTint, shadow: .gray, specular: .white, rim: .white)
-        #endif
     }
 
     /// Color palette used to render tab bar content across platforms.
     var tabBarPalette: TabBarPalette {
-        #if canImport(UIKit)
         let brightness = AppThemeColorUtilities.hsba(from: glassBaseColor)?.brightness
             ?? AppThemeColorUtilities.hsba(from: background)?.brightness
             ?? 0.65
@@ -517,15 +464,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             badgeBackground: badgeBackground,
             badgeForeground: badgeForeground
         )
-        #else
-        return TabBarPalette(
-            active: resolvedTint,
-            inactive: Color.primary.opacity(0.75),
-            disabled: Color.primary.opacity(0.34),
-            badgeBackground: resolvedTint,
-            badgeForeground: Color.white
-        )
-        #endif
     }
 
     /// Indicates whether the theme opts into the custom glass materials used
@@ -541,7 +479,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-#if canImport(UIKit)
 extension AppTheme {
     /// iOS/iPadOS System glass tuned brighter and more neutral.
     static func systemGlassConfiguration(resolvedTint: Color) -> GlassConfiguration {
@@ -662,7 +599,6 @@ extension AppTheme {
         )
     }
 }
-#endif
 
 // MARK: - AppTheme.GlassConfiguration
 
@@ -692,7 +628,7 @@ extension AppTheme {
                 case ultraThick
 
                 #if os(iOS) || os(tvOS)
-                @available(iOS 15.0, macOS 13.0, tvOS 15.0, *)
+                @available(iOS 15.0, macCatalyst 15.0, tvOS 15.0, *)
                 var shapeStyle: AnyShapeStyle {
                     switch self {
                     case .ultraThin: return AnyShapeStyle(.ultraThinMaterial)
@@ -704,7 +640,6 @@ extension AppTheme {
                 }
                 #endif
 
-                #if canImport(UIKit)
                 var uiBlurEffectStyle: UIBlurEffect.Style {
                     switch self {
                     case .ultraThin: return .systemUltraThinMaterial
@@ -714,7 +649,6 @@ extension AppTheme {
                     case .ultraThick: return .systemChromeMaterial
                     }
                 }
-                #endif
             }
 
             var highlightColor: Color
@@ -863,7 +797,6 @@ fileprivate enum AppThemeColorUtilities {
     }
 
     static func rgba(from color: Color) -> RGBA? {
-        #if canImport(UIKit)
         let platformColor = UIColor(color)
         var red: CGFloat = 0
         var green: CGFloat = 0
@@ -871,13 +804,9 @@ fileprivate enum AppThemeColorUtilities {
         var alpha: CGFloat = 0
         guard platformColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
         return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
-        #else
-        return nil
-        #endif
     }
 
     static func hsba(from color: Color) -> HSBA? {
-        #if canImport(UIKit)
         let platformColor = UIColor(color)
         var hue: CGFloat = 0
         var saturation: CGFloat = 0
@@ -885,9 +814,6 @@ fileprivate enum AppThemeColorUtilities {
         var alpha: CGFloat = 0
         guard platformColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return nil }
         return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
-        #else
-        return nil
-        #endif
     }
 
     static func color(from rgba: RGBA) -> Color {
@@ -1046,7 +972,6 @@ final class ThemeManager: ObservableObject {
     }
 
     private func applyAppearance() {
-        #if canImport(UIKit)
         let style: UIUserInterfaceStyle
         if let scheme = selectedTheme.colorScheme {
             style = scheme == .dark ? .dark : .light
@@ -1057,7 +982,6 @@ final class ThemeManager: ObservableObject {
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
             .forEach { $0.overrideUserInterfaceStyle = style }
-        #endif
     }
 
     private static func resolveTheme(from raw: String?) -> AppTheme {

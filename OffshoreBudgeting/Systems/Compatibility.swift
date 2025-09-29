@@ -7,9 +7,7 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 // MARK: - Glass Background Policy
 
@@ -88,18 +86,8 @@ extension View {
     /// Disables auto-capitalization and autocorrection where supported (iOS/iPadOS).
     /// On other platforms this is a no-op, allowing a single code path.
     func ub_noAutoCapsAndCorrection() -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         return self
-        #else
-        if #available(iOS 15.0, *) {
-            return self
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-        } else {
-            return self.disableAutocorrection(true)
-        }
-        #endif
         #else
         return self
         #endif
@@ -109,16 +97,8 @@ extension View {
     /// Sets the navigation/toolbar title to inline across platforms.
     /// Uses the best available API per OS version and is a no-op if unavailable.
     func ub_toolbarTitleInline() -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         return self
-        #else
-        if #available(iOS 17.0, *) {
-            return self.toolbarTitleDisplayMode(.inline)
-        } else {
-            return self.navigationBarTitleDisplayMode(.inline)
-        }
-        #endif
         #else
         return self
         #endif
@@ -130,18 +110,8 @@ extension View {
     /// that do not expose the API.
     @ViewBuilder
     func ub_toolbarTitleLarge() -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         self
-        #else
-        if #available(iOS 17.0, *) {
-            self
-                .toolbarTitleDisplayMode(.large)
-                .navigationBarTitleDisplayMode(.large)
-        } else {
-            self.navigationBarTitleDisplayMode(.large)
-        }
-        #endif
         #else
         self
         #endif
@@ -171,12 +141,8 @@ extension View {
     // MARK: ub_compactDatePickerStyle()
     /// Applies `.compact` date picker style where available (iPhone/iPad), no-op elsewhere.
     func ub_compactDatePickerStyle() -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         return self
-        #else
-        return self.datePickerStyle(.compact)
-        #endif
         #else
         return self
         #endif
@@ -290,7 +256,7 @@ extension View {
     /// don’t support it, this is a no-op so the view still compiles.  Use
     /// this helper instead of sprinkling `#if` checks throughout your views.
     func ub_formStyleGrouped() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             return self.formStyle(.grouped)
         } else {
             return self
@@ -321,7 +287,7 @@ extension View {
     /// versions it falls back to the legacy API.  Use this to avoid
     /// repetitive availability checks.
     func ub_hideScrollIndicators() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             return self.scrollIndicators(.hidden)
         } else {
             return self
@@ -351,7 +317,7 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 content
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -364,7 +330,7 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
                     .ub_applyListRowSeparators()
             }
         } else {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 content
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
@@ -383,7 +349,7 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
 private extension View {
     @ViewBuilder
     func ub_applyListRowSeparators() -> some View {
-        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             self
                 .listRowSeparator(.visible)
                 .listRowSeparatorTint(UBListStyleSeparators.separatorColor)
@@ -421,11 +387,7 @@ private extension View {
 
 private enum UBListStyleSeparators {
     static var separatorColor: Color {
-        #if canImport(UIKit)
         return Color(uiColor: .separator)
-        #else
-        return .secondary
-        #endif
     }
 }
 
@@ -447,16 +409,8 @@ private struct UBRootTabNavigationTitleModifier: ViewModifier {
     let title: String
 
     func body(content: Content) -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         return content.navigationTitle(title)
-        #else
-        if #available(iOS 16.0, *) {
-            return content.toolbar(.hidden, for: .navigationBar)
-        } else {
-            return content.navigationBarHidden(true)
-        }
-        #endif
         #else
         return content.navigationTitle(title)
         #endif
@@ -473,7 +427,7 @@ private struct UBOnChangeWithoutValueModifier<Value: Equatable>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17.0, macCatalyst 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macCatalyst 17.0, *) {
             content.onChange(of: value, initial: initial, action)
         } else {
             content.task(id: value) {
@@ -500,7 +454,7 @@ private struct UBOnChangeWithValueModifier<Value: Equatable>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17.0, macCatalyst 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macCatalyst 17.0, *) {
             content.onChange(of: value, initial: initial) { _, newValue in
                 action(newValue)
             }
@@ -526,22 +480,8 @@ private struct UBDecimalKeyboardModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        #if canImport(UIKit)
         #if targetEnvironment(macCatalyst)
         content
-        #else
-        if platformCapabilities.supportsAdaptiveKeypad {
-            if #available(iOS 18.0, *) {
-                content
-                    .keyboardType(.decimalPad)
-                    .submitLabel(.done)
-            } else {
-                content.keyboardType(.decimalPad)
-            }
-        } else {
-            content.keyboardType(.decimalPad)
-        }
-        #endif
         #else
         content
         #endif
@@ -703,13 +643,9 @@ private struct UBGlassBackgroundView: View {
     @ViewBuilder
     private var baseLayer: some View {
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 15.0, macCatalyst 15.0, macOS 13.0, *) {
-                #if canImport(UIKit)
+            if #available(iOS 15.0, macCatalyst 15.0, *) {
                 decoratedGlass
                     .background(configuration.glass.material.shapeStyle)
-                #else
-                decoratedGlass
-                #endif
             } else {
                 decoratedGlass
             }
@@ -846,21 +782,11 @@ private extension Edge.Set {
 extension View {
     @ViewBuilder
     func ub_ignoreSafeArea(edges: Edge.Set) -> some View {
-        #if canImport(UIKit)
         if #available(iOS 17.0, macCatalyst 17.0, *) {
             self.ignoresSafeArea(.container, edges: edges)
         } else {
             self.edgesIgnoringSafeArea(edges)
         }
-        #elseif os(macOS)
-        if #available(macOS 14.0, *) {
-            self.ignoresSafeArea(.container, edges: edges)
-        } else {
-            self.edgesIgnoringSafeArea(edges)
-        }
-        #else
-        self
-        #endif
     }
 }
 
@@ -870,20 +796,12 @@ extension View {
 enum UBColor {
     /// Top neutral for card backgrounds.
     static var cardNeutralTop: Color {
-        #if canImport(UIKit)
         return Color(UIColor.secondarySystemBackground) // iOS
-        #else
-        return Color.gray.opacity(0.16)
-        #endif
     }
 
     /// Bottom neutral for card backgrounds.
     static var cardNeutralBottom: Color {
-        #if canImport(UIKit)
         return Color(UIColor.tertiarySystemBackground) // iOS
-        #else
-        return Color.gray.opacity(0.22)
-        #endif
     }
 }
 
@@ -893,11 +811,7 @@ enum UBColor {
 enum UBTypography {
     /// Static title color for card text (legible dark tone on all platforms).
     static var cardTitleStatic: Color {
-        #if canImport(UIKit)
         return Color(UIColor.label).opacity(0.92)              // iOS: dark, dynamic
-        #else
-        return Color.black.opacity(0.9)
-        #endif
     }
 
     /// Softer, neutral gray for title shadows (avoids harsh pure black).
@@ -1002,9 +916,7 @@ enum UBDecor {
 /// Call this in your save actions to neatly resign the first responder before
 /// dismissing a sheet.  On macOS and other platforms this is a no‑op.
 func ub_dismissKeyboard() {
-    #if canImport(UIKit)
     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    #endif
 }
 
 // MARK: - Motion Provider Abstraction

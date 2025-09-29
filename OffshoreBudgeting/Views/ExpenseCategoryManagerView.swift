@@ -9,12 +9,7 @@ import SwiftUI
 import CoreData
 
 // Conditionally import platform-specific frameworks for color conversions.
-#if canImport(UIKit)
 import UIKit
-#endif
-#if canImport(AppKit)
-import AppKit
-#endif
 
 // MARK: - ExpenseCategoryManagerView
 /// Full-fidelity management screen for Expense Categories.
@@ -305,19 +300,11 @@ struct ExpenseCategoryEditorSheet: View {
     /// Converts a SwiftUI `Color` into a `#RRGGBB` uppercase hex string.  Returns
     /// nil if conversion fails (e.g., color isn't representable in sRGB).
     private func colorToHex(_ color: Color) -> String? {
-        #if canImport(UIKit)
         let ui = UIColor(color)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
         let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
         return String(format: "#%02X%02X%02X", ri, gi, bi)
-        #elseif canImport(AppKit)
-        guard let sRGB = NSColor(color).usingColorSpace(.sRGB) else { return nil }
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        sRGB.getRed(&r, green: &g, blue: &b, alpha: &a)
-        let ri = Int(round(r * 255)), gi = Int(round(g * 255)), bi = Int(round(b * 255))
-        return String(format: "#%02X%02X%02X", ri, gi, bi)
-        #endif
     }
 }
 

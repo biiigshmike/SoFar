@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Home Header Summary
 struct HomeHeaderContextSummary: View {
@@ -158,7 +159,6 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
 
 
 // MARK: - Header Action Helpers
-#if canImport(UIKit)
 struct HideMenuIndicatorIfPossible: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -169,7 +169,6 @@ struct HideMenuIndicatorIfPossible: ViewModifier {
         }
     }
 }
-#endif
 
 struct FilterBar: View {
     @Binding var sort: BudgetDetailsViewModel.SortOption

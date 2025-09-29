@@ -9,26 +9,17 @@ import SwiftUI
 
 // MARK: - Platform Color Bridge
 // Uses UIColor on iOS/Catalyst and NSColor on macOS for Canvas CG drawing.
-#if canImport(UIKit)
 import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
 // MARK: - Helper: labelCGColor(_:)
 // Returns a platform-appropriate label color as CGColor with the given alpha.
 // - iOS/Catalyst: UIColor.label
 // - macOS:        NSColor.labelColor
 private func labelCGColor(_ alpha: CGFloat) -> CGColor {
-    #if canImport(UIKit)
     return UIColor.label.withAlphaComponent(alpha).cgColor
-    #else
-    return NSColor.labelColor.withAlphaComponent(alpha).cgColor
-    #endif
 }
 
 private func rgbaComponents(from color: Color) -> (Double, Double, Double, Double)? {
-    #if canImport(UIKit)
     let platformColor = UIColor(color)
     var red: CGFloat = 0
     var green: CGFloat = 0
@@ -36,21 +27,6 @@ private func rgbaComponents(from color: Color) -> (Double, Double, Double, Doubl
     var alpha: CGFloat = 0
     guard platformColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
     return (Double(red), Double(green), Double(blue), Double(alpha))
-    #elseif canImport(AppKit)
-    let platformColor = NSColor(color)
-    let converted = platformColor.usingColorSpace(.deviceRGB)
-        ?? platformColor.usingColorSpace(.sRGB)
-        ?? platformColor.usingColorSpace(.genericRGB)
-    guard let converted else { return nil }
-    var red: CGFloat = 0
-    var green: CGFloat = 0
-    var blue: CGFloat = 0
-    var alpha: CGFloat = 0
-    converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-    return (Double(red), Double(green), Double(blue), Double(alpha))
-    #else
-    return nil
-    #endif
 }
 
 // MARK: - CardTheme

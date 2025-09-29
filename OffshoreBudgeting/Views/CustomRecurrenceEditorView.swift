@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - CustomRecurrence
 /// Lightweight model for building a simple RRULE:
@@ -136,9 +137,7 @@ struct CustomRecurrenceEditorView: View {
                         }
                 }
                 // Stack style is not available on macOS; apply only on platforms that support it.
-                #if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
-                #endif
             }
         }
         .ub_navigationBackground(

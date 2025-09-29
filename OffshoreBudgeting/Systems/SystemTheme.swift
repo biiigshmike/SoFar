@@ -1,7 +1,5 @@
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 /// Central adapter that decides whether the system should use Liquid Glass (OS 26
 /// cycle) or Classic styling (earlier OS versions), and applies minimal global
@@ -23,7 +21,6 @@ enum SystemThemeAdapter {
     static func applyGlobalChrome(theme: AppTheme, colorScheme: ColorScheme?) {
         guard currentFlavor == .classic else { return }
 
-        #if canImport(UIKit)
         // UINavigationBar
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
@@ -52,7 +49,6 @@ enum SystemThemeAdapter {
         UIToolbar.appearance().standardAppearance = toolAppearance
         UIToolbar.appearance().compactAppearance = toolAppearance
         UIToolbar.appearance().scrollEdgeAppearance = toolAppearance
-        #endif
     }
 }
 

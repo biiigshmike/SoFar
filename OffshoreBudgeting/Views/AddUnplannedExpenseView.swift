@@ -11,6 +11,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreData
 
 // MARK: - AddUnplannedExpenseView
@@ -152,7 +153,6 @@ struct AddUnplannedExpenseView: View {
             return true
         } catch {
             // Present error via UIKit alert on iOS; macOS simply returns false.
-            #if canImport(UIKit)
             let alert = UIAlertController(title: "Couldn’t Save", message: error.localizedDescription, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             UIApplication.shared.connectedScenes
@@ -160,7 +160,6 @@ struct AddUnplannedExpenseView: View {
                 .first?
                 .rootViewController?
                 .present(alert, animated: true)
-            #endif
             return false
         }
     }

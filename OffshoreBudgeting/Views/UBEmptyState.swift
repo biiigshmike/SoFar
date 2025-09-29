@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - UBEmptyState
 /// Standardized empty-state presentation with optional action buttons.
@@ -106,11 +107,7 @@ struct UBEmptyState: View {
     }
 
     private var resolvedVerticalPadding: CGFloat {
-        #if canImport(UIKit)
         return verticalSizeClass == .compact ? DS.Spacing.s : DS.Spacing.m
-        #else
-        return DS.Spacing.m
-        #endif
     }
 
     private var onboardingTint: Color {
@@ -146,7 +143,6 @@ struct UBEmptyState: View {
             .labelStyle(.titleAndIcon)
     }
 
-#if canImport(UIKit)
     @ViewBuilder
     private func glassPrimaryButton(
         title: String,
@@ -185,50 +181,8 @@ struct UBEmptyState: View {
             .glassEffect(in: capsule)
         }
     }
-#else
-    @ViewBuilder
-    private func glassPrimaryButton(
-        title: String,
-        fallbackTint: Color,
-        glassTint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        if capabilities.supportsOS26Translucency, #available(macCatalyst 26.0, *) {
-            glassStyledPrimaryButton(title: title, glassTint: glassTint, action: action)
-        } else {
-            legacyPrimaryButton(title: title, action: action)
-        }
-    }
 
-    @available(macCatalyst 26.0, *)
-    @ViewBuilder
-    private func glassStyledPrimaryButton(
-        title: String,
-        glassTint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        let capsule = Capsule(style: .continuous)
-        GlassEffectContainer {
-            Button(action: action) {
-                Label(title, systemImage: "plus")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.vertical, DS.Spacing.m)
-                    .contentShape(capsule)
-            }
-            .tint(glassTint)
-            .buttonStyle(.plain)
-            .frame(maxWidth: 320)
-            .glassEffect(in: capsule)
-        }
-    }
-#endif
-
-    #if canImport(UIKit)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    #endif
     private var primaryButtonTint: Color {
         themeManager.selectedTheme.resolvedTint
     }

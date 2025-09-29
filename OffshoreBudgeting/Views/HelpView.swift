@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Comprehensive in-app guide that mirrors the app's documented structure.
 /// Each section pulls from `// MARK:` comments across the codebase so users can
@@ -18,9 +19,7 @@ struct HelpView: View {
                     helpMenu
                         .navigationBarTitle("Help")
                 }
-#if canImport(UIKit)
                 .navigationViewStyle(StackNavigationViewStyle())
-#endif
             }
         }
         .ub_navigationBackground(

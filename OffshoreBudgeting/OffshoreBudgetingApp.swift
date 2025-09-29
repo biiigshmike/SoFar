@@ -6,9 +6,7 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 @main
 struct OffshoreBudgetingApp: App {
@@ -26,14 +24,12 @@ struct OffshoreBudgetingApp: App {
         CoreDataService.shared.ensureLoaded()
         UITestDataSeeder.applyIfNeeded()
         // No macOS-specific setup required at the moment.
-#if canImport(UIKit)
         // Reduce the chance of text truncation across the app by allowing
         // UILabel-backed Text views to shrink when space is constrained.
         let labelAppearance = UILabel.appearance()
         labelAppearance.adjustsFontSizeToFitWidth = true
         labelAppearance.minimumScaleFactor = 0.5
         labelAppearance.lineBreakMode = .byClipping
-#endif
     }
 
     var body: some Scene {
@@ -113,7 +109,6 @@ struct OffshoreBudgetingApp: App {
 #endif
 }
 
-#if canImport(UIKit)
 private struct ThemedToggleTint: ViewModifier {
     let color: Color
 
@@ -125,10 +120,3 @@ private struct ThemedToggleTint: ViewModifier {
         }
     }
 }
-#else
-private struct ThemedToggleTint: ViewModifier {
-    let color: Color
-
-    func body(content: Content) -> some View { content }
-}
-#endif

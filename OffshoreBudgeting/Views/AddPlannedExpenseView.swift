@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreData
 
 // MARK: - AddPlannedExpenseView
@@ -224,7 +225,6 @@ struct AddPlannedExpenseView: View {
             return true
         } catch {
             // Present error via UIKit alert on iOS; macOS simply returns false.
-            #if canImport(UIKit)
             let alert = UIAlertController(
                 title: "Couldn’t Save",
                 message: error.localizedDescription,
@@ -236,7 +236,6 @@ struct AddPlannedExpenseView: View {
                 .first?
                 .rootViewController?
                 .present(alert, animated: true)
-            #endif
             return false
         }
     }
@@ -371,15 +370,11 @@ private struct CategoryChipsRow: View {
 // A tiny compatibility wrapper to avoid directly calling presentationDetents on older OSes.
 private struct PresentationDetentsCompat: ViewModifier {
     func body(content: Content) -> some View {
-        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         if #available(iOS 16.0, *) {
             content.presentationDetents([.medium])
         } else {
             content
         }
-        #else
-        content
-        #endif
     }
 }
 

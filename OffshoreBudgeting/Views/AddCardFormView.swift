@@ -15,6 +15,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - AddCardFormView
 /// Sheet that lets the user add or edit a card.
@@ -177,9 +178,7 @@ struct AddCardFormView: View {
         }
         onSave(trimmedName, selectedTheme)
         // iOS: nicely resign keyboard for a neat dismissal experience.
-        #if canImport(UIKit)
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        #endif
         return true
     }
 }
