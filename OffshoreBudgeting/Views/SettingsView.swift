@@ -356,41 +356,25 @@ struct SettingsView: View {
 
     /// Balanced padding across platforms; a little more breathing room on larger screens.
     private var horizontalPadding: CGFloat {
-        #if os(macOS)
-        return 24
-        #else
         return horizontalSizeClass == .regular ? 24 : 16
-        #endif
     }
 
     private var cardStackSpacing: CGFloat {
-        #if os(iOS)
         return horizontalSizeClass == .compact ? 10 : 16
-        #else
-        return 16
-        #endif
     }
 
     private var scrollViewTopPadding: CGFloat {
-        #if os(iOS)
         return horizontalSizeClass == .compact ? DS.Spacing.m : DS.Spacing.l
-        #else
-        return DS.Spacing.l
-        #endif
     }
 
     private func extraBottomPadding(
         using proxy: RootTabPageProxy,
         tabBarGutter: RootTabPageProxy.TabBarGutter
     ) -> CGFloat {
-        #if os(iOS)
         let base = horizontalSizeClass == .compact ? 0 : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
         let overflow = max(proxy.safeAreaBottomInset - tabChromeHeight, 0)
         return max(base + overflow - proxy.tabBarGutterSpacing(tabBarGutter), 0)
-        #else
-        return max(DS.Spacing.l - proxy.tabBarGutterSpacing(tabBarGutter), 0)
-        #endif
     }
 
 }

@@ -23,12 +23,7 @@ struct CardPickerItemTile: View {
     /// ISO/ID-1 credit card aspect ratio (width / height).
     private let creditCardAspect: CGFloat = 85.60 / 53.98 // ≈ 1.586
     /// Visual height for the picker thumbnail. Adjust to taste.
-    /// We reduce the height slightly on macOS to avoid an oversized row.
-    #if os(macOS)
-    private let pickerHeight: CGFloat = 120
-    #else
     private let pickerHeight: CGFloat = 132
-    #endif
 
     // MARK: Body
     var body: some View {
