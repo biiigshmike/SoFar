@@ -59,7 +59,9 @@ struct OffshoreBudgetingApp: App {
                 .keyboardShortcut("?", modifiers: .command)
             }
         }
+#endif
 
+#if targetEnvironment(macCatalyst)
         WindowGroup(id: catalystHelpSceneIdentifier) {
             configuredScene {
                 HelpView()
