@@ -367,6 +367,7 @@ struct HomeView: View {
                 periodNavigation: nil,
                 displaysBudgetTitle: false,
                 headerTopPadding: DS.Spacing.xs,
+                appliesSurfaceBackground: false,
                 selectedSegment: $selectedSegment,
                 sort: $homeSort,
                 onSegmentChange: { newSegment in
