@@ -26,6 +26,7 @@ struct BudgetDetailsView: View {
     private let periodNavigation: PeriodNavigationConfiguration?
     private let displaysBudgetTitle: Bool
     private let headerTopPadding: CGFloat
+    private let appliesSurfaceBackground: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
@@ -85,6 +86,7 @@ struct BudgetDetailsView: View {
         periodNavigation: PeriodNavigationConfiguration? = nil,
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
+        appliesSurfaceBackground: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
@@ -93,6 +95,7 @@ struct BudgetDetailsView: View {
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
+        self.appliesSurfaceBackground = appliesSurfaceBackground
         self.onSegmentChange = onSegmentChange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
@@ -105,6 +108,7 @@ struct BudgetDetailsView: View {
         periodNavigation: PeriodNavigationConfiguration? = nil,
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
+        appliesSurfaceBackground: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
@@ -113,6 +117,7 @@ struct BudgetDetailsView: View {
         self.periodNavigation = periodNavigation
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
+        self.appliesSurfaceBackground = appliesSurfaceBackground
         self.onSegmentChange = onSegmentChange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
@@ -121,7 +126,8 @@ struct BudgetDetailsView: View {
 
     // MARK: Body
     var body: some View {
-        VStack(spacing: 0) {
+        applySurfaceBackground(
+            to: VStack(spacing: 0) {
 
             // Keep only a small top spacer to align with nav chrome
             Color.clear.frame(height: max(effectiveHeaderTopPadding - DS.Spacing.s, 0))
@@ -173,10 +179,6 @@ struct BudgetDetailsView: View {
         // Make the primary container expand to the viewport so inner Lists and
         // ScrollViews can scroll when height is constrained (e.g., landscape).
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ub_surfaceBackground(
-            themeManager.selectedTheme,
-            configuration: themeManager.glassConfiguration,
-            ignoringSafeArea: .all
         )
         // Load once per view instance. Gate with local state to avoid
         // accidental re-entrant loads caused by view tree churn.
@@ -279,6 +281,22 @@ struct BudgetDetailsView: View {
                 message: Text(message),
                 dismissButton: .default(Text("OK"))
             )
+        }
+    }
+
+    @ViewBuilder
+    private func applySurfaceBackground<Content: View>(
+        to content: Content
+    ) -> some View {
+        if appliesSurfaceBackground {
+            content
+                .ub_surfaceBackground(
+                    themeManager.selectedTheme,
+                    configuration: themeManager.glassConfiguration,
+                    ignoringSafeArea: .all
+                )
+        } else {
+            content
         }
     }
 
