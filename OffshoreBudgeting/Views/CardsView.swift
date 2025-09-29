@@ -47,7 +47,7 @@ struct CardsView: View {
     // MARK: Body
     var body: some View {
         RootTabPageScaffold(scrollBehavior: .always, spacing: DS.Spacing.s) {
-            RootViewTopPlanes(title: "Cards") {
+            RootViewTopPlanes(title: "Cards", titleDisplayMode: .hidden) {
                 addCardButton
             }
         } content: { proxy in

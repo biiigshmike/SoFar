@@ -144,7 +144,7 @@ struct IncomeView: View {
     // MARK: Body
     var body: some View {
         RootTabPageScaffold(spacing: DS.Spacing.s) {
-            RootViewTopPlanes(title: "Income") {
+            RootViewTopPlanes(title: "Income", titleDisplayMode: .hidden) {
                 addIncomeButton
             }
         } content: { proxy in
