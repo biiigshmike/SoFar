@@ -7,10 +7,8 @@
 //
 
 import SwiftUI
-#if os(iOS)
+#if canImport(UIKit)
 import UIKit
-#elseif os(macOS)
-import AppKit
 #endif
 
 // MARK: - UnifiedSwipeConfig
@@ -58,34 +56,23 @@ public struct UnifiedSwipeConfig {
 
     // MARK: Platform Defaults
     public static var defaultDeleteTint: Color {
-        #if os(iOS)
+        #if canImport(UIKit)
         return Color(UIColor.systemRed)
-        #elseif os(macOS)
-        if #available(macOS 11.0, *) {
-            return Color(nsColor: .systemRed)
-        } else {
-            return .red
-        }
         #else
         return .red
         #endif
     }
 
     public static var defaultEditTint: Color {
-        #if os(iOS)
-        return Color(UIColor.systemGray5)
-        #elseif os(macOS)
-        if #available(macOS 11.0, *) {
-            let dynamic = NSColor(name: nil) { appearance in
-                let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                return isDark
-                    ? NSColor(calibratedWhite: 0.28, alpha: 1.0)
-                    : NSColor(calibratedWhite: 0.92, alpha: 1.0)
+        #if canImport(UIKit)
+        return Color(UIColor { trait in
+            switch trait.userInterfaceStyle {
+            case .dark:
+                return UIColor(white: 0.28, alpha: 1.0)
+            default:
+                return UIColor(white: 0.92, alpha: 1.0)
             }
-            return Color(nsColor: dynamic)
-        } else {
-            return Color.gray.opacity(0.35)
-        }
+        })
         #else
         return Color.gray.opacity(0.35)
         #endif
@@ -154,19 +141,9 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
             .accessibilityIdentifierIfAvailable(config.deleteAccessibilityID)
         }
 
-        #if os(iOS)
-        if #available(iOS 15.0, *) {
+        #if canImport(UIKit)
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             base.swipeActions(edge: .trailing, allowsFullSwipe: config.allowsFullSwipeToDelete) {
-                deleteButton()
-                if let onEdit, config.showsEditAction { editButton(onEdit: onEdit) }
-                customButtons()
-            }
-        } else {
-            base
-        }
-        #elseif os(macOS)
-        if #available(macOS 13.0, *) {
-            base.swipeActions(edge: .trailing) {
                 deleteButton()
                 if let onEdit, config.showsEditAction { editButton(onEdit: onEdit) }
                 customButtons()
@@ -261,7 +238,7 @@ private struct UnifiedSwipeActionsModifier: ViewModifier {
 
     // MARK: - Helpers
     private func triggerDelete() {
-        #if os(iOS)
+        #if canImport(UIKit)
         if config.playHapticOnDelete {
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
@@ -294,7 +271,7 @@ private extension View {
     @ViewBuilder
     func accessibilityIdentifierIfAvailable(_ identifier: String?) -> some View {
         if let identifier {
-            #if os(iOS)
+            #if canImport(UIKit)
             self.accessibilityIdentifier(identifier)
             #else
             self
@@ -326,11 +303,6 @@ private extension Color {
         let uiColor = UIColor(self)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
-        return Color.contrastingColor(red: r, green: g, blue: b)
-        #elseif canImport(AppKit)
-        let ns = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(calibratedWhite: 1.0, alpha: 1.0)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        ns.getRed(&r, green: &g, blue: &b, alpha: &a)
         return Color.contrastingColor(red: r, green: g, blue: b)
         #else
         return .white
