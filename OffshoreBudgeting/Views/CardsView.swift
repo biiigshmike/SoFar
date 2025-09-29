@@ -112,31 +112,17 @@ struct CardsView: View {
     }
 
     private var addActionToolbarButton: some View {
-        Menu {
-            Button {
-                isPresentingAddCard = true
-            } label: {
-                Label("Add Card", systemImage: "creditcard")
-            }
-
-            Button {
-                isPresentingAddExpense = true
-            } label: {
-                Label("Add Expense", systemImage: "plus.forwardslash.minus")
-            }
-            .disabled(selectedCardStableID == nil)
-        } label: {
-            Image(systemName: "plus.circle.fill")
-                .symbolRenderingMode(.hierarchical)
-                .font(.title3)
-                .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
-        } primaryAction: {
+        Button {
             if selectedCardStableID == nil {
                 isPresentingAddCard = true
             } else {
                 isPresentingAddExpense = true
             }
+        } label: {
+            Image(systemName: "plus")
+                .imageScale(.medium)
         }
+        .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
     }
 
     // MARK: - Content View (Type-Safe)
