@@ -50,6 +50,10 @@ struct RootTabView: View {
     @ViewBuilder
     private func decoratedTabContent(for tab: Tab) -> some View {
         tabContent(for: tab)
+            .ub_navigationBackground(
+                theme: themeManager.selectedTheme,
+                configuration: themeManager.glassConfiguration
+            )
             .ub_rootNavigationChrome()
     }
 
