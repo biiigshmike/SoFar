@@ -97,12 +97,18 @@ struct RootTabHeader<Trailing: View>: View {
     private var standardTopPadding: CGFloat {
         #if targetEnvironment(macCatalyst)
         return DS.Spacing.l
+        #else
+        // Respect top safe area on iOS/iPadOS to avoid overlapping the status bar.
+        return effectiveSafeAreaInsets.top + DS.Spacing.l
         #endif
     }
 
     private var navigationBarAlignedTopPadding: CGFloat {
         #if targetEnvironment(macCatalyst)
         return DS.Spacing.l
+        #else
+        // Keep parity with standard for now; can be tweaked to align with a nav bar if needed.
+        return effectiveSafeAreaInsets.top + DS.Spacing.l
         #endif
     }
 
