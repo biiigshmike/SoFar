@@ -31,11 +31,14 @@ struct PresetsView: View {
         // jank/freezes on iOS 26. Let the List own scrolling by disabling
         // the scaffold's automatic wrapping.
         RootTabPageScaffold(spacing: DS.Spacing.s, wrapsContentInScrollView: false) {
-            RootViewTopPlanes(title: "Presets", titleDisplayMode: .hidden) {
-                addPresetButton
-            }
+            EmptyView()
         } content: { proxy in
             content(using: proxy)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                addPresetToolbarButton
+            }
         }
         .alert(item: $templateToDelete) { template in
             Alert(
@@ -150,13 +153,11 @@ struct PresetsView: View {
         .ub_tabNavigationTitle("Presets")
     }
 
-    private var addPresetButton: some View {
-        RootHeaderIconActionButton(
-            systemImage: "plus",
-            accessibilityLabel: "Add Preset Planned Expense"
-        ) {
-            isPresentingAddSheet = true
+    private var addPresetToolbarButton: some View {
+        Button(action: { isPresentingAddSheet = true }) {
+            Image(systemName: "plus")
         }
+        .accessibilityLabel("Add Preset Planned Expense")
     }
 
     // MARK: - Actions
