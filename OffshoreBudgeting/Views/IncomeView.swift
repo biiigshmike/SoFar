@@ -126,7 +126,6 @@ struct IncomeView: View {
     private var addIncomeButton: some View {
         Button(action: { beginAddingIncome() }) {
             Image(systemName: "plus")
-                .imageScale(.medium)
         }
         .accessibilityLabel("Add Income")
         .accessibilityIdentifier("add_income_button")

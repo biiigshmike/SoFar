@@ -120,7 +120,7 @@ struct CardsView: View {
             }
         } label: {
             Image(systemName: "plus")
-                .imageScale(.medium)
+                //.imageScale(.medium)
         }
         .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
     }
