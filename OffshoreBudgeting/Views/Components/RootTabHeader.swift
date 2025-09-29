@@ -22,7 +22,7 @@ struct RootTabHeader<Trailing: View>: View {
     // MARK: Properties
     @Environment(\.ub_safeAreaInsets) private var safeAreaInsets
     @Environment(\.responsiveLayoutContext) private var responsiveLayoutContext
-    private let title: String
+    private let title: String?
     private let horizontalPadding: CGFloat
     private let topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle
     private let trailingPlacement: RootTabHeaderLayout.TrailingPlacement
@@ -30,7 +30,7 @@ struct RootTabHeader<Trailing: View>: View {
 
     // MARK: Init
     init(
-        title: String,
+        title: String?,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
         trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right,
@@ -44,7 +44,7 @@ struct RootTabHeader<Trailing: View>: View {
     }
 
     init(
-        title: String,
+        title: String?,
         horizontalPadding: CGFloat = RootTabHeaderLayout.defaultHorizontalPadding,
         topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard,
         trailingPlacement: RootTabHeaderLayout.TrailingPlacement = .right
@@ -59,19 +59,23 @@ struct RootTabHeader<Trailing: View>: View {
     // MARK: Body
     var body: some View {
         headerStack
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, horizontalPadding)
-        .padding(.top, resolvedTopPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.top, resolvedTopPadding)
     }
 
     private var headerStack: some View {
         HStack(alignment: .top, spacing: DS.Spacing.m) {
-            Text(title)
-                .font(.largeTitle.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .accessibilityAddTraits(.isHeader)
-                .frame(maxWidth: trailingPlacement == .right ? .infinity : nil, alignment: .leading)
+            if let title {
+                Text(title)
+                    .font(.largeTitle.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .accessibilityAddTraits(.isHeader)
+                    .frame(maxWidth: trailingPlacement == .right ? .infinity : nil, alignment: .leading)
+            } else if trailingPlacement == .right {
+                Spacer(minLength: 0)
+            }
 
             trailing()
 

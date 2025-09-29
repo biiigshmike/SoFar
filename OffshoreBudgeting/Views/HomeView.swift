@@ -141,6 +141,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: headerSectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
+                titleDisplayMode: .hidden,
                 topPaddingStyle: .navigationBarAligned,
                 trailingPlacement: .right
             ) {

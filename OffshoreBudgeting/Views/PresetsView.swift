@@ -31,7 +31,7 @@ struct PresetsView: View {
         // jank/freezes on iOS 26. Let the List own scrolling by disabling
         // the scaffold's automatic wrapping.
         RootTabPageScaffold(spacing: DS.Spacing.s, wrapsContentInScrollView: false) {
-            RootViewTopPlanes(title: "Presets") {
+            RootViewTopPlanes(title: "Presets", titleDisplayMode: .hidden) {
                 addPresetButton
             }
         } content: { proxy in

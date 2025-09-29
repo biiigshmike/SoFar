@@ -32,7 +32,7 @@ struct SettingsView: View {
             scrollBehavior: .always,
             spacing: cardStackSpacing
         ) { _ in
-            RootViewTopPlanes(title: "Settings", horizontalPadding: horizontalPadding)
+            RootViewTopPlanes(title: "Settings", titleDisplayMode: .hidden, horizontalPadding: horizontalPadding)
                 .padding(.top, scrollViewTopPadding)
         } content: { proxy in
             content(using: proxy)
