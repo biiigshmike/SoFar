@@ -4,9 +4,6 @@ import Foundation
 #if canImport(UIKit)
 import UIKit
 #endif
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-import AppKit
-#endif
 
 // MARK: - Cloud Sync Infrastructure
 // This file's cloud-sync components require the iCloud Key-Value storage
@@ -141,9 +138,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var accent: Color {
         switch self {
         case .system:
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.accent
-            #elseif canImport(UIKit)
+            #if canImport(UIKit)
             return AppTheme.systemNeutralAccent
             #else
             return Color.primary
@@ -171,9 +166,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var tint: Color? {
         switch self {
         case .system:
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.tint
-            #elseif canImport(UIKit)
+            #if canImport(UIKit)
             return AppTheme.systemNeutralAccent
             #else
             return Color.primary
@@ -195,12 +188,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
 #if canImport(UIKit)
             return Color(UIColor.systemGreen)
-#elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: .systemGreen)
-            } else {
-                return Color.green
-            }
 #else
             return Color.green
 #endif
@@ -216,12 +203,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
         return Color(hue: Double(h), saturation: Double(s * 0.5), brightness: Double(min(b * 1.2, 1.0)))
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        let nsColor = NSColor(accent)
-        let converted = nsColor.usingColorSpace(.deviceRGB) ?? nsColor
-        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        converted.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
-        return Color(hue: Double(h), saturation: Double(s * 0.5), brightness: Double(min(b * 1.2, 1.0)))
         #else
         return accent
         #endif
@@ -233,20 +214,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
             #if canImport(UIKit)
             return Color(UIColor.systemBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.background
             #else
             return Color.white
             #endif
         case .classic:
             #if canImport(UIKit)
             return Color(UIColor.systemGroupedBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.windowBackgroundColor)
-            } else {
-                return Color.white
-            }
             #else
             return Color.white
             #endif
@@ -277,20 +250,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
             #if canImport(UIKit)
             return Color(UIColor.secondarySystemBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.secondaryBackground
             #else
             return Color.white.opacity(0.9)
             #endif
         case .classic:
             #if canImport(UIKit)
             return Color(UIColor.secondarySystemGroupedBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.gray.opacity(0.1)
-            }
             #else
             return Color.gray.opacity(0.1)
             #endif
@@ -321,20 +286,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         case .system:
             #if canImport(UIKit)
             return Color(UIColor.tertiarySystemBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.tertiaryBackground
             #else
             return Color.white.opacity(0.85)
             #endif
         case .classic:
             #if canImport(UIKit)
             return Color(UIColor.tertiarySystemGroupedBackground)
-            #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-            if #available(macOS 11.0, *) {
-                return Color(nsColor: NSColor.controlBackgroundColor)
-            } else {
-                return Color.gray.opacity(0.15)
-            }
             #else
             return Color.gray.opacity(0.15)
             #endif
@@ -390,11 +347,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var baseGlassConfiguration: GlassConfiguration {
         switch self {
         case .system:
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.glassConfiguration(resolvedTint: resolvedTint)
-            #else
             return AppTheme.systemGlassConfiguration(resolvedTint: resolvedTint)
-            #endif
         default:
             return .translucent(
                 liquidAmount: GlassConfiguration.TranslucentDefaults.liquidAmount,
@@ -406,7 +359,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Theme-aware base color used when rendering OS 26 translucent surfaces.
     var glassBaseColor: Color {
-        #if canImport(UIKit) || (canImport(AppKit) && !targetEnvironment(macCatalyst))
+        #if canImport(UIKit)
         let accentWash = AppThemeColorUtilities.adjust(
             resolvedTint,
             saturationMultiplier: 0.45,
@@ -429,11 +382,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.glassBaseColor(background: background, resolvedTint: resolvedTint)
-            #else
             return AppTheme.systemGlassBaseColor(resolvedTint: resolvedTint)
-            #endif
         default:
             return AppThemeColorUtilities.mix(background, accentWash, amount: blendAmount)
         }
@@ -444,7 +393,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Palette used when rendering OS 26 translucent surfaces.
     var glassPalette: GlassConfiguration.Palette {
-        #if canImport(UIKit) || (canImport(AppKit) && !targetEnvironment(macCatalyst))
+        #if canImport(UIKit)
         let accent: Color
         let shadow: Color
         let specular: Color
@@ -452,9 +401,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
         switch self {
         case .system:
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            return SystemThemeMac.glassPalette(resolvedTint: resolvedTint)
-            #else
             let tintSaturation = AppThemeColorUtilities
                 .hsba(from: resolvedTint)?.saturation ?? 0.0
             let tintBlend = tintSaturation.clamped(to: 0...1)
@@ -517,7 +463,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             shadow = AppThemeColorUtilities.mix(neutralShadow, shadowTone, amount: tintBlend)
             specular = AppThemeColorUtilities.mix(neutralSpecular, specularTone, amount: tintBlend)
             rim = AppThemeColorUtilities.mix(neutralRim, rimTone, amount: tintBlend)
-            #endif
         default:
             accent = resolvedTint
             shadow = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 1.05, brightnessMultiplier: 0.48, alpha: 1.0)
@@ -533,7 +478,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     /// Color palette used to render tab bar content across platforms.
     var tabBarPalette: TabBarPalette {
-        #if canImport(UIKit) || (canImport(AppKit) && !targetEnvironment(macCatalyst))
+        #if canImport(UIKit)
         let brightness = AppThemeColorUtilities.hsba(from: glassBaseColor)?.brightness
             ?? AppThemeColorUtilities.hsba(from: background)?.brightness
             ?? 0.65
@@ -746,7 +691,7 @@ extension AppTheme {
                 case thick
                 case ultraThick
 
-                #if os(iOS) || os(tvOS) || (os(macOS) && !targetEnvironment(macCatalyst))
+                #if os(iOS) || os(tvOS)
                 @available(iOS 15.0, macOS 13.0, tvOS 15.0, *)
                 var shapeStyle: AnyShapeStyle {
                     switch self {
@@ -767,19 +712,6 @@ extension AppTheme {
                     case .regular: return .systemMaterial
                     case .thick: return .systemThickMaterial
                     case .ultraThick: return .systemChromeMaterial
-                    }
-                }
-                #endif
-
-                #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-                @available(macOS 13.0, *)
-                var visualEffectMaterial: NSVisualEffectView.Material {
-                    switch self {
-                    case .ultraThin: return .headerView
-                    case .thin: return .titlebar
-                    case .regular: return .menu
-                    case .thick: return .windowBackground
-                    case .ultraThick: return .hudWindow
                     }
                 }
                 #endif
@@ -912,102 +844,6 @@ extension AppTheme.GlassConfiguration {
     }
 }
 
-#if os(macOS) && !targetEnvironment(macCatalyst)
-private enum SystemThemeMac {
-    static var accent: Color {
-        if #available(macOS 10.15, *) {
-            return Color(nsColor: .labelColor)
-        } else {
-            return Color.white
-        }
-    }
-
-    static var tint: Color {
-        accent
-    }
-
-    static var background: Color {
-        if #available(macOS 13.0, *) {
-            return Color(nsColor: .windowBackgroundColor)
-        } else {
-            // Covers macOS 11 and 12 with an appropriate fallback
-            return Color(nsColor: .underPageBackgroundColor)
-        }
-    }
-
-    static var secondaryBackground: Color {
-        if #available(macOS 13.0, *) {
-            return Color(nsColor: .controlBackgroundColor)
-        } else {
-            return Color(nsColor: .windowBackgroundColor)
-        }
-    }
-
-    static var tertiaryBackground: Color {
-        if #available(macOS 13.0, *) {
-            return Color(nsColor: .textBackgroundColor)
-        } else {
-            return Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
-        }
-    }
-
-    static func glassConfiguration(resolvedTint: Color) -> AppTheme.GlassConfiguration {
-        var configuration = AppTheme.GlassConfiguration.standard
-
-        // Lift and neutralize on macOS
-        configuration.liquid.tintOpacity = 0.06
-        configuration.liquid.saturation = 0.98
-        configuration.liquid.brightness = 0.02
-        configuration.liquid.contrast = 1.02
-        configuration.liquid.bloom = 0.06
-
-        let shadowTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.70, alpha: 1.0)
-        let specularTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.30, alpha: 1.0)
-        let rimTone = AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
-
-        configuration.glass.highlightOpacity = 0.42
-        configuration.glass.highlightBlur = 24
-        configuration.glass.shadowColor = shadowTone
-        configuration.glass.shadowOpacity = 0.08
-        configuration.glass.shadowBlur = 30
-        configuration.glass.specularColor = specularTone
-        configuration.glass.specularOpacity = 0.14
-        configuration.glass.specularWidth = 0.12
-        configuration.glass.noiseOpacity = 0.010
-        configuration.glass.rimColor = rimTone
-        configuration.glass.rimOpacity = 0.03
-        configuration.glass.rimWidth = 0.85
-        configuration.glass.rimBlur = 12
-        configuration.glass.material = .thin
-
-        return configuration
-    }
-
-    static func glassBaseColor(background: Color, resolvedTint: Color) -> Color {
-        // Brighter base, very small neutral wash
-        let softenedBackground = AppThemeColorUtilities.mix(background, Color.white, amount: 0.22)
-
-        let accentWash = AppThemeColorUtilities.adjust(
-            resolvedTint,
-            saturationMultiplier: 0.04,
-            brightnessMultiplier: 1.04,
-            alpha: 1.0
-        )
-
-        return AppThemeColorUtilities.mix(softenedBackground, accentWash, amount: 0.03)
-    }
-
-    static func glassPalette(resolvedTint: Color) -> AppTheme.GlassConfiguration.Palette {
-        AppTheme.GlassConfiguration.Palette(
-            accent: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.08, brightnessMultiplier: 1.10, alpha: 1.0),
-            shadow: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 0.74, alpha: 1.0),
-            specular: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.30, alpha: 1.0),
-            rim: AppThemeColorUtilities.adjust(resolvedTint, saturationMultiplier: 0.06, brightnessMultiplier: 1.18, alpha: 1.0)
-        )
-    }
-
-}
-#endif
 
 // MARK: - Color Utilities
 
@@ -1035,18 +871,6 @@ fileprivate enum AppThemeColorUtilities {
         var alpha: CGFloat = 0
         guard platformColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
         return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        let platformColor = NSColor(color)
-        let converted = platformColor.usingColorSpace(.deviceRGB)
-            ?? platformColor.usingColorSpace(.genericRGB)
-            ?? platformColor.usingColorSpace(.sRGB)
-        guard let converted = converted else { return nil }
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        converted.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return RGBA(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
         #else
         return nil
         #endif
@@ -1060,18 +884,6 @@ fileprivate enum AppThemeColorUtilities {
         var brightness: CGFloat = 0
         var alpha: CGFloat = 0
         guard platformColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return nil }
-        return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        let platformColor = NSColor(color)
-        let converted = platformColor.usingColorSpace(.deviceRGB)
-            ?? platformColor.usingColorSpace(.genericRGB)
-            ?? platformColor.usingColorSpace(.sRGB)
-        guard let converted = converted else { return nil }
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        var alpha: CGFloat = 0
-        converted.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
         return HSBA(hue: Double(hue), saturation: Double(saturation), brightness: Double(brightness), alpha: Double(alpha))
         #else
         return nil
@@ -1245,13 +1057,6 @@ final class ThemeManager: ObservableObject {
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
             .forEach { $0.overrideUserInterfaceStyle = style }
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        if let scheme = selectedTheme.colorScheme {
-            let appearance = scheme == .dark ? NSAppearance(named: .darkAqua) : NSAppearance(named: .aqua)
-            NSApp.appearance = appearance
-        } else {
-            NSApp.appearance = nil
-        }
         #endif
     }
 
