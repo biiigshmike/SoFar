@@ -131,11 +131,7 @@ extension View {
     /// Earlier platforms ignore the call so they retain their default opaque chrome.
     @ViewBuilder
     func ub_rootNavigationChrome() -> some View {
-        if #available(iOS 16.0, macCatalyst 16.0, *) {
-            self.toolbarBackground(.hidden, for: .navigationBar)
-        } else {
-            self
-        }
+        modifier(UBRootNavigationChromeModifier())
     }
 
     // MARK: ub_cardTitleShadow()
@@ -417,6 +413,23 @@ private struct UBPreOS26ListRowBackgroundModifier: ViewModifier {
 }
 
 // MARK: - Root Tab Navigation Title Styling
+private struct UBRootNavigationChromeModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
+                content.toolbarBackground(.hidden, for: .navigationBar)
+            } else {
+                content
+            }
+        } else {
+            content
+        }
+    }
+}
+
 private struct UBRootTabNavigationTitleModifier: ViewModifier {
     let title: String
 
