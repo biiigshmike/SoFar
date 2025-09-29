@@ -488,8 +488,15 @@ private struct HomeHeaderOverviewTable: View {
         if #available(iOS 16.0, macCatalyst 16.0, *) {
             Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: HomeHeaderOverviewMetrics.gridRowSpacing) {
                 GridRow(alignment: .top) {
-                    leadingGridCell { titleStack }
-                    trailingGridCell { periodNavigationControlView }
+                    titleStack
+                        .gridCellColumns(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                GridRow(alignment: .top) {
+                    periodNavigationControlView
+                        .gridCellColumns(2)
+                        .padding(.top, HomeHeaderOverviewMetrics.titleToPeriodNavigationSpacing)
                 }
 
                 incomeHeaderRow(title: "POTENTIAL INCOME", trailingTitle: "POTENTIAL SAVINGS")
@@ -540,7 +547,7 @@ private struct HomeHeaderOverviewTable: View {
             onPrevious: { onAdjustPeriod(-1) },
             onNext: { onAdjustPeriod(+1) }
         )
-        .padding(.top, HomeHeaderOverviewMetrics.periodNavigationTopPadding)
+        .frame(maxWidth: .infinity)
     }
 
     @available(iOS 16.0, macCatalyst 16.0, *)
@@ -620,9 +627,8 @@ private struct HomeHeaderOverviewTable: View {
 
     private var legacyTable: some View {
         VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
-            HStack(alignment: .top, spacing: HomeHeaderOverviewMetrics.legacyColumnSpacing) {
+            VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.legacyTitleToPeriodNavigationSpacing) {
                 titleStack
-                Spacer(minLength: 0)
                 periodNavigationControlView
             }
 
@@ -728,7 +734,8 @@ private enum HomeHeaderOverviewMetrics {
     static let titleSpacing: CGFloat = DS.Spacing.xs / 2
     static let legacyColumnSpacing: CGFloat = DS.Spacing.m
     static let legacyRowSpacing: CGFloat = 5
-    static let periodNavigationTopPadding: CGFloat = DS.Spacing.xs / 2
+    static let titleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs / 2
+    static let legacyTitleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 2
     static let titleMinimumScaleFactor: CGFloat = 0.75
