@@ -225,7 +225,7 @@ struct HomeView: View {
                         Spacer(minLength: 0)
 
                         if showsPeriodNavigation {
-                            periodNavigationControl(style: .glassIfAvailable)
+                            periodNavigationControl()
                                 .layoutPriority(1)
                                 .homeHeaderMinMatchedWidth(
                                     intrinsicWidth: $periodNavigationIntrinsicWidth,
@@ -234,7 +234,7 @@ struct HomeView: View {
                         }
                     }
                 } else if showsPeriodNavigation {
-                    periodNavigationControl(style: .glassIfAvailable)
+                    periodNavigationControl()
                         .layoutPriority(1)
                         .homeHeaderMinMatchedWidth(
                             intrinsicWidth: $periodNavigationIntrinsicWidth,
@@ -636,7 +636,7 @@ struct HomeView: View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: DS.Spacing.m) {
                 // Period navigation in content (original position)
-                periodNavigationControl(style: .glassIfAvailable)
+                periodNavigationControl()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Section header + running total for the current segment
@@ -708,10 +708,9 @@ struct HomeView: View {
 #endif
     }
 
-    private func periodNavigationControl(style: PeriodNavigationControl.Style) -> PeriodNavigationControl {
+    private func periodNavigationControl() -> PeriodNavigationControl {
         PeriodNavigationControl(
             title: title(for: vm.selectedDate),
-            style: style,
             onPrevious: { vm.adjustSelectedPeriod(by: -1) },
             onNext: { vm.adjustSelectedPeriod(by: +1) }
         )
