@@ -24,7 +24,7 @@ enum UBPresentationDetent: Equatable, Hashable {
     case large
     case fraction(Double)
 
-    #if os(iOS) || targetEnvironment(macCatalyst)
+    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     @available(iOS 16.0, *)
     var systemDetent: PresentationDetent {
         switch self {
@@ -55,7 +55,7 @@ struct EditSheetScaffold<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     // Selection state for detents (compat type)
-    #if os(iOS) || targetEnvironment(macCatalyst)
+    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     @State private var detentSelection: UBPresentationDetent
     #endif
 
@@ -80,7 +80,7 @@ struct EditSheetScaffold<Content: View>: View {
         self.onCancel = onCancel
         self.onSave = onSave
         self.content = content()
-        #if os(iOS) || targetEnvironment(macCatalyst)
+        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         _detentSelection = State(initialValue: initialDetent ?? detents.last ?? .medium)
         #endif
     }
@@ -129,7 +129,7 @@ struct EditSheetScaffold<Content: View>: View {
     // Navigation container: NavigationStack on iOS 16+/macOS 13+, else NavigationView
     @ViewBuilder
     private func navigationContainer<Inner: View>(@ViewBuilder content: () -> Inner) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             NavigationStack { content() }
         } else {
             NavigationView { content() }
@@ -139,7 +139,7 @@ struct EditSheetScaffold<Content: View>: View {
     // The form body with shared styling
     @ViewBuilder
     private var formContent: some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             Form { content }
                 .scrollContentBackground(.hidden)
                 .listRowBackground(rowBackground)
@@ -177,18 +177,14 @@ struct EditSheetScaffold<Content: View>: View {
         #if canImport(UIKit)
         return Color(uiColor: .separator)
         #elseif canImport(AppKit)
-        if #available(macOS 10.14, *) {
-            return Color(nsColor: .separatorColor)
-        } else {
-            return Color.primary.opacity(0.2)
-        }
+        return Color(nsColor: .separatorColor)
         #else
         return Color.primary.opacity(0.2)
         #endif
     }
 
     // MARK: Detent selection binding (iOS only)
-    #if os(iOS) || targetEnvironment(macCatalyst)
+    #if canImport(UIKit) || targetEnvironment(macCatalyst)
     private var detentSelectionBinding: Binding<UBPresentationDetent>? { $detentSelection }
     #else
     private var detentSelectionBinding: Binding<UBPresentationDetent>? { nil }
@@ -202,7 +198,7 @@ extension View {
         detents: [UBPresentationDetent],
         selection: Binding<UBPresentationDetent>?
     ) -> some View {
-        #if os(iOS) || targetEnvironment(macCatalyst)
+        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         if #available(iOS 16.0, *) {
             // Map compat detents to system detents
             let systemDetents = Set(detents.map { $0.systemDetent })

@@ -158,11 +158,11 @@ private struct HomeHeaderMinWidthModifier: ViewModifier {
 
 
 // MARK: - Header Action Helpers
-#if os(iOS) || os(macOS)
+#if canImport(UIKit)
 struct HideMenuIndicatorIfPossible: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             content.menuIndicator(.hidden)
         } else {
             content

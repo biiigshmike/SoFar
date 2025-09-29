@@ -363,7 +363,7 @@ private extension View {
     /// Hides list background on supported OS versions; no-ops on older targets.
     @ViewBuilder
     func applyIfAvailableScrollContentBackgroundHidden() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             scrollContentBackground(.hidden)
         } else {
             self

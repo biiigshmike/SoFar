@@ -122,7 +122,7 @@ struct AddPlannedExpenseView: View {
             UBFormSection("Expense Description", isUppercased: true) {
                 // Use an empty label and a prompt for true placeholder styling on modern OSes.
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
+                    if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.descriptionText, prompt: Text("Electric"))
                             .ub_noAutoCapsAndCorrection()
                             .multilineTextAlignment(.leading)
@@ -141,7 +141,7 @@ struct AddPlannedExpenseView: View {
             // Planned Amount
             UBFormSection("Planned Amount", isUppercased: true) {
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
+                    if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
                             .ub_decimalKeyboard()
                             .multilineTextAlignment(.leading)
@@ -160,7 +160,7 @@ struct AddPlannedExpenseView: View {
             // Actual Amount
             UBFormSection("Actual Amount", isUppercased: true) {
                 UBFormRow {
-                    if #available(iOS 15.0, macOS 12.0, *) {
+                    if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
                             .ub_decimalKeyboard()
                             .multilineTextAlignment(.leading)
@@ -371,7 +371,7 @@ private struct CategoryChipsRow: View {
 // A tiny compatibility wrapper to avoid directly calling presentationDetents on older OSes.
 private struct PresentationDetentsCompat: ViewModifier {
     func body(content: Content) -> some View {
-        #if os(iOS) || targetEnvironment(macCatalyst)
+        #if canImport(UIKit) || targetEnvironment(macCatalyst)
         if #available(iOS 16.0, *) {
             content.presentationDetents([.medium])
         } else {

@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-#if os(iOS)
+#if canImport(UIKit)
 import UIKit
 #endif
 
@@ -26,7 +26,7 @@ struct OffshoreBudgetingApp: App {
         CoreDataService.shared.ensureLoaded()
         UITestDataSeeder.applyIfNeeded()
         // No macOS-specific setup required at the moment.
-#if os(iOS)
+#if canImport(UIKit)
         // Reduce the chance of text truncation across the app by allowing
         // UILabel-backed Text views to shrink when space is constrained.
         let labelAppearance = UILabel.appearance()
@@ -113,12 +113,12 @@ struct OffshoreBudgetingApp: App {
 #endif
 }
 
-#if os(iOS) || os(macOS)
+#if canImport(UIKit)
 private struct ThemedToggleTint: ViewModifier {
     let color: Color
 
     func body(content: Content) -> some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             content.toggleStyle(SwitchToggleStyle(tint: color))
         } else {
             content

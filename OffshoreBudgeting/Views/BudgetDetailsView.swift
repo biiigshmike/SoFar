@@ -355,7 +355,7 @@ private struct CombinedBudgetHeaderGrid: View {
 
     var body: some View {
         Group {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
                     if showsIncomeGrid {
                         headerRow(title: "POTENTIAL INCOME", title2: "POTENTIAL SAVINGS")
@@ -444,7 +444,7 @@ private struct CombinedBudgetHeaderGrid: View {
         return CurrencyFormatterHelper.string(for: value)
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func headerRow(title: String, title2: String) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -453,7 +453,7 @@ private struct CombinedBudgetHeaderGrid: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -462,14 +462,14 @@ private struct CombinedBudgetHeaderGrid: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func leadingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 0) { content(); Spacer(minLength: 0) }
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func trailingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 0) { Spacer(minLength: 0); content() }
@@ -501,7 +501,7 @@ struct BudgetIncomeSavingsSummaryView: View {
 
     var body: some View {
         Group {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: BudgetIncomeSavingsSummaryMetrics.rowSpacing) {
                     headerRow(title: "POTENTIAL INCOME", title2: "POTENTIAL SAVINGS")
                     valuesRow(
@@ -560,7 +560,7 @@ struct BudgetIncomeSavingsSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func headerRow(title: String, title2: String) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -574,7 +574,7 @@ struct BudgetIncomeSavingsSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func valuesRow(firstValue: Double, firstColor: Color, secondValue: Double, secondColor: Color) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -588,7 +588,7 @@ struct BudgetIncomeSavingsSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func leadingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 0) {
@@ -598,7 +598,7 @@ struct BudgetIncomeSavingsSummaryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func trailingGridCell<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 0) {
@@ -1299,7 +1299,7 @@ private extension View {
     /// Applies the plain list style and hides default backgrounds where supported; keeps your custom look.
     @ViewBuilder
     func styledList() -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             self
                 .ub_listStyleLiquidAware()
 #if os(iOS)
@@ -1322,7 +1322,7 @@ private extension View {
 
     @ViewBuilder
     func ifAvailableContentMarginsZero() -> some View {
-        if #available(iOS 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macCatalyst 17.0, *) {
             self.contentMargins(.vertical, 0)
         } else {
             self
@@ -1335,7 +1335,7 @@ private enum CurrencyFormatterHelper {
     private static let fallbackCurrencyCode = "USD"
 
     static func string(for amount: Double) -> String {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             return amount.formatted(.currency(code: currencyCode))
         } else {
             return legacyString(for: amount)
@@ -1343,7 +1343,7 @@ private enum CurrencyFormatterHelper {
     }
 
     private static var currencyCode: String {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             return Locale.current.currency?.identifier ?? fallbackCurrencyCode
         } else {
             return Locale.current.currencyCode ?? fallbackCurrencyCode

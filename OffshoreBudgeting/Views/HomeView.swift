@@ -27,7 +27,7 @@ struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
-#if os(iOS)
+#if canImport(UIKit)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 #endif
     @AppStorage(AppSettingsKeys.budgetPeriod.rawValue) private var budgetPeriodRawValue: String = BudgetPeriod.monthly.rawValue
@@ -62,7 +62,7 @@ struct HomeView: View {
     // Reset header width matching on trait changes (e.g., rotation) to avoid
     // stale measurements forcing an oversized minWidth when returning from
     // landscape → portrait. This keeps the period navigation rendering stable.
-#if os(iOS)
+#if canImport(UIKit)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 #endif
 
@@ -136,7 +136,7 @@ struct HomeView: View {
         .alert(item: $vm.alert, content: alert(for:))
         // Clear cached/matched widths when key traits change so controls can
         // re-measure for the new size class/orientation.
-#if os(iOS)
+#if canImport(UIKit)
         .ub_onChange(of: horizontalSizeClass) { _ in resetHeaderWidthMatching() }
         .ub_onChange(of: verticalSizeClass) { _ in resetHeaderWidthMatching() }
 #endif
@@ -820,7 +820,7 @@ private struct HomeHeaderFallbackTitleView: View {
 private struct HomeIncomeSavingsZeroSummaryView: View {
     var body: some View {
         Group {
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 Grid(horizontalSpacing: DS.Spacing.m, verticalSpacing: HomeIncomeSavingsMetrics.rowSpacing) {
                     headerRow("POTENTIAL INCOME", "POTENTIAL SAVINGS")
                     valuesRow(0, DS.Colors.plannedIncome, 0, DS.Colors.savingsGood)
@@ -859,7 +859,7 @@ private struct HomeIncomeSavingsZeroSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func headerRow(_ left: String, _ right: String) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -868,7 +868,7 @@ private struct HomeIncomeSavingsZeroSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func valuesRow(_ leftValue: Double, _ leftColor: Color, _ rightValue: Double, _ rightColor: Color) -> some View {
         GridRow(alignment: .lastTextBaseline) {
@@ -877,14 +877,14 @@ private struct HomeIncomeSavingsZeroSummaryView: View {
         }
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func leadingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 0) { content(); Spacer(minLength: 0) }
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    @available(iOS 16.0, macOS 13.0, *)
+    @available(iOS 16.0, macCatalyst 16.0, *)
     @ViewBuilder
     private func trailingGridCell<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 0) { Spacer(minLength: 0); content().multilineTextAlignment(.trailing) }
@@ -908,9 +908,9 @@ private struct HomeIncomeSavingsZeroSummaryView: View {
     }
 
     private func formatCurrency(_ amount: Double) -> String {
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             let code: String
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 code = Locale.current.currency?.identifier ?? "USD"
             } else {
                 code = Locale.current.currencyCode ?? "USD"
@@ -951,9 +951,9 @@ private struct HomeSegmentTotalsRowView: View {
 
     private var totalString: String {
         // Lightweight currency formatting; mirrors the helper used elsewhere
-        if #available(iOS 15.0, macOS 12.0, *) {
+        if #available(iOS 15.0, macCatalyst 15.0, *) {
             let code: String
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, macCatalyst 16.0, *) {
                 code = Locale.current.currency?.identifier ?? "USD"
             } else {
                 code = Locale.current.currencyCode ?? "USD"
