@@ -91,21 +91,14 @@ struct RootTabHeader<Trailing: View>: View {
     }
 
     private var standardTopPadding: CGFloat {
-        #if os(macOS) || targetEnvironment(macCatalyst)
+        #if targetEnvironment(macCatalyst)
         return DS.Spacing.l
-        #else
-        let basePadding = DS.Spacing.xxl
-        let adjusted = effectiveSafeAreaInsets.top + DS.Spacing.m
-        return max(basePadding, adjusted)
         #endif
     }
 
     private var navigationBarAlignedTopPadding: CGFloat {
-        #if os(macOS) || targetEnvironment(macCatalyst)
+        #if targetEnvironment(macCatalyst)
         return DS.Spacing.l
-        #else
-        let adjusted = effectiveSafeAreaInsets.top + DS.Spacing.xs
-        return max(DS.Spacing.l, adjusted)
         #endif
     }
 

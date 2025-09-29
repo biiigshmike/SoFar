@@ -289,9 +289,7 @@ extension View {
 
     // MARK: ub_sheetPadding()
     /// Adds a subtle inner padding around sheet content on macOS.  On other
-    /// platforms this returns `self` unchanged.  Use this at the end of your
-    /// sheet view chain to avoid flush edges on macOS sheets without
-    /// duplicating `#if os(macOS)` in every view.
+    /// platforms this returns `self` unchanged. 
     func ub_sheetPadding() -> some View {
         return self
     }

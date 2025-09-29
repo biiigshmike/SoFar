@@ -121,9 +121,6 @@ struct EditSheetScaffold<Content: View>: View {
         )
         // MARK: Standard sheet behavior (platform-aware)
         .applyDetentsIfAvailable(detents: detents, selection: detentSelectionBinding)
-        #if os(macOS)
-        .frame(minWidth: 680)
-        #endif
         .ub_sheetPadding()
     }
 
