@@ -101,11 +101,11 @@ extension View {
     }
 }
 
-// MARK: - Header Glass Controls (iOS + macOS)
-#if os(iOS) || os(macOS)
+// MARK: - Header Glass Controls
+#if os(iOS)
 
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
-@available(iOS 26, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *)
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+@available(iOS 26, tvOS 18.0, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     private let content: Content
 
@@ -128,9 +128,9 @@ private extension View {
         theme: AppTheme,
         capabilities: PlatformCapabilities
     ) -> some View {
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 26.0, macOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
+            if #available(iOS 26.0, tvOS 18.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
@@ -144,12 +144,12 @@ private extension View {
     }
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private struct RootHeaderActionColumnsWriterKey: EnvironmentKey {
     static let defaultValue: (Int) -> Void = { _ in }
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private struct RootHeaderActionColumnsModifier: ViewModifier {
     @Environment(\.rootHeaderActionColumnsWriter) private var writer
     let count: Int
@@ -161,12 +161,12 @@ private struct RootHeaderActionColumnsModifier: ViewModifier {
     }
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private struct RootHeaderActionColumnsKey: LayoutValueKey {
     static let defaultValue: Int = 1
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private extension EnvironmentValues {
     var rootHeaderActionColumnsWriter: (Int) -> Void {
         get { self[RootHeaderActionColumnsWriterKey.self] }
@@ -177,7 +177,7 @@ private extension EnvironmentValues {
 extension View {
     @ViewBuilder
     func rootHeaderActionColumns(_ count: Int) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             modifier(RootHeaderActionColumnsModifier(count: max(0, count)))
         } else {
             self
@@ -185,7 +185,7 @@ extension View {
     }
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private struct RootHeaderActionSegment<Content: View>: View {
     @Environment(\.platformCapabilities) private var capabilities
     @State private var columnCount: Int
@@ -217,7 +217,7 @@ private struct RootHeaderActionSegment<Content: View>: View {
     }
 }
 
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 16.0, macCatalyst 16.0, *)
 private struct RootHeaderActionRowLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let dimension = RootHeaderActionMetrics.dimension(for: PlatformCapabilities.current)
@@ -399,7 +399,7 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
         verticalPadding: CGFloat,
         theme: AppTheme
     ) -> some View {
-        if #available(iOS 16.0, macOS 13.0, *) {
+        if #available(iOS 16.0, macCatalyst 16.0, *) {
             RootHeaderActionRowLayout {
                 RootHeaderActionSegment {
                     leading
@@ -657,9 +657,5 @@ struct RootHeaderIconActionButton: View {
         }
         .accessibilityLabel(accessibilityLabel)
         .optionalAccessibilityIdentifier(accessibilityIdentifier)
-#if os(macOS)
-        .buttonBorderShape(.circle)
-        .contentShape(Circle())
-#endif
     }
 }

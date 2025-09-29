@@ -3,7 +3,7 @@
 //  SoFar
 //
 //  Shared calendar components for MijickCalendarView.
-//  Provides custom month and day views plus macOS-specific weekday styling.
+//  Provides custom month and day views for the shared calendar presentation.
 //
 
 import SwiftUI
@@ -120,30 +120,4 @@ struct UBDayView: DayView {
     }
 }
 
-#if os(macOS)
-// MARK: - Weekday label (M T W T F S S)
-struct UBWeekdayLabel: WeekdayLabel {
-    // Required attribute (from WeekdayLabel)
-    let weekday: MWeekday
-
-    @Environment(\.colorScheme) private var scheme
-
-    func createContent() -> AnyView {
-        let base = scheme == .dark ? Color.white : Color.black
-        return AnyView(
-            Text(getString(with: .veryShort))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(base.opacity(0.45))
-        )
-    }
-}
-
-// MARK: - Weekdays row
-struct UBWeekdaysView: WeekdaysView {
-    func createContent() -> AnyView { AnyView(createWeekdaysView()) }
-    func createWeekdayLabel(_ weekday: MWeekday) -> AnyWeekdayLabel {
-        UBWeekdayLabel(weekday: weekday).erased()
-    }
-}
-#endif
 

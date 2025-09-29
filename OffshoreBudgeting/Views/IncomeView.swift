@@ -48,12 +48,23 @@ struct IncomeView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 #endif
 
+    /// Ensures the calendar makes fuller use of vertical space on compact devices and adapts for Catalyst.
+    private var headerBaselineHeight: CGFloat {
 #if os(iOS)
-    /// Ensures the calendar makes fuller use of vertical space on compact devices like iPhone.
-    private let headerBaselineHeight: CGFloat = 92
+    #if targetEnvironment(macCatalyst)
+        return 84
+    #else
+        return 92
+    #endif
+#else
+        return 92
+#endif
+    }
 
     private func isCompactHeightScenario(using proxy: RootTabPageProxy?) -> Bool {
+#if os(iOS)
         if verticalSizeClass == .compact { return true }
+#endif
         if let proxy, proxy.layoutContext.isLandscape { return true }
         return false
     }
@@ -71,22 +82,15 @@ struct IncomeView: View {
     }
 
     private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat {
+#if os(iOS)
         if horizontalSizeClass == .regular { return 440 }
-        if proxy?.layoutContext.isLandscape == true { return 280 }
         if verticalSizeClass == .compact { return 300 }
+#endif
+        if proxy?.layoutContext.isLandscape == true { return 280 }
         return 320
     }
-#else
-    private let headerBaselineHeight: CGFloat = 84
 
-    private func calendarCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 320 }
 
-    private func selectedDayCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 260 }
-
-    private func weeklySummaryCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat { 160 }
-
-    private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat { 340 }
-#endif
 
     private enum CalendarSectionMetrics {
         static let navigationRowHeight: CGFloat = max(
@@ -356,8 +360,7 @@ struct IncomeView: View {
         let end = cal.date(byAdding: .year, value: 5, to: today)!
         VStack(spacing: CalendarSectionMetrics.headerSpacing) {
             HStack(spacing: DS.Spacing.s) {
-                #if os(macOS)
-                if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
+                if #available(iOS 18.0, tvOS 18.0, macCatalyst 18.0, *), capabilities.supportsOS26Translucency {
                     Button("<<") { goToPreviousMonth() }
                         .accessibilityLabel("Previous Month")
                         .incomeCalendarGlassButtonStyle(role: .icon)
@@ -398,92 +401,9 @@ struct IncomeView: View {
                         .accessibilityLabel("Next Month")
                         .incomeCalendarGlassButtonStyle(role: .icon)
                 }
-                #else
-                if #available(iOS 18.0, tvOS 18.0, *), capabilities.supportsOS26Translucency {
-                    Button("<<") { goToPreviousMonth() }
-                        .accessibilityLabel("Previous Month")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button("<") { goToPreviousDay() }
-                        .accessibilityLabel("Previous Day")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button("Today") { goToToday() }
-                        .accessibilityLabel("Jump to Today")
-                        .incomeCalendarGlassButtonStyle(role: .label)
-
-                    Button(">") { goToNextDay() }
-                        .accessibilityLabel("Next Day")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button(">>") { goToNextMonth() }
-                        .accessibilityLabel("Next Month")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-                } else {
-                    Button("<<") { goToPreviousMonth() }
-                        .accessibilityLabel("Previous Month")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button("<") { goToPreviousDay() }
-                        .accessibilityLabel("Previous Day")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button("Today") { goToToday() }
-                        .accessibilityLabel("Jump to Today")
-                        .incomeCalendarGlassButtonStyle(role: .label)
-
-                    Button(">") { goToNextDay() }
-                        .accessibilityLabel("Next Day")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-
-                    Button(">>") { goToNextMonth() }
-                        .accessibilityLabel("Next Month")
-                        .incomeCalendarGlassButtonStyle(role: .icon)
-                }
-                #endif
             }
             .controlSize(.small)
             .frame(height: CalendarSectionMetrics.navigationRowHeight)
-            #if os(macOS)
-            // macOS: attach the configuration closure directly to the call
-            MCalendarView(
-                selectedDate: $viewModel.selectedDate,
-                selectedRange: .constant(nil)
-            ) { config in
-                config
-                    .dayView { date, isCurrentMonth, selectedDate, selectedRange in
-                        UBDayView(
-                            date: date,
-                            isCurrentMonth: isCurrentMonth,
-                            selectedDate: selectedDate,
-                            selectedRange: selectedRange,
-                            summary: viewModel.summary(for: date),
-                            selectedOverride: viewModel.selectedDate
-                        )
-                    }
-                    .firstWeekday(.sunday)
-                    .weekdaysView(UBWeekdaysView.init)
-                    .monthLabel(UBMonthLabel.init)
-                    .startMonth(start)
-                    .endMonth(end)
-                    .scrollTo(date: calendarScrollDate)
-            }
-            .transaction { t in
-                t.animation = nil
-                t.disablesAnimations = true
-            }
-            .animation(nil, value: viewModel.selectedDate)
-            .animation(nil, value: calendarScrollDate)
-            .accessibilityIdentifier("IncomeCalendar")
-            .frame(height: resolvedHeight, alignment: .top)
-            // MARK: Double-click calendar to add income (macOS)
-            .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    beginAddingIncome(for: viewModel.selectedDate ?? today)
-                }
-            )
-            #else
-            // iOS
             MCalendarView(
                 selectedDate: $viewModel.selectedDate,
                 selectedRange: .constant(nil)
@@ -513,7 +433,6 @@ struct IncomeView: View {
             .animation(nil, value: calendarScrollDate)
             .accessibilityIdentifier("IncomeCalendar")
             .frame(height: resolvedHeight, alignment: .top)
-#endif
         }
         .frame(maxWidth: .infinity)
         .layoutPriority(1)
@@ -858,55 +777,6 @@ private extension View {
 
     @ViewBuilder
     func incomeSectionContainerStyle(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
-        #if os(macOS)
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-
-        if capabilities.supportsOS26Translucency, #available(macOS 26.0, *) {
-            self
-                .background(
-                    shape
-                        .fill(theme.secondaryBackground.opacity(0.10))
-                        .background(.thinMaterial, in: shape)
-                )
-                .overlay(
-                    shape
-                        .stroke(Color.white.opacity(0.20), lineWidth: 0.9)
-                        .blendMode(.screen)
-                )
-                .overlay(
-                    shape
-                        .stroke(theme.tertiaryBackground.opacity(0.28), lineWidth: 0.7)
-                )
-                .compositingGroup()
-                .clipShape(shape)
-                .shadow(color: Color.black.opacity(0.12), radius: 18, x: 0, y: 8)
-        } else {
-            self
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            theme.secondaryBackground.opacity(0.96),
-                            theme.secondaryBackground.opacity(0.90)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    in: shape
-                )
-                .overlay(
-                    shape
-                        .stroke(theme.tertiaryBackground.opacity(0.32), lineWidth: 0.8)
-                )
-                .overlay(
-                    shape
-                        .stroke(Color.white.opacity(0.16), lineWidth: 0.9)
-                        .blendMode(.screen)
-                )
-                .compositingGroup()
-                .clipShape(shape)
-                .shadow(color: Color.black.opacity(0.16), radius: 20, x: 0, y: 10)
-        }
-        #else
         self
             .background(
                 theme.secondaryBackground,
@@ -915,9 +785,9 @@ private extension View {
             .compositingGroup()
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .shadow(radius: 1, y: 1)
-        #endif
     }
-}
+
+
 
 // MARK: - Availability Helpers
 private extension View {
@@ -957,7 +827,6 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
             }
             #else
             content.buttonStyle(.plain)
-            #endif
         }
         .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
