@@ -30,16 +30,7 @@ struct OffshoreBudgetingTests {
         )
 
         #expect(provider?.availability == .unknown)
-
-#if os(macOS)
-        if #available(macOS 10.16, *) {
-            #expect(notificationCenter.addObserverCallCount == 1)
-        } else {
-            #expect(notificationCenter.addObserverCallCount == 0)
-        }
-#else
         #expect(notificationCenter.addObserverCallCount == 1)
-#endif
 
         let isInitiallyAvailable = await provider?.resolveAvailability()
         #expect(isInitiallyAvailable == true)
@@ -60,15 +51,7 @@ struct OffshoreBudgetingTests {
         await Task.yield()
 
         #expect(weakProvider == nil)
-#if os(macOS)
-        if #available(macOS 10.16, *) {
-            #expect(notificationCenter.removeObserverCallCount == 1)
-        } else {
-            #expect(notificationCenter.removeObserverCallCount == 0)
-        }
-#else
         #expect(notificationCenter.removeObserverCallCount == 1)
-#endif
     }
 
     // MARK: - ThemeManager

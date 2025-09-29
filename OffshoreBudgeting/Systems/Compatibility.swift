@@ -10,9 +10,6 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-import AppKit
-#endif
 
 // MARK: - Glass Background Policy
 
@@ -114,12 +111,6 @@ extension View {
         } else {
             return self.navigationBarTitleDisplayMode(.inline)
         }
-        #elseif os(macOS)
-        if #available(macOS 13.0, *) {
-            return self.toolbarTitleDisplayMode(.inline)
-        } else {
-            return self
-        }
         #else
         return self
         #endif
@@ -145,9 +136,6 @@ extension View {
         } else {
             self
         }
-        #elseif os(macOS)
-        // macOS does not support `.large` title display mode; leave unchanged.
-        self
         #else
         self
         #endif
@@ -166,21 +154,12 @@ extension View {
     /// Tight, offset shadow for card titles (small 3D lift). Softer gray tone, not harsh black.
     /// Use on text layers: `.ub_cardTitleShadow()`
     func ub_cardTitleShadow() -> some View {
-        #if os(macOS)
-        return self.shadow(
-            color: UBTypography.cardTitleShadowColor,
-            radius: 1.0,
-            x: 0,
-            y: 1.6
-        )
-        #else
         return self.shadow(
             color: UBTypography.cardTitleShadowColor,
             radius: 0.8,
             x: 0,
             y: 1.2
         )
-        #endif
     }
     
     // MARK: ub_compactDatePickerStyle()
@@ -267,10 +246,8 @@ extension View {
     }
 
     /// Applies a platform-aware chrome background to container chrome like TabView bars
-    /// and equivalent macOS tab/tool strip backgrounds, tuned to the provided OS 26
-    /// configuration. On iOS, TabView chrome is customized via UIKit appearance; on macOS,
-    /// we insert an NSVisualEffectView behind the chrome and overlay a subtle tint wash
-    /// so the appearance matches iOS OS26 aesthetics.
+    /// tuned to the provided OS 26 configuration. UIKit-based platforms rely on
+    /// their native appearance APIs, so this modifier becomes a no-op placeholder.
     func ub_chromeGlassBackground(
         baseColor: Color,
         configuration: AppTheme.GlassConfiguration
@@ -316,13 +293,7 @@ extension View {
     /// sheet view chain to avoid flush edges on macOS sheets without
     /// duplicating `#if os(macOS)` in every view.
     func ub_sheetPadding() -> some View {
-        #if os(macOS)
         return self
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-        #else
-        return self
-        #endif
     }
 
     // MARK: ub_pickerBackground()
@@ -386,29 +357,15 @@ private struct UBListStyleLiquidAwareModifier: ViewModifier {
             }
         } else {
             if #available(iOS 16.0, macOS 13.0, *) {
-#if os(macOS)
-                content
-                    .listStyle(.inset)
-                    .scrollContentBackground(.hidden)
-                    .ub_applyListRowSeparators()
-                    .ub_applyCompactSectionSpacingIfAvailable()
-#else
                 content
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
                     .ub_applyListRowSeparators()
                     .ub_applyCompactSectionSpacingIfAvailable()
-#endif
             } else {
-#if os(macOS)
-                content
-                    .listStyle(.inset)
-                    .ub_applyListRowSeparators()
-#else
                 content
                     .listStyle(.insetGrouped)
                     .ub_applyListRowSeparators()
-#endif
             }
         }
     }
@@ -458,8 +415,6 @@ private enum UBListStyleSeparators {
     static var separatorColor: Color {
         #if os(iOS) || os(tvOS)
         return Color(uiColor: .separator)
-        #elseif os(macOS)
-        return Color(nsColor: .separatorColor)
         #else
         return .secondary
         #endif
@@ -497,8 +452,6 @@ private struct UBRootTabNavigationTitleModifier: ViewModifier {
         } else {
             return titled.navigationBarTitleDisplayMode(.inline)
         }
-        #elseif os(macOS)
-        return content.navigationTitle("")
         #else
         return content.navigationTitle(title)
         #endif
@@ -638,7 +591,6 @@ private struct UBNavigationGlassModifier: ViewModifier {
         if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             content
         } else {
-            #if os(iOS)
             if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
@@ -646,23 +598,9 @@ private struct UBNavigationGlassModifier: ViewModifier {
             } else {
                 content
             }
-            #else
-            #if os(macOS)
-            if #available(macOS 13.0, *) {
-                content
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(macToolbarGradientStyle, for: .windowToolbar)
-            } else {
-                content
-            }
-            #else
-            content
-            #endif
-            #endif
         }
     }
 
-    #if os(iOS)
     @available(iOS 16.0, *)
     private var gradientStyle: AnyShapeStyle {
         let highlight = Color.white.opacity(min(configuration.glass.highlightOpacity * 0.6, 0.28))
@@ -677,25 +615,6 @@ private struct UBNavigationGlassModifier: ViewModifier {
             )
         )
     }
-    #endif
-
-    #if os(macOS)
-    @available(macOS 13.0, *)
-    private var macToolbarGradientStyle: AnyShapeStyle {
-        // Slightly lighter than baseColor toward top-left; slightly darker toward bottom-right.
-        let highlight = Color.white.opacity(min(configuration.glass.highlightOpacity * 0.45, 0.22))
-        let mid = baseColor.opacity(min(configuration.liquid.tintOpacity + 0.10, 0.85))
-        let shadow = configuration.glass.shadowColor.opacity(min(configuration.glass.shadowOpacity * 0.60, 0.5))
-
-        return AnyShapeStyle(
-            LinearGradient(
-                colors: [highlight, mid, shadow],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-    }
-    #endif
 }
 
 private struct UBChromeGlassModifier: ViewModifier {
@@ -706,27 +625,7 @@ private struct UBChromeGlassModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        // On macOS 26, draw a subtle chrome glass layer behind the TabView
-        // control region so the top tab strip carries the Liquid Glass look.
-        // On other platforms or classic macOS, leave the content unchanged.
-        if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
-            #if os(macOS) && !targetEnvironment(macCatalyst)
-            if #available(macOS 13.0, *) {
-                content.background(
-                    UBMacChromeGlassBackground(
-                        baseColor: baseColor,
-                        configuration: configuration
-                    )
-                )
-            } else {
-                content
-            }
-            #else
-            content
-            #endif
-        } else {
-            content
-        }
+        content
     }
 }
 
@@ -762,7 +661,6 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
                 )
             )
         } else {
-            #if os(iOS)
             if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
@@ -770,17 +668,6 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
             } else {
                 content
             }
-            #elseif os(macOS)
-            if #available(macOS 13.0, *) {
-                content
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(theme.background, for: .windowToolbar)
-            } else {
-                content
-            }
-            #else
-            content
-            #endif
         }
     }
 }
@@ -808,7 +695,7 @@ private struct UBGlassBackgroundView: View {
     private var baseLayer: some View {
         if capabilities.supportsOS26Translucency {
             if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
-                #if os(iOS) || os(tvOS) || (os(macOS) && !targetEnvironment(macCatalyst))
+                #if os(iOS) || os(tvOS)
                 decoratedGlass
                     .background(configuration.glass.material.shapeStyle)
                 #else
@@ -942,93 +829,6 @@ private struct UBGlassBackgroundView: View {
     }
 }
 
-#if os(macOS) && !targetEnvironment(macCatalyst)
-/// A macOS-only background view that uses NSVisualEffectView to supply the chrome blur
-/// matching the desired AppTheme.GlassConfiguration material, and overlays a subtle
-/// tint wash derived from baseColor so the tab/tool chrome matches iOS OS26 aesthetics.
-private struct UBMacChromeGlassBackground: NSViewRepresentable {
-    let baseColor: Color
-    let configuration: AppTheme.GlassConfiguration
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let v = NSVisualEffectView()
-        v.state = .active
-        v.blendingMode = .behindWindow
-        if #available(macOS 13.0, *) {
-            v.material = configuration.glass.material.visualEffectMaterial
-        } else {
-            v.material = .underWindowBackground
-        }
-
-        // Insert a CALayer overlay to apply the tint wash and subtle highlight.
-        v.wantsLayer = true
-        let layer = CALayer()
-        layer.masksToBounds = true
-        v.layer = layer
-
-        // Create a sublayer for the tint wash.
-        let tintLayer = CALayer()
-        tintLayer.name = "tint-wash"
-        tintLayer.backgroundColor = NSColor(baseColor).withAlphaComponent(CGFloat(min(configuration.liquid.tintOpacity + 0.10, 0.90))).cgColor
-        layer.addSublayer(tintLayer)
-
-        // Create a subtle highlight gradient layer.
-        let highlightLayer = CAGradientLayer()
-        highlightLayer.name = "highlight"
-        highlightLayer.colors = [
-            NSColor.white.withAlphaComponent(CGFloat(min(configuration.glass.highlightOpacity * 0.45, 0.22))).cgColor,
-            NSColor.clear.cgColor
-        ]
-        highlightLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
-        highlightLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
-        layer.addSublayer(highlightLayer)
-
-        // Shadow gradient layer (soft, bottom-right)
-        let shadowLayer = CAGradientLayer()
-        shadowLayer.name = "shadow"
-        shadowLayer.colors = [
-            NSColor.clear.cgColor,
-            NSColor(configuration.glass.shadowColor).withAlphaComponent(CGFloat(min(configuration.glass.shadowOpacity * 0.60, 0.5))).cgColor
-        ]
-        shadowLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
-        shadowLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
-        layer.addSublayer(shadowLayer)
-
-        return v
-    }
-
-    func updateNSView(_ v: NSVisualEffectView, context: Context) {
-        if #available(macOS 13.0, *) {
-            v.material = configuration.glass.material.visualEffectMaterial
-        }
-
-        guard let layer = v.layer else { return }
-        layer.frame = v.bounds
-
-        // Update sublayer frames and colors dynamically.
-        let sublayers = layer.sublayers ?? []
-        let tintLayer = sublayers.first(where: { $0.name == "tint-wash" })
-        let highlightLayer = sublayers.first(where: { $0.name == "highlight" }) as? CAGradientLayer
-        let shadowLayer = sublayers.first(where: { $0.name == "shadow" }) as? CAGradientLayer
-
-        let tintAlpha = CGFloat(min(configuration.liquid.tintOpacity + 0.10, 0.90))
-        (tintLayer)?.frame = layer.bounds
-        (tintLayer)?.backgroundColor = NSColor(baseColor).withAlphaComponent(tintAlpha).cgColor
-
-        highlightLayer?.frame = layer.bounds
-        highlightLayer?.colors = [
-            NSColor.white.withAlphaComponent(CGFloat(min(configuration.glass.highlightOpacity * 0.45, 0.22))).cgColor,
-            NSColor.clear.cgColor
-        ]
-
-        shadowLayer?.frame = layer.bounds
-        shadowLayer?.colors = [
-            NSColor.clear.cgColor,
-            NSColor(configuration.glass.shadowColor).withAlphaComponent(CGFloat(min(configuration.glass.shadowOpacity * 0.60, 0.5))).cgColor
-        ]
-    }
-}
-#endif
 
 private extension Edge.Set {
     var isEmpty: Bool { self == [] }
@@ -1057,12 +857,6 @@ enum UBColor {
     static var cardNeutralTop: Color {
         #if canImport(UIKit)
         return Color(UIColor.secondarySystemBackground) // iOS
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        if #available(macOS 11.0, *) {
-            return Color(nsColor: NSColor.windowBackgroundColor) // macOS
-        } else {
-            return Color.gray.opacity(0.16)
-        }
         #else
         return Color.gray.opacity(0.16)
         #endif
@@ -1072,12 +866,6 @@ enum UBColor {
     static var cardNeutralBottom: Color {
         #if canImport(UIKit)
         return Color(UIColor.tertiarySystemBackground) // iOS
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        if #available(macOS 11.0, *) {
-            return Color(nsColor: NSColor.controlBackgroundColor) // macOS
-        } else {
-            return Color.gray.opacity(0.22)
-        }
         #else
         return Color.gray.opacity(0.22)
         #endif
@@ -1092,12 +880,6 @@ enum UBTypography {
     static var cardTitleStatic: Color {
         #if canImport(UIKit)
         return Color(UIColor.label).opacity(0.92)              // iOS: dark, dynamic
-        #elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
-        if #available(macOS 11.0, *) {
-            return Color(nsColor: NSColor.labelColor).opacity(0.88) // macOS: dark, dynamic
-        } else {
-            return Color.black.opacity(0.85)
-        }
         #else
         return Color.black.opacity(0.9)
         #endif
@@ -1105,11 +887,7 @@ enum UBTypography {
 
     /// Softer, neutral gray for title shadows (avoids harsh pure black).
     static var cardTitleShadowColor: Color {
-        #if os(macOS)
-        return Color(.sRGB, red: 0.12, green: 0.14, blue: 0.17, opacity: 0.28)
-        #else
         return Color(.sRGB, red: 0.16, green: 0.18, blue: 0.22, opacity: 0.22)
-        #endif
     }
 }
 
