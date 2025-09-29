@@ -6,10 +6,8 @@
 
 import SwiftUI
 // MARK: Platform Color Imports
-#if os(iOS) || os(tvOS)
+#if canImport(UIKit)
 import UIKit
-#elseif os(macOS)
-import AppKit
 #endif
 
 // MARK: - DesignSystem (Tokens)
@@ -58,21 +56,13 @@ enum DesignSystem {
         static let cardFill       = Color.gray.opacity(0.08)
 
         // MARK: System‑Aware Container Background
-        /// A dynamic background color that adapts to light/dark mode on each platform.
-        /// On iOS/tvOS this is `secondarySystemBackground`; on macOS it maps to
-        /// `underPageBackgroundColor` (fallback to `windowBackgroundColor` on older targets).
+        /// A dynamic background color that adapts to light/dark mode across UIKit platforms.
         static var containerBackground: Color {
-            #if os(iOS) || os(tvOS)
-            if #available(iOS 13.0, tvOS 13.0, *) {
+            #if canImport(UIKit)
+            if #available(iOS 13.0, macCatalyst 13.0, *) {
                 return Color(UIColor.secondarySystemBackground)
             } else {
                 return Color(UIColor(white: 0.92, alpha: 1.0))
-            }
-            #elseif os(macOS)
-            if #available(macOS 12.0, *) {
-                return Color(nsColor: NSColor.underPageBackgroundColor)
-            } else {
-                return Color(nsColor: NSColor.windowBackgroundColor)
             }
             #else
             return Color.gray.opacity(0.12)
@@ -127,7 +117,7 @@ private struct UBCardContainerModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if platformCapabilities.supportsOS26Translucency {
-            if #available(iOS 15.0, macOS 13.0, tvOS 15.0, *) {
+            if #available(iOS 15.0, macCatalyst 15.0, *) {
                 content
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
