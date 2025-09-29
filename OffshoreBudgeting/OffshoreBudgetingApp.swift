@@ -8,8 +8,6 @@
 import SwiftUI
 #if os(iOS)
 import UIKit
-#elseif os(macOS)
-import AppKit
 #endif
 
 @main
@@ -18,14 +16,11 @@ struct OffshoreBudgetingApp: App {
     @StateObject private var themeManager = ThemeManager()
     private let platformCapabilities = PlatformCapabilities.current
     @Environment(\.colorScheme) private var systemColorScheme
-#if os(macOS)
-    @Environment(\.openWindow) private var openWindow
-#endif
-    
+
     // MARK: Onboarding State
     /// Persisted flag indicating whether the intro flow has been completed.
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
-    
+
     // MARK: Init
     init() {
         CoreDataService.shared.ensureLoaded()
@@ -40,67 +35,80 @@ struct OffshoreBudgetingApp: App {
         labelAppearance.lineBreakMode = .byClipping
 #endif
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            ResponsiveLayoutReader { _ in
-                Group {
-                    if didCompleteOnboarding {
-                        RootTabView()
-                        //OnboardingView()
-                    } else {
-                        OnboardingView()
-                        //RootTabView()
+            configuredScene {
+                ResponsiveLayoutReader { _ in
+                    Group {
+                        if didCompleteOnboarding {
+                            RootTabView()
+                        } else {
+                            OnboardingView()
+                        }
                     }
                 }
-                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-                .environmentObject(themeManager)
-                .environment(\.platformCapabilities, platformCapabilities)
-                // Apply the selected theme's accent color to all controls.
-                // `tint` covers most modern SwiftUI controls, while `accentColor`
-                // is still required for some AppKit-backed macOS components
-                // (e.g., checkboxes, date pickers) to respect the theme.
-                .accentColor(themeManager.selectedTheme.resolvedTint)
-                .tint(themeManager.selectedTheme.resolvedTint)
-                .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
-                .onAppear {
-                    themeManager.refreshSystemAppearance(systemColorScheme)
-                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
-                }
-                .ub_onChange(of: systemColorScheme) { newScheme in
-                    themeManager.refreshSystemAppearance(newScheme)
-                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: newScheme)
-                }
-                .ub_onChange(of: themeManager.selectedTheme) {
-                    SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
-                }
             }
-#if os(macOS)
-            // Ensure macOS text fields default to leading alignment without
-            // dynamically toggling it during editing, which can steal focus.
-            .multilineTextAlignment(.leading)
-#endif
-#if os(macOS)
-            .frame(minWidth: 800, minHeight: 600)
-#endif
         }
-#if os(macOS)
-        .defaultSize(width: 1000, height: 800)
+#if targetEnvironment(macCatalyst)
         .commands {
             CommandGroup(replacing: .help) {
                 Button("Offshore Budgeting Help") {
-                    openWindow(id: "help")
+                    requestHelpScene()
                 }
                 .keyboardShortcut("?", modifiers: .command)
             }
         }
-#endif
-#if os(macOS)
-        Window("Offshore Budgeting Help", id: "help") {
-            HelpView()
+
+        WindowGroup(id: catalystHelpSceneIdentifier) {
+            configuredScene {
+                HelpView()
+            }
         }
+        .handlesExternalEvents(matching: Set(arrayLiteral: helpActivityType))
 #endif
     }
+
+    // MARK: Scene Wiring
+    @ViewBuilder
+    private func configuredScene<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            .environmentObject(themeManager)
+            .environment(\.platformCapabilities, platformCapabilities)
+            // Apply the selected theme's accent color to all controls.
+            // `tint` covers most modern SwiftUI controls, while `accentColor`
+            // is still required for some AppKit-backed macOS components
+            // (e.g., checkboxes, date pickers) to respect the theme.
+            .accentColor(themeManager.selectedTheme.resolvedTint)
+            .tint(themeManager.selectedTheme.resolvedTint)
+            .modifier(ThemedToggleTint(color: themeManager.selectedTheme.toggleTint))
+            .onAppear {
+                themeManager.refreshSystemAppearance(systemColorScheme)
+                SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
+            }
+            .ub_onChange(of: systemColorScheme) { newScheme in
+                themeManager.refreshSystemAppearance(newScheme)
+                SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: newScheme)
+            }
+            .ub_onChange(of: themeManager.selectedTheme) {
+                SystemThemeAdapter.applyGlobalChrome(theme: themeManager.selectedTheme, colorScheme: systemColorScheme)
+            }
+    }
+
+#if targetEnvironment(macCatalyst)
+    private var helpActivityType: String {
+        (Bundle.main.bundleIdentifier ?? "com.offshorebudgeting") + ".help"
+    }
+
+    private var catalystHelpSceneIdentifier: String { "help" }
+
+    private func requestHelpScene() {
+        let activity = NSUserActivity(activityType: helpActivityType)
+        activity.title = "Offshore Budgeting Help"
+        UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil, errorHandler: nil)
+    }
+#endif
 }
 
 #if os(iOS) || os(macOS)
