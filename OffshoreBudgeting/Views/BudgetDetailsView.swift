@@ -395,7 +395,7 @@ private extension BudgetDetailsView {
                             Text(vm.budget?.name ?? "Budget")
                                 .font(.largeTitle.bold())
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.5)
+                                .minimumScaleFactor(0.75)
 
                             if let startDate = vm.budget?.startDate,
                                let endDate = vm.budget?.endDate {

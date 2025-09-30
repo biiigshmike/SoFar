@@ -71,7 +71,7 @@ struct RootTabHeader<Trailing: View>: View {
                 Text(title)
                     .font(.largeTitle.bold())
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .minimumScaleFactor(0.75)
                     .accessibilityAddTraits(.isHeader)
                     .frame(maxWidth: trailingPlacement == .right ? .infinity : nil, alignment: .leading)
             } else if trailingPlacement == .right {

@@ -28,7 +28,7 @@ struct OffshoreBudgetingApp: App {
         // UILabel-backed Text views to shrink when space is constrained.
         let labelAppearance = UILabel.appearance()
         labelAppearance.adjustsFontSizeToFitWidth = true
-        labelAppearance.minimumScaleFactor = 0.5
+        labelAppearance.minimumScaleFactor = 0.75
         labelAppearance.lineBreakMode = .byClipping
     }
 
