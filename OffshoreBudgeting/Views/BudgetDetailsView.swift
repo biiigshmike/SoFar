@@ -1229,7 +1229,7 @@ private extension View {
 }
 
 // MARK: - Currency Formatting Helper
-private enum CurrencyFormatterHelper {
+enum CurrencyFormatterHelper {
     private static let fallbackCurrencyCode = "USD"
 
     static func string(for amount: Double) -> String {
