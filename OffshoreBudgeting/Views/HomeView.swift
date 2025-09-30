@@ -29,6 +29,7 @@ struct HomeView: View {
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
     @State private var homeSort: BudgetDetailsViewModel.SortOption = .dateNewOld
+    @State private var headerContentHeight: CGFloat = 0
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -49,14 +50,20 @@ struct HomeView: View {
         RootTabPageScaffold(
             scrollBehavior: .auto,
             spacing: headerContentSpacing
-        ) { _ in
-            headerSection
+        ) {
+            EmptyView()
         } content: { proxy in
-            contentContainer(
-                proxy: proxy,
-                availableContentHeight: max(proxy.availableHeightBelowHeader, 0)
-            )
+            let availableContentHeight = resolvedAvailableContentHeight(using: proxy)
+
+            VStack(alignment: .leading, spacing: headerContentSpacing) {
+                headerSection
+                contentContainer(
+                    proxy: proxy,
+                    availableContentHeight: availableContentHeight
+                )
+            }
             .frame(maxWidth: .infinity, alignment: .top)
+            .onPreferenceChange(HomeHeaderHeightPreferenceKey.self) { headerContentHeight = $0 }
             .rootTabContentPadding(
                 proxy,
                 horizontal: 0,
@@ -137,6 +144,15 @@ struct HomeView: View {
             onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
         )
         .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(
+                        key: HomeHeaderHeightPreferenceKey.self,
+                        value: proxy.size.height
+                    )
+            }
+        )
     }
 
     // MARK: Toolbar Actions
@@ -342,7 +358,7 @@ struct HomeView: View {
         proxy: RootTabPageProxy,
         availableContentHeight: CGFloat
     ) -> some View {
-        let fallbackHeight = proxy.availableHeightBelowHeader
+        let fallbackHeight = proxy.availableHeight - proxy.headerHeight
         let resolvedHeight = max(availableContentHeight > 0 ? availableContentHeight : fallbackHeight, 1)
 
         RootTabListHostingContainer(height: resolvedHeight) {
@@ -385,6 +401,11 @@ struct HomeView: View {
     }
 
     private var headerContentSpacing: CGFloat { DS.Spacing.s }
+
+    private func resolvedAvailableContentHeight(using proxy: RootTabPageProxy) -> CGFloat {
+        let spacingContribution = headerContentHeight > 0 ? headerContentSpacing : 0
+        return max(proxy.availableHeight - headerContentHeight - spacingContribution, 0)
+    }
 
     private var primarySummary: BudgetSummary? {
         if case .loaded(let summaries) = vm.state {
@@ -726,6 +747,14 @@ private enum HomeHeaderOverviewMetrics {
     static let valueFont: Font = .body.weight(.semibold)
     static let totalValueFont: Font = .title3.weight(.semibold)
     static let fallbackCurrencyCode = "USD"
+}
+
+private struct HomeHeaderHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(0, nextValue())
+    }
 }
 
 // MARK: - Segmented control sizing helpers
