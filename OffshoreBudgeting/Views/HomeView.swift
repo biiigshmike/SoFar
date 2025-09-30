@@ -7,11 +7,12 @@
 //  creating a budget.
 //
 //  Scroll behaviour:
-//  - RootTabPageScaffold owns the primary scroll host so large titles collapse.
-//  - RootTabListHostingContainer constrains BudgetDetailsView to the available
-//    viewport height, letting its Lists own vertical scrolling without nesting.
-//  - The empty state uses a VStack sized to the available height so the
-//    scaffold’s scroll view can manage reachability on compact devices.
+//  - RootTabPageScaffold now manages the primary scroll host so large titles
+//    collapse naturally.
+//  - BudgetDetailsView accepts the home header so the summary and expense lists
+//    share a single scroll container.
+//  - Empty periods reuse the same header and place their CTA directly beneath
+//    the sort controls for consistent alignment.
 //
 
 import SwiftUI
@@ -44,14 +45,13 @@ struct HomeView: View {
     var body: some View {
         // Sticky header is managed by RootTabPageScaffold.
         // - Empty states leverage the scaffold's scroll view for reachability.
-        // - Loaded budgets run through RootTabListHostingContainer so Lists keep
-        //   control of vertical scrolling without nested scroll views.
+        // - Loaded budgets embed the overview header within BudgetDetailsView so
+        //   the summary and expense lists share a single scroll container.
         RootTabPageScaffold(
             scrollBehavior: .auto,
-            spacing: headerContentSpacing,
-            wrapsContentInScrollView: false
-        ) {
-            headerSection
+            spacing: 0
+        ) { _ in
+            EmptyView()
         } content: { proxy in
             contentContainer(proxy: proxy)
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -124,7 +124,8 @@ struct HomeView: View {
         .alert(item: $vm.alert, content: alert(for:))
     }
 
-    private var headerSection: some View {
+    @ViewBuilder
+    private func homeOverviewHeader(for summary: BudgetSummary?) -> some View {
         VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
@@ -133,15 +134,14 @@ struct HomeView: View {
             )
 
             HomeHeaderOverviewTable(
-                summary: primarySummary,
+                summary: summary,
                 displayTitle: periodHeaderTitle,
                 displayDetail: periodRangeDetail,
-                categorySpending: headerCategoryBreakdown,
+                categorySpending: headerCategoryBreakdown(for: summary),
                 selectedSegment: $selectedSegment,
                 sort: $homeSort,
                 periodNavigationTitle: title(for: vm.selectedDate),
                 onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
-
             )
             .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
@@ -302,10 +302,7 @@ struct HomeView: View {
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-                    loadedBudgetContent(
-                        for: first,
-                        proxy: proxy
-                    )
+                    loadedBudgetContent(for: first)
                 } else {
                     emptyPeriodContent(proxy: proxy)
                 }
@@ -318,57 +315,59 @@ struct HomeView: View {
     private func emptyPeriodContent(proxy: RootTabPageProxy) -> some View {
         let availableContentHeight = proxy.availableHeightBelowHeader
 
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            // Always-offer Add button when no budget exists so users can
-            // quickly create an expense for this period.
-            GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
-                Button(action: addExpenseCTAAction) {
-                    Label(addExpenseCTATitle, systemImage: "plus")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity)
+        VStack(alignment: .leading, spacing: DS.Spacing.l) {
+            homeOverviewHeader(for: nil)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                // Always-offer Add button when no budget exists so users can
+                // quickly create an expense for this period.
+                GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                    Button(action: addExpenseCTAAction) {
+                        Label(addExpenseCTATitle, systemImage: "plus")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
+
+                // Segment-specific guidance — centered consistently across platforms
+                Text(emptyShellMessage)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, DS.Spacing.l)
+
+                Spacer(minLength: 0)
             }
-
-            // Segment-specific guidance — centered consistently across platforms
-            Text(emptyShellMessage)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, DS.Spacing.l)
-
-            Spacer(minLength: 0)
+            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
-        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(minHeight: availableContentHeight, alignment: .top)
     }
 
     @ViewBuilder
     private func loadedBudgetContent(
-        for summary: BudgetSummary,
-        proxy: RootTabPageProxy
+        for summary: BudgetSummary
     ) -> some View {
-        let resolvedHeight = max(proxy.availableHeightBelowHeader, 1)
-
-        RootTabListHostingContainer(height: resolvedHeight) {
-            BudgetDetailsView(
-                budgetObjectID: summary.id,
-                periodNavigation: nil,
-                displaysBudgetTitle: false,
-                headerTopPadding: DS.Spacing.xs,
-                appliesSurfaceBackground: false,
-                showsCategoryChips: false,
-                selectedSegment: $selectedSegment,
-                sort: $homeSort,
-                onSegmentChange: { newSegment in
-                    self.selectedSegment = newSegment
-                }
-            )
-            .id(summary.id)
-            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
-        }
+        BudgetDetailsView(
+            budgetObjectID: summary.id,
+            periodNavigation: nil,
+            displaysBudgetTitle: false,
+            headerTopPadding: DS.Spacing.xs,
+            appliesSurfaceBackground: false,
+            showsCategoryChips: false,
+            selectedSegment: $selectedSegment,
+            sort: $homeSort,
+            onSegmentChange: { newSegment in
+                self.selectedSegment = newSegment
+            },
+            header: {
+                homeOverviewHeader(for: summary)
+            }
+        )
+        .id(summary.id)
+        .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
     }
     // MARK: Helpers
     private func title(for date: Date) -> String {
@@ -388,10 +387,8 @@ struct HomeView: View {
         return "\(f.string(from: start)) through \(f.string(from: end))"
     }
 
-    private var headerContentSpacing: CGFloat { 0 }
-
-    private var headerCategoryBreakdown: [BudgetSummary.CategorySpending] {
-        guard let summary = primarySummary else { return [] }
+    private func headerCategoryBreakdown(for summary: BudgetSummary?) -> [BudgetSummary.CategorySpending] {
+        guard let summary else { return [] }
         if selectedSegment == .planned {
             return summary.plannedCategoryBreakdown
         } else {
@@ -430,30 +427,6 @@ struct HomeView: View {
 
     private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: NSManagedObjectID) {
         NotificationCenter.default.post(name: notificationName, object: budgetID)
-    }
-}
-
-// MARK: - RootTab Independent List Container
-/// Bridges RootTabPageScaffold with child views that manage their own scrolling
-/// (e.g., List) by constraining them to the available viewport height.
-private struct RootTabListHostingContainer<Content: View>: View {
-    private let height: CGFloat
-    private let content: Content
-
-    init(height: CGFloat, @ViewBuilder content: () -> Content) {
-        self.height = max(height, 1)
-        self.content = content()
-    }
-
-    var body: some View {
-        Color.clear
-            .frame(maxWidth: .infinity)
-            .frame(height: height, alignment: .top)
-            .overlay(alignment: .top) {
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .frame(height: height, alignment: .top)
-            }
     }
 }
 
