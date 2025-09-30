@@ -614,7 +614,13 @@ private struct UBChromeBackgroundModifier: ViewModifier {
         if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
             content
         } else {
-            content.background(theme.background)
+            if #available(iOS 16.0, *) {
+                content
+                    .toolbarBackground(.visible, for: .tabBar)
+                    .toolbarBackground(theme.background, for: .tabBar)
+            } else {
+                content.background(theme.background)
+            }
         }
     }
 }
