@@ -604,7 +604,10 @@ private struct HomeHeaderOverviewTable: View {
     }
 
     private var segmentPicker: some View {
-        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s) {
+        GlassCapsuleContainer(
+            horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
+            verticalPadding: DS.Spacing.s
+        ) {
             Picker("", selection: $selectedSegment) {
                 Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
                 Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
@@ -617,7 +620,11 @@ private struct HomeHeaderOverviewTable: View {
     }
 
     private var sortPicker: some View {
-        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+        GlassCapsuleContainer(
+            horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
+            verticalPadding: DS.Spacing.s,
+            alignment: .center
+        ) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
@@ -691,6 +698,7 @@ private enum HomeHeaderOverviewMetrics {
     static let metricRowSpacing: CGFloat = DS.Spacing.xs
     static let metricGroupSpacing: CGFloat = DS.Spacing.xs
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
+    static let controlHorizontalPadding: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 1
     static let titleMinimumScaleFactor: CGFloat = 0.6
