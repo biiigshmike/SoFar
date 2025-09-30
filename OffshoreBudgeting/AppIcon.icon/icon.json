@@ -2,6 +2,7 @@
   "fill" : "automatic",
   "groups" : [
     {
+      "blend-mode" : "normal",
       "layers" : [
         {
           "blend-mode-specializations" : [
@@ -13,26 +14,47 @@
               "value" : "normal"
             }
           ],
-          "fill-specializations" : [
+          "fill" : "none",
+          "glass" : true,
+          "hidden-specializations" : [
             {
-              "value" : "automatic"
+              "idiom" : "square",
+              "value" : false
+            }
+          ],
+          "image-name" : "ChatGPT Image Sep 30, 2025 at 11_32_01 AM.png",
+          "name" : "ChatGPT Image Sep 30, 2025 at 11_32_01 AM",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 1
+            }
+          ],
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1.25,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "image-name" : "ChatGPT Image Sep 30, 2025 at 11_44_38 AM 2.png",
+          "name" : "ChatGPT Image Sep 30, 2025 at 11_44_38 AM 2",
+          "opacity-specializations" : [
+            {
+              "value" : 0
             },
             {
               "appearance" : "dark",
-              "value" : "automatic"
+              "value" : 1
             }
           ],
-          "glass-specializations" : [
-            {
-              "value" : true
-            },
-            {
-              "appearance" : "dark",
-              "value" : true
-            }
-          ],
-          "image-name" : "Offshore Budgeting Icon Design.png",
-          "name" : "Offshore Budgeting Icon Design",
           "position-specializations" : [
             {
               "idiom" : "square",
@@ -47,10 +69,13 @@
           ]
         }
       ],
+      "lighting" : "individual",
+      "name" : "Group",
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
@@ -58,9 +83,6 @@
     }
   ],
   "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
     "squares" : "shared"
   }
 }

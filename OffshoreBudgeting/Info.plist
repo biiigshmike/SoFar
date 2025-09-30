@@ -2,17 +2,38 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-        <key>BGTaskSchedulerPermittedIdentifiers</key>
-        <array>
-                <string>com.mbrown.OffshoreBudgeting.refresh</string>
-                <string>com.mbrown.OffshoreBudgeting.processing</string>
-        </array>
-        <key>CFBundleVersion</key>
-        <string>$(CURRENT_PROJECT_VERSION)</string>
-        <key>NSServices</key>
-        <array>
-                <dict/>
-        </array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string></string>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AlternateIconSet</string>
+			</array>
+		</dict>
+	</dict>
+	<key>CFBundleAlternateIcons</key>
+	<dict>
+		<key>LightIcon</key>
+		<string>LightIcon</string>
+		<key>DarkIcon</key>
+		<string>DarkIcon</string>
+		<key>TintedIcon</key>
+		<string>TintedIcon</string>
+	</dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.mbrown.OffshoreBudgeting.refresh</string>
+		<string>com.mbrown.OffshoreBudgeting.processing</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSServices</key>
+	<array>
+		<dict/>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
