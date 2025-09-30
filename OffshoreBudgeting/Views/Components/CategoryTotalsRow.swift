@@ -11,6 +11,7 @@ import SwiftUI
 /// Horizontally scrolling pills showing spend per category.
 struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
+    var isPlaceholder: Bool = false
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -36,6 +37,8 @@ struct CategoryTotalsRow: View {
         }
         .ub_hideScrollIndicators()
         .frame(minHeight: chipRowMinHeight)
+        .opacity(isPlaceholder ? 0 : 1)
+        .accessibilityHidden(isPlaceholder)
     }
 
     // Slightly larger, easier to read, and fills the row visually.
