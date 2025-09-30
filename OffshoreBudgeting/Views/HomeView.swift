@@ -518,12 +518,15 @@ private struct HomeHeaderOverviewTable: View {
             Text(displayTitle)
                 .font(HomeHeaderOverviewMetrics.titleFont)
                 .lineLimit(HomeHeaderOverviewMetrics.titleLineLimit)
+                .layoutPriority(2)
+                .fixedSize(horizontal: true, vertical: false)
                 .minimumScaleFactor(HomeHeaderOverviewMetrics.titleMinimumScaleFactor)
 
             Text(displayDetail)
                 .font(HomeHeaderOverviewMetrics.subtitleFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(HomeHeaderOverviewMetrics.subtitleLineLimit)
+                .layoutPriority(0)
                 .minimumScaleFactor(HomeHeaderOverviewMetrics.subtitleMinimumScaleFactor)
         }
         .accessibilityElement(children: .combine)
@@ -732,10 +735,10 @@ private enum HomeHeaderOverviewMetrics {
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 1
-    static let titleMinimumScaleFactor: CGFloat = 0.65
+    static let titleMinimumScaleFactor: CGFloat = 0.75
     static let subtitleFont: Font = .callout
     static let subtitleLineLimit: Int = 1
-    static let subtitleMinimumScaleFactor: CGFloat = 0.85
+    static let subtitleMinimumScaleFactor: CGFloat = 0.75
     static let labelFont: Font = .caption.weight(.semibold)
     static let valueFont: Font = .body.weight(.semibold)
     static let totalValueFont: Font = .title3.weight(.semibold)
