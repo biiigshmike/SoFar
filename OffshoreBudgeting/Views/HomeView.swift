@@ -569,7 +569,8 @@ private struct HomeHeaderOverviewTable: View {
     private var categoryRow: some View {
         CategoryTotalsRow(
             categories: categorySpending,
-            isPlaceholder: categorySpending.isEmpty
+            isPlaceholder: categorySpending.isEmpty,
+            horizontalInset: 0
         )
         .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
     }

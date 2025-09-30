@@ -4,7 +4,6 @@
 //
 //  Shared horizontal chip row displaying spending per category.
 //
-
 import SwiftUI
 
 // MARK: - CategoryTotalsRow
@@ -12,6 +11,7 @@ import SwiftUI
 struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
     var isPlaceholder: Bool = false
+    var horizontalInset: CGFloat = DS.Spacing.l
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -33,7 +33,7 @@ struct CategoryTotalsRow: View {
                     )
                 }
             }
-            .padding(.horizontal, DS.Spacing.l)
+            .padding(.horizontal, horizontalInset)
         }
         .ub_hideScrollIndicators()
         .frame(minHeight: chipRowMinHeight)
