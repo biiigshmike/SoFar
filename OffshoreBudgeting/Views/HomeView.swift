@@ -299,7 +299,7 @@ struct HomeView: View {
 
             case .loaded(let summaries):
                 if let first = summaries.first {
-                    loadedBudgetContent(for: first)
+                    loadedBudgetContent(for: first, proxy: proxy)
                 } else {
                     emptyPeriodContent(proxy: proxy)
                 }
@@ -347,9 +347,15 @@ struct HomeView: View {
 
     @ViewBuilder
     private func loadedBudgetContent(
-        for summary: BudgetSummary
+        for summary: BudgetSummary,
+        proxy: RootTabPageProxy
     ) -> some View {
         homeHeaderPage(for: summary, topPaddingStyle: .contentEmbedded) { header in
+            let bottomInset = proxy.tabContentBottomPadding(
+                includeSafeArea: false,
+                tabBarGutter: proxy.compactAwareTabBarGutter
+            )
+
             BudgetDetailsView(
                 budgetObjectID: summary.id,
                 periodNavigation: nil,
@@ -368,6 +374,11 @@ struct HomeView: View {
             )
             .id(summary.id)
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear
+                    .frame(height: bottomInset)
+                    .allowsHitTesting(false)
+            }
         }
     }
     // MARK: Helpers
