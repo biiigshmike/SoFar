@@ -30,6 +30,7 @@ struct BudgetDetailsView: View {
     private let showsCategoryChips: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
     private let embeddedListHeader: AnyView?
+    private let embeddedHeaderManagesPadding: Bool
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
 
@@ -93,6 +94,7 @@ struct BudgetDetailsView: View {
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        headerManagesPadding: Bool = false,
         header: AnyView? = nil
     ) {
         self.budgetObjectID = budgetObjectID
@@ -103,6 +105,7 @@ struct BudgetDetailsView: View {
         self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
         self.embeddedListHeader = header
+        self.embeddedHeaderManagesPadding = headerManagesPadding
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
@@ -119,6 +122,7 @@ struct BudgetDetailsView: View {
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        headerManagesPadding: Bool = false,
         header: AnyView? = nil
     ) {
         self.budgetObjectID = viewModel.budgetObjectID
@@ -129,6 +133,7 @@ struct BudgetDetailsView: View {
         self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
         self.embeddedListHeader = header
+        self.embeddedHeaderManagesPadding = headerManagesPadding
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: viewModel)
@@ -144,6 +149,7 @@ struct BudgetDetailsView: View {
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        headerManagesPadding: Bool = false,
         @ViewBuilder header headerBuilder: @escaping () -> Header
     ) {
         self.init(
@@ -156,6 +162,7 @@ struct BudgetDetailsView: View {
             selectedSegment: selectedSegment,
             sort: sort,
             onSegmentChange: onSegmentChange,
+            headerManagesPadding: headerManagesPadding,
             header: AnyView(headerBuilder())
         )
     }
@@ -170,6 +177,7 @@ struct BudgetDetailsView: View {
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        headerManagesPadding: Bool = false,
         @ViewBuilder header headerBuilder: @escaping () -> Header
     ) {
         self.init(
@@ -182,6 +190,7 @@ struct BudgetDetailsView: View {
             selectedSegment: selectedSegment,
             sort: sort,
             onSegmentChange: onSegmentChange,
+            headerManagesPadding: headerManagesPadding,
             header: AnyView(headerBuilder())
         )
     }
@@ -212,7 +221,8 @@ struct BudgetDetailsView: View {
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
                             onTotalsChanged: { Task { await vm.refreshRows() } },
-                            header: embeddedListHeader
+                            header: embeddedListHeader,
+                            headerManagesPadding: embeddedHeaderManagesPadding
                         )
                     } else {
                         placeholderView()
@@ -230,7 +240,8 @@ struct BudgetDetailsView: View {
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
                         onTotalsChanged: { Task { await vm.refreshRows() } },
-                        header: embeddedListHeader
+                        header: embeddedListHeader,
+                        headerManagesPadding: embeddedHeaderManagesPadding
                     )
                 }
             }
@@ -712,6 +723,7 @@ private struct PlannedListFR: View {
     private let onAddTapped: () -> Void
     private let onTotalsChanged: () -> Void
     private let header: AnyView?
+    private let headerManagesPadding: Bool
     @State private var editingItem: PlannedExpense?
     @State private var itemToDelete: PlannedExpense?
     @State private var showDeleteAlert = false
@@ -730,12 +742,14 @@ private struct PlannedListFR: View {
         sort: BudgetDetailsViewModel.SortOption,
         onAddTapped: @escaping () -> Void,
         onTotalsChanged: @escaping () -> Void,
-        header: AnyView? = nil
+        header: AnyView? = nil,
+        headerManagesPadding: Bool = false
     ) {
         self.sort = sort
         self.onAddTapped = onAddTapped
         self.onTotalsChanged = onTotalsChanged
         self.header = header
+        self.headerManagesPadding = headerManagesPadding
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<PlannedExpense> = NSFetchRequest(entityName: "PlannedExpense")
@@ -760,7 +774,7 @@ private struct PlannedListFR: View {
                 // MARK: Compact empty state (single Add button)
                 List {
                     if let header {
-                        headerSection(header)
+                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     BudgetListEmptyStateSection(message: "No planned expenses in this period.") {
                         addActionButton(title: "Add Planned Expense", action: onAddTapped)
@@ -774,7 +788,7 @@ private struct PlannedListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        headerSection(header)
+                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     listRows(items: items)
                 }
@@ -887,16 +901,20 @@ private struct PlannedListFR: View {
 
     // Header row used inside the List. Hide separator and remove extra bottom inset.
     @ViewBuilder
-    private func headerListRow(_ header: AnyView) -> some View {
+    private func headerListRow(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
         header
-            .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
+            .listRowInsets(
+                applyDefaultInsets
+                    ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
+                    : EdgeInsets()
+            )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
     }
 
     @ViewBuilder
-    private func headerSection(_ header: AnyView) -> some View {
-        Section { headerListRow(header) }
+    private func headerSection(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
+        Section { headerListRow(header, applyDefaultInsets: applyDefaultInsets) }
             .ifAvailableContentMarginsZero()
     }
 
@@ -1001,6 +1019,7 @@ private struct VariableListFR: View {
     private let onAddTapped: () -> Void
     private let onTotalsChanged: () -> Void
     private let header: AnyView?
+    private let headerManagesPadding: Bool
     @State private var editingItem: UnplannedExpense?
     @State private var itemToDelete: UnplannedExpense?
     @State private var showDeleteAlert = false
@@ -1019,13 +1038,15 @@ private struct VariableListFR: View {
         sort: BudgetDetailsViewModel.SortOption,
         onAddTapped: @escaping () -> Void,
         onTotalsChanged: @escaping () -> Void,
-        header: AnyView? = nil
+        header: AnyView? = nil,
+        headerManagesPadding: Bool = false
     ) {
         self.sort = sort
         self.attachedCards = attachedCards
         self.onAddTapped = onAddTapped
         self.onTotalsChanged = onTotalsChanged
         self.header = header
+        self.headerManagesPadding = headerManagesPadding
 
         let (s, e) = Self.clamp(startDate...endDate)
         let req: NSFetchRequest<UnplannedExpense> = NSFetchRequest(entityName: "UnplannedExpense")
@@ -1056,7 +1077,7 @@ private struct VariableListFR: View {
                 // MARK: Compact empty state (single Add button)
                 List {
                     if let header {
-                        headerSection(header)
+                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     BudgetListEmptyStateSection(message: "No variable expenses in this period.") {
                         addActionButton(title: "Add Variable Expense", action: onAddTapped)
@@ -1070,7 +1091,7 @@ private struct VariableListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        headerSection(header)
+                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     listRows(items: items)
                 }
@@ -1174,17 +1195,21 @@ private struct VariableListFR: View {
     // Top header rendered as a normal list row (not a Section header) to keep
     // primary text colors and full-width layout.
     @ViewBuilder
-    private func headerListRow(_ header: AnyView) -> some View {
+    private func headerListRow(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
         header
-            .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
+            .listRowInsets(
+                applyDefaultInsets
+                    ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
+                    : EdgeInsets()
+            )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
     }
 
     @ViewBuilder
-    private func headerSection(_ header: AnyView) -> some View {
+    private func headerSection(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
         Section {
-            headerListRow(header)
+            headerListRow(header, applyDefaultInsets: applyDefaultInsets)
         }
         .ifAvailableContentMarginsZero()
     }
