@@ -891,8 +891,6 @@ private struct PlannedListFR: View {
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
@@ -998,30 +996,8 @@ private struct PlannedListFR: View {
 }
 
 // MARK: - Shared empty list section helper
-private struct BudgetListRowSurface<Content: View>: View {
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.platformCapabilities) private var capabilities
-    private let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        Group {
-            if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
-                content
-                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-            } else {
-                content
-                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
-                    .background(themeManager.selectedTheme.secondaryBackground)
-            }
-        }
-    }
-}
-
 private struct BudgetListRowContainer<Content: View>: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -1029,9 +1005,10 @@ private struct BudgetListRowContainer<Content: View>: View {
     }
 
     var body: some View {
-        BudgetListRowSurface {
-            content
-        }
+        content
+            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            .listRowBackground(Color.clear)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
     }
 }
 
@@ -1062,7 +1039,6 @@ private struct BudgetListEmptyStateSection<Button: View>: View {
                 .padding(.vertical, DS.Spacing.l)
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
         }
         .ifAvailableContentMarginsZero()
@@ -1226,8 +1202,6 @@ private struct VariableListFR: View {
                 }
                 .padding(.vertical, 6)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
