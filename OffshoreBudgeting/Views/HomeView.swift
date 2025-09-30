@@ -363,6 +363,7 @@ struct HomeView: View {
             onSegmentChange: { newSegment in
                 self.selectedSegment = newSegment
             },
+            headerManagesPadding: true,
             header: {
                 homeOverviewHeader(for: summary)
             }
