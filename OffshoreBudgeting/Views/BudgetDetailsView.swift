@@ -798,8 +798,8 @@ private struct PlannedListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
+                .budgetListBottomInset(layoutContext: layoutContext)
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -810,8 +810,8 @@ private struct PlannedListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
+                .budgetListBottomInset(layoutContext: layoutContext)
             }
         }
         .sheet(item: $editingItem) { expense in
@@ -1119,8 +1119,8 @@ private struct VariableListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
+                .budgetListBottomInset(layoutContext: layoutContext)
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -1131,8 +1131,8 @@ private struct VariableListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
+                .budgetListBottomInset(layoutContext: layoutContext)
             }
         }
         .sheet(item: $editingItem) { expense in
@@ -1336,6 +1336,29 @@ private extension View {
     }
 
     @ViewBuilder
+    func budgetListBottomInset(layoutContext: ResponsiveLayoutContext) -> some View {
+        #if os(iOS)
+        #if targetEnvironment(macCatalyst)
+        self
+        #else
+        let inset = BudgetListBottomInsetMetrics.bottomInset(for: layoutContext)
+        if inset > 0 {
+            self.safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: inset)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        } else {
+            self
+        }
+        #endif
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
     func ifAvailableContentMarginsZero() -> some View {
         if #available(iOS 17.0, macCatalyst 17.0, *) {
             self.contentMargins(.vertical, 0)
@@ -1343,6 +1366,30 @@ private extension View {
             self
         }
     }
+}
+
+private enum BudgetListBottomInsetMetrics {
+    #if os(iOS)
+    #if targetEnvironment(macCatalyst)
+    static func bottomInset(for layoutContext: ResponsiveLayoutContext) -> CGFloat { 0 }
+    #else
+    private static let compactTabBarHeight: CGFloat = 49
+    private static let regularTabBarHeight: CGFloat = 49
+
+    static func bottomInset(for layoutContext: ResponsiveLayoutContext) -> CGFloat {
+        let safeArea = layoutContext.safeArea.bottom
+        let sizeClass = layoutContext.horizontalSizeClass ?? .compact
+        let tabBarHeight = sizeClass == .regular ? regularTabBarHeight : compactTabBarHeight
+        if safeArea >= tabBarHeight - 1 {
+            return safeArea
+        } else {
+            return safeArea + tabBarHeight
+        }
+    }
+    #endif
+    #else
+    static func bottomInset(for layoutContext: ResponsiveLayoutContext) -> CGFloat { 0 }
+    #endif
 }
 
 // MARK: - Currency Formatting Helper
