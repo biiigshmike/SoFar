@@ -136,11 +136,12 @@ struct HomeView: View {
                 summary: primarySummary,
                 displayTitle: periodHeaderTitle,
                 displayDetail: periodRangeDetail,
+                categorySpending: headerCategoryBreakdown,
                 selectedSegment: $selectedSegment,
                 sort: $homeSort,
                 periodNavigationTitle: title(for: vm.selectedDate),
-                onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) },
-                categorySpending: headerCategoryBreakdown
+                onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
+
             )
             .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
