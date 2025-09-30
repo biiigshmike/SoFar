@@ -702,10 +702,6 @@ private struct PlannedListFR: View {
     @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    private var containerHeight: CGFloat {
-        max(layoutContext.containerSize.height - (layoutContext.safeArea.top + layoutContext.safeArea.bottom), 0)
-    }
-
     init(
         budget: Budget,
         startDate: Date,
@@ -740,11 +736,22 @@ private struct PlannedListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                emptyStateList(
-                    buttonTitle: "Add Planned Expense",
-                    message: "No planned expenses in this period."
-                )
-            } else {
+                // MARK: Compact empty state (single Add button)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: DS.Spacing.m) {
+                        addActionButton(title: "Add Planned Expense", action: onAddTapped)
+                            .padding(.horizontal, DS.Spacing.l)
+                        Text("No planned expenses in this period.")
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, DS.Spacing.l)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .refreshable { onTotalsChanged() }
+                .ub_ignoreSafeArea(edges: .bottom)
+        } else {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
@@ -756,7 +763,7 @@ private struct PlannedListFR: View {
                 .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
-            }
+        }
         }
         .sheet(item: $editingItem) { expense in
             AddPlannedExpenseView(
@@ -777,37 +784,6 @@ private struct PlannedListFR: View {
         } message: { _ in
             Text("This will remove the planned expense.")
         }
-    }
-
-    @ViewBuilder
-    private func emptyStateList(buttonTitle: String, message: String) -> some View {
-        List {
-            if let header {
-                headerSection(header)
-            }
-            emptyStateRow(buttonTitle: buttonTitle, message: message)
-        }
-        .refreshable { onTotalsChanged() }
-        .styledList()
-        .ub_ignoreSafeArea(edges: .bottom)
-        .applyListHorizontalPadding(capabilities)
-    }
-
-    @ViewBuilder
-    private func emptyStateRow(buttonTitle: String, message: String) -> some View {
-        VStack(spacing: DS.Spacing.m) {
-            addActionButton(title: buttonTitle, action: onAddTapped)
-            Text(message)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, DS.Spacing.l)
-        }
-        .frame(maxWidth: .infinity, minHeight: containerHeight, alignment: .top)
-        .padding(.vertical, DS.Spacing.l)
-        .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
     }
 
     // MARK: Local: Add action button with OS-aware styling
@@ -984,10 +960,6 @@ private struct VariableListFR: View {
     @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
-    private var containerHeight: CGFloat {
-        max(layoutContext.containerSize.height - (layoutContext.safeArea.top + layoutContext.safeArea.bottom), 0)
-    }
-
     init(
         attachedCards: [Card],
         startDate: Date,
@@ -1029,10 +1001,21 @@ private struct VariableListFR: View {
         let items = sorted(rows)
         Group {
             if items.isEmpty {
-                emptyStateList(
-                    buttonTitle: "Add Variable Expense",
-                    message: "No variable expenses in this period."
-                )
+                // MARK: Compact empty state (single Add button)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: DS.Spacing.m) {
+                        addActionButton(title: "Add Variable Expense", action: onAddTapped)
+                            .padding(.horizontal, DS.Spacing.l)
+                        Text("No variable expenses in this period.")
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, DS.Spacing.l)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .refreshable { onTotalsChanged() }
+                .ub_ignoreSafeArea(edges: .bottom)
             } else {
                 // MARK: Real List for native swipe
                 List {
@@ -1067,37 +1050,6 @@ private struct VariableListFR: View {
         } message: { _ in
             Text("This will remove the expense.")
         }
-    }
-
-    @ViewBuilder
-    private func emptyStateList(buttonTitle: String, message: String) -> some View {
-        List {
-            if let header {
-                headerSection(header)
-            }
-            emptyStateRow(buttonTitle: buttonTitle, message: message)
-        }
-        .refreshable { onTotalsChanged() }
-        .styledList()
-        .ub_ignoreSafeArea(edges: .bottom)
-        .applyListHorizontalPadding(capabilities)
-    }
-
-    @ViewBuilder
-    private func emptyStateRow(buttonTitle: String, message: String) -> some View {
-        VStack(spacing: DS.Spacing.m) {
-            addActionButton(title: buttonTitle, action: onAddTapped)
-            Text(message)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, DS.Spacing.l)
-        }
-        .frame(maxWidth: .infinity, minHeight: containerHeight, alignment: .top)
-        .padding(.vertical, DS.Spacing.l)
-        .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
     }
 
     // MARK: Local: Add action button with OS-aware styling
