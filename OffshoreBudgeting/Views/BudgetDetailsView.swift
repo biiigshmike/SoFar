@@ -737,21 +737,19 @@ private struct PlannedListFR: View {
         Group {
             if items.isEmpty {
                 // MARK: Compact empty state (single Add button)
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: DS.Spacing.m) {
-                        addActionButton(title: "Add Planned Expense", action: onAddTapped)
-                            .padding(.horizontal, DS.Spacing.l)
-                        Text("No planned expenses in this period.")
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, DS.Spacing.l)
+                List {
+                    if let header {
+                        headerSection(header)
                     }
-                    .frame(maxWidth: .infinity, alignment: .top)
+                    BudgetListEmptyStateSection(message: "No planned expenses in this period.") {
+                        addActionButton(title: "Add Planned Expense", action: onAddTapped)
+                    }
                 }
                 .refreshable { onTotalsChanged() }
+                .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
-        } else {
+                .applyListHorizontalPadding(capabilities)
+            } else {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
@@ -763,7 +761,7 @@ private struct PlannedListFR: View {
                 .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
                 .applyListHorizontalPadding(capabilities)
-        }
+            }
         }
         .sheet(item: $editingItem) { expense in
             AddPlannedExpenseView(
@@ -941,6 +939,39 @@ private struct PlannedListFR: View {
     }
 }
 
+// MARK: - Shared empty list section helper
+private struct BudgetListEmptyStateSection<Button: View>: View {
+    let message: String
+    private let buttonBuilder: () -> Button
+
+    init(message: String, @ViewBuilder button: @escaping () -> Button) {
+        self.message = message
+        self.buttonBuilder = button
+    }
+
+    var body: some View {
+        Section {
+            VStack(spacing: DS.Spacing.m) {
+                buttonBuilder()
+                    .padding(.horizontal, DS.Spacing.l)
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, DS.Spacing.l)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
+            .padding(.vertical, DS.Spacing.l)
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        }
+        .ifAvailableContentMarginsZero()
+    }
+}
+
 // MARK: - VariableListFR (List-backed; swipe enabled)
 private struct VariableListFR: View {
     @FetchRequest private var rows: FetchedResults<UnplannedExpense>
@@ -1002,20 +1033,18 @@ private struct VariableListFR: View {
         Group {
             if items.isEmpty {
                 // MARK: Compact empty state (single Add button)
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: DS.Spacing.m) {
-                        addActionButton(title: "Add Variable Expense", action: onAddTapped)
-                            .padding(.horizontal, DS.Spacing.l)
-                        Text("No variable expenses in this period.")
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .padding(.horizontal, DS.Spacing.l)
+                List {
+                    if let header {
+                        headerSection(header)
                     }
-                    .frame(maxWidth: .infinity, alignment: .top)
+                    BudgetListEmptyStateSection(message: "No variable expenses in this period.") {
+                        addActionButton(title: "Add Variable Expense", action: onAddTapped)
+                    }
                 }
                 .refreshable { onTotalsChanged() }
+                .styledList()
                 .ub_ignoreSafeArea(edges: .bottom)
+                .applyListHorizontalPadding(capabilities)
             } else {
                 // MARK: Real List for native swipe
                 List {
