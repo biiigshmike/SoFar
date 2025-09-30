@@ -499,12 +499,13 @@ private struct HomeHeaderOverviewTable: View {
                     trailingGridCell { totalValueView }
                 }
 
-                if !categorySpending.isEmpty {
-                    GridRow(alignment: .top) {
-                        CategoryTotalsRow(categories: categorySpending)
-                            .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
-                            .gridCellColumns(2)
-                    }
+                GridRow(alignment: .top) {
+                    CategoryTotalsRow(
+                        categories: categorySpending,
+                        isPlaceholder: categorySpending.isEmpty
+                    )
+                    .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
+                    .gridCellColumns(2)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -647,10 +648,11 @@ private struct HomeHeaderOverviewTable: View {
                 totalValueView
             }
 
-            if !categorySpending.isEmpty {
-                CategoryTotalsRow(categories: categorySpending)
-                    .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
-            }
+            CategoryTotalsRow(
+                categories: categorySpending,
+                isPlaceholder: categorySpending.isEmpty
+            )
+            .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
