@@ -126,12 +126,16 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func homeOverviewHeader(for summary: BudgetSummary?) -> some View {
+    private func homeOverviewHeader(
+        for summary: BudgetSummary?,
+        topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle = .standard
+    ) -> some View {
         VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
                 titleDisplayMode: .hidden,
-                horizontalPadding: RootTabHeaderLayout.defaultHorizontalPadding
+                horizontalPadding: RootTabHeaderLayout.defaultHorizontalPadding,
+                topPaddingStyle: topPaddingStyle
             )
 
             HomeHeaderOverviewTable(
@@ -365,7 +369,10 @@ struct HomeView: View {
             },
             headerManagesPadding: true,
             header: {
-                homeOverviewHeader(for: summary)
+                homeOverviewHeader(
+                    for: summary,
+                    topPaddingStyle: .contentEmbedded
+                )
             }
         )
         .id(summary.id)
