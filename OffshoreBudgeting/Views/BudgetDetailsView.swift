@@ -27,6 +27,7 @@ struct BudgetDetailsView: View {
     private let displaysBudgetTitle: Bool
     private let headerTopPadding: CGFloat
     private let appliesSurfaceBackground: Bool
+    private let showsCategoryChips: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
@@ -87,6 +88,7 @@ struct BudgetDetailsView: View {
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
         appliesSurfaceBackground: Bool = true,
+        showsCategoryChips: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
@@ -96,6 +98,7 @@ struct BudgetDetailsView: View {
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
         self.appliesSurfaceBackground = appliesSurfaceBackground
+        self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
@@ -109,6 +112,7 @@ struct BudgetDetailsView: View {
         displaysBudgetTitle: Bool = true,
         headerTopPadding: CGFloat = DS.Spacing.s,
         appliesSurfaceBackground: Bool = true,
+        showsCategoryChips: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
@@ -118,6 +122,7 @@ struct BudgetDetailsView: View {
         self.displaysBudgetTitle = displaysBudgetTitle
         self.headerTopPadding = headerTopPadding
         self.appliesSurfaceBackground = appliesSurfaceBackground
+        self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
@@ -346,7 +351,7 @@ private extension BudgetDetailsView {
                 .padding(.horizontal, DS.Spacing.l)
             }
 
-            if let summary = vm.summary {
+            if showsCategoryChips, let summary = vm.summary {
                 let categories = vm.selectedSegment == .planned ? summary.plannedCategoryBreakdown : summary.variableCategoryBreakdown
                 if !categories.isEmpty {
                     CategoryTotalsRow(categories: categories)
@@ -641,47 +646,6 @@ private enum BudgetIncomeSavingsSummaryMetrics {
     static let minimumScaleFactor: CGFloat = 0.5
     static let rowSpacing: CGFloat = 5
     static let legacyColumnSpacing: CGFloat = 5
-}
-
-// MARK: - CategoryTotalsRow
-/// Horizontally scrolling pills showing spend per category.
-private struct CategoryTotalsRow: View {
-    let categories: [BudgetSummary.CategorySpending]
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: DS.Spacing.s) {
-                ForEach(categories) { cat in
-                    HStack(spacing: DS.Spacing.s) {
-                        Circle()
-                            .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
-                            .frame(width: chipDotSize, height: chipDotSize)
-                        Text(cat.categoryName)
-                            .font(chipFont)
-                        Text(CurrencyFormatterHelper.string(for: cat.amount))
-                            .font(chipFont)
-                    }
-                    .padding(.horizontal, DS.Spacing.m)
-                    .padding(.vertical, chipVerticalPadding)
-                    .background(
-                        Capsule().fill(DS.Colors.chipFill)
-                    )
-                }
-            }
-            .padding(.horizontal, DS.Spacing.l)
-        }
-        .ub_hideScrollIndicators()
-        .frame(minHeight: chipRowMinHeight)
-    }
-
-    // Slightly larger, easier to read, and fills the row visually.
-    private var chipFont: Font { .footnote.weight(.semibold) }
-
-    private var chipVerticalPadding: CGFloat { 6 }
-
-    private var chipRowMinHeight: CGFloat { 22 }
-
-    private var chipDotSize: CGFloat { 8 }
 }
 
 // MARK: - PlannedListFR (List-backed; swipe enabled)

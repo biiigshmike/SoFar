@@ -125,16 +125,25 @@ struct HomeView: View {
     }
 
     private var headerSection: some View {
-        HomeHeaderOverviewTable(
-            summary: primarySummary,
-            displayTitle: periodHeaderTitle,
-            displayDetail: periodRangeDetail,
-            selectedSegment: $selectedSegment,
-            sort: $homeSort,
-            periodNavigationTitle: title(for: vm.selectedDate),
-            onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
-        )
-        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
+            RootViewTopPlanes(
+                title: "Home",
+                titleDisplayMode: .hidden,
+                horizontalPadding: RootTabHeaderLayout.defaultHorizontalPadding
+            )
+
+            HomeHeaderOverviewTable(
+                summary: primarySummary,
+                displayTitle: periodHeaderTitle,
+                displayDetail: periodRangeDetail,
+                selectedSegment: $selectedSegment,
+                sort: $homeSort,
+                periodNavigationTitle: title(for: vm.selectedDate),
+                onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) },
+                categorySpending: headerCategoryBreakdown
+            )
+            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        }
     }
 
     // MARK: Toolbar Actions
@@ -349,6 +358,7 @@ struct HomeView: View {
                 displaysBudgetTitle: false,
                 headerTopPadding: DS.Spacing.xs,
                 appliesSurfaceBackground: false,
+                showsCategoryChips: false,
                 selectedSegment: $selectedSegment,
                 sort: $homeSort,
                 onSegmentChange: { newSegment in
@@ -377,7 +387,16 @@ struct HomeView: View {
         return "\(f.string(from: start)) through \(f.string(from: end))"
     }
 
-    private var headerContentSpacing: CGFloat { DS.Spacing.s }
+    private var headerContentSpacing: CGFloat { 0 }
+
+    private var headerCategoryBreakdown: [BudgetSummary.CategorySpending] {
+        guard let summary = primarySummary else { return [] }
+        if selectedSegment == .planned {
+            return summary.plannedCategoryBreakdown
+        } else {
+            return summary.variableCategoryBreakdown
+        }
+    }
 
     private var primarySummary: BudgetSummary? {
         if case .loaded(let summaries) = vm.state {
@@ -442,6 +461,7 @@ private struct HomeHeaderOverviewTable: View {
     let summary: BudgetSummary?
     let displayTitle: String
     let displayDetail: String
+    let categorySpending: [BudgetSummary.CategorySpending]
     @Binding var selectedSegment: BudgetDetailsViewModel.Segment
     @Binding var sort: BudgetDetailsViewModel.SortOption
     let periodNavigationTitle: String
@@ -490,6 +510,14 @@ private struct HomeHeaderOverviewTable: View {
                 GridRow(alignment: .lastTextBaseline) {
                     leadingGridCell { totalLabelView }
                     trailingGridCell { totalValueView }
+                }
+
+                if !categorySpending.isEmpty {
+                    GridRow(alignment: .top) {
+                        CategoryTotalsRow(categories: categorySpending)
+                            .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
+                            .gridCellColumns(2)
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -628,6 +656,11 @@ private struct HomeHeaderOverviewTable: View {
                 Spacer()
                 totalValueView
             }
+
+            if !categorySpending.isEmpty {
+                CategoryTotalsRow(categories: categorySpending)
+                    .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -709,6 +742,7 @@ private enum HomeHeaderOverviewMetrics {
     static let legacyRowSpacing: CGFloat = 5
     static let titleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs / 2
     static let legacyTitleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs
+    static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 1
     static let titleMinimumScaleFactor: CGFloat = 0.65
