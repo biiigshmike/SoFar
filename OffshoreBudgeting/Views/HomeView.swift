@@ -606,7 +606,7 @@ private struct HomeHeaderOverviewTable: View {
     private var segmentPicker: some View {
         GlassCapsuleContainer(
             horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-            verticalPadding: DS.Spacing.s
+            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding
         ) {
             Picker("", selection: $selectedSegment) {
                 Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
@@ -622,7 +622,7 @@ private struct HomeHeaderOverviewTable: View {
     private var sortPicker: some View {
         GlassCapsuleContainer(
             horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-            verticalPadding: DS.Spacing.s,
+            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
             alignment: .center
         ) {
             Picker("Sort", selection: $sort) {
@@ -699,6 +699,7 @@ private enum HomeHeaderOverviewMetrics {
     static let metricGroupSpacing: CGFloat = DS.Spacing.xs
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
     static let controlHorizontalPadding: CGFloat = DS.Spacing.s
+    static let controlVerticalPadding: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
     static let titleLineLimit: Int = 1
     static let titleMinimumScaleFactor: CGFloat = 0.6
