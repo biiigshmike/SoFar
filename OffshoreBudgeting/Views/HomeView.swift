@@ -48,8 +48,9 @@ struct HomeView: View {
         // - Loaded budgets embed the overview header within BudgetDetailsView so
         //   the summary and expense lists share a single scroll container.
         RootTabPageScaffold(
-            scrollBehavior: .auto,
-            spacing: 0
+            scrollBehavior: requiresScaffoldScrollHosting ? .always : .auto,
+            spacing: 0,
+            wrapsContentInScrollView: requiresScaffoldScrollHosting
         ) { _ in
             EmptyView()
         } content: { proxy in
@@ -401,6 +402,10 @@ struct HomeView: View {
             return summaries.first
         }
         return nil
+    }
+
+    private var requiresScaffoldScrollHosting: Bool {
+        primarySummary == nil
     }
 
     private var emptyShellMessage: String {
