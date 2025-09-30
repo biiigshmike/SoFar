@@ -6,6 +6,7 @@ enum RootTabHeaderLayout {
     enum TopPaddingStyle {
         case standard
         case navigationBarAligned
+        case contentEmbedded
     }
     enum TrailingPlacement {
         /// Default: title expands to fill and trailing controls are pinned right.
@@ -91,6 +92,8 @@ struct RootTabHeader<Trailing: View>: View {
             return standardTopPadding
         case .navigationBarAligned:
             return navigationBarAlignedTopPadding
+        case .contentEmbedded:
+            return contentEmbeddedTopPadding
         }
     }
 
@@ -110,6 +113,10 @@ struct RootTabHeader<Trailing: View>: View {
         // Keep parity with standard for now; can be tweaked to align with a nav bar if needed.
         return effectiveSafeAreaInsets.top + DS.Spacing.l
         #endif
+    }
+
+    private var contentEmbeddedTopPadding: CGFloat {
+        DS.Spacing.l
     }
 
     private var effectiveSafeAreaInsets: EdgeInsets {
