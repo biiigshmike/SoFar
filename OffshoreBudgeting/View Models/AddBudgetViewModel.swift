@@ -139,13 +139,24 @@ final class AddBudgetViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Private Helpers
+    private func normalizedPeriodBounds() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let normalizedStart = calendar.startOfDay(for: startDate)
+        let endDayStart = calendar.startOfDay(for: endDate)
+        let normalizedEndCandidate = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: endDayStart) ?? endDayStart
+        let normalizedEnd = max(normalizedEndCandidate, normalizedStart)
+        return (normalizedStart, normalizedEnd)
+    }
+
     // MARK: - Private (ADD)
     private func createNewBudget() throws {
         let newBudget = Budget(context: context)
         newBudget.id = newBudget.id ?? UUID()
         newBudget.name = budgetName.trimmingCharacters(in: .whitespacesAndNewlines)
-        newBudget.startDate = startDate
-        newBudget.endDate = endDate
+        let (normalizedStart, normalizedEnd) = normalizedPeriodBounds()
+        newBudget.startDate = normalizedStart
+        newBudget.endDate = normalizedEnd
 
         // Attach selected Cards
         let cardsToAttach = allCards.filter { selectedCardObjectIDs.contains($0.objectID) }
@@ -161,7 +172,7 @@ final class AddBudgetViewModel: ObservableObject {
             cloned.descriptionText = template.descriptionText
             cloned.plannedAmount = template.plannedAmount
             cloned.actualAmount = template.actualAmount
-            cloned.transactionDate = startDate
+            cloned.transactionDate = normalizedStart
             cloned.isGlobal = false
             cloned.globalTemplateID = template.id
             cloned.budget = newBudget
@@ -179,8 +190,9 @@ final class AddBudgetViewModel: ObservableObject {
         }
 
         budget.name = budgetName.trimmingCharacters(in: .whitespacesAndNewlines)
-        budget.startDate = startDate
-        budget.endDate = endDate
+        let (normalizedStart, normalizedEnd) = normalizedPeriodBounds()
+        budget.startDate = normalizedStart
+        budget.endDate = normalizedEnd
 
         // Replace attached Cards with current selection
         let toAttach = allCards.filter { selectedCardObjectIDs.contains($0.objectID) }
@@ -204,7 +216,7 @@ final class AddBudgetViewModel: ObservableObject {
                 cloned.descriptionText = template.descriptionText
                 cloned.plannedAmount = template.plannedAmount
                 cloned.actualAmount = template.actualAmount
-                cloned.transactionDate = startDate
+                cloned.transactionDate = normalizedStart
                 cloned.isGlobal = false
                 cloned.globalTemplateID = tid
                 cloned.budget = budget
