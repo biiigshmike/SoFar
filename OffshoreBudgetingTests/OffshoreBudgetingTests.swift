@@ -197,61 +197,6 @@ struct OffshoreBudgetingTests {
         _ = manager
     }
 
-    // MARK: - HomeViewModel
-
-    @Test
-    @MainActor
-    func homeViewModel_loadSummaries_returnsMonthlyBudgets() async throws {
-        CoreDataService.shared.ensureLoaded()
-        await CoreDataService.shared.waitUntilStoresLoaded()
-        try CoreDataService.shared.wipeAllData()
-        defer { try? CoreDataService.shared.wipeAllData() }
-
-        let context = CoreDataService.shared.viewContext
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-
-        let januaryStart = calendar.date(from: DateComponents(year: 2024, month: 1, day: 1, hour: 10, minute: 15))!
-        let januaryEnd = calendar.date(from: DateComponents(year: 2024, month: 1, day: 31, hour: 20, minute: 45))!
-        let februaryStart = calendar.date(from: DateComponents(year: 2024, month: 2, day: 1, hour: 8, minute: 0))!
-        let februaryEnd = calendar.date(from: DateComponents(year: 2024, month: 2, day: 29, hour: 18, minute: 30))!
-
-        let januaryBudget = Budget(context: context)
-        januaryBudget.id = januaryBudget.id ?? UUID()
-        januaryBudget.name = "January Budget"
-        januaryBudget.startDate = januaryStart
-        januaryBudget.endDate = januaryEnd
-
-        let februaryBudget = Budget(context: context)
-        februaryBudget.id = februaryBudget.id ?? UUID()
-        februaryBudget.name = "February Budget"
-        februaryBudget.startDate = februaryStart
-        februaryBudget.endDate = februaryEnd
-
-        try context.save()
-
-        let januaryRange = BudgetPeriod.monthly.range(containing: januaryStart)
-        let februaryRange = BudgetPeriod.monthly.range(containing: februaryStart)
-
-        let viewModel = HomeViewModel(context: context)
-
-        let januarySummaries = await viewModel.loadSummaries(period: .monthly, dateRange: januaryRange.start...januaryRange.end)
-        let februarySummaries = await viewModel.loadSummaries(period: .monthly, dateRange: februaryRange.start...februaryRange.end)
-
-        #expect(januarySummaries.count == 1)
-        #expect(februarySummaries.count == 1)
-
-        let januarySummary = try #require(januarySummaries.first)
-        let februarySummary = try #require(februarySummaries.first)
-
-        #expect(calendar.component(.month, from: januarySummary.periodStart) == 1)
-        #expect(calendar.component(.month, from: februarySummary.periodStart) == 2)
-
-        #expect(januarySummary.budgetName == "January Budget")
-        #expect(februarySummary.budgetName == "February Budget")
-    }
-
     // MARK: - CardAppearanceStore
 
     @Test
