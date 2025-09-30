@@ -21,34 +21,42 @@ enum SystemThemeAdapter {
     static func applyGlobalChrome(theme: AppTheme, colorScheme: ColorScheme?) {
         guard currentFlavor == .classic else { return }
 
+        let backgroundColor = resolvedBackgroundColor(for: theme, colorScheme: colorScheme)
+
         // UINavigationBar
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
-        if let scheme = colorScheme {
-            let style: UIUserInterfaceStyle = (scheme == .dark) ? .dark : .light
-            let trait = UITraitCollection(userInterfaceStyle: style)
-            let ui = UIColor(theme.background).resolvedColor(with: trait)
-            navAppearance.backgroundColor = ui
-        } else {
-            navAppearance.backgroundColor = UIColor(theme.background)
-        }
+        navAppearance.backgroundColor = backgroundColor
         UINavigationBar.appearance().standardAppearance = navAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
 
         // UIToolbar (avoid custom backgrounds on OS 26; safe on classic)
         let toolAppearance = UIToolbarAppearance()
         toolAppearance.configureWithOpaqueBackground()
-        if let scheme = colorScheme {
-            let style: UIUserInterfaceStyle = (scheme == .dark) ? .dark : .light
-            let trait = UITraitCollection(userInterfaceStyle: style)
-            let ui = UIColor(theme.background).resolvedColor(with: trait)
-            toolAppearance.backgroundColor = ui
-        } else {
-            toolAppearance.backgroundColor = UIColor(theme.background)
-        }
+        toolAppearance.backgroundColor = backgroundColor
         UIToolbar.appearance().standardAppearance = toolAppearance
         UIToolbar.appearance().compactAppearance = toolAppearance
         UIToolbar.appearance().scrollEdgeAppearance = toolAppearance
+
+        // UITabBar
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = backgroundColor
+        tabAppearance.shadowColor = nil
+        let tabBar = UITabBar.appearance()
+        tabBar.standardAppearance = tabAppearance
+        tabBar.scrollEdgeAppearance = tabAppearance
+        tabBar.compactAppearance = tabAppearance
+    }
+
+    private static func resolvedBackgroundColor(for theme: AppTheme, colorScheme: ColorScheme?) -> UIColor {
+        guard let scheme = colorScheme else {
+            return UIColor(theme.background)
+        }
+
+        let style: UIUserInterfaceStyle = (scheme == .dark) ? .dark : .light
+        let trait = UITraitCollection(userInterfaceStyle: style)
+        return UIColor(theme.background).resolvedColor(with: trait)
     }
 }
 
