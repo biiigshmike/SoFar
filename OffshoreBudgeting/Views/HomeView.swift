@@ -48,7 +48,8 @@ struct HomeView: View {
         //   control of vertical scrolling without nested scroll views.
         RootTabPageScaffold(
             scrollBehavior: .auto,
-            spacing: headerContentSpacing
+            spacing: headerContentSpacing,
+            wrapsContentInScrollView: false
         ) {
             headerSection
         } content: { proxy in
