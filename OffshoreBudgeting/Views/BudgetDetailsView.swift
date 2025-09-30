@@ -29,6 +29,7 @@ struct BudgetDetailsView: View {
     private let appliesSurfaceBackground: Bool
     private let showsCategoryChips: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
+    private let embeddedListHeader: AnyView?
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
 
@@ -91,7 +92,8 @@ struct BudgetDetailsView: View {
         showsCategoryChips: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
-        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        header: AnyView? = nil
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
@@ -100,6 +102,7 @@ struct BudgetDetailsView: View {
         self.appliesSurfaceBackground = appliesSurfaceBackground
         self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
+        self.embeddedListHeader = header
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
@@ -115,7 +118,8 @@ struct BudgetDetailsView: View {
         showsCategoryChips: Bool = true,
         selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
         sort: Binding<BudgetDetailsViewModel.SortOption>,
-        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        header: AnyView? = nil
     ) {
         self.budgetObjectID = viewModel.budgetObjectID
         self.periodNavigation = periodNavigation
@@ -124,9 +128,62 @@ struct BudgetDetailsView: View {
         self.appliesSurfaceBackground = appliesSurfaceBackground
         self.showsCategoryChips = showsCategoryChips
         self.onSegmentChange = onSegmentChange
+        self.embeddedListHeader = header
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: viewModel)
+    }
+
+    init<Header: View>(
+        budgetObjectID: NSManagedObjectID,
+        periodNavigation: PeriodNavigationConfiguration? = nil,
+        displaysBudgetTitle: Bool = true,
+        headerTopPadding: CGFloat = DS.Spacing.s,
+        appliesSurfaceBackground: Bool = true,
+        showsCategoryChips: Bool = true,
+        selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
+        sort: Binding<BudgetDetailsViewModel.SortOption>,
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        @ViewBuilder header headerBuilder: @escaping () -> Header
+    ) {
+        self.init(
+            budgetObjectID: budgetObjectID,
+            periodNavigation: periodNavigation,
+            displaysBudgetTitle: displaysBudgetTitle,
+            headerTopPadding: headerTopPadding,
+            appliesSurfaceBackground: appliesSurfaceBackground,
+            showsCategoryChips: showsCategoryChips,
+            selectedSegment: selectedSegment,
+            sort: sort,
+            onSegmentChange: onSegmentChange,
+            header: AnyView(headerBuilder())
+        )
+    }
+
+    init<Header: View>(
+        viewModel: BudgetDetailsViewModel,
+        periodNavigation: PeriodNavigationConfiguration? = nil,
+        displaysBudgetTitle: Bool = true,
+        headerTopPadding: CGFloat = DS.Spacing.s,
+        appliesSurfaceBackground: Bool = true,
+        showsCategoryChips: Bool = true,
+        selectedSegment: Binding<BudgetDetailsViewModel.Segment>,
+        sort: Binding<BudgetDetailsViewModel.SortOption>,
+        onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
+        @ViewBuilder header headerBuilder: @escaping () -> Header
+    ) {
+        self.init(
+            viewModel: viewModel,
+            periodNavigation: periodNavigation,
+            displaysBudgetTitle: displaysBudgetTitle,
+            headerTopPadding: headerTopPadding,
+            appliesSurfaceBackground: appliesSurfaceBackground,
+            showsCategoryChips: showsCategoryChips,
+            selectedSegment: selectedSegment,
+            sort: sort,
+            onSegmentChange: onSegmentChange,
+            header: AnyView(headerBuilder())
+        )
     }
 
     // MARK: Body
@@ -155,7 +212,7 @@ struct BudgetDetailsView: View {
                             sort: vm.sort,
                             onAddTapped: { isPresentingAddPlannedSheet = true },
                             onTotalsChanged: { Task { await vm.refreshRows() } },
-                            header: nil
+                            header: embeddedListHeader
                         )
                     } else {
                         placeholderView()
@@ -173,7 +230,7 @@ struct BudgetDetailsView: View {
                         sort: vm.sort,
                         onAddTapped: { isPresentingAddUnplannedSheet = true },
                         onTotalsChanged: { Task { await vm.refreshRows() } },
-                        header: nil
+                        header: embeddedListHeader
                     )
                 }
             }
