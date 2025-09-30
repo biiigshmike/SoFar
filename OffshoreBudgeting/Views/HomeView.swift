@@ -514,19 +514,18 @@ private struct HomeHeaderOverviewTable: View {
     }
 
     private var titleStack: some View {
-        VStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.titleSpacing) {
+        BudgetHeaderTitleBlock(
+            spacing: HomeHeaderOverviewMetrics.titleSpacing,
+            titleMinimumScaleFactor: HomeHeaderOverviewMetrics.titleMinimumScaleFactor,
+            detailMinimumScaleFactor: HomeHeaderOverviewMetrics.subtitleMinimumScaleFactor
+        ) {
             Text(displayTitle)
                 .font(HomeHeaderOverviewMetrics.titleFont)
-                .lineLimit(HomeHeaderOverviewMetrics.titleLineLimit)
-                .minimumScaleFactor(HomeHeaderOverviewMetrics.titleMinimumScaleFactor)
-
+        } detail: {
             Text(displayDetail)
                 .font(HomeHeaderOverviewMetrics.subtitleFont)
                 .foregroundStyle(.secondary)
-                .lineLimit(HomeHeaderOverviewMetrics.subtitleLineLimit)
-                .minimumScaleFactor(HomeHeaderOverviewMetrics.subtitleMinimumScaleFactor)
         }
-        .accessibilityElement(children: .combine)
     }
 
     private var periodNavigationControlView: some View {
@@ -731,15 +730,60 @@ private enum HomeHeaderOverviewMetrics {
     static let legacyTitleToPeriodNavigationSpacing: CGFloat = DS.Spacing.xs
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
-    static let titleLineLimit: Int = 1
-    static let titleMinimumScaleFactor: CGFloat = 0.65
+    static let titleMinimumScaleFactor: CGFloat = BudgetHeaderTitleLayout.titleMinimumScaleFactor
     static let subtitleFont: Font = .callout
-    static let subtitleLineLimit: Int = 1
-    static let subtitleMinimumScaleFactor: CGFloat = 0.85
+    static let subtitleMinimumScaleFactor: CGFloat = BudgetHeaderTitleLayout.detailMinimumScaleFactor
     static let labelFont: Font = .caption.weight(.semibold)
     static let valueFont: Font = .body.weight(.semibold)
     static let totalValueFont: Font = .title3.weight(.semibold)
     static let fallbackCurrencyCode = "USD"
+}
+
+// MARK: - Shared Header Title Block
+
+struct BudgetHeaderTitleBlock<Title: View, Detail: View>: View {
+    private let spacing: CGFloat
+    private let titleMinimumScaleFactor: CGFloat
+    private let detailMinimumScaleFactor: CGFloat
+    private let title: () -> Title
+    private let detail: () -> Detail
+
+    init(
+        spacing: CGFloat,
+        titleMinimumScaleFactor: CGFloat = BudgetHeaderTitleLayout.titleMinimumScaleFactor,
+        detailMinimumScaleFactor: CGFloat = BudgetHeaderTitleLayout.detailMinimumScaleFactor,
+        @ViewBuilder title: @escaping () -> Title,
+        @ViewBuilder detail: @escaping () -> Detail
+    ) {
+        self.spacing = spacing
+        self.titleMinimumScaleFactor = titleMinimumScaleFactor
+        self.detailMinimumScaleFactor = detailMinimumScaleFactor
+        self.title = title
+        self.detail = detail
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: spacing) {
+            title()
+                .lineLimit(BudgetHeaderTitleLayout.titleLineLimit)
+                .layoutPriority(2)
+                .fixedSize(horizontal: true, vertical: false)
+                .minimumScaleFactor(titleMinimumScaleFactor)
+
+            detail()
+                .lineLimit(BudgetHeaderTitleLayout.detailLineLimit)
+                .layoutPriority(0)
+                .minimumScaleFactor(detailMinimumScaleFactor)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+enum BudgetHeaderTitleLayout {
+    static let titleLineLimit: Int = 1
+    static let detailLineLimit: Int = 1
+    static let titleMinimumScaleFactor: CGFloat = 0.75
+    static let detailMinimumScaleFactor: CGFloat = 0.75
 }
 
 // MARK: - Segmented control sizing helpers
