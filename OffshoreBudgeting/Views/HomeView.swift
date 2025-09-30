@@ -363,7 +363,7 @@ struct HomeView: View {
                     self.selectedSegment = newSegment
                 },
                 headerManagesPadding: true,
-                header: { header },
+                header: header,
                 listHeaderBehavior: .omitsHeader
             )
             .id(summary.id)
