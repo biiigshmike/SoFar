@@ -230,7 +230,7 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func loadSummaries(period: BudgetPeriod, dateRange: ClosedRange<Date>) async -> [BudgetSummary] {
+    private func loadSummaries(period: BudgetPeriod, dateRange: ClosedRange<Date>) async -> [BudgetSummary] {
         await withCheckedContinuation { continuation in
             let backgroundContext = CoreDataService.shared.newBackgroundContext()
             backgroundContext.perform {
@@ -307,16 +307,11 @@ final class HomeViewModel: ObservableObject {
         let req = NSFetchRequest<Budget>(entityName: "Budget")
         let start = range.lowerBound
         let end = range.upperBound
-        let calendar = Calendar.current
-        let normalizedStart = calendar.startOfDay(for: start)
-        let endDayStart = calendar.startOfDay(for: end)
-        let normalizedEndCandidate = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: endDayStart) ?? endDayStart
-        let normalizedEnd = max(normalizedEndCandidate, normalizedStart)
 
-        // Overlap predicate: (startDate <= normalizedEnd) AND (endDate >= normalizedStart)
+        // Overlap predicate: (startDate <= end) AND (endDate >= start)
         req.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "startDate <= %@", normalizedEnd as NSDate),
-            NSPredicate(format: "endDate >= %@", normalizedStart as NSDate)
+            NSPredicate(format: "startDate <= %@", end as NSDate),
+            NSPredicate(format: "endDate >= %@", start as NSDate)
         ])
         req.sortDescriptors = [
             NSSortDescriptor(key: "startDate", ascending: true),
