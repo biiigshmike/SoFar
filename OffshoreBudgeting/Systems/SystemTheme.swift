@@ -49,7 +49,6 @@ enum SystemThemeAdapter {
         tabAppearance.backgroundColor = resolvedBackground
         UITabBar.appearance().standardAppearance = tabAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabAppearance
-        UITabBar.appearance().compactAppearance = tabAppearance
     }
 
     private static func resolvedBackgroundColor(
