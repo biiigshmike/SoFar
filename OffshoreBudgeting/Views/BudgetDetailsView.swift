@@ -384,6 +384,10 @@ struct BudgetDetailsView: View {
 
 // MARK: - Scrolling List Header Content
 private extension BudgetDetailsView {
+    private enum BudgetDetailsHeaderMetrics {
+        static let titleSpacing: CGFloat = 4
+    }
+
     @ViewBuilder
     var listHeader: some View {
         VStack(alignment: .leading, spacing: headerSpacing) {
@@ -391,17 +395,14 @@ private extension BudgetDetailsView {
             if displaysBudgetTitle || shouldShowPeriodNavigation {
                 HStack(alignment: .top, spacing: DS.Spacing.m) {
                     if displaysBudgetTitle {
-                        VStack(alignment: .leading, spacing: 4) {
+                        BudgetHeaderTitleBlock(spacing: BudgetDetailsHeaderMetrics.titleSpacing) {
                             Text(vm.budget?.name ?? "Budget")
                                 .font(.largeTitle.bold())
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.75)
-
+                        } detail: {
                             if let startDate = vm.budget?.startDate,
                                let endDate = vm.budget?.endDate {
                                 Text("\(Self.mediumDate(startDate)) through \(Self.mediumDate(endDate))")
                                     .foregroundStyle(.secondary)
-                                    .lineLimit(1)
                             }
                         }
                     }
