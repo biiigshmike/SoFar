@@ -29,8 +29,14 @@ struct BudgetDetailsView: View {
     private let appliesSurfaceBackground: Bool
     private let showsCategoryChips: Bool
     let onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)?
+    enum ListHeaderBehavior {
+        case rendersHeader
+        case omitsHeader
+    }
+
     private let embeddedListHeader: AnyView?
     private let embeddedHeaderManagesPadding: Bool
+    private let listHeaderBehavior: ListHeaderBehavior
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
 
@@ -95,7 +101,8 @@ struct BudgetDetailsView: View {
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
-        header: AnyView? = nil
+        header: AnyView? = nil,
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
@@ -106,6 +113,7 @@ struct BudgetDetailsView: View {
         self.onSegmentChange = onSegmentChange
         self.embeddedListHeader = header
         self.embeddedHeaderManagesPadding = headerManagesPadding
+        self.listHeaderBehavior = listHeaderBehavior
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
@@ -123,7 +131,8 @@ struct BudgetDetailsView: View {
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
-        header: AnyView? = nil
+        header: AnyView? = nil,
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader
     ) {
         self.budgetObjectID = viewModel.budgetObjectID
         self.periodNavigation = periodNavigation
@@ -134,6 +143,7 @@ struct BudgetDetailsView: View {
         self.onSegmentChange = onSegmentChange
         self.embeddedListHeader = header
         self.embeddedHeaderManagesPadding = headerManagesPadding
+        self.listHeaderBehavior = listHeaderBehavior
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: viewModel)
@@ -150,6 +160,7 @@ struct BudgetDetailsView: View {
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
         @ViewBuilder header headerBuilder: @escaping () -> Header
     ) {
         self.init(
@@ -163,7 +174,8 @@ struct BudgetDetailsView: View {
             sort: sort,
             onSegmentChange: onSegmentChange,
             headerManagesPadding: headerManagesPadding,
-            header: AnyView(headerBuilder())
+            header: AnyView(headerBuilder()),
+            listHeaderBehavior: listHeaderBehavior
         )
     }
 
@@ -178,6 +190,7 @@ struct BudgetDetailsView: View {
         sort: Binding<BudgetDetailsViewModel.SortOption>,
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
         @ViewBuilder header headerBuilder: @escaping () -> Header
     ) {
         self.init(
@@ -191,7 +204,8 @@ struct BudgetDetailsView: View {
             sort: sort,
             onSegmentChange: onSegmentChange,
             headerManagesPadding: headerManagesPadding,
-            header: AnyView(headerBuilder())
+            header: AnyView(headerBuilder()),
+            listHeaderBehavior: listHeaderBehavior
         )
     }
 
@@ -205,7 +219,9 @@ struct BudgetDetailsView: View {
 
             // Always render the header above the list so its size/color
             // remains consistent whether items exist or not.
-            listHeader
+            if listHeaderBehavior == .rendersHeader {
+                listHeader
+            }
 
             // MARK: Lists
             Group {
