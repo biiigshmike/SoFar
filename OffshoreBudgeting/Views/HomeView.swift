@@ -29,6 +29,7 @@ struct HomeView: View {
     private var budgetPeriod: BudgetPeriod { BudgetPeriod(rawValue: budgetPeriodRawValue) ?? .monthly }
     @State private var selectedSegment: BudgetDetailsViewModel.Segment = .planned
     @State private var homeSort: BudgetDetailsViewModel.SortOption = .dateNewOld
+    @State private var headerContentHeight: CGFloat = 0
 
     // MARK: Add Budget Sheet
     @State private var isPresentingAddBudget: Bool = false
@@ -50,16 +51,25 @@ struct HomeView: View {
             scrollBehavior: .auto,
             spacing: headerContentSpacing
         ) {
-            headerSection
+            EmptyView()
         } content: { proxy in
-            contentContainer(proxy: proxy)
-                .frame(maxWidth: .infinity, alignment: .top)
-                .rootTabContentPadding(
-                    proxy,
-                    horizontal: 0,
-                    includeSafeArea: false,
-                    tabBarGutter: proxy.compactAwareTabBarGutter
+            let availableContentHeight = resolvedAvailableContentHeight(using: proxy)
+
+            VStack(alignment: .leading, spacing: headerContentSpacing) {
+                headerSection
+                contentContainer(
+                    proxy: proxy,
+                    availableContentHeight: availableContentHeight
                 )
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .onPreferenceChange(HomeHeaderHeightPreferenceKey.self) { headerContentHeight = $0 }
+            .rootTabContentPadding(
+                proxy,
+                horizontal: 0,
+                includeSafeArea: false,
+                tabBarGutter: proxy.compactAwareTabBarGutter
+            )
         }
         .ub_tabNavigationTitle("Home")
         .toolbar {
@@ -134,6 +144,15 @@ struct HomeView: View {
             onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) }
         )
         .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(
+                        key: HomeHeaderHeightPreferenceKey.self,
+                        value: proxy.size.height
+                    )
+            }
+        )
     }
 
     // MARK: Toolbar Actions
@@ -274,9 +293,7 @@ struct HomeView: View {
     }
 
     // MARK: Content Container
-    private func contentContainer(proxy: RootTabPageProxy) -> some View {
-        let availableHeight = max(proxy.availableHeightBelowHeader, 0)
-
+    private func contentContainer(proxy: RootTabPageProxy, availableContentHeight: CGFloat) -> some View {
         Group {
             switch vm.state {
             case .initial:
@@ -289,17 +306,17 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
             case .empty:
-                emptyPeriodContent(availableHeight: availableHeight)
+                emptyPeriodContent(availableContentHeight: availableContentHeight)
 
             case .loaded(let summaries):
                 if let first = summaries.first {
                     loadedBudgetContent(
                         for: first,
                         proxy: proxy,
-                        availableHeight: availableHeight
+                        availableContentHeight: availableContentHeight
                     )
                 } else {
-                    emptyPeriodContent(availableHeight: availableHeight)
+                    emptyPeriodContent(availableContentHeight: availableContentHeight)
                 }
             }
         }
@@ -307,7 +324,7 @@ struct HomeView: View {
 
     // MARK: Empty Period Content (replaces generic empty state)
     @ViewBuilder
-    private func emptyPeriodContent(availableHeight: CGFloat) -> some View {
+    private func emptyPeriodContent(availableContentHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.m) {
             // Always-offer Add button when no budget exists so users can
             // quickly create an expense for this period.
@@ -332,16 +349,19 @@ struct HomeView: View {
         }
         .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(minHeight: availableHeight, alignment: .top)
+        .frame(minHeight: availableContentHeight, alignment: .top)
     }
 
     @ViewBuilder
     private func loadedBudgetContent(
         for summary: BudgetSummary,
         proxy: RootTabPageProxy,
-        availableHeight: CGFloat
+        availableContentHeight: CGFloat
     ) -> some View {
-        RootTabListHostingContainer(height: max(availableHeight, 1)) {
+        let fallbackHeight = proxy.availableHeight - proxy.headerHeight
+        let resolvedHeight = max(availableContentHeight > 0 ? availableContentHeight : fallbackHeight, 1)
+
+        RootTabListHostingContainer(height: resolvedHeight) {
             BudgetDetailsView(
                 budgetObjectID: summary.id,
                 periodNavigation: nil,
@@ -359,6 +379,8 @@ struct HomeView: View {
         }
     }
 
+
+    private var headerSectionSpacing: CGFloat { DS.Spacing.xs / 2 }
 
     // MARK: Helpers
     private func title(for date: Date) -> String {
@@ -379,6 +401,11 @@ struct HomeView: View {
     }
 
     private var headerContentSpacing: CGFloat { DS.Spacing.s }
+
+    private func resolvedAvailableContentHeight(using proxy: RootTabPageProxy) -> CGFloat {
+        let spacingContribution = headerContentHeight > 0 ? headerContentSpacing : 0
+        return max(proxy.availableHeight - headerContentHeight - spacingContribution, 0)
+    }
 
     private var primarySummary: BudgetSummary? {
         if case .loaded(let summaries) = vm.state {
@@ -720,6 +747,14 @@ private enum HomeHeaderOverviewMetrics {
     static let valueFont: Font = .body.weight(.semibold)
     static let totalValueFont: Font = .title3.weight(.semibold)
     static let fallbackCurrencyCode = "USD"
+}
+
+private struct HomeHeaderHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(0, nextValue())
+    }
 }
 
 // MARK: - Segmented control sizing helpers
