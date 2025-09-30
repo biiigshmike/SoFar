@@ -199,10 +199,11 @@ final class HomeViewModel: ObservableObject {
         await CoreDataService.shared.waitUntilStoresLoaded()
         AppLog.viewModel.debug("HomeViewModel.refresh() continuing – storesLoaded: \(CoreDataService.shared.storesLoaded)")
 
-        let currentPeriod = period
-        let (start, end) = currentPeriod.range(containing: selectedDate)
+        let requestedPeriod = period
+        let requestedDate = selectedDate
+        let (start, end) = requestedPeriod.range(containing: requestedDate)
 
-        let summaries = await loadSummaries(period: currentPeriod, dateRange: start...end)
+        let summaries = await loadSummaries(period: requestedPeriod, dateRange: start...end)
         AppLog.viewModel.debug("HomeViewModel.refresh() finished fetching summaries – count: \(summaries.count)")
 
         // Even if this task was cancelled (for example, by a rapid burst of
@@ -210,17 +211,33 @@ final class HomeViewModel: ObservableObject {
         // have computed summaries so the view never gets stuck showing the
         // "Loading…" placeholder. This mirrors the Budget Details fix and
         // keeps HomeView responsive for non‑iCloud accounts as well.
-        let newState: BudgetLoadState = summaries.isEmpty ? .empty : .loaded(summaries)
-        if self.state != newState {
-            self.state = newState
-            if summaries.isEmpty {
-                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
-            } else {
-                AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+        let calendar = Calendar.current
+        let periodChanged = self.period != requestedPeriod
+        let dateChanged = !calendar.isDate(self.selectedDate, inSameDayAs: requestedDate)
+        if periodChanged || dateChanged {
+            AppLog.viewModel.debug("HomeViewModel.refresh() discarding fetched summaries – selection changed during fetch")
+        } else {
+            let newState: BudgetLoadState = summaries.isEmpty ? .empty : .loaded(summaries)
+            if self.state != newState {
+                self.state = newState
+                if summaries.isEmpty {
+                    AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .empty state")
+                } else {
+                    AppLog.viewModel.debug("HomeViewModel.refresh() transitioning to .loaded state")
+                }
             }
         }
 
         isRefreshing = false
+        if periodChanged || dateChanged {
+            let hadPendingRefresh = needsAnotherRefresh
+            needsAnotherRefresh = false
+            AppLog.viewModel.debug("HomeViewModel.refresh() restarting refresh for updated selection – coalesced: \(hadPendingRefresh)")
+            Task { [weak self] in
+                await self?.refresh()
+            }
+            return
+        }
         if needsAnotherRefresh {
             needsAnotherRefresh = false
             AppLog.viewModel.debug("HomeViewModel.refresh() scheduling coalesced refresh")
