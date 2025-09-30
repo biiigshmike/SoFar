@@ -853,42 +853,44 @@ private struct PlannedListFR: View {
     @ViewBuilder
     private func listRows(items: [PlannedExpense]) -> some View {
         ForEach(items, id: \.objectID) { item in
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
-                // Category color indicator, matching Variable expenses
-                Circle()
-                    .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
-                    .frame(width: 8, height: 8)
+            BudgetListRowContainer {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+                    // Category color indicator, matching Variable expenses
+                    Circle()
+                        .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                        .frame(width: 8, height: 8)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.descriptionText ?? "Untitled")
-                        .font(.title3.weight(.semibold))
-                    if let name = item.expenseCategory?.name {
-                        Text(name)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.descriptionText ?? "Untitled")
+                            .font(.title3.weight(.semibold))
+                        if let name = item.expenseCategory?.name {
+                            Text(name)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text("Planned:")
+                                .font(.footnote.weight(.bold))
+                            Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
+                        }
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text("Actual:")
+                                .font(.footnote.weight(.bold))
+                            Text(CurrencyFormatterHelper.string(for: item.actualAmount))
+                        }
+                        Text(Self.mediumDate(item.transactionDate ?? .distantPast))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                 }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text("Planned:")
-                            .font(.footnote.weight(.bold))
-                        Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
-                    }
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text("Actual:")
-                            .font(.footnote.weight(.bold))
-                        Text(CurrencyFormatterHelper.string(for: item.actualAmount))
-                    }
-                    Text(Self.mediumDate(item.transactionDate ?? .distantPast))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
@@ -902,7 +904,6 @@ private struct PlannedListFR: View {
                     }
                 }
             )
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
         .onDelete { indexSet in
             let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
@@ -995,6 +996,22 @@ private struct PlannedListFR: View {
 }
 
 // MARK: - Shared empty list section helper
+private struct BudgetListRowContainer<Content: View>: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            .listRowBackground(Color.clear)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+    }
+}
+
 private struct BudgetListEmptyStateSection<Button: View>: View {
     let message: String
     private let buttonBuilder: () -> Button
@@ -1006,22 +1023,23 @@ private struct BudgetListEmptyStateSection<Button: View>: View {
 
     var body: some View {
         Section {
-            VStack(spacing: DS.Spacing.m) {
-                buttonBuilder()
-                    .padding(.horizontal, DS.Spacing.l)
-                Text(message)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, DS.Spacing.l)
-                Spacer(minLength: 0)
+            BudgetListRowContainer {
+                VStack(spacing: DS.Spacing.m) {
+                    buttonBuilder()
+                        .padding(.horizontal, DS.Spacing.l)
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, DS.Spacing.l)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
+                .padding(.vertical, DS.Spacing.l)
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
-            .padding(.vertical, DS.Spacing.l)
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
         }
         .ifAvailableContentMarginsZero()
     }
@@ -1157,31 +1175,33 @@ private struct VariableListFR: View {
     @ViewBuilder
     private func listRows(items: [UnplannedExpense]) -> some View {
         ForEach(items, id: \.objectID) { item in
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
-                Circle()
-                    .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
-                    .frame(width: 8, height: 8)
+            BudgetListRowContainer {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+                    Circle()
+                        .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                        .frame(width: 8, height: 8)
 
-                VStack(alignment: .leading) {
-                    Text(item.descriptionText ?? "Untitled")
-                        .font(.title3.weight(.semibold))
-                    if let name = item.expenseCategory?.name {
-                        Text(name)
+                    VStack(alignment: .leading) {
+                        Text(item.descriptionText ?? "Untitled")
+                            .font(.title3.weight(.semibold))
+                        if let name = item.expenseCategory?.name {
+                            Text(name)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing) {
+                        Text(CurrencyFormatterHelper.string(for: item.amount))
+                        Text(Self.mediumDate(item.transactionDate ?? .distantPast))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                 }
-
-                Spacer()
-
-                VStack(alignment: .trailing) {
-                    Text(CurrencyFormatterHelper.string(for: item.amount))
-                    Text(Self.mediumDate(item.transactionDate ?? .distantPast))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 6)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
@@ -1195,7 +1215,6 @@ private struct VariableListFR: View {
                     }
                 }
             )
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
         }
         .onDelete { indexSet in
             let itemsToDelete = indexSet.compactMap { idx in items.indices.contains(idx) ? items[idx] : nil }
