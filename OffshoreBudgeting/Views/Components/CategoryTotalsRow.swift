@@ -12,6 +12,7 @@ struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
     var isPlaceholder: Bool = false
     var horizontalInset: CGFloat = DS.Spacing.l
+    private let controlHeight: CGFloat = 34
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -27,7 +28,7 @@ struct CategoryTotalsRow: View {
                             .font(chipFont)
                     }
                     .padding(.horizontal, DS.Spacing.m)
-                    .padding(.vertical, chipVerticalPadding)
+                    .frame(height: controlHeight)
                     .background(
                         Capsule().fill(DS.Colors.chipFill)
                     )
@@ -36,7 +37,7 @@ struct CategoryTotalsRow: View {
             .padding(.horizontal, horizontalInset)
         }
         .ub_hideScrollIndicators()
-        .frame(minHeight: chipRowMinHeight)
+        .frame(height: controlHeight)
         .opacity(isPlaceholder ? 0 : 1)
         .accessibilityHidden(isPlaceholder)
     }
@@ -44,9 +45,7 @@ struct CategoryTotalsRow: View {
     // Slightly larger, easier to read, and fills the row visually.
     private var chipFont: Font { .footnote.weight(.semibold) }
 
-    private var chipVerticalPadding: CGFloat { 6 }
-
-    private var chipRowMinHeight: CGFloat { 22 }
+    private var chipVerticalPadding: CGFloat { 0 }
 
     private var chipDotSize: CGFloat { 8 }
 }

@@ -838,7 +838,7 @@ private struct PlannedListFR: View {
     // MARK: Local: Add action button with OS-aware styling
     @ViewBuilder
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
-        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.s, verticalPadding: DS.Spacing.s, alignment: .center) {
             Button(action: action) {
                 Label(title, systemImage: "plus")
                     .labelStyle(.titleAndIcon)
@@ -1026,12 +1026,10 @@ private struct BudgetListEmptyStateSection<Button: View>: View {
             BudgetListRowContainer {
                 VStack(spacing: DS.Spacing.m) {
                     buttonBuilder()
-                        .padding(.horizontal, DS.Spacing.l)
                     Text(message)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, DS.Spacing.l)
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -1160,7 +1158,7 @@ private struct VariableListFR: View {
     // MARK: Local: Add action button with OS-aware styling
     @ViewBuilder
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
-        GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+        GlassCapsuleContainer(horizontalPadding: DS.Spacing.s, verticalPadding: DS.Spacing.s, alignment: .center) {
             Button(action: action) {
                 Label(title, systemImage: "plus")
                     .labelStyle(.titleAndIcon)

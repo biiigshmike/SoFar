@@ -325,7 +325,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.m) {
                     // Always-offer Add button when no budget exists so users can
                     // quickly create an expense for this period.
-                    GlassCapsuleContainer(horizontalPadding: DS.Spacing.l, verticalPadding: DS.Spacing.s, alignment: .center) {
+                    GlassCapsuleContainer(horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding, verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding, alignment: .center) {
                         Button(action: addExpenseCTAAction) {
                             Label(addExpenseCTATitle, systemImage: "plus")
                                 .font(.system(size: 17, weight: .semibold, design: .rounded))
@@ -334,17 +334,19 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
 
                     // Segment-specific guidance — centered consistently across platforms
                     Text(emptyShellMessage)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, DS.Spacing.l)
+                        .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
 
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+                // Horizontal padding applied to individual rows above for precise matching
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(minHeight: availableContentHeight, alignment: .top)
