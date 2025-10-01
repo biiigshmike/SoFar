@@ -449,7 +449,7 @@ private struct UBSurfaceBackgroundModifier: ViewModifier {
             )
         } else {
             content.background(
-                theme.background.ub_ignoreSafeArea(edges: ignoresSafeAreaEdges)
+                theme.legacySurfaceFillColor.ub_ignoreSafeArea(edges: ignoresSafeAreaEdges)
             )
         }
     }
@@ -535,9 +535,16 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
             )
         } else {
             if #available(iOS 16.0, *) {
+                let fallbackStyle: AnyShapeStyle
+                if theme == .system {
+                    fallbackStyle = AnyShapeStyle(theme.legacyChromeBackground)
+                } else {
+                    fallbackStyle = theme.legacyNavigationFallbackStyle
+                }
+
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(theme.legacyChromeBackground, for: .navigationBar)
+                    .toolbarBackground(fallbackStyle, for: .navigationBar)
                     .toolbarColorScheme(colorScheme == .dark ? .dark : .light, for: .navigationBar)
             } else {
                 content
