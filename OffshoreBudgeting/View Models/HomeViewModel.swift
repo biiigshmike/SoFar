@@ -150,6 +150,7 @@ final class HomeViewModel: ObservableObject {
     // MARK: Dependencies
     private let context: NSManagedObjectContext
     private let budgetService = BudgetService()
+    private var dataStoreObserver: NSObjectProtocol?
     private var hasStarted = false
     private var isRefreshing = false
     private var needsAnotherRefresh = false
@@ -168,6 +169,17 @@ final class HomeViewModel: ObservableObject {
     func startIfNeeded() {
         guard !hasStarted else { return }
         hasStarted = true
+
+        if dataStoreObserver == nil {
+            dataStoreObserver = NotificationCenter.default.addObserver(
+                forName: .dataStoreDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self else { return }
+                Task { await self.refresh() }
+            }
+        }
 
         // After a 200ms delay, if we are still in the `initial` state,
         // we transition to the `loading` state.
@@ -244,6 +256,12 @@ final class HomeViewModel: ObservableObject {
             Task { [weak self] in
                 await self?.refresh()
             }
+        }
+    }
+
+    deinit {
+        if let observer = dataStoreObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 
