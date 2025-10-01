@@ -21,7 +21,6 @@ struct ExpenseCategoryManagerView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
 
     // MARK: Sorting (extracted to avoid heavy type inference)
@@ -102,7 +101,7 @@ struct ExpenseCategoryManagerView: View {
                     Section {
                         ForEach(categories, id: \.objectID) { category in
                             categoryRow(for: category)
-                                .listRowBackground(themeManager.selectedTheme.formRowBackground(for: colorScheme))
+                                .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                         }
                         .onDelete { offsets in
                             let targets = offsets.map { categories[$0] }
@@ -117,7 +116,7 @@ struct ExpenseCategoryManagerView: View {
                     } footer: {
                         Text("These categories appear when adding unplanned expenses. Colors help visually group spending.")
                     }
-                    .listRowBackground(themeManager.selectedTheme.formRowBackground(for: colorScheme))
+                    .listRowBackground(themeManager.selectedTheme.secondaryBackground)
                 }
                 .listStyle(.insetGrouped)
                 .applyIfAvailableScrollContentBackgroundHidden()
