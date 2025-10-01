@@ -150,7 +150,7 @@ struct PresetsView: View {
             )
             .environment(\.managedObjectContext, viewContext)
         }
-        .ub_tabNavigationTitle("Presets")
+        .navigationTitle("Presets")
     }
 
     private var addPresetToolbarButton: some View {

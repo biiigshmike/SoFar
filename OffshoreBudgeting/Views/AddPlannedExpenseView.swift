@@ -125,13 +125,15 @@ struct AddPlannedExpenseView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.descriptionText, prompt: Text("Electric"))
-                            .ub_noAutoCapsAndCorrection()
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Expense Description")
                     } else {
                         TextField("Rent", text: $vm.descriptionText)
-                            .ub_noAutoCapsAndCorrection()
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Expense Description")
@@ -144,13 +146,13 @@ struct AddPlannedExpenseView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.plannedAmountString, prompt: Text("100"))
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Planned Amount")
                     } else {
                         TextField("2000", text: $vm.plannedAmountString)
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Planned Amount")
@@ -163,13 +165,13 @@ struct AddPlannedExpenseView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.actualAmountString, prompt: Text("102.50"))
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Actual Amount")
                     } else {
                         TextField("102.50", text: $vm.actualAmountString)
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Actual Amount")
@@ -271,7 +273,8 @@ struct AddPlannedExpenseView: View {
                         }
                     )
                 )
-                .ub_noAutoCapsAndCorrection()
+                .autocorrectionDisabled(true)
+                .textInputAutocapitalization(.never)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

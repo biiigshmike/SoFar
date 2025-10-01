@@ -56,7 +56,7 @@ struct CardsView: View {
         // Pull to refresh to manually reload cards
         .refreshable { await viewModel.refresh() }
         // MARK: App Toolbar
-        .ub_tabNavigationTitle("Cards")
+        .navigationTitle("Cards")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 addActionToolbarButton

@@ -113,7 +113,6 @@ struct EditSheetScaffold<Content: View>: View {
         )
         // MARK: Standard sheet behavior (platform-aware)
         .applyDetentsIfAvailable(detents: detents, selection: detentSelectionBinding)
-        .ub_sheetPadding()
     }
 
     // MARK: - Subviews

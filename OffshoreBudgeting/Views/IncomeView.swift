@@ -177,7 +177,7 @@ struct IncomeView: View {
             let initial = viewModel.selectedDate ?? Date()
             navigate(to: initial)
         }
-        .ub_tabNavigationTitle("Income")
+        .navigationTitle("Income")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 addIncomeButton

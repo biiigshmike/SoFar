@@ -113,13 +113,15 @@ struct AddIncomeFormView: View {
             UBFormRow {
                 if #available(iOS 15.0, macCatalyst 15.0, *) {
                     TextField("", text: $viewModel.source, prompt: Text("Paycheck"))
-                        .ub_noAutoCapsAndCorrection()
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Income Source")
                 } else {
                     TextField("Paycheck", text: $viewModel.source)
-                        .ub_noAutoCapsAndCorrection()
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Income Source")
@@ -133,13 +135,13 @@ struct AddIncomeFormView: View {
             UBFormRow {
                 if #available(iOS 15.0, macCatalyst 15.0, *) {
                     TextField("", text: $viewModel.amountInput, prompt: Text("1000"))
-                        .ub_decimalKeyboard()
+                        .keyboardType(.decimalPad)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Income Amount")
                 } else {
                     TextField("1542.75", text: $viewModel.amountInput)
-                        .ub_decimalKeyboard()
+                        .keyboardType(.decimalPad)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("Income Amount")

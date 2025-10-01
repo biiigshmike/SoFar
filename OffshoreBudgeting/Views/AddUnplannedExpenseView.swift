@@ -93,13 +93,15 @@ struct AddUnplannedExpenseView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.descriptionText, prompt: Text("Apple Store"))
-                            .ub_noAutoCapsAndCorrection()
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Expense Description")
                     } else {
                         TextField("Apple Store", text: $vm.descriptionText)
-                            .ub_noAutoCapsAndCorrection()
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Expense Description")
@@ -112,13 +114,13 @@ struct AddUnplannedExpenseView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $vm.amountString, prompt: Text("299.99"))
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Amount")
                     } else {
                         TextField("299.99", text: $vm.amountString)
-                            .ub_decimalKeyboard()
+                            .keyboardType(.decimalPad)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel("Amount")

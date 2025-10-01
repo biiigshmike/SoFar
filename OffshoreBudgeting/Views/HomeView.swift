@@ -40,6 +40,7 @@ struct HomeView: View {
     // Manage sheets
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
+    @State private var isPresentingManageCategories: Bool = false
 
     // MARK: Body
     var body: some View {
@@ -63,7 +64,7 @@ struct HomeView: View {
                     tabBarGutter: proxy.compactAwareTabBarGutter
                 )
         }
-        .ub_tabNavigationTitle("Home")
+        .navigationTitle("Home")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 calendarToolbarMenu()
@@ -122,6 +123,10 @@ struct HomeView: View {
             PresetsView()
                 .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
+        .sheet(isPresented: $isPresentingManageCategories) {
+            ExpenseCategoryManagerView()
+                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
         .alert(item: $vm.alert, content: alert(for:))
     }
 
@@ -139,6 +144,7 @@ struct HomeView: View {
             sort: $homeSort,
             periodNavigationTitle: title(for: vm.selectedDate),
             onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) },
+            onAddCategory: { isPresentingManageCategories = true },
             topPaddingStyle: topPaddingStyle,
             content: content
         )
@@ -445,6 +451,7 @@ private struct HomeHeaderTablePage<Content: View>: View {
     @Binding var sort: BudgetDetailsViewModel.SortOption
     let periodNavigationTitle: String
     let onAdjustPeriod: (Int) -> Void
+    let onAddCategory: () -> Void
     let topPaddingStyle: RootTabHeaderLayout.TopPaddingStyle
     let content: (AnyView) -> Content
 
@@ -470,7 +477,8 @@ private struct HomeHeaderTablePage<Content: View>: View {
                 selectedSegment: $selectedSegment,
                 sort: $sort,
                 periodNavigationTitle: periodNavigationTitle,
-                onAdjustPeriod: onAdjustPeriod
+                onAdjustPeriod: onAdjustPeriod,
+                onAddCategory: onAddCategory
             )
             .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
         }
@@ -487,6 +495,7 @@ private struct HomeHeaderOverviewTable: View {
     @Binding var sort: BudgetDetailsViewModel.SortOption
     let periodNavigationTitle: String
     let onAdjustPeriod: (Int) -> Void
+    let onAddCategory: () -> Void
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
@@ -567,11 +576,32 @@ private struct HomeHeaderOverviewTable: View {
     }
 
     private var categoryRow: some View {
-        CategoryTotalsRow(
-            categories: categorySpending,
-            isPlaceholder: categorySpending.isEmpty,
-            horizontalInset: 0
-        )
+        Group {
+            if categorySpending.isEmpty {
+                // Full-width, pressable capsule to prompt adding a category
+                GlassCapsuleContainer(
+                    horizontalPadding: DS.Spacing.l,
+                    verticalPadding: DS.Spacing.s,
+                    alignment: .center
+                ) {
+                    Button(action: onAddCategory) {
+                        Label("Add Category", systemImage: "plus")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home_add_category_cta")
+                }
+                .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
+            } else {
+                CategoryTotalsRow(
+                    categories: categorySpending,
+                    isPlaceholder: false,
+                    horizontalInset: 0
+                )
+                .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
+            }
+        }
         .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
     }
 
@@ -615,7 +645,6 @@ private struct HomeHeaderOverviewTable: View {
             .pickerStyle(.segmented)
             .equalWidthSegments()
             .frame(maxWidth: .infinity)
-            .modifier(UBSegmentedControlStyleModifier())
         }
     }
 
@@ -635,7 +664,6 @@ private struct HomeHeaderOverviewTable: View {
             .pickerStyle(.segmented)
             .equalWidthSegments()
             .frame(maxWidth: .infinity)
-            .modifier(UBSegmentedControlStyleModifier())
         }
     }
 
@@ -698,6 +726,7 @@ private enum HomeHeaderOverviewMetrics {
     static let metricRowSpacing: CGFloat = DS.Spacing.xs
     static let metricGroupSpacing: CGFloat = DS.Spacing.xs
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
+    static let categoryControlHeight: CGFloat = 34
     static let controlHorizontalPadding: CGFloat = DS.Spacing.s
     static let controlVerticalPadding: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()

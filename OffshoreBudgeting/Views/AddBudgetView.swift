@@ -109,7 +109,8 @@ struct AddBudgetView: View {
                         text: $vm.budgetName,
                         prompt: Text(vm.defaultBudgetName)
                     )
-                    .ub_noAutoCapsAndCorrection()
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.never)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Budget Name")

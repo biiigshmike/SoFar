@@ -37,7 +37,8 @@ struct RenameCardSheet: View {
                 TextField(
                     "", text: $name,
                     prompt: Text("Card Name"))
-                    .ub_noAutoCapsAndCorrection()
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.never)
                     .onAppear { name = originalName }
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

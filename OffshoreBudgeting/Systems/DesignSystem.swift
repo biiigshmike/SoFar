@@ -26,19 +26,6 @@ enum DesignSystem {
     // MARK: Corner Radii
     enum Radius {
         static let card: CGFloat = 16
-        static let chip: CGFloat = 12
-    }
-
-    // MARK: Shadows
-    enum Shadow {
-        static let card = ShadowStyle(radius: 10, y: 4, opacity: 0.08)
-    }
-
-    /// Lightweight shadow value object.
-    struct ShadowStyle {
-        let radius: CGFloat
-        let y: CGFloat
-        let opacity: Double
     }
 
     // MARK: Colors
@@ -50,7 +37,6 @@ enum DesignSystem {
         static let savingsBad     = Color.red
 
         // Neutrals
-        static let metricLabel    = Color.secondary
         static let cardFill       = Color.gray.opacity(0.08)
 
         // MARK: System‑Aware Container Background
@@ -94,50 +80,3 @@ enum DesignSystem {
 
 // Maintain compatibility with existing views using `DS`
 typealias DS = DesignSystem
-
-// MARK: - View Helpers
-extension View {
-    /// Adds the app’s standard “card” background: subtle fill, rounded corners, and soft shadow.
-    func cardBackground() -> some View {
-        modifier(UBCardContainerModifier())
-    }
-}
-
-// MARK: - Private Modifiers
-
-private struct UBCardContainerModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var platformCapabilities
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if platformCapabilities.supportsOS26Translucency {
-            if #available(iOS 15.0, macCatalyst 15.0, *) {
-                content
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                            .fill(DS.Colors.cardFill.opacity(0.45))
-                            .background(
-                                .ultraThinMaterial,
-                                in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                            )
-                    )
-                    .shadow(color: Color.black.opacity(0.04), radius: 18, x: 0, y: 6)
-            } else {
-                legacy(content: content)
-            }
-        } else {
-            legacy(content: content)
-        }
-    }
-
-    @ViewBuilder
-    private func legacy(content: Content) -> some View {
-        content
-            .background(DS.Colors.cardFill)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
-            .shadow(color: .black.opacity(DS.Shadow.card.opacity),
-                    radius: DS.Shadow.card.radius,
-                    x: 0,
-                    y: DS.Shadow.card.y)
-    }
-}

@@ -60,11 +60,9 @@ OffshoreBudgeting/
     CardAppearanceStore.swift
     CardTheme.swift
     Compatibility.swift
-    DesignSystem+Decor.swift
     DesignSystem+Motion.swift
-    DesignSystem+Typography.swift
     DesignSystem.swift
-    HomeHeaderLayoutEnvironment.swift
+    MetallicTextStyles.swift
     IncomeCalendarPalette.swift
     MotionSupport.swift
     OnboardingEnvironment.swift
@@ -179,11 +177,9 @@ __MACOSX/
       ._CardAppearanceStore.swift
       ._CardTheme.swift
       ._Compatibility.swift
-      ._DesignSystem+Decor.swift
       ._DesignSystem+Motion.swift
-      ._DesignSystem+Typography.swift
       ._DesignSystem.swift
-      ._HomeHeaderLayoutEnvironment.swift
+      ._MetallicTextStyles.swift
       ._IncomeCalendarPalette.swift
       ._MotionSupport.swift
       ._OnboardingEnvironment.swift
@@ -314,17 +310,15 @@ __MACOSX/
 - __MACOSX/OffshoreBudgeting/View Models/._SettingsViewModel.swift — types: N/A
 
 ### Systems / Environment / Helpers
-- OffshoreBudgeting/Systems/DesignSystem+Typography.swift — types: Typography
+- OffshoreBudgeting/Systems/MetallicTextStyles.swift — types: UBTypography, UBDecor
 - OffshoreBudgeting/Systems/AppSettings.swift — types: AppSettingsKeys
 - OffshoreBudgeting/Systems/ScrollViewInsetAdjustment.swift — types: UBScrollViewInsetAdjustmentDisabler
 - OffshoreBudgeting/Systems/PlatformCapabilities.swift — types: PlatformCapabilities, PlatformCapabilitiesKey
 - OffshoreBudgeting/Systems/Compatibility.swift — types: UBListStyleLiquidAwareModifier, UBListStyleSeparators, UBPreOS26ListRowBackgroundModifier, UBRootTabNavigationTitleModifier, UBOnChangeWithoutValueModifier
-- OffshoreBudgeting/Systems/HomeHeaderLayoutEnvironment.swift — types: HomeHeaderPillMatchedWidthKey
 - OffshoreBudgeting/Systems/IncomeCalendarPalette.swift — types: UBMonthLabel, UBDayView, UBWeekdayLabel, UBWeekdaysView
 - OffshoreBudgeting/Systems/DesignSystem+Motion.swift — types: Motion
-- OffshoreBudgeting/Systems/DesignSystem.swift — types: DesignSystem, Spacing, Radius, Shadow, ShadowStyle
+- OffshoreBudgeting/Systems/DesignSystem.swift — types: DesignSystem, Spacing, Radius
 - OffshoreBudgeting/Systems/SafeAreaInsetsCompatibility.swift — types: UBSafeAreaInsetsEnvironmentKey, UBSafeAreaInsetsPreferenceKey, UBSafeAreaInsetsReader
-- OffshoreBudgeting/Systems/DesignSystem+Decor.swift — types: Decor
 - OffshoreBudgeting/Systems/MotionSupport.swift — types: MotionMonitor
 - OffshoreBudgeting/Systems/CardTheme.swift — types: CardTheme, BackgroundPattern, DiagonalStripesOverlay, CrossHatchOverlay, GridOverlay
 - OffshoreBudgeting/Systems/ResponsiveLayoutContext.swift — types: ResponsiveLayoutContext, Idiom, ResponsiveLayoutContextKey, ResponsiveLayoutReader, LegacySafeAreaCapture
@@ -333,7 +327,7 @@ __MACOSX/
 - OffshoreBudgeting/Systems/CardAppearanceStore.swift — types: CardAppearanceStore
 - OffshoreBudgeting/Systems/SystemTheme.swift — types: SystemThemeAdapter, Flavor
 - OffshoreBudgeting/Systems/RootTabView.swift — types: RootTabView, Tab, MacToolbarBackgroundModifier, MacRootTabBar, MacTabLabel
-- __MACOSX/OffshoreBudgeting/Systems/._DesignSystem+Typography.swift — types: N/A
+  (Removed: DesignSystem+Typography.swift, DesignSystem+Decor.swift, HomeHeaderLayoutEnvironment.swift)
 
 ## Conventions and constraints
 
@@ -594,9 +588,9 @@ Use the following // MARK anchors to understand intent and safe insertion points
 - // MARK: Display
 - // MARK: Identifiable
 
-**OffshoreBudgeting/Systems/DesignSystem+Typography.swift**
-- // MARK: - DS.Typography
-- // MARK: cardTitleStatic
+**OffshoreBudgeting/Systems/MetallicTextStyles.swift**
+- UBTypography: cardTitleStatic, cardTitleShadowColor
+- UBDecor: metallicSilverLinear, holographicGradient, holographicShine, metallicShine
 
 **OffshoreBudgeting/Systems/AppSettings.swift**
 - // MARK: - AppSettingsKeys
@@ -607,24 +601,18 @@ Use the following // MARK anchors to understand intent and safe insertion points
 **OffshoreBudgeting/Systems/Compatibility.swift**
 - // MARK: - View Modifiers (Cross-Platform)
 - // MARK: ub_onChange(of:initial:)
-- // MARK: ub_noAutoCapsAndCorrection()
-- // MARK: ub_toolbarTitleInline()
-- // MARK: ub_toolbarTitleLarge()
-- // MARK: ub_tabNavigationTitle(_:)
 - // MARK: ub_cardTitleShadow()
 - // MARK: ub_compactDatePickerStyle()
-- // MARK: ub_decimalKeyboard()
 - // MARK: ub_formStyleGrouped()
-- // MARK: ub_sheetPadding()
 - // MARK: ub_pickerBackground()
 - // MARK: ub_hideScrollIndicators()
 - // MARK: ub_listStyleLiquidAware()
 - // MARK: ub_preOS26ListRowBackground(_:)
 - // MARK: - Internal Modifiers (List Styling)
 - // MARK: - List Separators Helper
-- // MARK: - Root Tab Navigation Title Styling
 - // MARK: - Private Modifiers
-- // MARK: - UBColor (Cross-Platform Neutrals)
+  (Removed wrappers: ub_noAutoCapsAndCorrection, ub_decimalKeyboard, ub_tabNavigationTitle, ub_toolbarTitleInline, ub_toolbarTitleLarge, ub_sheetPadding)
+  (Removed UBChromeGlassModifier and UBColor)
 
 **OffshoreBudgeting/Systems/HomeHeaderLayoutEnvironment.swift**
 - // MARK: - Environment Key
@@ -643,17 +631,12 @@ Use the following // MARK anchors to understand intent and safe insertion points
 - // MARK: - DesignSystem (Tokens)
 - // MARK: Spacing (pts)
 - // MARK: Corner Radii
-- // MARK: Shadows
 - // MARK: Colors
 - // MARK: System‑Aware Container Background
 - // MARK: Chip and Pill Fills
-- // MARK: - View Helpers
-- // MARK: - Private Modifiers
+  (Removed legacy Shadows and cardBackground helper)
 
-**OffshoreBudgeting/Systems/DesignSystem+Decor.swift**
-- // MARK: - DS.Decor
-- // MARK: metallicSilverLinear(angle:)
-- // MARK: metallicShine(angle:intensity:)
+// DS.Decor was removed; use MetallicTextStyles.swift
 
 **OffshoreBudgeting/Systems/MotionSupport.swift**
 - // MARK: - MotionMonitor

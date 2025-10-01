@@ -119,15 +119,17 @@ struct AddCardFormView: View {
                 UBFormRow {
                     if #available(iOS 15.0, macCatalyst 15.0, *) {
                         TextField("", text: $cardName, prompt: Text("Apple Card"))
-                            .ub_noAutoCapsAndCorrection()
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             // Align to the leading edge and expand to fill the row
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .submitLabel(.done)
                             .accessibilityLabel("Card Name")
                     } else {
-                        TextField("]pple Card", text: $cardName)
-                            .ub_noAutoCapsAndCorrection()
+                        TextField("Apple Card", text: $cardName)
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.never)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .submitLabel(.done)

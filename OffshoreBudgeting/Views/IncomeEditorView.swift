@@ -111,7 +111,8 @@ struct IncomeEditorView: View {
             Section {
                 UBFormRow {
                     TextField("Paycheck", text: $form.source)
-                        .ub_noAutoCapsAndCorrection()   // cross-platform fix
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 

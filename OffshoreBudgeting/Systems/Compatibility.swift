@@ -82,49 +82,9 @@ extension View {
         )
     }
 
-    // MARK: ub_noAutoCapsAndCorrection()
-    /// Disables auto-capitalization and autocorrection where supported (iOS/iPadOS).
-    /// On other platforms this is a no-op, allowing a single code path.
-    func ub_noAutoCapsAndCorrection() -> some View {
-        #if targetEnvironment(macCatalyst)
-        return self
-        #else
-        return self
-        #endif
-    }
-
-    // MARK: ub_toolbarTitleInline()
-    /// Sets the navigation/toolbar title to inline across platforms.
-    /// Uses the best available API per OS version and is a no-op if unavailable.
-    func ub_toolbarTitleInline() -> some View {
-        #if targetEnvironment(macCatalyst)
-        return self
-        #else
-        return self
-        #endif
-    }
-
-    // MARK: ub_toolbarTitleLarge()
-    /// Applies a large navigation/toolbar title where supported, matching the
-    /// default iOS "Settings" appearance. Falls back gracefully on platforms
-    /// that do not expose the API.
-    @ViewBuilder
-    func ub_toolbarTitleLarge() -> some View {
-        #if targetEnvironment(macCatalyst)
-        self
-        #else
-        self
-        #endif
-    }
-
-    // MARK: ub_tabNavigationTitle(_:)
-    /// Convenience helper for TabView root screens to ensure the navigation
-    /// title matches the tab label and uses the standard large-title display.
-    /// - Parameter title: The title to show in the navigation bar.
-    /// - Returns: A view with the title and large display mode applied.
-    func ub_tabNavigationTitle(_ title: String) -> some View {
-        modifier(UBRootTabNavigationTitleModifier(title: title))
-    }
+    // Removed: ub_noAutoCapsAndCorrection()
+    // Removed: ub_toolbarTitleInline(), ub_toolbarTitleLarge()
+    // Removed: ub_tabNavigationTitle(_:)
 
     // MARK: ub_rootNavigationChrome()
     /// Hides the navigation bar background for root-level navigation stacks on modern OS releases.
@@ -156,11 +116,7 @@ extension View {
         #endif
     }
     
-    // MARK: ub_decimalKeyboard()
-    /// Uses the decimal keyboard on iOS; no-op on macOS so the same view compiles for both.
-    func ub_decimalKeyboard() -> some View {
-        modifier(UBDecimalKeyboardModifier())
-    }
+    // Removed: ub_decimalKeyboard()
 
     /// Applies the platform-aware OS 26 translucent background when supported,
     /// falling back to the provided base color elsewhere.
@@ -197,23 +153,6 @@ extension View {
         )
     }
 
-    /// Applies a translucent navigation bar treatment that mirrors the
-    /// OS 26 surface configuration when supported by the platform.
-    /// On the modern OS builds we defer entirely to the system chrome;
-    /// on pre-26 releases we fall back to a subtle gradient wash that
-    /// picks up the current theme's accent tint.
-    func ub_navigationGlassBackground(
-        baseColor: Color,
-        configuration: AppTheme.GlassConfiguration
-    ) -> some View {
-        modifier(
-            UBNavigationGlassModifier(
-                baseColor: baseColor,
-                configuration: configuration
-            )
-        )
-    }
-
     /// Applies navigation styling appropriate for the current theme. System
     /// theme favors the platform's plain backgrounds while custom themes keep
     /// the glass treatment.
@@ -229,20 +168,8 @@ extension View {
         )
     }
 
-    /// Applies a platform-aware chrome background to container chrome like TabView bars
-    /// tuned to the provided OS 26 configuration. UIKit-based platforms rely on
-    /// their native appearance APIs, so this modifier becomes a no-op placeholder.
-    func ub_chromeGlassBackground(
-        baseColor: Color,
-        configuration: AppTheme.GlassConfiguration
-    ) -> some View {
-        modifier(
-            UBChromeGlassModifier(
-                baseColor: baseColor,
-                configuration: configuration
-            )
-        )
-    }
+    // (Removed) ub_navigationGlassBackground – unused wrapper.
+    // (Removed) ub_chromeGlassBackground – unused wrapper.
 
     /// Applies theme-aware chrome styling for tab bars and other container chrome.
     func ub_chromeBackground(
@@ -271,12 +198,7 @@ extension View {
         }
     }
 
-    // MARK: ub_sheetPadding()
-    /// Adds a subtle inner padding around sheet content on macOS.  On other
-    /// platforms this returns `self` unchanged. 
-    func ub_sheetPadding() -> some View {
-        return self
-    }
+    // Removed: ub_sheetPadding()
 
     // MARK: ub_pickerBackground()
     /// Applies the app’s container background behind a scrollable picker (e.g.
@@ -430,17 +352,7 @@ private struct UBRootNavigationChromeModifier: ViewModifier {
     }
 }
 
-private struct UBRootTabNavigationTitleModifier: ViewModifier {
-    let title: String
-
-    func body(content: Content) -> some View {
-        #if targetEnvironment(macCatalyst)
-        return content.navigationTitle(title)
-        #else
-        return content.navigationTitle(title)
-        #endif
-    }
-}
+// Removed: UBRootTabNavigationTitleModifier (no longer used)
 
 // MARK: - Private Modifiers
 
@@ -500,18 +412,7 @@ private struct UBOnChangeWithValueModifier<Value: Equatable>: ViewModifier {
     }
 }
 
-private struct UBDecimalKeyboardModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var platformCapabilities
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        #if targetEnvironment(macCatalyst)
-        content
-        #else
-        content
-        #endif
-    }
-}
+// Removed: UBDecimalKeyboardModifier (no longer used)
 
 private struct UBGlassBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var platformCapabilities
@@ -591,17 +492,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
     }
 }
 
-private struct UBChromeGlassModifier: ViewModifier {
-    @Environment(\.platformCapabilities) private var capabilities
-
-    let baseColor: Color
-    let configuration: AppTheme.GlassConfiguration
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        content
-    }
-}
+// Removed: UBChromeGlassModifier (unused)
 
 private struct UBChromeBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
@@ -821,125 +712,7 @@ extension View {
     }
 }
 
-// MARK: - UBColor (Cross-Platform Neutrals)
-
-/// Central place for neutral system-like colors that work on iOS and macOS.
-enum UBColor {
-    /// Top neutral for card backgrounds.
-    static var cardNeutralTop: Color {
-        return Color(UIColor.secondarySystemBackground) // iOS
-    }
-
-    /// Bottom neutral for card backgrounds.
-    static var cardNeutralBottom: Color {
-        return Color(UIColor.tertiarySystemBackground) // iOS
-    }
-}
-
-// MARK: - UBTypography (Cross-Platform text colors)
-
-/// Typography helpers that adapt per platform.
-enum UBTypography {
-    /// Static title color for card text (legible dark tone on all platforms).
-    static var cardTitleStatic: Color {
-        return Color(UIColor.label).opacity(0.92)              // iOS: dark, dynamic
-    }
-
-    /// Softer, neutral gray for title shadows (avoids harsh pure black).
-    static var cardTitleShadowColor: Color {
-        return Color(.sRGB, red: 0.16, green: 0.18, blue: 0.22, opacity: 0.22)
-    }
-}
-
-// MARK: - UBDecor (Reusable decorative styles)
-
-enum UBDecor {
-
-    // MARK: metallicSilverLinear(angle:)
-    /// A subtle metallic-silver linear gradient for text.
-    /// Angle sets the sweep direction; pass a tilt-driven angle.
-    static func metallicSilverLinear(angle: Angle) -> AnyShapeStyle {
-        // Enhanced metallic gradient with more realistic shine
-        let stops: [Gradient.Stop] = [
-            .init(color: Color(white: 0.96), location: 0.00),
-            .init(color: Color(white: 0.85), location: 0.25),
-            .init(color: Color(white: 0.99), location: 0.50),
-            .init(color: Color(white: 0.82), location: 0.75),
-            .init(color: Color(white: 0.94), location: 1.00)
-        ]
-        // Convert angle into start/end unit points so the gradient "rotates".
-        let theta = angle.radians
-        let dx = cos(theta)
-        let dy = sin(theta)
-        let start = UnitPoint(x: 0.5 - dx * 0.6, y: 0.5 - dy * 0.6)
-        let end   = UnitPoint(x: 0.5 + dx * 0.6, y: 0.5 + dy * 0.6)
-
-        return AnyShapeStyle(
-            LinearGradient(gradient: Gradient(stops: stops), startPoint: start, endPoint: end)
-        )
-    }
-    
-    // MARK: holographicGradient(angle:)
-    static func holographicGradient(angle: Angle) -> AnyShapeStyle {
-        let stops: [Gradient.Stop] = [
-            .init(color: Color(red: 0.98, green: 0.78, blue: 0.82), location: 0.0),
-            .init(color: Color(red: 0.92, green: 0.81, blue: 0.65), location: 0.15),
-            .init(color: Color(red: 0.88, green: 0.92, blue: 0.85), location: 0.3),
-            .init(color: Color(red: 0.75, green: 0.89, blue: 0.95), location: 0.45),
-            .init(color: Color(red: 0.85, green: 0.78, blue: 0.92), location: 0.6),
-            .init(color: Color(red: 0.95, green: 0.78, blue: 0.85), location: 0.75),
-            .init(color: Color(red: 0.98, green: 0.85, blue: 0.72), location: 0.9),
-            .init(color: Color(red: 0.98, green: 0.78, blue: 0.82), location: 1.0)
-        ]
-        let theta = angle.radians
-        let dx = cos(theta)
-        let dy = sin(theta)
-        let start = UnitPoint(x: 0.5 - dx * 0.7, y: 0.5 - dy * 0.7)
-        let end   = UnitPoint(x: 0.5 + dx * 0.7, y: 0.5 + dy * 0.7)
-
-        return AnyShapeStyle(
-            LinearGradient(gradient: Gradient(stops: stops), startPoint: start, endPoint: end)
-        )
-    }
-    
-    // MARK: holographicShine(angle:)
-    static func holographicShine(angle: Angle, intensity: Double) -> AnyShapeStyle {
-        let stops: [Gradient.Stop] = [
-            .init(color: Color(white: 1.0).opacity(0.0), location: 0.0),
-            .init(color: Color(white: 0.98).opacity(intensity * 0.4), location: 0.3),
-            .init(color: Color(white: 1.0).opacity(intensity * 0.7), location: 0.5),
-            .init(color: Color(white: 0.98).opacity(intensity * 0.4), location: 0.7),
-            .init(color: Color(white: 1.0).opacity(0.0), location: 1.0)
-        ]
-        let theta = angle.radians
-        let dx = cos(theta) * 0.5
-        let dy = sin(theta) * 0.5
-        let center = UnitPoint(x: 0.5 + dx, y: 0.5 + dy)
-
-        return AnyShapeStyle(
-            RadialGradient(gradient: Gradient(stops: stops), center: center, startRadius: 0, endRadius: 100)
-        )
-    }
-    
-    // MARK: metallicShine(angle:, intensity:)
-    static func metallicShine(angle: Angle, intensity: Double) -> AnyShapeStyle {
-        let stops: [Gradient.Stop] = [
-            .init(color: Color(white: 1.0).opacity(0.0), location: 0.0),
-            .init(color: Color(white: 0.98).opacity(intensity * 0.3), location: 0.4),
-            .init(color: Color(white: 1.0).opacity(intensity * 0.6), location: 0.5),
-            .init(color: Color(white: 0.95).opacity(intensity * 0.3), location: 0.6),
-            .init(color: Color(white: 1.0).opacity(0.0), location: 1.0)
-        ]
-        let theta = angle.radians
-        let dx = cos(theta) * 0.6
-        let dy = sin(theta) * 0.6
-        let center = UnitPoint(x: 0.5 + dx, y: 0.5 + dy)
-
-        return AnyShapeStyle(
-            RadialGradient(gradient: Gradient(stops: stops), center: center, startRadius: 0, endRadius: 80)
-        )
-    }
-}
+// Removed: UBColor (unused)
 
 // MARK: - Global Helpers
 
