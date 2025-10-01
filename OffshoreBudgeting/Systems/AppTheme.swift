@@ -563,6 +563,53 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         })
     }
 
+    /// Base fill color used when Liquid Glass isn't available. Ensures legacy
+    /// surfaces share the same tint as navigation chrome.
+    var legacySurfaceFillColor: Color {
+        switch self {
+        case .system:
+            return background
+        default:
+            return glassBaseColor
+        }
+    }
+
+    /// Navigation bar background shape style for legacy OS versions that do
+    /// not support glass surfaces.
+    @available(iOS 16.0, macCatalyst 16.0, *)
+    var legacyNavigationFallbackStyle: AnyShapeStyle {
+        if self == .system {
+            return AnyShapeStyle(legacyChromeBackground)
+        }
+
+        let base = legacySurfaceFillColor
+        let highlight = AppThemeColorUtilities.adjust(
+            base,
+            saturationMultiplier: 0.94,
+            brightnessMultiplier: 1.08,
+            alpha: 1.0
+        )
+        let shadow = AppThemeColorUtilities.adjust(
+            base,
+            saturationMultiplier: 1.04,
+            brightnessMultiplier: 0.94,
+            alpha: 1.0
+        )
+
+        return AnyShapeStyle(
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: highlight, location: 0.0),
+                    .init(color: base, location: 0.42),
+                    .init(color: shadow, location: 0.78),
+                    .init(color: base, location: 1.0)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
     /// UIKit helper for legacy chrome background.
     func legacyUIKitChromeBackgroundColor(colorScheme: ColorScheme?) -> UIColor {
         let trait: UIUserInterfaceStyle
