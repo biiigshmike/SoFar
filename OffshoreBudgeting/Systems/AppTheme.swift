@@ -244,6 +244,53 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Standardized background for grouped form rows.
+    /// - Parameter colorScheme: The environment color scheme used for dynamic overrides.
+    func formRowBackground(for colorScheme: ColorScheme) -> Color {
+        switch self {
+        case .system where colorScheme == .light:
+            return Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor.secondarySystemBackground
+                } else {
+                    return UIColor(red: 0.94, green: 0.95, blue: 0.96, alpha: 1.0)
+                }
+            })
+        case .classic:
+            return Color(UIColor { trait in
+                if trait.userInterfaceStyle == .dark {
+                    return UIColor.secondarySystemGroupedBackground
+                } else {
+                    return UIColor(red: 0.93, green: 0.94, blue: 0.95, alpha: 1.0)
+                }
+            })
+        default:
+            let brightness = AppThemeColorUtilities.hsba(from: background)?.brightness ?? (colorScheme == .dark ? 0.25 : 0.85)
+            let blendAmount: Double
+            switch brightness {
+            case ..<0.25:
+                blendAmount = 0.28
+            case ..<0.45:
+                blendAmount = 0.20
+            case ..<0.65:
+                blendAmount = 0.14
+            case ..<0.85:
+                blendAmount = 0.10
+            default:
+                blendAmount = 0.08
+            }
+
+            let wash = AppThemeColorUtilities.adjust(
+                resolvedTint,
+                saturationMultiplier: colorScheme == .dark ? 0.35 : 0.22,
+                brightnessMultiplier: colorScheme == .dark ? 0.72 : 1.16,
+                alpha: 1.0
+            )
+
+            return AppThemeColorUtilities.mix(background, wash, amount: blendAmount)
+        }
+    }
+
     /// Tertiary background for card shells.
     var tertiaryBackground: Color {
         switch self {

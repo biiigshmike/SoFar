@@ -48,6 +48,7 @@ struct EditSheetScaffold<Content: View>: View {
 
     // MARK: Environment
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
     // Selection state for detents (compat type)
@@ -157,7 +158,7 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: Row Background
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(themeManager.selectedTheme.secondaryBackground)
+            .fill(themeManager.selectedTheme.formRowBackground(for: colorScheme))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(separatorColor, lineWidth: 1)
