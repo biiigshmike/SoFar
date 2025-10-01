@@ -496,6 +496,7 @@ private struct UBNavigationGlassModifier: ViewModifier {
 
 private struct UBChromeBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.colorScheme) private var colorScheme
 
     let theme: AppTheme
     let configuration: AppTheme.GlassConfiguration
@@ -508,9 +509,9 @@ private struct UBChromeBackgroundModifier: ViewModifier {
             if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .tabBar)
-                    .toolbarBackground(theme.background, for: .tabBar)
+                    .toolbarBackground(theme.legacyChromeBackground, for: .tabBar)
             } else {
-                content.background(theme.background)
+                content.background(theme.legacyChromeBackground)
             }
         }
     }
@@ -518,6 +519,7 @@ private struct UBChromeBackgroundModifier: ViewModifier {
 
 private struct UBNavigationBackgroundModifier: ViewModifier {
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.colorScheme) private var colorScheme
 
     let theme: AppTheme
     let configuration: AppTheme.GlassConfiguration
@@ -535,7 +537,8 @@ private struct UBNavigationBackgroundModifier: ViewModifier {
             if #available(iOS 16.0, *) {
                 content
                     .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbarBackground(theme.background, for: .navigationBar)
+                    .toolbarBackground(theme.legacyChromeBackground, for: .navigationBar)
+                    .toolbarColorScheme(colorScheme == .dark ? .dark : .light, for: .navigationBar)
             } else {
                 content
             }

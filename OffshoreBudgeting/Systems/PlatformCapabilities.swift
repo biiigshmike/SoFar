@@ -19,13 +19,24 @@ extension PlatformCapabilities {
     /// Snapshot the current process' capabilities using the most specific
     /// availability information we have at launch.
     static var current: PlatformCapabilities {
-        let supportsModernTranslucency: Bool
+        var supportsModernTranslucency: Bool
         // Liquid Glass is available starting with the OS 26 system releases.
         if #available(iOS 18.0, macCatalyst 18.0, *) {
             supportsModernTranslucency = true
         } else {
             supportsModernTranslucency = false
         }
+
+        #if DEBUG
+        // Developer / QA override to simulate legacy behaviour on devices
+        // that support Liquid Glass. Debug‑only so Release builds always
+        // prioritize OS26 styling on modern devices.
+        let forceLegacyByEnv = ProcessInfo.processInfo.environment["UB_FORCE_LEGACY_CHROME"] == "1"
+        let forceLegacyByDefaults = UserDefaults.standard.bool(forKey: "UBForceLegacyChrome")
+        if forceLegacyByEnv || forceLegacyByDefaults {
+            supportsModernTranslucency = false
+        }
+        #endif
 
         #if targetEnvironment(macCatalyst)
         let supportsAdaptiveKeypad = false

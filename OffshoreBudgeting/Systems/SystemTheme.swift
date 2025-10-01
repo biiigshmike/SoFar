@@ -19,25 +19,27 @@ enum SystemThemeAdapter {
     /// overriding system appearances per Apple guidance. On earlier OS versions,
     /// we set plain, opaque backgrounds to respect the classic, flat style.
     static func applyGlobalChrome(theme: AppTheme, colorScheme: ColorScheme?) {
+        // Always prefer large titles so OS26 shows the big title on initial load.
+        UINavigationBar.appearance().prefersLargeTitles = true
+
         guard currentFlavor == .classic else { return }
 
         // UINavigationBar
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = resolvedBackgroundColor(
-            for: theme,
-            colorScheme: colorScheme
-        )
+        navAppearance.backgroundColor = theme.legacyUIKitChromeBackgroundColor(colorScheme: colorScheme)
+        // Ensure readable titles/buttons for classic (opaque) chrome.
+        let resolvedTitleColor = resolvedForegroundColor(for: theme, colorScheme: colorScheme)
+        navAppearance.titleTextAttributes = [.foregroundColor: resolvedTitleColor]
+        navAppearance.largeTitleTextAttributes = [.foregroundColor: resolvedTitleColor]
         UINavigationBar.appearance().standardAppearance = navAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().isTranslucent = false
 
         // UIToolbar (avoid custom backgrounds on OS 26; safe on classic)
         let toolAppearance = UIToolbarAppearance()
         toolAppearance.configureWithOpaqueBackground()
-        let resolvedBackground = resolvedBackgroundColor(
-            for: theme,
-            colorScheme: colorScheme
-        )
+        let resolvedBackground = theme.legacyUIKitChromeBackgroundColor(colorScheme: colorScheme)
         toolAppearance.backgroundColor = resolvedBackground
         UIToolbar.appearance().standardAppearance = toolAppearance
         UIToolbar.appearance().compactAppearance = toolAppearance
@@ -49,19 +51,20 @@ enum SystemThemeAdapter {
         tabAppearance.backgroundColor = resolvedBackground
         UITabBar.appearance().standardAppearance = tabAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        UITabBar.appearance().isTranslucent = false
     }
 
-    private static func resolvedBackgroundColor(
+    private static func resolvedForegroundColor(
         for theme: AppTheme,
         colorScheme: ColorScheme?
     ) -> UIColor {
+        // On classic chrome, prefer white text for dark mode backgrounds.
+        // For light mode, prefer black text. This keeps titles readable
+        // against the legacy chrome backgrounds computed above.
         if let scheme = colorScheme {
-            let style: UIUserInterfaceStyle = (scheme == .dark) ? .dark : .light
-            let trait = UITraitCollection(userInterfaceStyle: style)
-            return UIColor(theme.background).resolvedColor(with: trait)
+            return (scheme == .dark) ? UIColor.white : UIColor.black
         }
-
-        return UIColor(theme.background)
+        let isDark = UITraitCollection.current.userInterfaceStyle == .dark
+        return isDark ? UIColor.white : UIColor.black
     }
 }
-

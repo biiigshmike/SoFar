@@ -477,6 +477,58 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
             return true
         }
     }
+
+    // MARK: - Legacy (pre‑OS26) Chrome Colors
+    /// Background color to use for navigation/tab bars on legacy OS versions
+    /// where Liquid Glass isn't available. This intentionally differs from the
+    /// page background to keep chrome readable and consistent with platform
+    /// expectations:
+    /// - System theme: light mode uses a subtle grouped gray; dark mode uses black.
+    /// - Custom themes: derive a muted wash from the theme's `resolvedTint` so
+    ///   chrome feels on‑brand without harming contrast.
+    var legacyChromeBackground: Color {
+        let hsba = AppThemeColorUtilities.hsba(from: resolvedTint)
+
+        return Color(UIColor { trait in
+            let isDark = trait.userInterfaceStyle == .dark
+
+            // System theme → neutral chrome
+            if self == .system {
+                return isDark ? UIColor.black : UIColor.systemGray6
+            }
+
+            // Custom themes → gently washed by tint
+            let hue = CGFloat(hsba?.hue ?? 0.0)
+            let sat = CGFloat(hsba?.saturation ?? 0.0)
+            let bri = CGFloat(hsba?.brightness ?? 0.7)
+
+            if isDark {
+                // Very dark, slightly tinted surface
+                let s = max(0.0, min(sat * 0.30, 0.35))
+                let b = max(0.08, min(0.16 + bri * 0.10, 0.22))
+                return UIColor(hue: hue, saturation: s, brightness: b, alpha: 1.0)
+            } else {
+                // Subtle light gray with a hint of the tint
+                let s = max(0.0, min(sat * 0.12, 0.18))
+                let b = CGFloat(0.96)
+                return UIColor(hue: hue, saturation: s, brightness: b, alpha: 1.0)
+            }
+        })
+    }
+
+    /// UIKit helper for legacy chrome background.
+    func legacyUIKitChromeBackgroundColor(colorScheme: ColorScheme?) -> UIColor {
+        let trait: UIUserInterfaceStyle
+        if let scheme = colorScheme {
+            trait = (scheme == .dark) ? .dark : .light
+        } else {
+            trait = UITraitCollection.current.userInterfaceStyle
+        }
+
+        return UIColor(legacyChromeBackground).resolvedColor(
+            with: UITraitCollection(userInterfaceStyle: trait)
+        )
+    }
 }
 
 extension AppTheme {

@@ -19,6 +19,7 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var cloudStatusProvider: CloudAccountStatusProvider?
@@ -26,6 +27,7 @@ struct SettingsView: View {
     @State private var cloudAvailability: CloudAccountStatusProvider.Availability = .unknown
     @State private var showResetAlert: Bool = false
     @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding: Bool = false
+    @AppStorage("UBForceLegacyChrome") private var forceLegacyChrome: Bool = false
 
     var body: some View {
         RootTabPageScaffold(
@@ -274,6 +276,22 @@ struct SettingsView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
+
+            #if DEBUG
+            // MARK: Developer (Debug only)
+            SettingsCard(
+                iconSystemName: "hammer",
+                title: "Developer",
+                subtitle: "Testing options for UI chrome.") {
+                VStack(spacing: 0) {
+                    SettingsRow(title: "Force Legacy Navigation Chrome (requires relaunch)", showsTopDivider: false) {
+                        Toggle("", isOn: $forceLegacyChrome)
+                            .labelsHidden()
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            #endif
         }
         .frame(maxWidth: .infinity)
         .rootTabContentPadding(
@@ -373,8 +391,18 @@ struct SettingsView: View {
     ) -> CGFloat {
         let base = horizontalSizeClass == .compact ? 0 : DS.Spacing.l
         let tabChromeHeight: CGFloat = horizontalSizeClass == .compact ? 49 : 50
-        let overflow = max(proxy.safeAreaBottomInset - tabChromeHeight, 0)
-        return max(base + overflow - proxy.tabBarGutterSpacing(tabBarGutter), 0)
+        let gutter = proxy.tabBarGutterSpacing(tabBarGutter)
+
+        if capabilities.supportsOS26Translucency {
+            // On OS26 we respect safe area; no extra is required beyond minor spacing.
+            return max(base - gutter, 0)
+        } else {
+            // Legacy path: scaffold ignores the bottom safe area. Pad content by the
+            // visible chrome (tab bar height) plus safe-area inset so the last card
+            // remains fully visible above the opaque tab bar.
+            let required = tabChromeHeight + proxy.safeAreaBottomInset
+            return max(required + base - gutter, 0)
+        }
     }
 
 }

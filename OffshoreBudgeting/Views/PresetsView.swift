@@ -16,6 +16,7 @@ struct PresetsView: View {
     // MARK: Dependencies
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     // MARK: State
     @StateObject private var viewModel = PresetsViewModel()
@@ -30,7 +31,11 @@ struct PresetsView: View {
         // Avoid nesting a List inside an outer ScrollView to prevent
         // jank/freezes on iOS 26. Let the List own scrolling by disabling
         // the scaffold's automatic wrapping.
-        RootTabPageScaffold(spacing: DS.Spacing.s, wrapsContentInScrollView: false) {
+        RootTabPageScaffold(
+            scrollBehavior: .always,
+            spacing: DS.Spacing.s,
+            wrapsContentInScrollView: !capabilities.supportsOS26Translucency
+        ) {
             EmptyView()
         } content: { proxy in
             content(using: proxy)
