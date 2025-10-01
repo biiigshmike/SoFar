@@ -81,6 +81,14 @@ final class CardsViewModel: ObservableObject {
                 self?.reapplyThemes()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .dataStoreDidChange)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { await self.refresh() }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: startIfNeeded()
