@@ -23,12 +23,11 @@ struct OnboardingView: View {
     /// Cloud sync preferences stored globally so onboarding can opt the user in.
     @AppStorage(AppSettingsKeys.enableCloudSync.rawValue) private var enableCloudSync: Bool = false
     @AppStorage(AppSettingsKeys.syncCardThemes.rawValue) private var syncCardThemes: Bool = false
-    @AppStorage(AppSettingsKeys.syncAppTheme.rawValue) private var syncAppTheme: Bool = false
     @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue) private var syncBudgetPeriod: Bool = false
 
     // MARK: Step
     /// Enumeration of onboarding steps.
-    enum Step: Int { case welcome, theme, categories, cards, presets, cloudSync, loading }
+    enum Step: Int { case welcome, categories, cards, presets, cloudSync, loading }
     /// Current step in the flow.
     @State private var step: Step = .welcome
 
@@ -43,16 +42,11 @@ struct OnboardingView: View {
 
             switch step {
             case .welcome:
-                WelcomeStep { step = .theme }
-            case .theme:
-                ThemeStep(
-                    onNext: { step = .categories },
-                    onBack: { step = .welcome }
-                )
+                WelcomeStep { step = .categories }
             case .categories:
                 CategoriesStep(
                     onNext: { step = .cards },
-                    onBack: { step = .theme }
+                    onBack: { step = .welcome }
                 )
             case .cards:
                 CardsStep(
@@ -68,7 +62,6 @@ struct OnboardingView: View {
                 CloudSyncStep(
                     enableCloudSync: $enableCloudSync,
                     syncCardThemes: $syncCardThemes,
-                    syncAppTheme: $syncAppTheme,
                     syncBudgetPeriod: $syncBudgetPeriod
                 ) {
                     step = .loading
@@ -87,7 +80,6 @@ struct OnboardingView: View {
         .ub_onChange(of: enableCloudSync) { newValue in
             guard !newValue else { return }
             syncCardThemes = false
-            syncAppTheme = false
             syncBudgetPeriod = false
         }
     }
@@ -132,191 +124,7 @@ private struct WelcomeStep: View {
     }
 }
 
-// MARK: - ThemeStep
-/// Lets users preview and select their preferred app theme before diving into setup.
-/// - Parameters:
-///   - onNext: Callback fired after the user confirms their choice.
-///   - onBack: Callback fired when the user wants to return to the previous step.
-private struct ThemeStep: View {
-    let onNext: () -> Void
-    let onBack: () -> Void
-
-    @EnvironmentObject private var themeManager: ThemeManager
-    @State private var selectedTheme: AppTheme = .system
-
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                header
-                themePicker
-                VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                    Text("You can change this anytime from Settings.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    OnboardingButtonRow(
-                        buttons: [
-                            .secondary("Back", action: onBack),
-                            .primary("Continue", action: onNext)
-                        ],
-                        contentInsets: .init(
-                            top: DS.Spacing.m,
-                            leading: 0,
-                            bottom: 0,
-                            trailing: 0
-                        )
-                    )
-                }
-            }
-            .padding(.vertical, DS.Spacing.xxl)
-            .padding(.horizontal, DS.Spacing.xl)
-            .frame(maxWidth: 560, alignment: .leading)
-            .frame(maxWidth: .infinity)
-        }
-        .onAppear { selectedTheme = themeManager.selectedTheme }
-        .ub_onChange(of: themeManager.selectedTheme) { newValue in
-            guard newValue != selectedTheme else { return }
-            selectedTheme = newValue
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.s) {
-            Text("Choose Your Theme")
-                .font(.largeTitle.bold())
-            Text("Preview each style instantly to see how cards, backgrounds, and accents adapt.")
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var themePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: DS.Spacing.xl) {
-                ForEach(AppTheme.allCases) { theme in
-                    ThemePreviewTile(theme: theme, isSelected: theme == selectedTheme)
-                        .onTapGesture { select(theme) }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text(theme.displayName))
-                        .accessibilityAddTraits(theme == selectedTheme ? .isSelected : [])
-                }
-            }
-            .padding(.vertical, DS.Spacing.m)
-            .padding(.horizontal, DS.Spacing.s)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func select(_ theme: AppTheme) {
-        guard theme != selectedTheme else { return }
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-            selectedTheme = theme
-            themeManager.selectedTheme = theme
-        }
-    }
-}
-
-// MARK: ThemePreviewTile
-private struct ThemePreviewTile: View {
-    let theme: AppTheme
-    let isSelected: Bool
-
-    private var outlineColor: Color { theme.tint ?? theme.accent }
-
-    private var textColor: Color {
-        switch theme.colorScheme {
-        case .some(let scheme):
-            switch scheme {
-            case .dark:
-                return .white
-            case .light:
-                return Color.black.opacity(0.9)
-            @unknown default:
-                return .primary
-            }
-        case nil:
-            return .primary
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.l) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(theme.secondaryBackground)
-                    .overlay(cardDemo)
-                Circle()
-                    .fill(outlineColor.opacity(0.15))
-                    .frame(width: 70, height: 70)
-                    .offset(x: 110, y: -26)
-            }
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(theme.displayName)
-                    .font(.headline)
-                    .foregroundStyle(textColor)
-                Text("Rich gradients, glass, and accents tailored to this palette.")
-                    .font(.footnote)
-                    .foregroundStyle(textColor.opacity(0.7))
-            }
-        }
-        .padding(DS.Spacing.l)
-        .frame(width: 260, height: 320)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(theme.background)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(outlineColor.opacity(isSelected ? 1 : 0.0), lineWidth: isSelected ? 3 : 0)
-        )
-        .shadow(color: .black.opacity(isSelected ? 0.22 : 0.12), radius: isSelected ? 16 : 10, x: 0, y: isSelected ? 10 : 6)
-        .scaleEffect(isSelected ? 1.03 : 1.0)
-        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: isSelected)
-    }
-
-    private var cardDemo: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.m) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill((theme.tint ?? theme.accent).opacity(0.85))
-                .frame(height: 40)
-                .overlay(
-                    HStack {
-                        Capsule()
-                            .fill(Color.white.opacity(0.35))
-                            .frame(width: 70, height: 8)
-                        Spacer()
-                        Circle()
-                            .fill(Color.white.opacity(0.2))
-                            .frame(width: 18, height: 18)
-                    }
-                    .padding(.horizontal, DS.Spacing.m)
-                )
-
-            VStack(alignment: .leading, spacing: DS.Spacing.s) {
-                Capsule()
-                    .fill((theme.secondaryAccent).opacity(0.9))
-                    .frame(width: 90, height: 10)
-                Capsule()
-                    .fill((theme.accent).opacity(0.55))
-                    .frame(width: 60, height: 10)
-                Capsule()
-                    .fill((theme.accent).opacity(0.35))
-                    .frame(width: 110, height: 10)
-            }
-
-            Spacer()
-
-            HStack(spacing: DS.Spacing.s) {
-                Capsule()
-                    .fill((theme.tint ?? theme.accent).opacity(0.9))
-                    .frame(width: 70, height: 22)
-                Capsule()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 36, height: 22)
-            }
-        }
-        .padding(DS.Spacing.l)
-    }
-}
+// Theme selection UI removed.
 
 // MARK: - CardsStep
 /// Allows users to add cards before proceeding.
@@ -394,14 +202,12 @@ private struct PresetsStep: View {
 /// - Parameters:
 ///   - enableCloudSync: Binding to the master iCloud sync toggle.
 ///   - syncCardThemes: Binding to the card appearance sync toggle.
-///   - syncAppTheme: Binding to the app theme sync toggle.
 ///   - syncBudgetPeriod: Binding to the budget period sync toggle.
 ///   - onNext: Callback fired after the user makes a choice.
 ///   - onBack: Callback fired when the user wants to revisit the previous step.
 private struct CloudSyncStep: View {
     @Binding var enableCloudSync: Bool
     @Binding var syncCardThemes: Bool
-    @Binding var syncAppTheme: Bool
     @Binding var syncBudgetPeriod: Bool
     let onNext: () -> Void
     let onBack: () -> Void
@@ -422,7 +228,6 @@ private struct CloudSyncStep: View {
         .ub_onChange(of: enableCloudSync) { newValue in
             guard newValue else { return }
             if !syncCardThemes { syncCardThemes = true }
-            if !syncAppTheme { syncAppTheme = true }
             if !syncBudgetPeriod { syncBudgetPeriod = true }
         }
         .task {
@@ -462,7 +267,7 @@ private struct CloudSyncStep: View {
         VStack(alignment: .leading, spacing: DS.Spacing.s) {
             Text("Sync with iCloud")
                 .font(.largeTitle.bold())
-            Text("Keep your budgets, themes, and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
+            Text("Keep your budgets and settings up to date across every device signed into your iCloud account. You can change this anytime from Settings.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -495,13 +300,6 @@ private struct CloudSyncStep: View {
                     title: "Sync card themes",
                     subtitle: "Mirror your custom card colors across devices.",
                     isOn: $syncCardThemes,
-                    isEnabled: enableCloudSync && canUseCloudSync
-                )
-
-                CloudOptionToggle(
-                    title: "Sync app appearance",
-                    subtitle: "Use the same theme everywhere automatically.",
-                    isOn: $syncAppTheme,
                     isEnabled: enableCloudSync && canUseCloudSync
                 )
 
@@ -573,7 +371,6 @@ private struct CloudSyncStep: View {
             }
         } else {
             syncCardThemes = false
-            syncAppTheme = false
             syncBudgetPeriod = false
             Task { await CoreDataService.shared.applyCloudSyncPreferenceChange(enableSync: false) }
             cloudAvailability = .unknown
@@ -589,7 +386,6 @@ private struct CloudSyncStep: View {
                 enableCloudSync = false
             }
             syncCardThemes = false
-            syncAppTheme = false
             syncBudgetPeriod = false
         case .available, .unknown:
             break

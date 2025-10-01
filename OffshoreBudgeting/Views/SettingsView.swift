@@ -89,25 +89,7 @@ struct SettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            // MARK: Appearance Card
-            SettingsCard(
-                iconSystemName: "paintpalette",
-                title: "Appearance",
-                subtitle: "Select a theme for the app.",
-            ) {
-                VStack(spacing: 0) {
-                    SettingsRow(title: "Theme", showsTopDivider: false) {
-                        Picker("", selection: $themeManager.selectedTheme) {
-                            ForEach(AppTheme.allCases) { theme in
-                                Text(theme.displayName).tag(theme)
-                            }
-                        }
-                        .labelsHidden()
-                    }
-
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
+            // Appearance selection has been removed; app follows the System theme.
 
             // MARK: Sync Card (disabled)
             if false {
@@ -130,12 +112,6 @@ struct SettingsView: View {
                     .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
                     .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
 
-                    SettingsRow(title: "Sync App Theme Across Devices") {
-                        Toggle("", isOn: $viewModel.syncAppTheme)
-                            .labelsHidden()
-                    }
-                    .disabled(!viewModel.enableCloudSync || !canUseCloudSync)
-                    .opacity(viewModel.enableCloudSync && canUseCloudSync ? 1 : 0.5)
                     SettingsRow(title: "Sync Budget Period Across Devices") {
                         Toggle("", isOn: $viewModel.syncBudgetPeriod)
                             .labelsHidden()

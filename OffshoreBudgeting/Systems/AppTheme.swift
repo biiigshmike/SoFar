@@ -63,8 +63,9 @@ final class NotificationCenterAdapter: NotificationCentering {
 }
 
 enum CloudSyncPreferences {
+    // App theme sync disabled; keep API for compatibility but do nothing.
     static func disableAppThemeSync(in defaults: UserDefaults) {
-        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        /* no-op */
     }
 
     static func disableCardThemeSync(in defaults: UserDefaults) {
@@ -100,8 +101,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    /// UI-facing list of selectable themes.
-    static var selectableCases: [AppTheme] { allCases }
+    /// UI-facing list of selectable themes. Custom themes are disabled — only System remains.
+    static var selectableCases: [AppTheme] { [.system] }
 
     /// Dynamic neutral accent that mirrors the system's black text in light mode
     /// and white text in dark mode without relying on an asset catalog color.
@@ -938,7 +939,17 @@ fileprivate extension Double {
 // MARK: - ThemeManager
 @MainActor
 final class ThemeManager: ObservableObject {
-    @Published var selectedTheme: AppTheme = .system { didSet { if !isApplyingRemoteChange { save() }; applyAppearance() } }
+    // Custom themes disabled: always coerce to `.system`.
+    @Published var selectedTheme: AppTheme = .system {
+        didSet {
+            if selectedTheme != .system {
+                selectedTheme = .system
+                return
+            }
+            if !isApplyingRemoteChange { save() }
+            applyAppearance()
+        }
+    }
 
     private let storageKey = "selectedTheme"
     private static let legacyLiquidGlassIdentifier = "tahoe"
@@ -966,27 +977,10 @@ final class ThemeManager: ObservableObject {
         self.defaultCloudStatusProviderFactory = { CloudAccountStatusProvider.shared }
         self.notificationCenter = notificationCenter
 
-        let initialTheme: AppTheme
-        if Self.isThemeSyncEnabled(in: userDefaults) {
-            let provider = resolveCloudStatusProvider()
-            if Self.isCloudAvailable(from: provider) {
-                let store = instantiateUbiquitousStore()
-                _ = store.synchronize()
-                let raw = store.string(forKey: storageKey) ?? userDefaults.string(forKey: storageKey)
-                initialTheme = Self.resolveTheme(from: raw)
-            } else {
-                let raw = userDefaults.string(forKey: storageKey)
-                initialTheme = Self.resolveTheme(from: raw)
-            }
-        } else {
-            let raw = userDefaults.string(forKey: storageKey)
-            initialTheme = Self.resolveTheme(from: raw)
-        }
-        selectedTheme = initialTheme
+        // Force System theme regardless of stored/iCloud value.
+        selectedTheme = .system
 
-        if shouldUseICloud {
-            startObservingUbiquitousStoreIfNeeded()
-        }
+        // With custom themes disabled, do not observe iCloud for theme changes.
         applyAppearance()
     }
 
@@ -1044,9 +1038,8 @@ final class ThemeManager: ObservableObject {
     }
 
     private static func isThemeSyncEnabled(in defaults: UserDefaults) -> Bool {
-        let themeSync = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue) as? Bool ?? false
-        let cloud = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue) as? Bool ?? false
-        return themeSync && cloud
+        // App theme sync removed – always false.
+        return false
     }
 
     private static func isCloudAvailable(from provider: CloudAvailabilityProviding) -> Bool {

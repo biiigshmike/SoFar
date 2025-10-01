@@ -285,7 +285,6 @@ private extension CoreDataService {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
         defaults.set(false, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
     }
 

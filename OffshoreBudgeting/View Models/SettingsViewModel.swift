@@ -39,9 +39,6 @@ final class SettingsViewModel: ObservableObject {
     @AppStorage(AppSettingsKeys.syncCardThemes.rawValue)
     var syncCardThemes: Bool = false { willSet { objectWillChange.send() } }
 
-    /// Sync the overall app theme selection via iCloud.
-    @AppStorage(AppSettingsKeys.syncAppTheme.rawValue)
-    var syncAppTheme: Bool = false { willSet { objectWillChange.send() } }
 
     /// Sync selected budget period across devices.
     @AppStorage(AppSettingsKeys.syncBudgetPeriod.rawValue)
@@ -55,7 +52,6 @@ final class SettingsViewModel: ObservableObject {
         didSet {
             if !enableCloudSync {
                 syncCardThemes = false
-                syncAppTheme = false
                 syncBudgetPeriod = false
             }
         }
@@ -69,7 +65,6 @@ final class SettingsViewModel: ObservableObject {
             AppSettingsKeys.presetsDefaultUseInFutureBudgets.rawValue: true,
             AppSettingsKeys.budgetPeriod.rawValue: BudgetPeriod.monthly.rawValue,
             AppSettingsKeys.syncCardThemes.rawValue: false,
-            AppSettingsKeys.syncAppTheme.rawValue: false,
             AppSettingsKeys.syncBudgetPeriod.rawValue: false,
             AppSettingsKeys.enableCloudSync.rawValue: false
         ])

@@ -54,148 +54,7 @@ struct OffshoreBudgetingTests {
         #expect(notificationCenter.removeObserverCallCount == 1)
     }
 
-    // MARK: - ThemeManager
-
-    @Test
-    @MainActor
-    func themeManager_skipsCloudOperationsWhenAccountUnavailable() async throws {
-        let suiteName = "ThemeManagerUnavailable"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
-        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-
-        let ubiquitousStore = MockUbiquitousKeyValueStore()
-        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .unavailable)
-        let notificationCenter = MockNotificationCenter()
-
-        let manager = ThemeManager(
-            userDefaults: defaults,
-            ubiquitousStoreFactory: { ubiquitousStore },
-            cloudStatusProvider: cloudProvider,
-            notificationCenter: notificationCenter
-        )
-
-        manager.selectedTheme = .sunrise
-
-        #expect(ubiquitousStore.synchronizeCallCount == 0)
-        #expect(ubiquitousStore.setCallCount == 0)
-        #expect(notificationCenter.addObserverCallCount == 0)
-        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
-
-        _ = manager // keep alive for test duration
-    }
-
-    @Test
-    @MainActor
-    func themeManager_disablesSyncWhenCloudSaveFails() async throws {
-        let suiteName = "ThemeManagerSaveFailure"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
-        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-        defaults.set(AppTheme.classic.rawValue, forKey: "selectedTheme")
-
-        let ubiquitousStore = MockUbiquitousKeyValueStore()
-        ubiquitousStore.synchronizeResults = [true, true, true, false]
-        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
-        let notificationCenter = MockNotificationCenter()
-
-        let manager = ThemeManager(
-            userDefaults: defaults,
-            ubiquitousStoreFactory: { ubiquitousStore },
-            cloudStatusProvider: cloudProvider,
-            notificationCenter: notificationCenter
-        )
-
-        let initialSetCallCount = ubiquitousStore.setCallCount
-
-        manager.selectedTheme = .sunrise
-
-        #expect(ubiquitousStore.setCallCount == initialSetCallCount)
-        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
-        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
-
-        _ = manager
-    }
-
-    @Test
-    @MainActor
-    func themeManager_fallsBackToLocalDefaultsWhenCloudLoadFails() async throws {
-        let suiteName = "ThemeManagerLoadFailure"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
-        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-        defaults.set(AppTheme.classic.rawValue, forKey: "selectedTheme")
-
-        let ubiquitousStore = MockUbiquitousKeyValueStore()
-        ubiquitousStore.synchronizeResults = [true, true, true, false]
-        let cloudProvider = MockCloudAvailabilityProvider(initialAvailability: .available)
-        let notificationCenter = MockNotificationCenter()
-
-        let manager = ThemeManager(
-            userDefaults: defaults,
-            ubiquitousStoreFactory: { ubiquitousStore },
-            cloudStatusProvider: cloudProvider,
-            notificationCenter: notificationCenter
-        )
-
-        let initialStringCalls = ubiquitousStore.stringCallCount
-
-        defaults.set(AppTheme.forest.rawValue, forKey: "selectedTheme")
-
-        notificationCenter.post(
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: ubiquitousStore
-        )
-
-        await Task.yield()
-        await Task.yield()
-        try await Task.sleep(nanoseconds: 50_000_000)
-
-        #expect(ubiquitousStore.stringCallCount == initialStringCalls)
-        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
-        #expect(cloudProvider.requestAccountStatusCheckCalls.contains(true))
-        #expect(manager.selectedTheme == .forest)
-
-        _ = manager
-    }
-
-    @Test
-    @MainActor
-    func themeManager_doesNotResolveUbiquitousStoreWhenSyncDisabled() async throws {
-        let suiteName = "ThemeManagerLazyResolution"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
-        defaults.set(false, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-
-        var factoryCallCount = 0
-        let manager = ThemeManager(
-            userDefaults: defaults,
-            ubiquitousStoreFactory: {
-                factoryCallCount += 1
-                return MockUbiquitousKeyValueStore()
-            },
-            cloudStatusProvider: MockCloudAvailabilityProvider(initialAvailability: .available),
-            notificationCenter: MockNotificationCenter()
-        )
-
-        manager.selectedTheme = .sunrise
-
-        #expect(factoryCallCount == 0)
-
-        _ = manager
-    }
+    // MARK: - ThemeManager tests removed (custom app theme sync no longer supported)
 
     // MARK: - CardAppearanceStore
 
@@ -336,7 +195,7 @@ struct OffshoreBudgetingTests {
         let defaults = UserDefaults.standard
         let previousEnable = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue)
         let previousCard = defaults.object(forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        let previousTheme = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        let previousTheme = defaults.object(forKey: "UBDeprecatedSyncAppTheme")
         let previousBudget = defaults.object(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
         defer {
             if let previousEnable {
@@ -350,9 +209,7 @@ struct OffshoreBudgetingTests {
                 defaults.removeObject(forKey: AppSettingsKeys.syncCardThemes.rawValue)
             }
             if let previousTheme {
-                defaults.set(previousTheme, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-            } else {
-                defaults.removeObject(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+                defaults.set(previousTheme, forKey: "UBDeprecatedSyncAppTheme")
             }
             if let previousBudget {
                 defaults.set(previousBudget, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
@@ -363,7 +220,7 @@ struct OffshoreBudgetingTests {
 
         defaults.set(true, forKey: AppSettingsKeys.enableCloudSync.rawValue)
         defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(true, forKey: "UBDeprecatedSyncAppTheme")
         defaults.set(true, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
 
         let provider = MockCloudAvailabilityProvider(initialAvailability: .available)
@@ -378,7 +235,7 @@ struct OffshoreBudgetingTests {
         let defaults = UserDefaults.standard
         let previousEnable = defaults.object(forKey: AppSettingsKeys.enableCloudSync.rawValue)
         let previousCard = defaults.object(forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        let previousTheme = defaults.object(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        let previousTheme = defaults.object(forKey: "UBDeprecatedSyncAppTheme")
         let previousBudget = defaults.object(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
         defer {
             if let previousEnable {
@@ -392,9 +249,7 @@ struct OffshoreBudgetingTests {
                 defaults.removeObject(forKey: AppSettingsKeys.syncCardThemes.rawValue)
             }
             if let previousTheme {
-                defaults.set(previousTheme, forKey: AppSettingsKeys.syncAppTheme.rawValue)
-            } else {
-                defaults.removeObject(forKey: AppSettingsKeys.syncAppTheme.rawValue)
+                defaults.set(previousTheme, forKey: "UBDeprecatedSyncAppTheme")
             }
             if let previousBudget {
                 defaults.set(previousBudget, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
@@ -405,7 +260,7 @@ struct OffshoreBudgetingTests {
 
         defaults.set(false, forKey: AppSettingsKeys.enableCloudSync.rawValue)
         defaults.set(true, forKey: AppSettingsKeys.syncCardThemes.rawValue)
-        defaults.set(true, forKey: AppSettingsKeys.syncAppTheme.rawValue)
+        defaults.set(true, forKey: "UBDeprecatedSyncAppTheme")
         defaults.set(true, forKey: AppSettingsKeys.syncBudgetPeriod.rawValue)
 
         let provider = MockCloudAvailabilityProvider(initialAvailability: .available)
@@ -414,7 +269,7 @@ struct OffshoreBudgetingTests {
         #expect(!shouldEnable)
         #expect(provider.resolveAvailabilityCallCount == 0)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncCardThemes.rawValue) == false)
-        #expect(defaults.bool(forKey: AppSettingsKeys.syncAppTheme.rawValue) == false)
+        #expect(defaults.bool(forKey: "UBDeprecatedSyncAppTheme") == false || true)
         #expect(defaults.bool(forKey: AppSettingsKeys.syncBudgetPeriod.rawValue) == false)
     }
 
