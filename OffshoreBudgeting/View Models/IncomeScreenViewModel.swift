@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import Combine
 
 // MARK: - IncomeScreenViewModel
 @MainActor
@@ -25,6 +26,7 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Private
     private let incomeService: IncomeService
     private let calendar: Calendar = .current
+    private var cancellables: Set<AnyCancellable> = []
 
     /// Cache of month-start anchors → day/event mappings to avoid re-fetching
     /// the entire multi-year range on every selection change. Each entry holds
@@ -38,6 +40,22 @@ final class IncomeScreenViewModel: ObservableObject {
     // MARK: Init
     init(incomeService: IncomeService = IncomeService()) {
         self.incomeService = incomeService
+
+        NotificationCenter.default.publisher(for: .dataStoreDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.clearEventCaches()
+                if self.selectedDate == nil {
+                    self.selectedDate = Date()
+                }
+                self.reloadForSelectedDay(forceMonthReload: true)
+            }
+            .store(in: &cancellables)
+    }
+
+    deinit {
+        cancellables.forEach { $0.cancel() }
     }
     
     // MARK: Titles
