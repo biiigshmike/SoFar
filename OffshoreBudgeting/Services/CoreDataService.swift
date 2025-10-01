@@ -41,7 +41,7 @@ final class CoreDataService: ObservableObject {
     private var didSaveObserver: NSObjectProtocol?
     private var remoteChangeObserver: NSObjectProtocol?
     private var cloudKitEventObserver: NSObjectProtocol?
-    
+
     // MARK: Persistent Container
     /// Expose the container as NSPersistentContainer (local-only).
     public lazy var container: NSPersistentContainer = {
@@ -66,18 +66,20 @@ final class CoreDataService: ObservableObject {
         container.persistentStoreDescriptions = [description]
         return container
     }()
-    
+
     // MARK: Contexts
+    private let contextRegistry = NSHashTable<NSManagedObjectContext>.weakObjects()
+    private let contextRegistryLock = NSLock()
+
     /// Main thread context for UI work.
     public var viewContext: NSManagedObjectContext {
         container.viewContext
     }
-    
+
     /// Background context (on-demand) for write-heavy operations.
     func newBackgroundContext() -> NSManagedObjectContext {
         let context = container.newBackgroundContext()
-        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        context.automaticallyMergesChangesFromParent = true
+        configureBackgroundContext(context)
         return context
     }
     
@@ -108,6 +110,8 @@ final class CoreDataService: ObservableObject {
         viewContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
         // Optional: performance niceties
         viewContext.undoManager = nil
+
+        registerContext(viewContext)
 
         // Begin monitoring Core Data saves.
         startObservingChanges()
@@ -153,8 +157,7 @@ final class CoreDataService: ObservableObject {
     /// - Parameter work: Closure with the background context to perform your writes.
     func performBackgroundTask(_ work: @escaping (NSManagedObjectContext) throws -> Void) {
         container.performBackgroundTask { context in
-            context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-            context.automaticallyMergesChangesFromParent = true
+            self.configureBackgroundContext(context)
             do {
                 try work(context)
                 if context.hasChanges {
@@ -195,15 +198,33 @@ final class CoreDataService: ObservableObject {
     /// Completely remove all data from the persistent store.
     func wipeAllData() throws {
         let context = viewContext
+        var deletedObjectIDs: [NSManagedObjectID] = []
+
         try context.performAndWait {
             for entity in container.managedObjectModel.entities {
                 guard let name = entity.name else { continue }
                 let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
                 let request = NSBatchDeleteRequest(fetchRequest: fetch)
-                try context.execute(request)
+                request.resultType = .resultTypeObjectIDs
+
+                guard let result = try context.execute(request) as? NSBatchDeleteResult,
+                      let objectIDs = result.result as? [NSManagedObjectID],
+                      !objectIDs.isEmpty else { continue }
+
+                deletedObjectIDs.append(contentsOf: objectIDs)
             }
-            try context.save()
         }
+
+        let contextsToUpdate = registeredContextsIncludingViewContext()
+
+        if !deletedObjectIDs.isEmpty {
+            let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: deletedObjectIDs]
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: contextsToUpdate)
+        }
+
+        resetContexts(contextsToUpdate)
+
+        notificationCenter.post(name: .dataStoreDidChange, object: nil)
     }
 }
 
@@ -223,6 +244,41 @@ extension CoreDataService {
 // MARK: - Private Helpers
 
 private extension CoreDataService {
+    func configureBackgroundContext(_ context: NSManagedObjectContext) {
+        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        context.automaticallyMergesChangesFromParent = true
+        registerContext(context)
+    }
+
+    func registerContext(_ context: NSManagedObjectContext) {
+        contextRegistryLock.lock()
+        contextRegistry.add(context)
+        contextRegistryLock.unlock()
+    }
+
+    func registeredContextsIncludingViewContext() -> [NSManagedObjectContext] {
+        contextRegistryLock.lock()
+        let registeredContexts = contextRegistry.allObjects
+        contextRegistryLock.unlock()
+
+        var uniqueContexts: [ObjectIdentifier: NSManagedObjectContext] = [:]
+        uniqueContexts[ObjectIdentifier(viewContext)] = viewContext
+
+        for context in registeredContexts {
+            uniqueContexts[ObjectIdentifier(context)] = context
+        }
+
+        return Array(uniqueContexts.values)
+    }
+
+    func resetContexts(_ contexts: [NSManagedObjectContext]) {
+        for context in contexts {
+            context.performAndWait {
+                context.reset()
+            }
+        }
+    }
+
     @MainActor
     func loadStores(file: StaticString, line: UInt) async {
         defer { loadingTask = nil }

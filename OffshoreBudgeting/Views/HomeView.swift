@@ -89,6 +89,12 @@ struct HomeView: View {
             let newPeriod = BudgetPeriod(rawValue: newValue) ?? .monthly
             vm.updateBudgetPeriod(to: newPeriod)
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .dataStoreDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            Task { await vm.refresh() }
+        }
 
         // MARK: ADD SHEET — present new budget UI for the selected period
         .sheet(isPresented: $isPresentingAddBudget, content: makeAddBudgetView)
