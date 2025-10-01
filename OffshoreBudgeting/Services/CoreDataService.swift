@@ -195,14 +195,39 @@ final class CoreDataService: ObservableObject {
     /// Completely remove all data from the persistent store.
     func wipeAllData() throws {
         let context = viewContext
+        var didMergeDeletes = false
+
         try context.performAndWait {
+            var deletedObjectIDs = Set<NSManagedObjectID>()
+
             for entity in container.managedObjectModel.entities {
                 guard let name = entity.name else { continue }
                 let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: name)
                 let request = NSBatchDeleteRequest(fetchRequest: fetch)
-                try context.execute(request)
+                request.resultType = .resultTypeObjectIDs
+
+                let result = try context.execute(request) as? NSBatchDeleteResult
+                if let ids = result?.result as? [NSManagedObjectID] {
+                    deletedObjectIDs.formUnion(ids)
+                }
             }
-            try context.save()
+
+            guard !deletedObjectIDs.isEmpty else { return }
+
+            let changes: [AnyHashable: Any] = [
+                NSDeletedObjectsKey: Array(deletedObjectIDs)
+            ]
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
+
+            if !context.registeredObjects.isEmpty {
+                context.reset()
+            }
+
+            didMergeDeletes = true
+        }
+
+        if didMergeDeletes {
+            notificationCenter.post(name: .dataStoreDidChange, object: nil)
         }
     }
 }
