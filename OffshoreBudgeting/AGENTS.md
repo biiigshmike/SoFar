@@ -6,7 +6,7 @@ This document guides code agents on how to safely read, plan, and modify this re
 
 ```
 ./
-OffshoreBudgeting/
+Offshore/
   .DS_Store
   ContentView.swift
   Info.plist
