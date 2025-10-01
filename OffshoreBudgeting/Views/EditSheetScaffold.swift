@@ -48,7 +48,6 @@ struct EditSheetScaffold<Content: View>: View {
 
     // MARK: Environment
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
     // Selection state for detents (compat type)
@@ -158,11 +157,15 @@ struct EditSheetScaffold<Content: View>: View {
     // MARK: Row Background
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(themeManager.selectedTheme.formRowFill(for: colorScheme))
+            .fill(themeManager.selectedTheme.secondaryBackground)
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(themeManager.selectedTheme.formRowStroke(for: colorScheme), lineWidth: 1)
+                    .stroke(separatorColor, lineWidth: 1)
             )
+    }
+
+    private var separatorColor: Color {
+        return Color(uiColor: .separator)
     }
 
     // MARK: Detent selection binding (iOS only)
