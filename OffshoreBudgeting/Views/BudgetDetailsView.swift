@@ -1420,7 +1420,7 @@ private extension View {
 }
 
 private enum BudgetListLayoutMetrics {
-    static let headerToRowsPadding: CGFloat = DS.Spacing.xs / 2
+    static let headerToRowsPadding: CGFloat = DS.Spacing.s
 }
 
 private enum BudgetListBottomInsetMetrics {

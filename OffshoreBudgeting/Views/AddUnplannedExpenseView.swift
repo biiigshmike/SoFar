@@ -68,7 +68,7 @@ struct AddUnplannedExpenseView: View {
             UBFormSection("Assign a Card to Expense", isUppercased: false) {
                 if vm.allCards.isEmpty {
                     VStack(spacing: DS.Spacing.m) {
-                        Text("No cards yet. Add one to continue.")
+                        Text("No cards yet. Add one to assign this expense.")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Button {

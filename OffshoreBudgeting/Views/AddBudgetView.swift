@@ -132,7 +132,7 @@ struct AddBudgetView: View {
             // ---- Cards to Track
             UBFormSection("Cards to Track", isUppercased: true) {
                 if vm.allCards.isEmpty {
-                    Text("No cards yet. Add cards first to track variable expenses.")
+                    Text("No cards yet. Add cards first to track expenses.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(vm.allCards, id: \.objectID) { card in
