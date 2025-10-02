@@ -57,21 +57,18 @@ struct GlassCTAButton<Label: View>: View {
     @available(iOS 26.0, macCatalyst 26.0, *)
     @ViewBuilder
     private func glassButton() -> some View {
-        let capsule = Capsule(style: .continuous)
-
-        GlassEffectContainer {
+        GlassCapsuleContainer(
+            horizontalPadding: DS.Spacing.xl,
+            verticalPadding: DS.Spacing.m,
+            alignment: .center
+        ) {
             Button(action: action) {
                 labelBuilder()
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.vertical, DS.Spacing.m)
-                    .contentShape(capsule)
             }
             .buttonStyle(.plain)
             .tint(glassTint)
-            .glassEffect(in: capsule)
         }
     }
 
