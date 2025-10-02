@@ -124,7 +124,8 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        let radius = metrics.cornerRadius
+        let supportsOS26Translucency = capabilities.supportsOS26Translucency
+        let radius = supportsOS26Translucency ? metrics.cornerRadius : 0
         let theme = themeManager.selectedTheme
 
         return labelContent(for: configuration, theme: theme)
@@ -133,8 +134,16 @@ struct TranslucentButtonStyle: ButtonStyle {
             .frame(maxWidth: metrics.layout == .expandHorizontally ? .infinity : nil)
             .frame(width: metrics.width, height: metrics.height)
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .background(background(for: theme, isPressed: configuration.isPressed, radius: radius))
-            .overlay(border(for: theme, isPressed: configuration.isPressed, radius: radius))
+            .background(alignment: .center) {
+                if supportsOS26Translucency {
+                    background(for: theme, isPressed: configuration.isPressed, radius: radius)
+                }
+            }
+            .overlay {
+                if supportsOS26Translucency {
+                    border(for: theme, isPressed: configuration.isPressed, radius: radius)
+                }
+            }
             .overlay {
                 if capabilities.supportsOS26Translucency {
                     highlight(radius: radius)
@@ -151,7 +160,10 @@ struct TranslucentButtonStyle: ButtonStyle {
 
     @ViewBuilder
     private func labelContent(for configuration: Configuration, theme: AppTheme) -> some View {
-        if metrics.overridesLabelForeground {
+        let shouldOverrideLabelForeground = metrics.overridesLabelForeground && capabilities.supportsOS26Translucency
+        let shouldApplyLegacyTint = metrics.overridesLabelForeground && !capabilities.supportsOS26Translucency
+
+        if shouldOverrideLabelForeground {
             if let font = metrics.font {
                 configuration.label
                     .font(font)
@@ -159,6 +171,15 @@ struct TranslucentButtonStyle: ButtonStyle {
             } else {
                 configuration.label
                     .foregroundStyle(labelForeground(for: theme))
+            }
+        } else if shouldApplyLegacyTint {
+            if let font = metrics.font {
+                configuration.label
+                    .font(font)
+                    .foregroundStyle(legacyLabelForeground(for: theme))
+            } else {
+                configuration.label
+                    .foregroundStyle(legacyLabelForeground(for: theme))
             }
         } else if let font = metrics.font {
             configuration.label
@@ -170,6 +191,10 @@ struct TranslucentButtonStyle: ButtonStyle {
 
     private func labelForeground(for theme: AppTheme) -> Color {
         usesSystemPalette(for: theme) ? Color.primary : Color.white
+    }
+
+    private func legacyLabelForeground(for theme: AppTheme) -> Color {
+        usesSystemPalette(for: theme) ? Color.primary : tint
     }
 
     @ViewBuilder
