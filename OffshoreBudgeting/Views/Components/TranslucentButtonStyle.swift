@@ -229,6 +229,10 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func shadowColor(for theme: AppTheme, isPressed: Bool) -> Color {
+        if appearance == .neutral {
+            return .clear
+        }
+
         if usesSystemPalette(for: theme) {
             return Color.black.opacity(isPressed ? 0.20 : 0.28)
         } else {
