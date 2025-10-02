@@ -969,6 +969,7 @@ private struct PlannedListFR: View {
     @ViewBuilder
     private func headerListRow(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
         header
+            .padding(.bottom, applyDefaultInsets ? 0 : BudgetListLayoutMetrics.headerToRowsPadding)
             .listRowInsets(
                 applyDefaultInsets
                     ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
@@ -1281,6 +1282,7 @@ private struct VariableListFR: View {
     @ViewBuilder
     private func headerListRow(_ header: AnyView, applyDefaultInsets: Bool = true) -> some View {
         header
+            .padding(.bottom, applyDefaultInsets ? 0 : BudgetListLayoutMetrics.headerToRowsPadding)
             .listRowInsets(
                 applyDefaultInsets
                     ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
@@ -1415,6 +1417,10 @@ private extension View {
             self
         }
     }
+}
+
+private enum BudgetListLayoutMetrics {
+    static let headerToRowsPadding: CGFloat = DS.Spacing.xs / 2
 }
 
 private enum BudgetListBottomInsetMetrics {
