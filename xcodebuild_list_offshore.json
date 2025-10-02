@@ -1,0 +1,17 @@
+{
+  "project" : {
+    "configurations" : [
+      "Debug",
+      "Release"
+    ],
+    "name" : "Offshore",
+    "schemes" : [
+      "OffshoreBudgeting"
+    ],
+    "targets" : [
+      "OffshoreBudgeting",
+      "OffshoreBudgetingTests",
+      "OffshoreBudgetingUITests"
+    ]
+  }
+}

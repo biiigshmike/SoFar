@@ -93,11 +93,36 @@ struct ExpenseCategoryManagerView: View {
             if categories.isEmpty {
                 emptyState
             } else {
-                List {
-                    Section {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    // Title + helper message outside the list so it stays above
+                    Text("Categories")
+                        .font(.headline)
+                        .padding(.horizontal, DS.Spacing.l)
+                    Text("These categories appear when adding expenses. Colors help visually group spending.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, DS.Spacing.l)
+                        .padding(.bottom, DS.Spacing.s)
+
+                    List {
                         ForEach(categories, id: \.objectID) { category in
                             categoryRow(for: category)
-                                .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                                .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+                                .unifiedSwipeActions(
+                                    UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
+                                    onEdit: { categoryToEdit = category },
+                                    onDelete: {
+                                        let counts = usageCounts(for: category)
+                                        if counts.total > 0 {
+                                            categoryToDelete = category
+                                        } else if confirmBeforeDelete {
+                                            categoryToDelete = category
+                                        } else {
+                                            deleteCategory(category)
+                                        }
+                                    }
+                                )
                         }
                         .onDelete { offsets in
                             let targets = offsets.map { categories[$0] }
@@ -109,15 +134,9 @@ struct ExpenseCategoryManagerView: View {
                                 targets.forEach(deleteCategory(_:))
                             }
                         }
-                    } header: {
-                        Text("Categories")
-                    } footer: {
-                        Text("These categories appear when adding expenses. Colors help visually group spending.")
                     }
-                    .listRowBackground(themeManager.selectedTheme.secondaryBackground)
+                    .ub_listStyleLiquidAware()
                 }
-                .listStyle(.insetGrouped)
-                .applyIfAvailableScrollContentBackgroundHidden()
             }
         }
         .navigationTitle("Manage Categories")

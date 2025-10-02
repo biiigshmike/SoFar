@@ -1,0 +1,9 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -scheme OffshoreBudgeting -project Offshore.xcodeproj -destination "platform=iOS Simulator,name=iPhone 15" build
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  MijickCalendarView: https://github.com/Mijick/CalendarView.git @ 1.0.0
+

@@ -85,6 +85,7 @@ struct PresetsView: View {
                         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .unifiedSwipeActions(
+                            UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
                             onEdit: { editingTemplate = item.template },
                             onDelete: {
                                 if confirmBeforeDelete {

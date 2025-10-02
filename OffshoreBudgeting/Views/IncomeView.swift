@@ -531,14 +531,12 @@ struct IncomeView: View {
                     onEdit: { beginEditingIncome(income) },
                     onDelete: { handleDeleteRequest(income) }
                 )
-                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                 .listRowBackground(Color.clear)
             }
         }
-        .listStyle(.plain)
+        .ub_listStyleLiquidAware()
         .ub_hideScrollIndicators()
-        .applyIfAvailableScrollContentBackgroundHidden()
     }
 
     @ViewBuilder

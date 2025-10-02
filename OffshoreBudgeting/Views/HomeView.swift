@@ -67,14 +67,17 @@ struct HomeView: View {
         .navigationTitle("Home")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Order: ellipsis, calendar, plus
+                if let periodSummary = actionableSummaryForSelectedPeriod {
+                    optionsToolbarMenu(summary: periodSummary)
+                } else {
+                    optionsToolbarMenu()
+                }
+
                 calendarToolbarMenu()
 
-                if let summary = primarySummary {
-                    addExpenseToolbarMenu(for: summary.id)
-                    optionsToolbarMenu(summary: summary)
-                } else {
-                    addExpenseToolbarMenu()
-                    optionsToolbarMenu()
+                if let active = actionableSummaryForSelectedPeriod {
+                    addExpenseToolbarMenu(for: active.id)
                 }
             }
         }
@@ -304,8 +307,8 @@ struct HomeView: View {
                 emptyPeriodContent(proxy: proxy)
 
             case .loaded(let summaries):
-                if let first = summaries.first {
-                    loadedBudgetContent(for: first)
+                if let primary = selectPrimarySummary(from: summaries) {
+                    loadedBudgetContent(for: primary)
                 } else {
                     emptyPeriodContent(proxy: proxy)
                 }
@@ -372,7 +375,8 @@ struct HomeView: View {
                 },
                 headerManagesPadding: true,
                 header: header,
-                listHeaderBehavior: .omitsHeader
+                listHeaderBehavior: .omitsHeader,
+                initialFilterRange: filterOverrideRangeForCurrentSelection
             )
             .id(summary.id)
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
@@ -407,13 +411,90 @@ struct HomeView: View {
 
     private var primarySummary: BudgetSummary? {
         if case .loaded(let summaries) = vm.state {
-            return summaries.first
+            return selectPrimarySummary(from: summaries)
+        }
+        return nil
+    }
+
+    // Summary that is considered "active" for the currently selected period
+    // (exact canonical match or same period type containing the selected date).
+    private var actionableSummaryForSelectedPeriod: BudgetSummary? {
+        if case .loaded(let summaries) = vm.state {
+            return selectActionableSummary(from: summaries)
+        }
+        return nil
+    }
+
+    /// Choose the most relevant budget summary for the current Home selection.
+    /// Preference order:
+    /// 1) Exact match to the selected period's canonical start/end for `vm.selectedDate`.
+    /// 2) A summary whose detected period type matches the selected period and contains `vm.selectedDate`.
+    /// 3) Fallback to the earliest (current behavior via `.first`).
+    private func selectPrimarySummary(from summaries: [BudgetSummary]) -> BudgetSummary? {
+        guard !summaries.isEmpty else { return nil }
+
+        let cal = Calendar.current
+        let selectedPeriod = budgetPeriod
+        let (selStart, selEnd) = selectedPeriod.range(containing: vm.selectedDate)
+
+        // 1) Exact match to canonical range for the selected period
+        if let exact = summaries.first(where: { s in
+            cal.isDate(s.periodStart, inSameDayAs: selStart) && cal.isDate(s.periodEnd, inSameDayAs: selEnd)
+        }) {
+            return exact
+        }
+
+        // 2) Match by detected period type and containment of selected date
+        if let typeMatch = summaries.first(where: { s in
+            let detected = BudgetPeriod.selectableCases.first { $0.matches(startDate: s.periodStart, endDate: s.periodEnd) }
+            let containsSelected = (s.periodStart ... s.periodEnd).contains(vm.selectedDate)
+            return detected == selectedPeriod && containsSelected
+        }) {
+            return typeMatch
+        }
+
+        // 3) Fallback: maintain current behavior
+        return summaries.first
+    }
+
+    /// Returns a summary only if it matches the selected period exactly or by type.
+    /// This is used to decide whether the options menu should present Edit actions,
+    /// otherwise it will offer Create Budget.
+    private func selectActionableSummary(from summaries: [BudgetSummary]) -> BudgetSummary? {
+        guard !summaries.isEmpty else { return nil }
+        let cal = Calendar.current
+        let selectedPeriod = budgetPeriod
+        let (selStart, selEnd) = selectedPeriod.range(containing: vm.selectedDate)
+
+        if let exact = summaries.first(where: { s in
+            cal.isDate(s.periodStart, inSameDayAs: selStart) && cal.isDate(s.periodEnd, inSameDayAs: selEnd)
+        }) {
+            return exact
+        }
+        if let typeMatch = summaries.first(where: { s in
+            let detected = BudgetPeriod.selectableCases.first { $0.matches(startDate: s.periodStart, endDate: s.periodEnd) }
+            let containsSelected = (s.periodStart ... s.periodEnd).contains(vm.selectedDate)
+            return detected == selectedPeriod && containsSelected
+        }) {
+            return typeMatch
         }
         return nil
     }
 
     private var requiresScaffoldScrollHosting: Bool {
         primarySummary == nil
+    }
+
+    // For Daily/Weekly/Bi-Weekly, align the BudgetDetailsView lists to the
+    // selected period range. Monthly/Quarterly/Yearly: keep default.
+    private var filterOverrideRangeForCurrentSelection: ClosedRange<Date>? {
+        switch budgetPeriod {
+        case .daily, .weekly, .biWeekly:
+            let (start, end) = budgetPeriod.range(containing: vm.selectedDate)
+            return start...end
+        default:
+            return nil
+        }
     }
 
     private var emptyShellMessage: String {

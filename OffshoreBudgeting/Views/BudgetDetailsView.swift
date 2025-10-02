@@ -37,6 +37,8 @@ struct BudgetDetailsView: View {
     private let embeddedListHeader: AnyView?
     private let embeddedHeaderManagesPadding: Bool
     private let listHeaderBehavior: ListHeaderBehavior
+    // Optional: override the initial date window shown by the lists
+    private let initialFilterRange: ClosedRange<Date>?
     @Binding private var externalSelectedSegment: BudgetDetailsViewModel.Segment
     @Binding private var externalSort: BudgetDetailsViewModel.SortOption
 
@@ -58,6 +60,7 @@ struct BudgetDetailsView: View {
     @State private var isPresentingAddUnplannedSheet = false
     @State private var didTriggerInitialLoad = false
     @State private var isPresentingManageCategories = false
+    @State private var didApplyFilterOverride = false
 
     // MARK: Layout
     private var isWideHeaderLayout: Bool {
@@ -103,7 +106,8 @@ struct BudgetDetailsView: View {
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
         header: AnyView? = nil,
-        listHeaderBehavior: ListHeaderBehavior = .rendersHeader
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
+        initialFilterRange: ClosedRange<Date>? = nil
     ) {
         self.budgetObjectID = budgetObjectID
         self.periodNavigation = periodNavigation
@@ -115,6 +119,7 @@ struct BudgetDetailsView: View {
         self.embeddedListHeader = header
         self.embeddedHeaderManagesPadding = headerManagesPadding
         self.listHeaderBehavior = listHeaderBehavior
+        self.initialFilterRange = initialFilterRange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: BudgetDetailsViewModelStore.shared.viewModel(for: budgetObjectID))
@@ -133,7 +138,8 @@ struct BudgetDetailsView: View {
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
         header: AnyView? = nil,
-        listHeaderBehavior: ListHeaderBehavior = .rendersHeader
+        listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
+        initialFilterRange: ClosedRange<Date>? = nil
     ) {
         self.budgetObjectID = viewModel.budgetObjectID
         self.periodNavigation = periodNavigation
@@ -145,6 +151,7 @@ struct BudgetDetailsView: View {
         self.embeddedListHeader = header
         self.embeddedHeaderManagesPadding = headerManagesPadding
         self.listHeaderBehavior = listHeaderBehavior
+        self.initialFilterRange = initialFilterRange
         _externalSelectedSegment = selectedSegment
         _externalSort = sort
         _vm = StateObject(wrappedValue: viewModel)
@@ -162,7 +169,8 @@ struct BudgetDetailsView: View {
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
         listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
-        @ViewBuilder header headerBuilder: @escaping () -> Header
+        @ViewBuilder header headerBuilder: @escaping () -> Header,
+        initialFilterRange: ClosedRange<Date>? = nil
     ) {
         self.init(
             budgetObjectID: budgetObjectID,
@@ -176,7 +184,8 @@ struct BudgetDetailsView: View {
             onSegmentChange: onSegmentChange,
             headerManagesPadding: headerManagesPadding,
             header: AnyView(headerBuilder()),
-            listHeaderBehavior: listHeaderBehavior
+            listHeaderBehavior: listHeaderBehavior,
+            initialFilterRange: initialFilterRange
         )
     }
 
@@ -192,7 +201,8 @@ struct BudgetDetailsView: View {
         onSegmentChange: ((BudgetDetailsViewModel.Segment) -> Void)? = nil,
         headerManagesPadding: Bool = false,
         listHeaderBehavior: ListHeaderBehavior = .rendersHeader,
-        @ViewBuilder header headerBuilder: @escaping () -> Header
+        @ViewBuilder header headerBuilder: @escaping () -> Header,
+        initialFilterRange: ClosedRange<Date>? = nil
     ) {
         self.init(
             viewModel: viewModel,
@@ -206,7 +216,8 @@ struct BudgetDetailsView: View {
             onSegmentChange: onSegmentChange,
             headerManagesPadding: headerManagesPadding,
             header: AnyView(headerBuilder()),
-            listHeaderBehavior: listHeaderBehavior
+            listHeaderBehavior: listHeaderBehavior,
+            initialFilterRange: initialFilterRange
         )
     }
 
@@ -277,6 +288,13 @@ struct BudgetDetailsView: View {
                 didTriggerInitialLoad = true
                 CoreDataService.shared.ensureLoaded()
                 await vm.load()
+                // Apply an optional initial filter override once after load
+                if !didApplyFilterOverride, let override = initialFilterRange {
+                    didApplyFilterOverride = true
+                    vm.startDate = override.lowerBound
+                    vm.endDate = override.upperBound
+                    await vm.refreshRows()
+                }
             }
         }
         .onAppear(perform: synchronizeBindingsFromViewModel)
@@ -833,7 +851,7 @@ private struct PlannedListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
+                        headerListRow(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     listRows(items: items)
                 }
@@ -881,9 +899,10 @@ private struct PlannedListFR: View {
 
     @ViewBuilder
     private func listRows(items: [PlannedExpense]) -> some View {
-        ForEach(items, id: \.objectID) { item in
-            BudgetListRowContainer {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+        ForEach(Array(items.enumerated()), id: \.element.objectID) { pair in
+            let idx = pair.offset
+            let item = pair.element
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                     // Category color indicator, matching Variable expenses
                     Circle()
                         .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
@@ -919,7 +938,8 @@ private struct PlannedListFR: View {
                 }
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            .listRowInsets(EdgeInsets(top: idx == 0 ? 4 : 12, leading: 16, bottom: 12, trailing: 16))
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
@@ -955,7 +975,7 @@ private struct PlannedListFR: View {
                     : EdgeInsets()
             )
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
     }
 
     @ViewBuilder
@@ -1152,7 +1172,7 @@ private struct VariableListFR: View {
                 // MARK: Real List for native swipe
                 List {
                     if let header {
-                        headerSection(header, applyDefaultInsets: !headerManagesPadding)
+                        headerListRow(header, applyDefaultInsets: !headerManagesPadding)
                     }
                     listRows(items: items)
                 }
@@ -1201,9 +1221,10 @@ private struct VariableListFR: View {
 
     @ViewBuilder
     private func listRows(items: [UnplannedExpense]) -> some View {
-        ForEach(items, id: \.objectID) { item in
-            BudgetListRowContainer {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
+        ForEach(Array(items.enumerated()), id: \.element.objectID) { pair in
+            let idx = pair.offset
+            let item = pair.element
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                     Circle()
                         .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
                         .frame(width: 8, height: 8)
@@ -1228,7 +1249,8 @@ private struct VariableListFR: View {
                     }
                 }
                 .padding(.vertical, 6)
-            }
+            .listRowInsets(EdgeInsets(top: idx == 0 ? 4 : 12, leading: 16, bottom: 12, trailing: 16))
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
