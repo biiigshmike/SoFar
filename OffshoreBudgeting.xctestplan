@@ -1,0 +1,48 @@
+{
+  "configurations" : [
+    {
+      "id" : "9B05BFA0-50B2-4469-8C83-4CA28BAEA88F",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "OS_ACTIVITY_MODE",
+        "value" : "disable"
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Offshore.xcodeproj",
+      "identifier" : "4CF220362E4A33BA00AD5F29",
+      "name" : "OffshoreBudgeting"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Offshore.xcodeproj",
+        "identifier" : "4CF220442E4A33BC00AD5F29",
+        "name" : "OffshoreBudgetingTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "parallelizable" : true,
+      "selectedTests" : [
+
+      ],
+      "target" : {
+        "containerPath" : "container:Offshore.xcodeproj",
+        "identifier" : "4CF2204E2E4A33BC00AD5F29",
+        "name" : "OffshoreBudgetingUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -29,6 +29,10 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     @Published private(set) var allCategories: [ExpenseCategory] = []
     @Published private(set) var allCards: [Card] = []
 
+    // MARK: Live Updates
+    /// Listens for Core Data changes and reloads cards/categories/budgets on demand.
+    private var changeMonitor: CoreDataEntityChangeMonitor?
+
     // MARK: Form State
     @Published var selectedBudgetID: NSManagedObjectID?
     @Published var selectedCategoryID: NSManagedObjectID?
@@ -87,7 +91,19 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             if selectedCategoryID == nil {
                 selectedCategoryID = allCategories.first?.objectID
             }
-            // Leave `selectedCardID` nil by default so the form can choose "No Card".
+            // If cards exist, do not auto-select; the user will pick one explicitly.
+        }
+
+        // Monitor for external inserts/updates/deletes of cards so the picker updates if a new card is added from a sheet.
+        changeMonitor = CoreDataEntityChangeMonitor(
+            entityNames: ["Card", "ExpenseCategory", "Budget"]
+        ) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                self.allCards = self.fetchCards()
+                self.allCategories = self.fetchCategories()
+                self.allBudgets = self.fetchBudgets()
+            }
         }
     }
 
@@ -95,21 +111,28 @@ final class AddPlannedExpenseViewModel: ObservableObject {
     var canSave: Bool {
         let amountValid = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) != nil
         let textValid = !descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let cardValid = (selectedCardID != nil)
         if isEditing && editingOriginalIsGlobal {
-            // Editing a parent template does not require selecting a budget.
-            return textValid && amountValid
+            // Editing a parent template: require a card.
+            return textValid && amountValid && cardValid
         }
         if !requiresBudgetSelection && saveAsGlobalPreset {
-            // Adding a new global preset without attaching to a budget.
-            return textValid && amountValid
+            // Adding a new global preset without attaching to a budget: require a card.
+            return textValid && amountValid && cardValid
         }
-        return selectedBudgetID != nil && textValid && amountValid
+        return (selectedBudgetID != nil) && textValid && amountValid && cardValid
     }
 
     // MARK: save()
     func save() throws {
         let plannedAmt = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
         let actualAmt  = Double(actualAmountString.replacingOccurrences(of: ",", with: "")) ?? 0
+
+        // Resolve required card selection up-front.
+        guard let cardID = selectedCardID,
+              let selectedCard = try? context.existingObject(with: cardID) as? Card else {
+            throw NSError(domain: "SoFar.AddPlannedExpense", code: 12, userInfo: [NSLocalizedDescriptionKey: "Please select a card."])
+        }
 
         if isEditing,
            let id = plannedExpenseID,
@@ -124,12 +147,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             } else {
                 existing.expenseCategory = nil
             }
-            if let cardID = selectedCardID,
-               let card = try? context.existingObject(with: cardID) as? Card {
-                existing.card = card
-            } else {
-                existing.card = nil
-            }
+            existing.card = selectedCard
             if editingOriginalIsGlobal {
                 // Editing a parent template; keep it global and unattached.
                 existing.isGlobal = true
@@ -161,10 +179,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                    let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                     parent.expenseCategory = category
                 }
-                if let cardID = selectedCardID,
-                   let card = try? context.existingObject(with: cardID) as? Card {
-                    parent.card = card
-                }
+                parent.card = selectedCard
 
                 if let budgetID = selectedBudgetID,
                    let targetBudget = context.object(with: budgetID) as? Budget {
@@ -182,10 +197,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                        let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                         child.expenseCategory = category
                     }
-                    if let cardID = selectedCardID,
-                       let card = try? context.existingObject(with: cardID) as? Card {
-                        child.card = card
-                    }
+                    child.card = selectedCard
                 }
             } else {
                 guard let budgetID = selectedBudgetID,
@@ -206,10 +218,7 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                    let category = try? context.existingObject(with: catID) as? ExpenseCategory {
                     item.expenseCategory = category
                 }
-                if let cardID = selectedCardID,
-                   let card = try? context.existingObject(with: cardID) as? Card {
-                    item.card = card
-                }
+                item.card = selectedCard
             }
         }
 

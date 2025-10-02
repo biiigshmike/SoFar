@@ -58,8 +58,13 @@ struct CardsView: View {
         // MARK: App Toolbar
         .navigationTitle("Cards")
         .toolbar {
+            // Always provide the item; render EmptyView when a card is selected.
             ToolbarItem(placement: .primaryAction) {
-                addActionToolbarButton
+                if selectedCardStableID == nil {
+                    addActionToolbarButton
+                } else {
+                    EmptyView()
+                }
             }
         }
         // MARK: Add Sheet
@@ -196,15 +201,18 @@ struct CardsView: View {
                 ForEach(cards) { card in
                     CardTileView(
                         card: card,
-                        isSelected: selectedCardStableID == card.id
-                    ) {
+                        isSelected: selectedCardStableID == card.id,
+                        onTap: {
                         // MARK: On Tap → Select Card
                         // This highlights the card with a color-matched ring + glow.
                         selectedCardStableID = card.id
 
                         // TODO: Navigate or reveal expenses for `card`.
                         // e.g., vm.showExpenses(for: card) or set a sidebar selection.
-                    }
+                        },
+                        enableMotionShine: true,
+                        showsBaseShadow: false
+                    )
                     .frame(height: fixedCardHeight)
                     .opacity(selectedCardStableID == nil ? 1 : 0)
                     .animation(.smooth(duration: 0.25), value: selectedCardStableID)

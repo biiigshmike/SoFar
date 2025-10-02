@@ -5,6 +5,20 @@ import CoreData
 /// Handles both legacy keyword strings ("weekly", "monthly", etc.) and
 /// modern ICS RRULE strings produced by `RecurrenceRule`.
 struct RecurrenceEngine {
+    // MARK: - Day-Inclusive Helpers
+    /// Compare by calendar day: true if `date` is on or before the end day (ignoring time-of-day).
+    private static func isOnOrBeforeEndDay(_ date: Date, interval: DateInterval, calendar: Calendar) -> Bool {
+        let lhs = calendar.startOfDay(for: date)
+        let rhs = calendar.startOfDay(for: interval.end)
+        return lhs <= rhs
+    }
+
+    /// Compare by calendar day: true if `date` is on or after the start day (ignoring time-of-day).
+    private static func isOnOrAfterStartDay(_ date: Date, interval: DateInterval, calendar: Calendar) -> Bool {
+        let lhs = calendar.startOfDay(for: date)
+        let rhs = calendar.startOfDay(for: interval.start)
+        return lhs >= rhs
+    }
     /// Generate projected recurrence dates for an event.
     /// - Parameters:
     ///   - recurrence: Either a simple keyword ("weekly", "monthly", etc.) or an ICS RRULE string.
@@ -126,7 +140,7 @@ struct RecurrenceEngine {
             let steps = (delta + stepDays - 1) / stepDays
             current = calendar.date(byAdding: .day, value: steps * stepDays, to: start) ?? interval.start
         }
-        while current <= interval.end {
+        while isOnOrBeforeEndDay(current, interval: interval, calendar: calendar) {
             dates.append(current)
             guard let next = calendar.date(byAdding: .day, value: stepDays, to: current) else { break }
             current = next
@@ -137,7 +151,7 @@ struct RecurrenceEngine {
     private static func strideMonthly(start: Date, stepMonths: Int, within interval: DateInterval, calendar: Calendar) -> [Date] {
         var dates: [Date] = []
         var current = alignedToInterval(start: start, unit: .month, step: stepMonths, within: interval, calendar: calendar)
-        while current <= interval.end {
+        while isOnOrBeforeEndDay(current, interval: interval, calendar: calendar) {
             dates.append(current)
             guard let next = calendar.date(byAdding: .month, value: stepMonths, to: current) else { break }
             current = next
@@ -148,7 +162,7 @@ struct RecurrenceEngine {
     private static func strideYearly(start: Date, within interval: DateInterval, calendar: Calendar) -> [Date] {
         var dates: [Date] = []
         var current = alignedToInterval(start: start, unit: .year, step: 1, within: interval, calendar: calendar)
-        while current <= interval.end {
+        while isOnOrBeforeEndDay(current, interval: interval, calendar: calendar) {
             dates.append(current)
             guard let next = calendar.date(byAdding: .year, value: 1, to: current) else { break }
             current = next
@@ -179,9 +193,11 @@ struct RecurrenceEngine {
         var monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: max(start, interval.start))) ?? calendar.startOfDay(for: start)
         while monthStart <= interval.end {
             if let d1 = clampedDayInMonth(baseDay, near: monthStart, calendar: calendar),
-               interval.contains(d1), d1 >= start { results.append(d1) }
+               isOnOrBeforeEndDay(d1, interval: interval, calendar: calendar),
+               isOnOrAfterStartDay(d1, interval: interval, calendar: calendar) { results.append(d1) }
             if let d2 = clampedDayInMonth(second, near: monthStart, calendar: calendar),
-               interval.contains(d2), d2 >= start { results.append(d2) }
+               isOnOrBeforeEndDay(d2, interval: interval, calendar: calendar),
+               isOnOrAfterStartDay(d2, interval: interval, calendar: calendar) { results.append(d2) }
             guard let next = calendar.date(byAdding: .month, value: 1, to: monthStart) else { break }
             monthStart = next
         }
@@ -254,4 +270,3 @@ struct RecurrenceEngine {
         }
     }
 }
-

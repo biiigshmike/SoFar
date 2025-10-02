@@ -24,6 +24,8 @@ struct CardDetailView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
+    // Add flows
+    @State private var isPresentingAddPlanned: Bool = false
 
     // No longer tracking header offset via state; the header is rendered
     // outside of the scroll view and does not need to drive layout of the
@@ -54,7 +56,7 @@ struct CardDetailView: View {
         .task { await viewModel.load() }
         //.accentColor(themeManager.selectedTheme.tint)
         //.tint(themeManager.selectedTheme.tint)
-        // Add Unplanned Expense sheet for this card
+        // Add Variable (Unplanned) Expense sheet for this card
         .sheet(isPresented: $isPresentingAddExpense) {
             AddUnplannedExpenseView(
                 initialCardID: card.objectID,
@@ -64,6 +66,20 @@ struct CardDetailView: View {
                     Task { await viewModel.load() }
                 }
             )
+        }
+        // Add Planned Expense sheet for this card
+        .sheet(isPresented: $isPresentingAddPlanned) {
+            AddPlannedExpenseView(
+                preselectedBudgetID: nil,
+                defaultSaveAsGlobalPreset: false,
+                showAssignBudgetToggle: true,
+                onSaved: {
+                    isPresentingAddPlanned = false
+                    Task { await viewModel.load() }
+                },
+                initialCardID: card.objectID
+            )
+            .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
         .ub_surfaceBackground(
             themeManager.selectedTheme,
@@ -171,6 +187,15 @@ struct CardDetailView: View {
                         IconOnlyButton(systemName: "pencil") {
                             onEdit()
                         }
+                        // Add Expense menu (Planned or Variable) — keep as the rightmost control
+                        Menu {
+                            Button("Add Planned Expense") { isPresentingAddPlanned = true }
+                            Button("Add Variable Expense") { isPresentingAddExpense = true }
+                        } label: {
+                            RootHeaderControlIcon(systemImage: "plus")
+                        }
+                        .modifier(HideMenuIndicatorIfPossible())
+                        .accessibilityLabel("Add Expense")
                     }
                 }
             }

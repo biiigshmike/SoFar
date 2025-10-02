@@ -101,7 +101,7 @@ struct AddCardFormView: View {
 
             // ---- Preview
             Section {
-                CardTileView(card: previewItem)
+                CardTileView(card: previewItem, enableMotionShine: true)
                     .padding(.vertical, DS.Spacing.m)
             } header: {
                 // Gray, ALL CAPS, not bold — match Add Budget

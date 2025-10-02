@@ -30,6 +30,11 @@ struct CardTileView: View {
     /// single, prominent tiles (e.g., detail header).
     var enableMotionShine: Bool = false
 
+    /// When true, applies the base neutral drop shadow beneath the card tile.
+    /// Set to false for flat presentations (e.g., pickers and grids) while
+    /// retaining the selection glow.
+    var showsBaseShadow: Bool = true
+
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Layout
@@ -61,7 +66,7 @@ struct CardTileView: View {
             .overlay(selectionRingOverlay) // <- inner visible ring
             .overlay(selectionGlowOverlay) // <- outer glow (pretty when not clipped)
             .overlay(thinEdgeOverlay)
-            .shadow(color: .black.opacity(0.20), radius: 6, x: 0, y: 4)
+            .shadow(color: .black.opacity(showsBaseShadow ? 0.20 : 0), radius: showsBaseShadow ? 6 : 0, x: 0, y: showsBaseShadow ? 4 : 0)
         }
         .buttonStyle(.plain) // avoid system blue highlight
         .accessibilityElement(children: .ignore)

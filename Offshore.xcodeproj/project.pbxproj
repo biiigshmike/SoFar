@@ -28,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4C54117B2E8E1D37002EE82B /* OffshoreBudgeting.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = OffshoreBudgeting.xctestplan; sourceTree = "<group>"; };
 		4CF220372E4A33BA00AD5F29 /* Offshore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Offshore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF220452E4A33BC00AD5F29 /* OffshoreBudgetingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CF2204F2E4A33BC00AD5F29 /* OffshoreBudgetingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffshoreBudgetingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,6 +94,7 @@
 		4CF2202E2E4A33B900AD5F29 = {
 			isa = PBXGroup;
 			children = (
+				4C54117B2E8E1D37002EE82B /* OffshoreBudgeting.xctestplan */,
 				4CF220392E4A33BA00AD5F29 /* OffshoreBudgeting */,
 				4CF220482E4A33BC00AD5F29 /* OffshoreBudgetingTests */,
 				4CF220522E4A33BC00AD5F29 /* OffshoreBudgetingUITests */,
@@ -540,7 +542,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -564,7 +566,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OffshoreBudgeting.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OffshoreBudgeting";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Offshore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Offshore";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;

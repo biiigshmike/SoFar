@@ -5,7 +5,7 @@
 //  Tappable wrapper around CardTileView for horizontal pickers.
 //  Renders the exact card styling with a true credit-card aspect ratio.
 //
-//  Selection: uses an optional subtle shadow (no borders).
+//  Selection: no extra shadows; selection glow is handled by CardTileView.
 //
 
 import SwiftUI
@@ -29,7 +29,7 @@ struct CardPickerItemTile: View {
     var body: some View {
         let uiItem = CardItem(from: card)
 
-        CardTileView(card: uiItem)
+        CardTileView(card: uiItem, showsBaseShadow: false)
             // Keep the *shape* correct first…
             .aspectRatio(creditCardAspect, contentMode: .fit)
             // …then set the height to control the overall size in the row.
@@ -40,8 +40,7 @@ struct CardPickerItemTile: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
 
-            // Optional, subtle selection cue (no borders).
-            .shadow(radius: isSelected ? 10 : 0, y: isSelected ? 2 : 0)
+            // No additional shadow here; keep tiles flat in pickers.
 
             // Tap handling
             .onTapGesture(perform: onTap)

@@ -23,11 +23,14 @@ struct AddPlannedExpenseView: View {
     let showAssignBudgetToggle: Bool
     /// Called after a successful save.
     let onSaved: () -> Void
+    /// Optional card to preselect on first load.
+    let initialCardID: NSManagedObjectID?
 
     // MARK: State
     /// We don't call `dismiss()` directly anymore (the scaffold handles it),
     /// but we keep this in case future platform-specific work needs it.
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var vm: AddPlannedExpenseViewModel
     @State private var isAssigningToBudget: Bool
 
@@ -43,6 +46,7 @@ struct AddPlannedExpenseView: View {
     // MARK: Layout
     /// Shared card picker height to align with `CardPickerRow`.
     private let cardRowHeight: CGFloat = 160
+    @State private var isPresentingAddCard = false
 
     // MARK: Init
     /// Designated initializer.
@@ -57,13 +61,15 @@ struct AddPlannedExpenseView: View {
         preselectedBudgetID: NSManagedObjectID? = nil,
         defaultSaveAsGlobalPreset: Bool = false,
         showAssignBudgetToggle: Bool = false,
-        onSaved: @escaping () -> Void
+        onSaved: @escaping () -> Void,
+        initialCardID: NSManagedObjectID? = nil
     ) {
         self.plannedExpenseID = plannedExpenseID
         self.preselectedBudgetID = preselectedBudgetID
         self.defaultSaveAsGlobalPreset = defaultSaveAsGlobalPreset
         self.showAssignBudgetToggle = showAssignBudgetToggle
         self.onSaved = onSaved
+        self.initialCardID = initialCardID
         _isAssigningToBudget = State(initialValue: !showAssignBudgetToggle)
         _vm = StateObject(
             wrappedValue: AddPlannedExpenseViewModel(
@@ -84,14 +90,28 @@ struct AddPlannedExpenseView: View {
         ) {
             // MARK: Card Selection
             UBFormSection("Card", isUppercased: true) {
-                CardPickerRow(
-                    allCards: vm.allCards,
-                    selectedCardID: $vm.selectedCardID,
-                    includeNoneTile: true
-                )
-                .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: cardRowHeight)
-                .ub_hideScrollIndicators()
+                if vm.allCards.isEmpty {
+                    VStack(spacing: DS.Spacing.m) {
+                        Text("No cards yet. Add one to assign this expense.")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button {
+                            isPresentingAddCard = true
+                        } label: {
+                            Label("Add Card", systemImage: "plus")
+                        }
+                        .buttonStyle(TranslucentButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+                        .accessibilityLabel("Add Card")
+                    }
+                } else {
+                    CardPickerRow(
+                        allCards: vm.allCards,
+                        selectedCardID: $vm.selectedCardID
+                    )
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: cardRowHeight)
+                    .ub_hideScrollIndicators()
+                }
             }
 
             // MARK: Budget Assignment
@@ -202,6 +222,13 @@ struct AddPlannedExpenseView: View {
                 vm.saveAsGlobalPreset = defaultSaveAsGlobalPreset
                 didApplyDefaultGlobal = true
             }
+
+            // Preselect card if provided and none chosen yet
+            if let initialCardID,
+               vm.selectedCardID == nil,
+               vm.allCards.contains(where: { $0.objectID == initialCardID }) {
+                vm.selectedCardID = initialCardID
+            }
         }
         .ub_onChange(of: isAssigningToBudget) { newValue in
             guard showAssignBudgetToggle else { return }
@@ -212,6 +239,29 @@ struct AddPlannedExpenseView: View {
             }
         }
         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        // Add Card sheet for empty state
+        .sheet(isPresented: $isPresentingAddCard) {
+            AddCardFormView { newName, selectedTheme in
+                do {
+                    let service = CardService()
+                    let card = try service.createCard(name: newName)
+                    if let uuid = card.value(forKey: "id") as? UUID {
+                        CardAppearanceStore.shared.setTheme(selectedTheme, for: uuid)
+                    }
+                    // Select the new card immediately
+                    vm.selectedCardID = card.objectID
+                } catch {
+                    // Best-effort simple alert; the sheet handles its own dismissal
+                    let alert = UIAlertController(title: "Couldn’t Create Card", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    UIApplication.shared.connectedScenes
+                        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+                        .first?
+                        .rootViewController?
+                        .present(alert, animated: true)
+                }
+            }
+        }
     }
 
     // MARK: Actions

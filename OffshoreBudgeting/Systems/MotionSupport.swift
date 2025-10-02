@@ -12,6 +12,9 @@
 
 import SwiftUI
 import Combine
+#if os(iOS) || targetEnvironment(macCatalyst)
+import UIKit
+#endif
 
 // MARK: - MotionMonitor
 @MainActor
@@ -37,18 +40,28 @@ final class MotionMonitor: ObservableObject {
 
     // MARK: Provider
     private let provider: UBMotionsProviding
+    private var isRunning = false
+    private var lifecycleObservers: [NSObjectProtocol] = []
 
     // MARK: Init
     init(provider: UBMotionsProviding = UBPlatform.makeMotionProvider()) {
         self.provider = provider
+        setupLifecycleObservers()
         start()
     }
 
-    deinit { stop() }
+    deinit {
+        // Intentionally empty: for @MainActor classes, deinit is nonisolated in Swift 6.
+        // Avoid calling actor-isolated API here to satisfy isolation rules.
+        // Runtime cleanup is handled by lifecycle notifications and weak
+        // capture in the provider callback.
+    }
 
     // MARK: start()
     /// Begins motion updates and applies low-pass filtering to `display*`.
     func start() {
+        guard !isRunning else { return }
+        isRunning = true
         provider.start { [weak self] r, p, y in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -72,7 +85,9 @@ final class MotionMonitor: ObservableObject {
     /// This resolves “Call to main actor-isolated instance method in a nonisolated context”.
     nonisolated func stop() {
         Task { @MainActor in
+            guard self.isRunning else { return }
             self.provider.stop()
+            self.isRunning = false
         }
     }
 
@@ -84,5 +99,32 @@ final class MotionMonitor: ObservableObject {
     func updateTuning(smoothing: Double? = nil, scale: Double? = nil) {
         if let s = smoothing { smoothingAlpha = max(0, min(1, s)) }
         if let k = scale { amplitudeScale = max(0, min(1, k)) }
+    }
+}
+
+// MARK: - App Lifecycle Integration
+private extension MotionMonitor {
+    func setupLifecycleObservers() {
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        let center = NotificationCenter.default
+        let didEnterBackground = center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.stop() // nonisolated; hops to MainActor internally
+        }
+        let willEnterForeground = center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+            // Hop to MainActor to call the actor-isolated `start()`
+            Task { @MainActor [weak self] in self?.start() }
+        }
+        lifecycleObservers.append(contentsOf: [didEnterBackground, willEnterForeground])
+        #endif
+    }
+
+    func removeLifecycleObservers() {
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        let center = NotificationCenter.default
+        for token in lifecycleObservers {
+            center.removeObserver(token)
+        }
+        lifecycleObservers.removeAll()
+        #endif
     }
 }

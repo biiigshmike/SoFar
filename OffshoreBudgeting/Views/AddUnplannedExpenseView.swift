@@ -26,6 +26,8 @@ struct AddUnplannedExpenseView: View {
 
     // MARK: State
     @StateObject private var vm: AddUnplannedExpenseViewModel
+    @EnvironmentObject private var themeManager: ThemeManager
+    @State private var isPresentingAddCard = false
     
     // MARK: - Layout
     /// Height of the card picker row.  This matches the tile height defined in
@@ -64,13 +66,28 @@ struct AddUnplannedExpenseView: View {
         ) {
             // MARK: Card Picker (horizontal)
             UBFormSection("Assign a Card to Expense", isUppercased: false) {
-                CardPickerRow(
-                    allCards: vm.allCards,
-                    selectedCardID: $vm.selectedCardID
-                )
-                .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: cardRowHeight)
-                .ub_hideScrollIndicators()
+                if vm.allCards.isEmpty {
+                    VStack(spacing: DS.Spacing.m) {
+                        Text("No cards yet. Add one to continue.")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button {
+                            isPresentingAddCard = true
+                        } label: {
+                            Label("Add Card", systemImage: "plus")
+                        }
+                        .buttonStyle(TranslucentButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+                        .accessibilityLabel("Add Card")
+                    }
+                } else {
+                    CardPickerRow(
+                        allCards: vm.allCards,
+                        selectedCardID: $vm.selectedCardID
+                    )
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: cardRowHeight)
+                    .ub_hideScrollIndicators()
+                }
             }
 
             // MARK: Category Chips Row
@@ -140,6 +157,26 @@ struct AddUnplannedExpenseView: View {
         .task { await vm.load() }
         // Make sure our chips & sheet share the same context.
         .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        .sheet(isPresented: $isPresentingAddCard) {
+            AddCardFormView { newName, selectedTheme in
+                do {
+                    let service = CardService()
+                    let card = try service.createCard(name: newName)
+                    if let uuid = card.value(forKey: "id") as? UUID {
+                        CardAppearanceStore.shared.setTheme(selectedTheme, for: uuid)
+                    }
+                    vm.selectedCardID = card.objectID
+                } catch {
+                    let alert = UIAlertController(title: "Couldn’t Create Card", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    UIApplication.shared.connectedScenes
+                        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+                        .first?
+                        .rootViewController?
+                        .present(alert, animated: true)
+                }
+            }
+        }
     }
 
     // MARK: - trySave()

@@ -31,10 +31,6 @@ struct CardPickerRow: View {
     /// Selected Core Data objectID; keeps selection stable even through renames.
     @Binding var selectedCardID: NSManagedObjectID?
 
-    /// When true, show a "No Card" option and do **not** auto-select the first card.
-    /// Useful for forms where assigning a card is optional (e.g., planned expenses).
-    var includeNoneTile: Bool = false
-
     // MARK: Layout
     // Card tile height. Adjust here rather than inside individual views so
     // tweaks remain consistent across the app.
@@ -44,11 +40,6 @@ struct CardPickerRow: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: DS.Spacing.l) {
-                if includeNoneTile {
-                    NoCardTile(isSelected: selectedCardID == nil)
-                        .frame(height: tileHeight)
-                        .onTapGesture { selectedCardID = nil }
-                }
                 ForEach(allCards, id: \.objectID) { managedCard in
                     // MARK: Bridge Core Data → UI model
                     // Uses your existing CoreDataBridge to pull name/theme.
@@ -56,24 +47,25 @@ struct CardPickerRow: View {
 
                     CardTileView(
                         card: item,
-                        isSelected: selectedCardID == managedCard.objectID
-                    ) {
+                        isSelected: selectedCardID == managedCard.objectID,
+                        onTap: {
                         // MARK: On Tap → Select for Expense
                         selectedCardID = managedCard.objectID
-                    }
+                        },
+                        enableMotionShine: false,
+                        showsBaseShadow: false
+                    )
                     .frame(height: tileHeight)
                 }
             }
             .padding(.horizontal, DS.Spacing.l)
             .padding(.vertical, DS.Spacing.s)
         }
-        // Apply unified background and hide indicators across platforms
-        .ub_pickerBackground()
+        // Hide indicators across platforms; remove neutral background for flat look
         .ub_hideScrollIndicators()
         // Default to the first available card if none selected yet and no "None" option.
         .onAppear {
-            if !includeNoneTile,
-               selectedCardID == nil,
+            if selectedCardID == nil,
                let firstID = allCards.first?.objectID {
                 selectedCardID = firstID
             }
