@@ -21,6 +21,7 @@ struct CardDetailView: View {
     // MARK: State
     @StateObject private var viewModel: CardDetailViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.responsiveLayoutContext) private var layoutContext
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var isSearchActive: Bool = false
     @FocusState private var isSearchFieldFocused: Bool
@@ -117,10 +118,11 @@ struct CardDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding()
         case .loaded(let total, _, _):
+            let cardMaxWidth = resolvedCardMaxWidth(in: layoutContext)
             ScrollView {
                 VStack(spacing: 20) {
                     CardTileView(card: card, enableMotionShine: true)
-                        .frame(maxWidth: 360)
+                        .frame(maxWidth: cardMaxWidth)
                         .frame(maxWidth: .infinity, alignment: .center)
                     totalsSection(total: total)
                     categoryBreakdown(categories: viewModel.filteredCategories)
@@ -264,6 +266,29 @@ struct CardDetailView: View {
         .padding()
         .background(themeManager.selectedTheme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: Layout Helpers
+    private func resolvedCardMaxWidth(in context: ResponsiveLayoutContext) -> CGFloat? {
+        let availableWidth = max(context.containerSize.width - context.safeArea.leading - context.safeArea.trailing, 0)
+
+        switch context.idiom {
+        case .phone:
+            return nil
+        case .pad, .mac, .vision, .car:
+            return boundedCardWidth(for: availableWidth, upperBound: 520)
+        case .unspecified:
+            if context.horizontalSizeClass == .regular {
+                return boundedCardWidth(for: availableWidth, upperBound: 480)
+            } else {
+                return nil
+            }
+        }
+    }
+
+    private func boundedCardWidth(for availableWidth: CGFloat, upperBound: CGFloat) -> CGFloat? {
+        guard availableWidth > 0 else { return upperBound }
+        return min(availableWidth, upperBound)
     }
 
     // The sectionOffset helper and associated preference key were removed
