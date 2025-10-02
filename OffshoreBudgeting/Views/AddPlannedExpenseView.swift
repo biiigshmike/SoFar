@@ -95,17 +95,12 @@ struct AddPlannedExpenseView: View {
                         Text("No cards yet. Add one to assign this expense.")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Button {
-                            isPresentingAddCard = true
-                        } label: {
+                        GlassCTAButton(
+                            fallbackAppearance: .neutral,
+                            action: { isPresentingAddCard = true }
+                        ) {
                             Label("Add Card", systemImage: "plus")
                         }
-                        .buttonStyle(
-                            TranslucentButtonStyle(
-                                tint: themeManager.selectedTheme.resolvedTint,
-                                appearance: .neutral
-                            )
-                        )
                         .accessibilityLabel("Add Card")
                     }
                 } else {
