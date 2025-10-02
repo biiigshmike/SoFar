@@ -112,15 +112,17 @@ final class AddPlannedExpenseViewModel: ObservableObject {
         let amountValid = Double(plannedAmountString.replacingOccurrences(of: ",", with: "")) != nil
         let textValid = !descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let cardValid = (selectedCardID != nil)
+        let categoryValid = (selectedCategoryID != nil)
         if isEditing && editingOriginalIsGlobal {
-            // Editing a parent template: require a card.
-            return textValid && amountValid && cardValid
+            // Editing a parent template: require a card and a category.
+            return textValid && amountValid && cardValid && categoryValid
         }
         if !requiresBudgetSelection && saveAsGlobalPreset {
-            // Adding a new global preset without attaching to a budget: require a card.
-            return textValid && amountValid && cardValid
+            // Adding a new global preset without attaching to a budget: require a card and a category.
+            return textValid && amountValid && cardValid && categoryValid
         }
-        return (selectedBudgetID != nil) && textValid && amountValid && cardValid
+        // Standard: require budget, card, and category
+        return (selectedBudgetID != nil) && textValid && amountValid && cardValid && categoryValid
     }
 
     // MARK: save()
@@ -141,12 +143,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
             existing.plannedAmount = plannedAmt
             existing.actualAmount = actualAmt
             existing.transactionDate = transactionDate
-            if let catID = selectedCategoryID,
-               let category = try? context.existingObject(with: catID) as? ExpenseCategory {
-                existing.expenseCategory = category
-            } else {
-                existing.expenseCategory = nil
+            // Resolve required category selection.
+            guard let catID = selectedCategoryID,
+                  let category = try? context.existingObject(with: catID) as? ExpenseCategory else {
+                throw NSError(domain: "SoFar.AddPlannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
             }
+            existing.expenseCategory = category
             existing.card = selectedCard
             if editingOriginalIsGlobal {
                 // Editing a parent template; keep it global and unattached.
@@ -175,10 +177,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 parent.transactionDate = transactionDate
                 parent.isGlobal = true
                 parent.budget = nil
-                if let catID = selectedCategoryID,
-                   let category = try? context.existingObject(with: catID) as? ExpenseCategory {
-                    parent.expenseCategory = category
+                // Category is required for templates as well
+                guard let catID = selectedCategoryID,
+                      let category = try? context.existingObject(with: catID) as? ExpenseCategory else {
+                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
                 }
+                parent.expenseCategory = category
                 parent.card = selectedCard
 
                 if let budgetID = selectedBudgetID,
@@ -193,10 +197,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                     child.isGlobal = false
                     child.globalTemplateID = parent.id
                     child.budget = targetBudget
-                    if let catID = selectedCategoryID,
-                       let category = try? context.existingObject(with: catID) as? ExpenseCategory {
-                        child.expenseCategory = category
+                    // Require category for child too
+                    guard let catID = selectedCategoryID,
+                          let category = try? context.existingObject(with: catID) as? ExpenseCategory else {
+                        throw NSError(domain: "SoFar.AddPlannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
                     }
+                    child.expenseCategory = category
                     child.card = selectedCard
                 }
             } else {
@@ -214,10 +220,12 @@ final class AddPlannedExpenseViewModel: ObservableObject {
                 item.transactionDate = transactionDate
                 item.isGlobal = false
                 item.budget = targetBudget
-                if let catID = selectedCategoryID,
-                   let category = try? context.existingObject(with: catID) as? ExpenseCategory {
-                    item.expenseCategory = category
+                // Category is required
+                guard let catID = selectedCategoryID,
+                      let category = try? context.existingObject(with: catID) as? ExpenseCategory else {
+                    throw NSError(domain: "SoFar.AddPlannedExpense", code: 11, userInfo: [NSLocalizedDescriptionKey: "Please select a category."])
                 }
+                item.expenseCategory = category
                 item.card = selectedCard
             }
         }

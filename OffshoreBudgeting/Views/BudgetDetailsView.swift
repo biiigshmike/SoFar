@@ -57,6 +57,7 @@ struct BudgetDetailsView: View {
     @State private var isPresentingAddPlannedSheet = false
     @State private var isPresentingAddUnplannedSheet = false
     @State private var didTriggerInitialLoad = false
+    @State private var isPresentingManageCategories = false
 
     // MARK: Layout
     private var isWideHeaderLayout: Bool {
@@ -340,6 +341,19 @@ struct BudgetDetailsView: View {
             )
             .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
         }
+        // Refresh rows when Core Data changes so category chips include newly added categories immediately
+        .onReceive(
+            NotificationCenter.default
+                .publisher(for: .dataStoreDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            Task { await vm.refreshRows() }
+        }
+        // Manage categories sheet
+        .sheet(isPresented: $isPresentingManageCategories) {
+            ExpenseCategoryManagerView()
+                .environment(\.managedObjectContext, CoreDataService.shared.viewContext)
+        }
     }
 
     // MARK: Helpers
@@ -437,7 +451,22 @@ private extension BudgetDetailsView {
 
             if showsCategoryChips, let summary = vm.summary {
                 let categories = vm.selectedSegment == .planned ? summary.plannedCategoryBreakdown : summary.variableCategoryBreakdown
-                if !categories.isEmpty {
+                if categories.isEmpty {
+                    GlassCapsuleContainer(
+                        horizontalPadding: DS.Spacing.l,
+                        verticalPadding: DS.Spacing.s,
+                        alignment: .center
+                    ) {
+                        Button(action: { isPresentingManageCategories = true }) {
+                            Label("Add Category", systemImage: "plus")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("details_add_category_cta")
+                    }
+                    .frame(height: 34)
+                } else {
                     CategoryTotalsRow(categories: categories)
                 }
             }

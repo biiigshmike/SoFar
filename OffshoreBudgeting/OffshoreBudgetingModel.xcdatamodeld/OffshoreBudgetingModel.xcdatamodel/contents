@@ -23,8 +23,8 @@
         <attribute name="color" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
-        <relationship name="plannedExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PlannedExpense" inverseName="expenseCategory" inverseEntity="PlannedExpense"/>
-        <relationship name="unplannedExpense" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="expenseCategory" inverseEntity="UnplannedExpense"/>
+        <relationship name="plannedExpense" optional="YES" toMany="YES" deletionRule="Deny" destinationEntity="PlannedExpense" inverseName="expenseCategory" inverseEntity="PlannedExpense"/>
+        <relationship name="unplannedExpense" optional="YES" toMany="YES" deletionRule="Deny" destinationEntity="UnplannedExpense" inverseName="expenseCategory" inverseEntity="UnplannedExpense"/>
     </entity>
     <entity name="Income" representedClassName="Income" syncable="YES" codeGenerationType="class">
         <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
@@ -47,7 +47,7 @@
         <attribute name="transactionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="budget" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Budget" inverseName="plannedExpense" inverseEntity="Budget"/>
         <relationship name="card" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Card" inverseName="plannedExpenses" inverseEntity="Card"/>
-        <relationship name="expenseCategory" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="ExpenseCategory" inverseName="plannedExpense" inverseEntity="ExpenseCategory"/>
+        <relationship name="expenseCategory" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="ExpenseCategory" inverseName="plannedExpense" inverseEntity="ExpenseCategory"/>
     </entity>
     <entity name="UnplannedExpense" representedClassName="UnplannedExpense" syncable="YES" codeGenerationType="class">
         <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
@@ -60,7 +60,7 @@
         <attribute name="transactionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="card" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Card" inverseName="unplannedExpenses" inverseEntity="Card"/>
         <relationship name="childExpense" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UnplannedExpense" inverseName="parentExpense" inverseEntity="UnplannedExpense"/>
-        <relationship name="expenseCategory" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="ExpenseCategory" inverseName="unplannedExpense" inverseEntity="ExpenseCategory"/>
+        <relationship name="expenseCategory" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="ExpenseCategory" inverseName="unplannedExpense" inverseEntity="ExpenseCategory"/>
         <relationship name="parentExpense" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UnplannedExpense" inverseName="childExpense" inverseEntity="UnplannedExpense"/>
     </entity>
 </model>

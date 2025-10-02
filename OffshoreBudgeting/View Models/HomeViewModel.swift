@@ -384,13 +384,13 @@ final class HomeViewModel: ObservableObject {
         let potentialIncomeTotal = incomes.filter { $0.isPlanned }.reduce(0.0) { $0 + $1.amount }
         let actualIncomeTotal    = incomes.filter { !$0.isPlanned }.reduce(0.0) { $0 + $1.amount }
 
-        // MARK: Expense Categories – separate maps
+        // MARK: Expense Categories – separate maps (exclude Uncategorized) and include zero-amount categories
         var plannedCatMap: [String: (hex: String?, total: Double)] = [:]
         var variableCatMap: [String: (hex: String?, total: Double)] = [:]
 
         for e in plannedExpenses {
             let amt = e.plannedAmount
-            let name = e.expenseCategory?.name ?? "Uncategorized"
+            guard let name = (e.expenseCategory?.name?.trimmingCharacters(in: .whitespacesAndNewlines)), !name.isEmpty else { continue }
             let hex = e.expenseCategory?.color
             let existing = plannedCatMap[name] ?? (hex: hex, total: 0)
             plannedCatMap[name] = (hex: hex ?? existing.hex, total: existing.total + amt)
@@ -409,20 +409,38 @@ final class HomeViewModel: ObservableObject {
                 let amt = e.amount
                 variableTotal += amt
 
-                let catName = e.expenseCategory?.name ?? "Uncategorized"
+                guard let catName = (e.expenseCategory?.name?.trimmingCharacters(in: .whitespacesAndNewlines)), !catName.isEmpty else { continue }
                 let hex = e.expenseCategory?.color
                 let existing = variableCatMap[catName] ?? (hex: hex, total: 0)
                 variableCatMap[catName] = (hex: hex ?? existing.hex, total: existing.total + amt)
             }
         }
 
+        // Union with all categories to include zero-amount chips
+        let allCategoriesFetch = NSFetchRequest<ExpenseCategory>(entityName: "ExpenseCategory")
+        allCategoriesFetch.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))]
+        let allCategories: [ExpenseCategory] = (try? context.fetch(allCategoriesFetch)) ?? []
+        for cat in allCategories {
+            let name = (cat.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if plannedCatMap[name] == nil { plannedCatMap[name] = (hex: cat.color, total: 0) }
+            if variableCatMap[name] == nil { variableCatMap[name] = (hex: cat.color, total: 0) }
+        }
+
+        // Build breakdowns, sort by amount desc, then name A–Z for stable tie-breaks
         let plannedBreakdown: [BudgetSummary.CategorySpending] = plannedCatMap
             .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
-            .sorted(by: { $0.amount > $1.amount })
+            .sorted { lhs, rhs in
+                if lhs.amount == rhs.amount { return lhs.categoryName.localizedCaseInsensitiveCompare(rhs.categoryName) == .orderedAscending }
+                return lhs.amount > rhs.amount
+            }
 
         let variableBreakdown: [BudgetSummary.CategorySpending] = variableCatMap
             .map { BudgetSummary.CategorySpending(categoryName: $0.key, hexColor: $0.value.hex, amount: $0.value.total) }
-            .sorted(by: { $0.amount > $1.amount })
+            .sorted { lhs, rhs in
+                if lhs.amount == rhs.amount { return lhs.categoryName.localizedCaseInsensitiveCompare(rhs.categoryName) == .orderedAscending }
+                return lhs.amount > rhs.amount
+            }
 
         // Combined (legacy)
         let categoryBreakdown: [BudgetSummary.CategorySpending] = (plannedBreakdown + variableBreakdown)
