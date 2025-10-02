@@ -100,7 +100,12 @@ struct AddPlannedExpenseView: View {
                         } label: {
                             Label("Add Card", systemImage: "plus")
                         }
-                        .buttonStyle(TranslucentButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+                        .buttonStyle(
+                            TranslucentButtonStyle(
+                                tint: themeManager.selectedTheme.resolvedTint,
+                                appearance: .neutral
+                            )
+                        )
                         .accessibilityLabel("Add Card")
                     }
                 } else {
