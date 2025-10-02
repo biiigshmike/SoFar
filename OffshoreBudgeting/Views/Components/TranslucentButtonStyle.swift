@@ -107,13 +107,20 @@ struct TranslucentButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
+    enum Appearance {
+        case tinted
+        case neutral
+    }
+
     /// Primary tint used for the button background and glow treatments.
     var tint: Color
     var metrics: Metrics
+    var appearance: Appearance
 
-    init(tint: Color, metrics: Metrics = .standard) {
+    init(tint: Color, metrics: Metrics = .standard, appearance: Appearance = .tinted) {
         self.tint = tint
         self.metrics = metrics
+        self.appearance = appearance
     }
 
     func makeBody(configuration: Configuration) -> some View {
@@ -162,7 +169,7 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func labelForeground(for theme: AppTheme) -> Color {
-        theme == .system ? Color.primary : Color.white
+        usesSystemPalette(for: theme) ? Color.primary : Color.white
     }
 
     @ViewBuilder
@@ -189,7 +196,7 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func fillColor(for theme: AppTheme, isPressed: Bool) -> Color {
-        if theme == .system {
+        if usesSystemPalette(for: theme) {
             return Color.white.opacity(isPressed ? 0.38 : 0.30)
         } else {
             return tint.opacity(isPressed ? 0.40 : 0.32)
@@ -197,7 +204,7 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func shadowColor(for theme: AppTheme, isPressed: Bool) -> Color {
-        if theme == .system {
+        if usesSystemPalette(for: theme) {
             return Color.black.opacity(isPressed ? 0.20 : 0.28)
         } else {
             return tint.opacity(isPressed ? 0.32 : 0.42)
@@ -248,11 +255,11 @@ struct TranslucentButtonStyle: ButtonStyle {
     }
 
     private func glowColor(for theme: AppTheme) -> Color {
-        theme == .system ? Color.white : tint
+        usesSystemPalette(for: theme) ? Color.white : tint
     }
 
     private func glowOpacity(for theme: AppTheme, isPressed: Bool) -> Double {
-        let base: Double = theme == .system ? 0.32 : 0.42
+        let base: Double = usesSystemPalette(for: theme) ? 0.32 : 0.42
         return isPressed ? base * 0.6 : base
     }
 
@@ -277,7 +284,7 @@ struct TranslucentButtonStyle: ButtonStyle {
 
     private func borderColor(for theme: AppTheme, isPressed: Bool) -> Color {
         if capabilities.supportsOS26Translucency {
-            if theme == .system {
+            if usesSystemPalette(for: theme) {
                 return Color.white.opacity(isPressed ? 0.60 : 0.50)
             } else {
                 return tint.opacity(isPressed ? 0.70 : 0.58)
@@ -290,5 +297,9 @@ struct TranslucentButtonStyle: ButtonStyle {
                 return Color.black.opacity(isPressed ? 0.16 : 0.12)
             }
         }
+    }
+
+    private func usesSystemPalette(for theme: AppTheme) -> Bool {
+        theme == .system || appearance == .neutral
     }
 }
