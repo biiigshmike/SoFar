@@ -205,6 +205,7 @@ struct IncomeView: View {
     private func landscapeLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
         let minimums = minimumCardHeights(using: proxy)
         let gutter = proxy.compactAwareTabBarGutter
+        let horizontalInset = proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
         let heights = adaptiveCardHeights(
             using: proxy,
             availableHeight: availableHeight,
@@ -219,7 +220,7 @@ struct IncomeView: View {
             rightColumnHeight - (calendarSectionContentPadding * 2) - navigationHeaderHeight,
             minimums.calendar
         )
-        let horizontalPadding = DS.Spacing.l * 2
+        let horizontalPadding = horizontalInset * 2
         let columnSpacing = DS.Spacing.l
         let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
         let calendarFraction: CGFloat = 0.58
@@ -243,7 +244,7 @@ struct IncomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .rootTabContentPadding(
             proxy,
-            horizontal: DS.Spacing.l,
+            horizontal: horizontalInset,
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -256,6 +257,7 @@ struct IncomeView: View {
     private func nonScrollingLayout(using proxy: RootTabPageProxy, availableHeight: CGFloat) -> some View {
         let minimums = minimumCardHeights(using: proxy)
         let gutter = proxy.compactAwareTabBarGutter
+        let horizontalInset = proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
         let heights = adaptiveCardHeights(
             using: proxy,
             availableHeight: availableHeight,
@@ -276,7 +278,7 @@ struct IncomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .rootTabContentPadding(
             proxy,
-            horizontal: DS.Spacing.l,
+            horizontal: horizontalInset,
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -289,6 +291,7 @@ struct IncomeView: View {
     private func scrollingLayout(using proxy: RootTabPageProxy) -> some View {
         let minimums = minimumCardHeights(using: proxy)
         let gutter = proxy.compactAwareTabBarGutter
+        let horizontalInset = proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
 
         return ScrollView(showsIndicators: false) {
             VStack(spacing: DS.Spacing.m) {
@@ -301,7 +304,7 @@ struct IncomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .rootTabContentPadding(
                 proxy,
-                horizontal: DS.Spacing.l,
+                horizontal: horizontalInset,
                 includeSafeArea: false,
                 tabBarGutter: gutter
             )

@@ -410,6 +410,23 @@ struct RootTabPageProxy {
     }
 }
 
+extension RootTabPageProxy {
+    /// Resolves the recommended symmetric horizontal inset for root tab content.
+    ///
+    /// - Parameters:
+    ///   - capabilities: Platform capabilities that gate OS 26 visual treatments.
+    /// - Returns: ``RootTabHeaderLayout.defaultHorizontalPadding`` when OS 26
+    ///   visuals are active or the layout is wide (≥600pt). Falls back to the
+    ///   leading safe-area inset on compact legacy layouts so content can align
+    ///   flush with the device edges.
+    func resolvedSymmetricHorizontalInset(capabilities: PlatformCapabilities) -> CGFloat {
+        if capabilities.supportsOS26Translucency { return RootTabHeaderLayout.defaultHorizontalPadding }
+        if layoutContext.containerSize.width >= 600 { return RootTabHeaderLayout.defaultHorizontalPadding }
+
+        return max(effectiveSafeAreaInsets.leading, 0)
+    }
+}
+
 // MARK: - Preference Infrastructure
 private enum RootTabSection: Hashable {
     case header
