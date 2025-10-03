@@ -828,23 +828,20 @@ private struct HeaderMenuGlassLabel: View {
     var systemImage: String
 
     var body: some View {
-        let size: CGFloat = 44
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                let circle = Circle()
-                GlassEffectContainer {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 18, weight: .semibold))
-                        .frame(width: size, height: size)
-                        .contentShape(circle)
-                        .glassEffect(.regular.interactive(), in: circle)
-                }
-                .tint(themeManager.selectedTheme.resolvedTint)
+                baseLabel
+                    .tint(themeManager.selectedTheme.resolvedTint)
             } else {
-                Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: size, height: size)
+                baseLabel
             }
+        }
+    }
+
+    @ViewBuilder
+    private var baseLabel: some View {
+        RootHeaderGlassControl(sizing: .icon) {
+            RootHeaderControlIcon(systemImage: systemImage)
         }
     }
 }
