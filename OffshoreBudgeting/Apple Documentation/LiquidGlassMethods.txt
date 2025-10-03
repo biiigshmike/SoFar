@@ -151,3 +151,39 @@ Conforms To
 	SendableMetatype
 	Shape
 	View
+
+identity
+The identity transition specifying no changes.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+
+static var identity: GlassEffectTransition { get }
+
+matchedGeometry
+Returns the matched geometry glass effect transition.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+static var matchedGeometry: GlassEffectTransition { get }
+
+The matched geometry transition allows the geometries of glass shapes during an appearance or disappearance phase of a transition to be derived from the geometry of a nearby shape within the glass container.
+For example, if a newly appearing shape is within the spacing of any existing shape, it will use that shapes geometry to transition out of.
+When using the default, this transition applies additional scale and offset effects to content when the identity of the shape does not change but its content does. Opt out of these additional animations by providing a specific animation like spring.
+
+materialize
+The materialize glass effect transition which will fade in content and animate in or out the glass material but will not attempt to match the geometry of any other glass effects.
+iOS 26.0+
+iPadOS 26.0+
+Mac Catalyst 26.0+
+macOS 26.0+
+tvOS 26.0+
+watchOS 26.0+
+
+static var materialize: GlassEffectTransition { get }

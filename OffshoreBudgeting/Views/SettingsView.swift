@@ -253,21 +253,7 @@ struct SettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            #if DEBUG
-            // MARK: Developer (Debug only)
-            SettingsCard(
-                iconSystemName: "hammer",
-                title: "Developer",
-                subtitle: "Testing options for UI chrome.") {
-                VStack(spacing: 0) {
-                    SettingsRow(title: "Force Legacy Navigation Chrome (requires relaunch)", showsTopDivider: false) {
-                        Toggle("", isOn: $forceLegacyChrome)
-                            .labelsHidden()
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            #endif
+//f
         }
         .frame(maxWidth: .infinity)
         .rootTabContentPadding(
