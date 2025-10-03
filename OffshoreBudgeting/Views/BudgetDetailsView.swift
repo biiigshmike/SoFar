@@ -888,22 +888,14 @@ private struct PlannedListFR: View {
         Group {
             if #available(iOS 26.0, macCatalyst 26.0, *) {
                 Button(action: action) {
-            Label(title, systemImage: "plus")
-                .labelStyle(.titleAndIcon)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 44)
+                    budgetDetailsCTAButtonLabel(title)
+                        .foregroundStyle(.primary)
                 }
                 .buttonStyle(.glass)
                 .tint(themeManager.selectedTheme.resolvedTint)
             } else {
                 Button(action: action) {
-                    Label(title, systemImage: "plus")
-                        .labelStyle(.titleAndIcon)
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 44)
+                    budgetDetailsCTAButtonLabel(title)
                 }
                 .buttonStyle(.plain)
             }
@@ -1224,10 +1216,7 @@ private struct VariableListFR: View {
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
         GlassCapsuleContainer(horizontalPadding: DS.Spacing.s, verticalPadding: DS.Spacing.s, alignment: .center) {
             Button(action: action) {
-                Label(title, systemImage: "plus")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
+                budgetDetailsCTAButtonLabel(title)
             }
             .buttonStyle(.plain)
         }
@@ -1372,6 +1361,17 @@ private struct VariableListFR: View {
             }
         }
     }
+}
+
+// MARK: - Shared CTA Helpers
+
+@ViewBuilder
+private func budgetDetailsCTAButtonLabel(_ title: String) -> some View {
+    Label(title, systemImage: "plus")
+        .labelStyle(.titleAndIcon)
+        .font(.system(size: 17, weight: .semibold, design: .rounded))
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 44)
 }
 
 // MARK: - Shared List Styling Helpers
