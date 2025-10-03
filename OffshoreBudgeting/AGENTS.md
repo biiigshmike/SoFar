@@ -331,10 +331,9 @@ __MACOSX/
 
 ## Conventions and constraints
 
-- Always return full file contents for any modified Swift files. Do not provide partial diffs.
 - Preserve naming, structure, and // MARK organization already in the code.
 - Prefer small, isolated changes. Avoid refactors unless explicitly requested.
-- Keep platform behavior consistent across iOS, iPadOS, and macOS when editing UI.
+- Keep platform behavior consistent across iOS, iPadOS, and macOS Catalyst when editing UI.
 - Avoid adding dependencies without prior approval.
 
 ## How to read the code using // MARK and comments
