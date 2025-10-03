@@ -823,6 +823,8 @@ private struct HomeHeaderTableTwoColumnRow<Leading: View, Trailing: View>: View 
 
 // MARK: - Header Menu Glass Label (OS26)
 private struct HeaderMenuGlassLabel: View {
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
     var symbolVariants: SymbolVariants? = nil
 
