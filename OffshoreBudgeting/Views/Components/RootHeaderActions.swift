@@ -647,20 +647,31 @@ enum RootHeaderLegacyGlass {
 }
 
 extension View {
+    @ViewBuilder
     func rootHeaderLegacyGlassDecorated(theme: AppTheme, capabilities: PlatformCapabilities) -> some View {
         let shape = Capsule(style: .continuous)
-        // Classic OS style: keep it flat and subtle. No glow, no highlight,
-        // no faux glass. Just a neutral fill and a light stroke.
-        return self
-            .background(
-                shape
-                    .fill(theme.secondaryBackground)
-                    .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
-            )
-            .overlay(
-                shape
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
-            )
+        let borderStroke = shape.stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
+
+        if capabilities.supportsOS26Translucency {
+            // Preserve the existing legacy fallback for modern devices so the
+            // capsule continues to match the glass baseline.
+            self
+                .background(
+                    shape
+                        .fill(theme.secondaryBackground)
+                        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
+                )
+                .overlay(borderStroke)
+        } else {
+            // Older platforms should mirror the lighter OS 26 styling without
+            // the gray-tinted drop shadow.
+            self
+                .background(
+                    shape
+                        .fill(theme.background)
+                )
+                .overlay(borderStroke)
+        }
     }
 }
 #endif
