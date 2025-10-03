@@ -155,6 +155,24 @@ extension View {
 // MARK: - Header Glass Controls
 #if os(iOS)
 
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+@available(iOS 26, macCatalyst 26.0, *)
+private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        GlassEffectContainer {
+            content
+                .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+        }
+    }
+}
+#endif
+
 private extension View {
     @ViewBuilder
     func rootHeaderGlassDecorated(
@@ -164,15 +182,7 @@ private extension View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
             if #available(iOS 26.0, macCatalyst 26.0, *) {
-                GlassEffectContainer {
-                    self
-                        .glassEffect(
-                            .regular
-                                .tint(theme.glassPalette.accent)
-                                .interactive(),
-                            in: Capsule(style: .continuous)
-                        )
-                }
+                RootHeaderGlassCapsuleContainer { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
             }
@@ -559,20 +569,6 @@ private extension View {
     }
 }
 
-#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
-@available(iOS 26.0, macCatalyst 26.0, *)
-private extension View {
-    func applyOS26GlassEffect(
-        theme: AppTheme,
-        configuration: RootHeaderGlassEffectConfiguration?
-    ) -> some View {
-        let accent = theme.glassPalette.accent
-        return glassEffect(.regular.tint(accent).interactive(), in: Capsule(style: .continuous))
-            .applyGlassEffectConfiguration(configuration)
-    }
-}
-#endif
-
 struct RootHeaderGlassControl<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
@@ -606,11 +602,12 @@ struct RootHeaderGlassControl<Content: View>: View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
             if capabilities.supportsOS26Translucency {
                 if #available(iOS 26.0, macCatalyst 26.0, *) {
-                    content
-                        .frame(width: iconSide, height: iconSide)
-                        .applyOS26GlassEffect(theme: theme, configuration: glassEffectConfiguration)
-                        .frame(width: iconSide, height: iconSide)
-                        .contentShape(Circle())
+                    RootHeaderGlassCapsuleContainer {
+                        content
+                            .applyGlassEffectConfiguration(glassEffectConfiguration)
+                            .frame(width: iconSide, height: iconSide)
+                    }
+                    .contentShape(Circle())
                 } else {
                     content
                         .applyGlassEffectConfiguration(glassEffectConfiguration)
