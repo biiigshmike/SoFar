@@ -830,10 +830,12 @@ private struct HeaderMenuGlassLabel: View {
 
     var body: some View {
         if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-            RootHeaderGlassControl(sizing: .icon) {
-                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
-            }
-            .tint(themeManager.selectedTheme.resolvedTint)
+            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+                .frame(
+                    width: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil),
+                    height: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
+                )
+                .tint(themeManager.selectedTheme.resolvedTint)
         } else {
             RootHeaderGlassControl(sizing: .icon) {
                 RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
