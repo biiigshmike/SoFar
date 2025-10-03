@@ -2,9 +2,13 @@ import SwiftUI
 
 // MARK: - Shared Metrics
 enum RootHeaderActionMetrics {
+    /// Platform accessibility guidance recommends a minimum tap target of 44 pt
+    /// across controls that present actionable content.
+    private static let minimumTapTarget: CGFloat = 44
+
     /// Base tap target for header controls on platforms without the refreshed
     /// Liquid Glass treatments from the OS 26 cycle.
-    private static let legacyDimension: CGFloat = DS.Spacing.l + DS.Spacing.m
+    private static let legacyDimension: CGFloat = max(minimumTapTarget, DS.Spacing.xxl + DS.Spacing.m)
 
     /// Taller control size that mirrors Apple's updated capsule buttons when
     /// Liquid Glass materials are available.
@@ -518,8 +522,9 @@ struct RootHeaderGlassControl<Content: View>: View {
         let theme = themeManager.selectedTheme
 
         if sizing == .icon {
+            let iconSide = max(width ?? dimension, dimension)
             content
-                .frame(width: width ?? dimension, height: dimension)
+                .frame(width: iconSide, height: iconSide)
                 .contentShape(Circle())
                 .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
         } else {
