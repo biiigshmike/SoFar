@@ -1470,24 +1470,17 @@ private extension View {
         _ capabilities: PlatformCapabilities,
         layoutContext: ResponsiveLayoutContext? = nil
     ) -> some View {
-        if capabilities.supportsOS26Translucency {
-            self
-        } else {
-            let sanitizedLayoutContext: ResponsiveLayoutContext?
-            if let layoutContext, layoutContext.containerSize.width > 0 {
-                sanitizedLayoutContext = layoutContext
-            } else {
-                sanitizedLayoutContext = nil
-            }
-
-            let horizontalInsets = BudgetListHorizontalPaddingMetrics.resolvedInsets(
+        Group {
+            if let insets = resolveBudgetListPadding(
                 for: capabilities,
-                layoutContext: sanitizedLayoutContext
-            )
-
-            self
-                .padding(.leading, horizontalInsets.leading)
-                .padding(.trailing, horizontalInsets.trailing)
+                layoutContext: layoutContext
+            ).insets {
+                self
+                    .padding(.leading, insets.leading)
+                    .padding(.trailing, insets.trailing)
+            } else {
+                self
+            }
         }
     }
 
@@ -1522,6 +1515,48 @@ private extension View {
             self
         }
     }
+}
+
+// MARK: - List Padding Resolution
+
+private struct BudgetListPaddingResolution {
+    let sanitizedLayoutContext: ResponsiveLayoutContext?
+    let insets: BudgetListHorizontalPaddingMetrics.Insets?
+
+    static let none = BudgetListPaddingResolution(
+        sanitizedLayoutContext: nil,
+        insets: nil
+    )
+}
+
+private func resolveBudgetListPadding(
+    for capabilities: PlatformCapabilities,
+    layoutContext: ResponsiveLayoutContext?
+) -> BudgetListPaddingResolution {
+    guard capabilities.supportsOS26Translucency == false else {
+        return .none
+    }
+
+    let sanitizedLayoutContext = sanitizeLayoutContextForBudgetListPadding(layoutContext)
+
+    let resolvedInsets = BudgetListHorizontalPaddingMetrics.resolvedInsets(
+        for: capabilities,
+        layoutContext: sanitizedLayoutContext
+    )
+
+    return BudgetListPaddingResolution(
+        sanitizedLayoutContext: sanitizedLayoutContext,
+        insets: resolvedInsets
+    )
+}
+
+private func sanitizeLayoutContextForBudgetListPadding(
+    _ layoutContext: ResponsiveLayoutContext?
+) -> ResponsiveLayoutContext? {
+    guard let layoutContext, layoutContext.containerSize.width > 0 else {
+        return nil
+    }
+    return layoutContext
 }
 
 private enum BudgetListLayoutMetrics {
