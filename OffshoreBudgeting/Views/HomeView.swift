@@ -41,6 +41,7 @@ struct HomeView: View {
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
     @State private var isPresentingManageCategories: Bool = false
+    @Namespace private var headerGlassNamespace
 
     // MARK: Body
     @EnvironmentObject private var themeManager: ThemeManager
@@ -161,7 +162,12 @@ struct HomeView: View {
                 Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
             }
         } label: {
-            HeaderMenuGlassLabel(systemImage: "calendar")
+            HeaderMenuGlassLabel(
+                systemImage: "calendar",
+                glassNamespace: headerGlassNamespace,
+                glassEffectID: HomeToolbarGlassEffectID.calendar,
+                glassEffectUnionID: HomeToolbarGlassEffectID.union
+            )
                 .accessibilityLabel(budgetPeriod.displayName)
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -172,7 +178,14 @@ struct HomeView: View {
         Menu {
             Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
             Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
-        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "plus",
+                glassNamespace: headerGlassNamespace,
+                glassEffectID: HomeToolbarGlassEffectID.add,
+                glassEffectUnionID: HomeToolbarGlassEffectID.union
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -185,7 +198,14 @@ struct HomeView: View {
             Button("Add Variable Expense") {
                 triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "plus",
+                glassNamespace: headerGlassNamespace,
+                glassEffectID: HomeToolbarGlassEffectID.add,
+                glassEffectUnionID: HomeToolbarGlassEffectID.union
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -197,7 +217,14 @@ struct HomeView: View {
             } label: {
                 Label("Create Budget", systemImage: "plus")
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "ellipsis",
+                glassNamespace: headerGlassNamespace,
+                glassEffectID: HomeToolbarGlassEffectID.ellipsis,
+                glassEffectUnionID: HomeToolbarGlassEffectID.union
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Options")
     }
@@ -216,7 +243,15 @@ struct HomeView: View {
             } label: {
                 Label("Delete Budget", systemImage: "trash")
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis", symbolVariants: SymbolVariants.none) }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "ellipsis",
+                symbolVariants: SymbolVariants.none,
+                glassNamespace: headerGlassNamespace,
+                glassEffectID: HomeToolbarGlassEffectID.ellipsis,
+                glassEffectUnionID: HomeToolbarGlassEffectID.union
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Actions")
     }
@@ -822,20 +857,47 @@ private struct HomeHeaderTableTwoColumnRow<Leading: View, Trailing: View>: View 
 }
 
 // MARK: - Header Menu Glass Label (OS26)
+private enum HomeToolbarGlassEffectID {
+    static let ellipsis = "home.toolbar.ellipsis"
+    static let calendar = "home.toolbar.calendar"
+    static let add = "home.toolbar.add"
+    static let union = "home.toolbar.cluster"
+}
+
 private struct HeaderMenuGlassLabel: View {
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
     var symbolVariants: SymbolVariants? = nil
+    var glassNamespace: Namespace.ID? = nil
+    var glassEffectID: String? = nil
+    var glassEffectUnionID: String? = nil
+    var glassTransitionStyle: RootHeaderGlassTransitionStyle = .matchedGeometry
+
+    private var glassConfiguration: RootHeaderGlassEffectConfiguration? {
+        guard let glassNamespace, let glassEffectID else { return nil }
+        return RootHeaderGlassEffectConfiguration(
+            namespace: glassNamespace,
+            id: glassEffectID,
+            unionID: glassEffectUnionID,
+            transition: glassTransitionStyle
+        )
+    }
 
     var body: some View {
         if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-            RootHeaderGlassControl(sizing: .icon) {
+            RootHeaderGlassControl(
+                sizing: .icon,
+                glassEffectConfiguration: glassConfiguration
+            ) {
                 RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
             }
             .tint(themeManager.selectedTheme.resolvedTint)
         } else {
-            RootHeaderGlassControl(sizing: .icon) {
+            RootHeaderGlassControl(
+                sizing: .icon,
+                glassEffectConfiguration: glassConfiguration
+            ) {
                 RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
             }
         }
