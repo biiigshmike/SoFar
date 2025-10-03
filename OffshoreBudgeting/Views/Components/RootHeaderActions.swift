@@ -139,16 +139,37 @@ extension View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
 @available(iOS 26, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
+    private let namespace: Namespace.ID?
+    private let glassID: String?
+    private let transition: GlassEffectTransition?
     private let content: Content
 
-    init(@ViewBuilder content: () -> Content) {
+    init(
+        namespace: Namespace.ID? = nil,
+        glassID: String? = nil,
+        transition: GlassEffectTransition? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.namespace = namespace
+        self.glassID = glassID
+        self.transition = transition
         self.content = content()
     }
 
     var body: some View {
         GlassEffectContainer {
-            content
+            var decorated = content
                 .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+
+            if let namespace, let glassID {
+                decorated = decorated.glassEffectID(glassID, in: namespace)
+            }
+
+            if let transition {
+                decorated = decorated.glassEffectTransition(transition)
+            }
+
+            decorated
         }
     }
 }
@@ -158,12 +179,19 @@ private extension View {
     @ViewBuilder
     func rootHeaderGlassDecorated(
         theme: AppTheme,
-        capabilities: PlatformCapabilities
+        capabilities: PlatformCapabilities,
+        namespace: Namespace.ID? = nil,
+        glassID: String? = nil,
+        transition: GlassEffectTransition? = nil
     ) -> some View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
             if #available(iOS 26.0, macCatalyst 26.0, *) {
-                RootHeaderGlassCapsuleContainer { self }
+                RootHeaderGlassCapsuleContainer(
+                    namespace: namespace,
+                    glassID: glassID,
+                    transition: transition
+                ) { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
             }
@@ -522,17 +550,26 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let width: CGFloat?
     private let sizing: RootHeaderControlSizing
     private let background: RootHeaderControlBackground
+    private let glassNamespace: Namespace.ID?
+    private let glassID: String?
+    private let glassTransition: GlassEffectTransition?
 
     init(
         width: CGFloat? = nil,
         sizing: RootHeaderControlSizing = .automatic,
         background: RootHeaderControlBackground = .automatic,
+        glassNamespace: Namespace.ID? = nil,
+        glassID: String? = nil,
+        glassTransition: GlassEffectTransition? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
         self.width = width
         self.sizing = sizing
         self.background = background
+        self.glassNamespace = glassNamespace
+        self.glassID = glassID
+        self.glassTransition = glassTransition
     }
 
     @ViewBuilder
@@ -557,7 +594,11 @@ struct RootHeaderGlassControl<Content: View>: View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
                 if capabilities.supportsOS26Translucency {
                     if #available(iOS 26.0, macCatalyst 26.0, *) {
-                        RootHeaderGlassCapsuleContainer {
+                        RootHeaderGlassCapsuleContainer(
+                            namespace: glassNamespace,
+                            glassID: glassID,
+                            transition: glassTransition
+                        ) {
                             content
                                 .frame(width: max(iconSide, d), height: max(iconSide, d))
                         }
@@ -585,7 +626,13 @@ struct RootHeaderGlassControl<Content: View>: View {
                 .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
                 .padding(.vertical, RootHeaderGlassMetrics.verticalPadding)
                 .contentShape(Capsule(style: .continuous))
-                .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+                .rootHeaderGlassDecorated(
+                    theme: theme,
+                    capabilities: capabilities,
+                    namespace: glassNamespace,
+                    glassID: glassID,
+                    transition: glassTransition
+                )
         }
     }
 }
