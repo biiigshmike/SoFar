@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
 // MARK: - PresetRowView
 /// Row layout matching the screenshot style:
 /// Left column: Name, PLANNED/ACTUAL amounts.
@@ -15,8 +21,6 @@ import SwiftUI
 struct PresetRowView: View {
 
     @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var themeManager: ThemeManager
-
     // MARK: Inputs
     let item: PresetListItem
     let onAssignTapped: (PlannedExpense) -> Void
@@ -47,7 +51,6 @@ struct PresetRowView: View {
                     AssignedBudgetsBadge(
                         title: "Assigned Budgets",
                         count: item.assignedCount,
-                        theme: themeManager.selectedTheme,
                         colorScheme: colorScheme
                     )
                 }
@@ -94,7 +97,6 @@ private struct LabeledAmountBlock: View {
 private struct AssignedBudgetsBadge: View {
     let title: String
     let count: Int
-    let theme: AppTheme
     let colorScheme: ColorScheme
 
     var body: some View {
@@ -115,35 +117,41 @@ private struct AssignedBudgetsBadge: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(badgeBackgroundColor)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .strokeBorder(badgeStrokeColor, lineWidth: 1)
-        )
     }
 
     private var titleColor: Color {
-        colorScheme == .dark ? Color.white : theme.resolvedTint
+        .primary
     }
 
     private var circleBackgroundColor: Color {
         if colorScheme == .dark {
-            return theme.background
-        } else {
-            return .white
+            return circleBackgroundColorDark
         }
+
+        return circleBackgroundColorLight
     }
 
     private var circleForegroundColor: Color {
-        colorScheme == .dark ? theme.resolvedTint : .black
+        .primary
     }
 
-    private var badgeBackgroundColor: Color {
-        theme.resolvedTint.opacity(colorScheme == .dark ? 0.2 : 0.08)
+    private var circleBackgroundColorLight: Color {
+#if canImport(UIKit)
+        Color(uiColor: .systemGray5)
+#elseif canImport(AppKit)
+        Color(nsColor: .systemGray5)
+#else
+        Color.gray.opacity(0.2)
+#endif
     }
 
-    private var badgeStrokeColor: Color {
-        theme.resolvedTint.opacity(colorScheme == .dark ? 0.4 : 0.2)
+    private var circleBackgroundColorDark: Color {
+#if canImport(UIKit)
+        Color(uiColor: .systemGray3)
+#elseif canImport(AppKit)
+        Color(nsColor: .systemGray3)
+#else
+        Color.gray.opacity(0.4)
+#endif
     }
 }
