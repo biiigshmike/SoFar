@@ -726,7 +726,8 @@ func ub_dismissKeyboard() {
 // MARK: - Motion Provider Abstraction
 
 protocol UBMotionsProviding: AnyObject {
-    func start(onUpdate: @escaping (_ roll: Double, _ pitch: Double, _ yaw: Double) -> Void)
+    /// Starts delivering Core Motion updates. Gravity components are normalized (√(x²+y²+z²)=1).
+    func start(onUpdate: @escaping (_ roll: Double, _ pitch: Double, _ yaw: Double, _ gravityX: Double, _ gravityY: Double, _ gravityZ: Double) -> Void)
     func stop()
 }
 
@@ -735,15 +736,23 @@ import CoreMotion
 
 final class UBCoreMotionProvider: UBMotionsProviding {
     private let manager = CMMotionManager()
-    private var onUpdate: ((_ r: Double, _ p: Double, _ y: Double) -> Void)?
+    private var onUpdate: ((_ r: Double, _ p: Double, _ y: Double, _ gx: Double, _ gy: Double, _ gz: Double) -> Void)?
 
-    func start(onUpdate: @escaping (Double, Double, Double) -> Void) {
+    func start(onUpdate: @escaping (Double, Double, Double, Double, Double, Double) -> Void) {
         guard manager.isDeviceMotionAvailable else { return }
         self.onUpdate = onUpdate
         manager.deviceMotionUpdateInterval = 1.0 / 60.0
         manager.startDeviceMotionUpdates(to: OperationQueue.main) { [weak self] motion, _ in
             guard let self, let m = motion else { return }
-            self.onUpdate?(m.attitude.roll, m.attitude.pitch, m.attitude.yaw)
+            let gravity = m.gravity
+            self.onUpdate?(
+                m.attitude.roll,
+                m.attitude.pitch,
+                m.attitude.yaw,
+                gravity.x,
+                gravity.y,
+                gravity.z
+            )
         }
     }
 
@@ -754,7 +763,7 @@ final class UBCoreMotionProvider: UBMotionsProviding {
 }
 #else
 final class UBNoopMotionProvider: UBMotionsProviding {
-    func start(onUpdate: @escaping (Double, Double, Double) -> Void) { /* no-op */ }
+    func start(onUpdate: @escaping (Double, Double, Double, Double, Double, Double) -> Void) { /* no-op */ }
     func stop() { /* no-op */ }
 }
 #endif
