@@ -182,7 +182,7 @@ private extension View {
         capabilities: PlatformCapabilities,
         namespace: Namespace.ID? = nil,
         glassID: String? = nil,
-        transition: GlassEffectTransition? = nil
+        transitionStorage: Any? = nil
     ) -> some View {
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
@@ -190,7 +190,7 @@ private extension View {
                 RootHeaderGlassCapsuleContainer(
                     namespace: namespace,
                     glassID: glassID,
-                    transition: transition
+                    transition: transitionStorage as? GlassEffectTransition
                 ) { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
@@ -552,7 +552,7 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let background: RootHeaderControlBackground
     private let glassNamespace: Namespace.ID?
     private let glassID: String?
-    private let glassTransition: GlassEffectTransition?
+    private let glassTransitionStorage: Any?
 
     init(
         width: CGFloat? = nil,
@@ -560,7 +560,6 @@ struct RootHeaderGlassControl<Content: View>: View {
         background: RootHeaderControlBackground = .automatic,
         glassNamespace: Namespace.ID? = nil,
         glassID: String? = nil,
-        glassTransition: GlassEffectTransition? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
@@ -569,7 +568,26 @@ struct RootHeaderGlassControl<Content: View>: View {
         self.background = background
         self.glassNamespace = glassNamespace
         self.glassID = glassID
-        self.glassTransition = glassTransition
+        self.glassTransitionStorage = nil
+    }
+
+    @available(iOS 26.0, macCatalyst 26.0, *)
+    init(
+        width: CGFloat? = nil,
+        sizing: RootHeaderControlSizing = .automatic,
+        background: RootHeaderControlBackground = .automatic,
+        glassNamespace: Namespace.ID? = nil,
+        glassID: String? = nil,
+        glassTransition: GlassEffectTransition,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+        self.width = width
+        self.sizing = sizing
+        self.background = background
+        self.glassNamespace = glassNamespace
+        self.glassID = glassID
+        self.glassTransitionStorage = glassTransition
     }
 
     @ViewBuilder
@@ -597,7 +615,7 @@ struct RootHeaderGlassControl<Content: View>: View {
                         RootHeaderGlassCapsuleContainer(
                             namespace: glassNamespace,
                             glassID: glassID,
-                            transition: glassTransition
+                            transition: glassTransitionStorage as? GlassEffectTransition
                         ) {
                             content
                                 .frame(width: max(iconSide, d), height: max(iconSide, d))
@@ -631,7 +649,7 @@ struct RootHeaderGlassControl<Content: View>: View {
                     capabilities: capabilities,
                     namespace: glassNamespace,
                     glassID: glassID,
-                    transition: glassTransition
+                    transitionStorage: glassTransitionStorage
                 )
         }
     }
