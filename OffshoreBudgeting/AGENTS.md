@@ -2,7 +2,38 @@
 
 This document guides code agents on how to safely read, plan, and modify this repository. It is optimized for step-based tools that generate full-file patches. Keep changes scoped, reversible, and consistent with existing patterns.
 
+## Coding
+- Coding should be reusable, scalable, and OOP-oriented. 
+- The codebase should also try to be simple and easy-to-read. 
+- Try to avoid introducing new helper methods; instead, check first if one may exist. If one does not exist, and the method will be used for a singular instance, consider implementing the single instance in the single file versus creating new files or new methods that will not be called elsewhere.
+- iOS/iPadOS/macOS 26.0 is the latest OS release. We need to always consider providing a simple, alternate solution for our lowest legacy members on iOS/iPadOS/macOS 15.4 and then consider the highest legacy members on iOS/iPadOS/macOS 18.5
+
+## UI guidelines
+
+- Align header pills, grids, and info panels using shared layout environment values when present.
+- Keep text sizing, spacing, and padding consistent with existing design tokens.
+- Avoid hard-coded device checks when layout modifiers can adapt.
+- Ensure that iOS 26/iPadOS26/macOS 26 Liquid Glass is prioritized and provide legacy fallback for older OSes. The app supports as low as iOS/iPadOS 15.4 and macOS 15.4; due to this, Liquid Glass should only be for OS 26 and then older, legacy OS versions have their UI elements that are consistent with their current OS.
+- I prefer my legacy members to only see plain text buttons while I prefer my iOS26 users to see Liquid Glass buttons.
+- Always reference the Apple Documentation folder, especially when making adjustments to Liquid Glass elements throughout the app. It's very important you do this each time you are coding that you constantly refresh yourself on Apple's official documentation on Liquid Glass.
+
+## Core Data and model notes
+
+- Respect existing entity and relationship names. Do not change the schema unless asked.
+- When adding fetch logic, centralize it in service files if that pattern exists.
+
+## Logging and error handling
+
+- Use existing helpers for alerts and logs if present. Do not introduce print spam.
+
+## Commit style for tool-generated changes
+
+- Conventional subject: `feat(view): short description` or `fix(service): short description`.
+- Body lists files touched and a brief rationale.
+
 ## Repository overview
+
+
 
 ```
 ./
@@ -1284,31 +1315,4 @@ Use the following // MARK anchors to understand intent and safe insertion points
 - // MARK: saveIfNeeded()
 - // MARK: performBackgroundTask(_:)
 
-## Coding
-- Coding should be reusable, scalable, and OOP-oriented. 
-- The codebase should also try to be simple and easy-to-read. 
-- Try to avoid introducing new helper methods; instead, check first if one may exist. If one does not exist, and the method will be used for a singular instance, consider implementing the single instance in the single file versus creating new files or new methods that will not be called elsewhere.
-- iOS/iPadOS/macOS 26.0 is the latest OS release. We need to always consider providing a simple, alternate solution for our lowest legacy members on iOS/iPadOS/macOS 15.4 and then consider the highest legacy members on iOS/iPadOS/macOS 18.5
 
-## UI guidelines
-
-- Align header pills, grids, and info panels using shared layout environment values when present.
-- Keep text sizing, spacing, and padding consistent with existing design tokens.
-- Avoid hard-coded device checks when layout modifiers can adapt.
-- Ensure that iOS 26/iPadOS26/macOS 26 Liquid Glass is prioritized and provide legacy fallback for older OSes. The app supports as low as iOS/iPadOS 15.4 and macOS 15.4; due to this, Liquid Glass should only be for OS 26 and then older, legacy OS versions have their UI elements that are consistent with their current OS.
-- I prefer my legacy members to only see plain text buttons while I prefer my iOS26 users to see Liquid Glass buttons.
-- Always reference the Apple Documentation folder, especially when making adjustments to Liquid Glass elements throughout the app. It's very important you do this each time you are coding that you constantly refresh yourself on Apple's official documentation on Liquid Glass.
-
-## Core Data and model notes
-
-- Respect existing entity and relationship names. Do not change the schema unless asked.
-- When adding fetch logic, centralize it in service files if that pattern exists.
-
-## Logging and error handling
-
-- Use existing helpers for alerts and logs if present. Do not introduce print spam.
-
-## Commit style for tool-generated changes
-
-- Conventional subject: `feat(view): short description` or `fix(service): short description`.
-- Body lists files touched and a brief rationale.
