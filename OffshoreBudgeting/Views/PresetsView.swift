@@ -34,7 +34,7 @@ struct PresetsView: View {
         RootTabPageScaffold(
             scrollBehavior: .always,
             spacing: DS.Spacing.s,
-            wrapsContentInScrollView: !capabilities.supportsOS26Translucency
+            wrapsContentInScrollView: false
         ) {
             EmptyView()
         } content: { proxy in
@@ -59,6 +59,8 @@ struct PresetsView: View {
 
     @ViewBuilder
     private func content(using proxy: RootTabPageProxy) -> some View {
+        let horizontalInset = proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
+
         Group {
             // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
             if viewModel.items.isEmpty {
@@ -69,9 +71,12 @@ struct PresetsView: View {
                     primaryButtonTitle: "Add Preset",
                     onPrimaryTap: { isPresentingAddSheet = true }
                 )
-                .padding(.horizontal, DS.Spacing.l)
+                .padding(.horizontal, horizontalInset)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: proxy.availableHeightBelowHeader, alignment: .center)
+                .frame(
+                    minHeight: max(proxy.availableHeightBelowHeader, proxy.availableHeight),
+                    alignment: .center
+                )
             } else {
                 // MARK: Non-empty List
                 List {
@@ -82,7 +87,9 @@ struct PresetsView: View {
                                 sheetTemplateToAssign = template
                             }
                         )
-                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                        .listRowInsets(
+                            EdgeInsets(top: 12, leading: horizontalInset, bottom: 12, trailing: horizontalInset)
+                        )
                         .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
                         .unifiedSwipeActions(
                             UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
