@@ -263,7 +263,7 @@ struct RootTabPageScaffold<Header: View, Content: View>: View {
         safeArea: EdgeInsets
     ) -> CGFloat {
         guard context.containerSize.height > 0 else { return 0 }
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) 
         // Allow content to extend into the bottom safe area so controls with
         // shadows (e.g., primary CTA) aren’t visually clipped. Individual
         // screens can still add bottom padding via `rootTabContentPadding`.

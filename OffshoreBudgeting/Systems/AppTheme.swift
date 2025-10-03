@@ -680,8 +680,8 @@ extension AppTheme {
                 case thick
                 case ultraThick
 
-                #if os(iOS) || os(tvOS)
-                @available(iOS 15.0, macCatalyst 15.0, tvOS 15.0, *)
+                #if os(iOS)
+                @available(iOS 15.0, macCatalyst 15.0,  *)
                 var shapeStyle: AnyShapeStyle {
                     switch self {
                     case .ultraThin: return AnyShapeStyle(.ultraThinMaterial)

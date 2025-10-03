@@ -107,7 +107,7 @@ struct RootHeaderActionButtonStyle: ButtonStyle {
 }
 
 // MARK: - Optional Accessibility Identifier
-#if os(iOS) || targetEnvironment(macCatalyst) || os(tvOS)
+#if os(iOS) || targetEnvironment(macCatalyst) 
 private struct OptionalAccessibilityIdentifierModifier: ViewModifier {
     let identifier: String?
 
@@ -136,7 +136,7 @@ extension View {
 // MARK: - Header Glass Controls
 #if os(iOS)
 
-#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
 @available(iOS 26, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     private let namespace: Namespace.ID?
@@ -193,7 +193,7 @@ private extension View {
         glassID: String? = nil,
         transitionStorage: Any? = nil
     ) -> some View {
-#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
             if #available(iOS 26.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer(
@@ -618,7 +618,7 @@ struct RootHeaderGlassControl<Content: View>: View {
                     .contentShape(Circle())
             } else {
 
-#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || targetEnvironment(macCatalyst)
                 if capabilities.supportsOS26Translucency {
                     if #available(iOS 26.0, macCatalyst 26.0, *) {
                         RootHeaderGlassCapsuleContainer(
