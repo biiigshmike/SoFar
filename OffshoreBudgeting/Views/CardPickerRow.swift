@@ -44,15 +44,16 @@ struct CardPickerRow: View {
                     // MARK: Bridge Core Data → UI model
                     // Uses your existing CoreDataBridge to pull name/theme.
                     let item = CardItem(from: managedCard)
+                    let isSelected = selectedCardID == managedCard.objectID
 
                     CardTileView(
                         card: item,
-                        isSelected: selectedCardID == managedCard.objectID,
+                        isSelected: isSelected,
                         onTap: {
                         // MARK: On Tap → Select for Expense
                         selectedCardID = managedCard.objectID
                         },
-                        enableMotionShine: false,
+                        enableMotionShine: true,
                         showsBaseShadow: false
                     )
                     .frame(height: tileHeight)
