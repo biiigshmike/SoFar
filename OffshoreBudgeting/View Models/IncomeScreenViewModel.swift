@@ -35,7 +35,7 @@ final class IncomeScreenViewModel: ObservableObject {
 
     /// Maximum number of distinct months to keep in memory at once. Older
     /// months are pruned when this limit is exceeded.
-    private let maxCachedMonths: Int = 6
+    private let maxCachedMonths: Int = 24
     
     // MARK: Init
     init(incomeService: IncomeService = IncomeService()) {
@@ -138,8 +138,8 @@ final class IncomeScreenViewModel: ObservableObject {
     private func refreshEventsCache(for date: Date, force: Bool) {
         let monthAnchor = monthStart(for: date)
         if !force, cachedMonthlyEvents[monthAnchor] != nil {
-            // Still prefetch adjacent months if they aren't cached yet.
-            prefetchAdjacentMonths(from: date)
+            let horizon = dynamicHorizon(for: date)
+            prefetchMonths(from: date, monthsBefore: horizon.before, monthsAfter: horizon.after)
             return
         }
 
@@ -149,18 +149,58 @@ final class IncomeScreenViewModel: ObservableObject {
             rebuildEventsByDay()
         }
 
-        prefetchAdjacentMonths(from: date)
+        let horizon = dynamicHorizon(for: date)
+        prefetchMonths(from: date, monthsBefore: horizon.before, monthsAfter: horizon.after)
     }
 
-    /// Prefetch the previous and next months when they are not already cached
-    /// to keep calendar scrolling responsive.
-    private func prefetchAdjacentMonths(from date: Date) {
-        if let previous = calendar.date(byAdding: .month, value: -1, to: date) {
-            _ = ensureMonthCached(for: previous)
+    /// Prefetches a horizon of months around the provided date to keep
+    /// calendar scrolling responsive without requiring a tap to load.
+    private func prefetchMonths(from date: Date, monthsBefore: Int, monthsAfter: Int) {
+        guard monthsBefore >= 0 || monthsAfter >= 0 else { return }
+
+        if monthsBefore > 0 {
+            for delta in stride(from: -monthsBefore, through: -1, by: 1) {
+                if let d = calendar.date(byAdding: .month, value: delta, to: date) {
+                    _ = ensureMonthCached(for: d)
+                }
+            }
         }
-        if let next = calendar.date(byAdding: .month, value: 1, to: date) {
-            _ = ensureMonthCached(for: next)
+        if monthsAfter > 0 {
+            for delta in 1...monthsAfter {
+                if let d = calendar.date(byAdding: .month, value: delta, to: date) {
+                    _ = ensureMonthCached(for: d)
+                }
+            }
         }
+    }
+
+    /// Computes a dynamic prefetch horizon based on the earliest and latest
+    /// persisted income dates. Incomes without explicit end dates still have
+    /// children persisted for roughly a year, so the latest persisted date
+    /// naturally bounds the horizon.
+    private func dynamicHorizon(for date: Date) -> (before: Int, after: Int) {
+        // Default small horizon when store is empty.
+        let defaults = (before: 2, after: 3)
+        guard let all = try? incomeService.fetchAllIncomes(sortedByDateAscending: true),
+              let firstDate = all.first?.date else {
+            return defaults
+        }
+        let lastDate = all.last?.date ?? firstDate
+
+        let selectedMonth = monthStart(for: date)
+        let firstMonth = monthStart(for: firstDate)
+        let lastMonth = monthStart(for: lastDate)
+
+        let before = max(0, calendar.dateComponents([.month], from: firstMonth, to: selectedMonth).month ?? 0)
+        let after  = max(0, calendar.dateComponents([.month], from: selectedMonth, to: lastMonth).month ?? 0)
+
+        // Cap total span to cache capacity to avoid memory churn.
+        let maxSpan = max(0, maxCachedMonths - 1)
+        if before + after > maxSpan {
+            let cappedAfter = max(0, maxSpan - before)
+            return (before: before, after: cappedAfter)
+        }
+        return (before: before, after: after)
     }
 
     /// Ensures the month containing `date` is cached. Returns `true` when a

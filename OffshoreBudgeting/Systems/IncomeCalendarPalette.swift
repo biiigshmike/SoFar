@@ -41,15 +41,17 @@ struct UBDayView: DayView {
     @Environment(\.colorScheme) private var scheme
 
     func createContent() -> AnyView {
-        AnyView(
+        let planned = summary?.planned ?? 0
+        let actual = summary?.actual ?? 0
+        let hasEvents = (planned + actual) > 0
+
+        var content: some View {
             VStack(spacing: 2) {
                 ZStack {
                     createSelectionView()
                     createRangeSelectionView()
                     createDayLabel()
                 }
-                let planned = summary?.planned ?? 0
-                let actual = summary?.actual ?? 0
                 VStack(spacing: 1) {
                     if planned > 0 && actual > 0 {
                         Text(currencyString(planned))
@@ -74,7 +76,16 @@ struct UBDayView: DayView {
             }
             // Fill the available cell space and pin content to the top
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        )
+        }
+
+        if hasEvents {
+            return AnyView(
+                content
+                    .accessibilityIdentifier("income_day_has_events_\(ymdString(date))")
+            )
+        } else {
+            return AnyView(content)
+        }
     }
 
     // Text: 16pt semibold; black in light, white in dark; flips on selection
@@ -118,6 +129,13 @@ struct UBDayView: DayView {
         nf.maximumFractionDigits = 0
         return nf.string(from: amount as NSNumber) ?? ""
     }
-}
 
+    private func ymdString(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: d)
+    }
+}
 

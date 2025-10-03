@@ -251,8 +251,7 @@ struct BudgetDetailsView: View {
                 if vm.selectedSegment == .planned {
                     // Prefer a fresh instance from the context so we don't
                     // show a transient placeholder while the view model resolves.
-                    let resolvedBudget = (try? viewContext.existingObject(with: vm.budgetObjectID) as? Budget) ?? vm.budget
-                    if let budget = resolvedBudget {
+                    if let budget = ((try? viewContext.existingObject(with: vm.budgetObjectID) as? Budget) ?? vm.budget) {
                         PlannedListFR(
                             budget: budget,
                             startDate: vm.startDate,
@@ -271,9 +270,8 @@ struct BudgetDetailsView: View {
                     // variable list with an empty cards array so the user sees
                     // the proper empty state (with Add button) instead of a
                     // perpetual "Loading…" placeholder.
-                    let cards = (vm.budget?.cards as? Set<Card>) ?? []
                     VariableListFR(
-                        attachedCards: Array(cards),
+                        attachedCards: Array((vm.budget?.cards as? Set<Card>) ?? []),
                         startDate: vm.startDate,
                         endDate: vm.endDate,
                         sort: vm.sort,
@@ -480,27 +478,50 @@ private extension BudgetDetailsView {
             }
 
             if showsCategoryChips, let summary = vm.summary {
-                let categories = vm.selectedSegment == .planned ? summary.plannedCategoryBreakdown : summary.variableCategoryBreakdown
-                if categories.isEmpty {
-                    GlassCapsuleContainer(
-                        horizontalPadding: headerHorizontalInsets.symmetricInset,
-                        verticalPadding: DS.Spacing.s,
-                        alignment: .center
-                    ) {
-                        Button(action: { isPresentingManageCategories = true }) {
-                            Label("Add Category", systemImage: "plus")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                .frame(maxWidth: .infinity)
+                if vm.selectedSegment == .planned {
+                    if summary.plannedCategoryBreakdown.isEmpty {
+                        GlassCapsuleContainer(
+                            horizontalPadding: headerHorizontalInsets.symmetricInset,
+                            verticalPadding: DS.Spacing.s,
+                            alignment: .center
+                        ) {
+                            Button(action: { isPresentingManageCategories = true }) {
+                                Label("Add Category", systemImage: "plus")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("details_add_category_cta")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("details_add_category_cta")
+                        .frame(height: 34)
+                    } else {
+                        CategoryTotalsRow(
+                            categories: summary.plannedCategoryBreakdown,
+                            horizontalInset: headerHorizontalInsets.symmetricInset
+                        )
                     }
-                    .frame(height: 34)
                 } else {
-                    CategoryTotalsRow(
-                        categories: categories,
-                        horizontalInset: headerHorizontalInsets.symmetricInset
-                    )
+                    if summary.variableCategoryBreakdown.isEmpty {
+                        GlassCapsuleContainer(
+                            horizontalPadding: headerHorizontalInsets.symmetricInset,
+                            verticalPadding: DS.Spacing.s,
+                            alignment: .center
+                        ) {
+                            Button(action: { isPresentingManageCategories = true }) {
+                                Label("Add Category", systemImage: "plus")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("details_add_category_cta")
+                        }
+                        .frame(height: 34)
+                    } else {
+                        CategoryTotalsRow(
+                            categories: summary.variableCategoryBreakdown,
+                            horizontalInset: headerHorizontalInsets.symmetricInset
+                        )
+                    }
                 }
             }
         }
@@ -932,18 +953,16 @@ private struct PlannedListFR: View {
     @ViewBuilder
     private func listRows(items: [PlannedExpense]) -> some View {
         ForEach(Array(items.enumerated()), id: \.element.objectID) { pair in
-            let idx = pair.offset
-            let item = pair.element
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                     // Category color indicator, matching Variable expenses
                     Circle()
-                        .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                        .fill(Color(hex: pair.element.expenseCategory?.color ?? "#999999") ?? .secondary)
                         .frame(width: 8, height: 8)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(item.descriptionText ?? "Untitled")
+                        Text(pair.element.descriptionText ?? "Untitled")
                             .font(.title3.weight(.semibold))
-                        if let name = item.expenseCategory?.name {
+                        if let name = pair.element.expenseCategory?.name {
                             Text(name)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -956,14 +975,14 @@ private struct PlannedListFR: View {
                         HStack(spacing: DS.Spacing.xs) {
                             Text("Planned:")
                                 .font(.footnote.weight(.bold))
-                            Text(CurrencyFormatterHelper.string(for: item.plannedAmount))
+                            Text(CurrencyFormatterHelper.string(for: pair.element.plannedAmount))
                         }
                         HStack(spacing: DS.Spacing.xs) {
                             Text("Actual:")
                                 .font(.footnote.weight(.bold))
-                            Text(CurrencyFormatterHelper.string(for: item.actualAmount))
+                            Text(CurrencyFormatterHelper.string(for: pair.element.actualAmount))
                         }
-                        Text(Self.mediumDate(item.transactionDate ?? .distantPast))
+                        Text(Self.mediumDate(pair.element.transactionDate ?? .distantPast))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -972,7 +991,7 @@ private struct PlannedListFR: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             .listRowInsets(
                 listHorizontalInsets.edgeInsets(
-                    top: idx == 0 ? 4 : 12,
+                    top: pair.offset == 0 ? 4 : 12,
                     bottom: 12
                 )
             )
@@ -980,13 +999,13 @@ private struct PlannedListFR: View {
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
-                onEdit: { editingItem = item },
+                onEdit: { editingItem = pair.element },
                 onDelete: {
                     if confirmBeforeDelete {
-                        itemToDelete = item
+                        itemToDelete = pair.element
                         showDeleteAlert = true
                     } else {
-                        deletePlanned(item)
+                        deletePlanned(pair.element)
                     }
                 }
             )
@@ -1278,17 +1297,15 @@ private struct VariableListFR: View {
     @ViewBuilder
     private func listRows(items: [UnplannedExpense]) -> some View {
         ForEach(Array(items.enumerated()), id: \.element.objectID) { pair in
-            let idx = pair.offset
-            let item = pair.element
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.m) {
                     Circle()
-                        .fill(Color(hex: item.expenseCategory?.color ?? "#999999") ?? .secondary)
+                        .fill(Color(hex: pair.element.expenseCategory?.color ?? "#999999") ?? .secondary)
                         .frame(width: 8, height: 8)
 
                     VStack(alignment: .leading) {
-                        Text(item.descriptionText ?? "Untitled")
+                        Text(pair.element.descriptionText ?? "Untitled")
                             .font(.title3.weight(.semibold))
-                        if let name = item.expenseCategory?.name {
+                        if let name = pair.element.expenseCategory?.name {
                             Text(name)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -1298,8 +1315,8 @@ private struct VariableListFR: View {
                     Spacer()
 
                     VStack(alignment: .trailing) {
-                        Text(CurrencyFormatterHelper.string(for: item.amount))
-                        Text(Self.mediumDate(item.transactionDate ?? .distantPast))
+                        Text(CurrencyFormatterHelper.string(for: pair.element.amount))
+                        Text(Self.mediumDate(pair.element.transactionDate ?? .distantPast))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -1307,7 +1324,7 @@ private struct VariableListFR: View {
                 .padding(.vertical, 6)
             .listRowInsets(
                 listHorizontalInsets.edgeInsets(
-                    top: idx == 0 ? 4 : 12,
+                    top: pair.offset == 0 ? 4 : 12,
                     bottom: 12
                 )
             )
@@ -1315,13 +1332,13 @@ private struct VariableListFR: View {
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
-                onEdit: { editingItem = item },
+                onEdit: { editingItem = pair.element },
                 onDelete: {
                     if confirmBeforeDelete {
-                        itemToDelete = item
+                        itemToDelete = pair.element
                         showDeleteAlert = true
                     } else {
-                        deleteUnplanned(item)
+                        deleteUnplanned(pair.element)
                     }
                 }
             )

@@ -560,7 +560,7 @@ private struct HomeHeaderTablePage<Content: View>: View {
             layoutContext: layoutContext
         )
 
-        VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
+        return VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
                 titleDisplayMode: .hidden,
@@ -806,7 +806,7 @@ private struct HomeHeaderTableTwoColumnRow<Leading: View, Trailing: View>: View 
         @ViewBuilder trailing: @escaping () -> Trailing
     ) {
         self.alignment = alignment
-        self.leading = leading
+               self.leading = leading
         self.trailing = trailing
     }
 

@@ -6,6 +6,7 @@ enum UITestDataSeeder {
         let arguments = ProcessInfo.processInfo.arguments
         let shouldResetData = arguments.contains("-uiTestResetData")
         let shouldSeedHomeBudget = arguments.contains("-uiTestSeedHomeBudget")
+        let shouldSeedIncomeCalendar = arguments.contains("-uiTestSeedIncomeCalendar")
 
         guard shouldResetData || shouldSeedHomeBudget else { return }
 
@@ -18,6 +19,9 @@ enum UITestDataSeeder {
 
             if shouldSeedHomeBudget {
                 await seedHomeBudget()
+            }
+            if shouldSeedIncomeCalendar {
+                await seedIncomeCalendar()
             }
         }
 #endif
@@ -63,3 +67,39 @@ enum UITestDataSeeder {
     }
 #endif
 }
+
+#if DEBUG
+extension UITestDataSeeder {
+    @MainActor
+    fileprivate static func seedIncomeCalendar() {
+        let service = IncomeService(calendar: {
+            var cal = Calendar(identifier: .gregorian)
+            cal.timeZone = TimeZone(secondsFromGMT: 0)!
+            return cal
+        }())
+
+        let start = {
+            var comps = DateComponents(); comps.year = 2025; comps.month = 10; comps.day = 1; comps.hour = 12; comps.minute = 0; comps.timeZone = TimeZone(secondsFromGMT: 0)
+            return Calendar(identifier: .gregorian).date(from: comps) ?? Date()
+        }()
+        let end = {
+            var comps = DateComponents(); comps.year = 2026; comps.month = 10; comps.day = 1; comps.hour = 12; comps.minute = 0; comps.timeZone = TimeZone(secondsFromGMT: 0)
+            return Calendar(identifier: .gregorian).date(from: comps) ?? Date()
+        }()
+
+        do {
+            // One simple weekly planned income series so dots appear in future months
+            _ = try service.createIncome(
+                source: "UI Test Weekly Income",
+                amount: 100,
+                date: start,
+                isPlanned: true,
+                recurrence: "weekly",
+                recurrenceEndDate: end
+            )
+        } catch {
+            assertionFailure("Failed to seed income calendar data: \(error)")
+        }
+    }
+}
+#endif
