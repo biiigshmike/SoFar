@@ -722,21 +722,6 @@ private struct HomeHeaderOverviewTable: View {
     private var categoryRow: some View {
         Group {
             if categorySpending.isEmpty {
-                // Full-width, pressable capsule to prompt adding a category
-                @ViewBuilder
-                func addCategoryContent() -> some View {
-                    Button(action: onAddCategory) {
-                        Label("Add Category", systemImage: "plus")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: HomeHeaderOverviewMetrics.categoryControlHeight
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("home_add_category_cta")
-                }
-
                 Group {
                     if #available(iOS 26.0, macCatalyst 26.0, *) {
                         GlassCapsuleContainer(
@@ -772,6 +757,20 @@ private struct HomeHeaderOverviewTable: View {
             }
         }
         .padding(.top, HomeHeaderOverviewMetrics.categoryChipTopSpacing)
+    }
+
+    @ViewBuilder
+    private func addCategoryContent() -> some View {
+        Button(action: onAddCategory) {
+            Label("Add Category", systemImage: "plus")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: HomeHeaderOverviewMetrics.categoryControlHeight
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("home_add_category_cta")
     }
 
     private var totalLabelView: some View {
