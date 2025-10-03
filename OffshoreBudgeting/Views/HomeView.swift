@@ -41,6 +41,7 @@ struct HomeView: View {
     @State private var isPresentingManageCards: Bool = false
     @State private var isPresentingManagePresets: Bool = false
     @State private var isPresentingManageCategories: Bool = false
+    @Namespace private var toolbarGlassNamespace
 
     // MARK: Body
     @EnvironmentObject private var themeManager: ThemeManager
@@ -155,13 +156,26 @@ struct HomeView: View {
     }
 
     // MARK: Toolbar Actions
+    private var toolbarGlassTransition: GlassEffectTransition? {
+        if #available(iOS 26.0, macCatalyst 26.0, *) {
+            return .matchedGeometry
+        } else {
+            return nil
+        }
+    }
+
     private func calendarToolbarMenu() -> some View {
         Menu {
             ForEach(BudgetPeriod.selectableCases) { period in
                 Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
             }
         } label: {
-            HeaderMenuGlassLabel(systemImage: "calendar")
+            HeaderMenuGlassLabel(
+                systemImage: "calendar",
+                glassNamespace: toolbarGlassNamespace,
+                glassID: HomeToolbarGlassIdentifiers.calendar,
+                transition: toolbarGlassTransition
+            )
                 .accessibilityLabel(budgetPeriod.displayName)
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -172,7 +186,14 @@ struct HomeView: View {
         Menu {
             Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
             Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
-        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "plus",
+                glassNamespace: toolbarGlassNamespace,
+                glassID: HomeToolbarGlassIdentifiers.addExpense,
+                transition: toolbarGlassTransition
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -185,7 +206,14 @@ struct HomeView: View {
             Button("Add Variable Expense") {
                 triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "plus",
+                glassNamespace: toolbarGlassNamespace,
+                glassID: HomeToolbarGlassIdentifiers.addExpense,
+                transition: toolbarGlassTransition
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -197,7 +225,14 @@ struct HomeView: View {
             } label: {
                 Label("Create Budget", systemImage: "plus")
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis") }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "ellipsis",
+                glassNamespace: toolbarGlassNamespace,
+                glassID: HomeToolbarGlassIdentifiers.options,
+                transition: toolbarGlassTransition
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Options")
     }
@@ -216,7 +251,15 @@ struct HomeView: View {
             } label: {
                 Label("Delete Budget", systemImage: "trash")
             }
-        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis", symbolVariants: SymbolVariants.none) }
+        } label: {
+            HeaderMenuGlassLabel(
+                systemImage: "ellipsis",
+                symbolVariants: SymbolVariants.none,
+                glassNamespace: toolbarGlassNamespace,
+                glassID: HomeToolbarGlassIdentifiers.options,
+                transition: toolbarGlassTransition
+            )
+        }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Actions")
     }
@@ -838,9 +881,18 @@ private struct HeaderMenuGlassLabel: View {
     @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
     var symbolVariants: SymbolVariants? = nil
+    var glassNamespace: Namespace.ID? = nil
+    var glassID: String? = nil
+    var transition: GlassEffectTransition? = nil
 
     var body: some View {
-        RootHeaderGlassControl(sizing: .icon, background: .clear) {
+        RootHeaderGlassControl(
+            sizing: .icon,
+            background: .clear,
+            glassNamespace: glassNamespace,
+            glassID: glassID,
+            glassTransition: transition
+        ) {
             RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
                 .frame(
                     width: RootHeaderActionMetrics.minimumIconDimension,
@@ -848,6 +900,12 @@ private struct HeaderMenuGlassLabel: View {
                 )
         }
     }
+}
+
+private enum HomeToolbarGlassIdentifiers {
+    static let options = "home-toolbar.options"
+    static let calendar = "home-toolbar.calendar"
+    static let addExpense = "home-toolbar.add-expense"
 }
 
 private enum HomeHeaderOverviewMetrics {
