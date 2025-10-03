@@ -20,6 +20,7 @@ struct SettingsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.responsiveLayoutContext) private var responsiveLayoutContext
 
     @StateObject private var viewModel = SettingsViewModel()
     @State private var cloudStatusProvider: CloudAccountStatusProvider?
@@ -33,8 +34,10 @@ struct SettingsView: View {
         RootTabPageScaffold(
             scrollBehavior: .always,
             spacing: cardStackSpacing
-        ) { _ in
-            RootViewTopPlanes(title: "Settings", titleDisplayMode: .hidden, horizontalPadding: horizontalPadding)
+        ) { proxy in
+            let horizontalInset = resolvedHorizontalInset(using: proxy)
+
+            RootViewTopPlanes(title: "Settings", titleDisplayMode: .hidden, horizontalPadding: horizontalInset)
                 .padding(.top, scrollViewTopPadding)
         } content: { proxy in
             content(using: proxy)
@@ -64,6 +67,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func content(using proxy: RootTabPageProxy) -> some View {
         let tabBarGutter = proxy.compactAwareTabBarGutter
+        let horizontalInset = resolvedHorizontalInset(using: proxy)
 
         VStack(spacing: cardStackSpacing) {
             // MARK: General Hero Card
@@ -258,7 +262,7 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity)
         .rootTabContentPadding(
             proxy,
-            horizontal: horizontalPadding,
+            horizontal: horizontalInset,
             extraBottom: extraBottomPadding(
                 using: proxy,
                 tabBarGutter: tabBarGutter
@@ -334,9 +338,20 @@ struct SettingsView: View {
         viewModel.enableCloudSync && cloudAvailability == .unknown
     }
 
-    /// Balanced padding across platforms; a little more breathing room on larger screens.
-    private var horizontalPadding: CGFloat {
-        return horizontalSizeClass == .regular ? 24 : 16
+    private func resolvedHorizontalInset(using proxy: RootTabPageProxy?) -> CGFloat {
+        if let proxy {
+            return proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
+        }
+
+        if capabilities.supportsOS26Translucency { return RootTabHeaderLayout.defaultHorizontalPadding }
+        if responsiveLayoutContext.containerSize.width >= 600 { return RootTabHeaderLayout.defaultHorizontalPadding }
+
+        let safeArea = responsiveLayoutContext.safeArea
+        if safeArea.hasNonZeroInsets {
+            return max(safeArea.leading, 0)
+        }
+
+        return max(horizontalSizeClass == .regular ? RootTabHeaderLayout.defaultHorizontalPadding : 0, 0)
     }
 
     private var cardStackSpacing: CGFloat {
