@@ -533,6 +533,7 @@ struct RootHeaderGlassControl<Content: View>: View {
         let theme = themeManager.selectedTheme
 
         if sizing == .icon {
+            let d = RootHeaderActionMetrics.minimumIconDimension
             let iconSide = RootHeaderActionMetrics.iconDimension(for: capabilities, width: width)
             let fallbackSide = RootHeaderActionMetrics.minimumIconDimension
 
@@ -541,7 +542,7 @@ struct RootHeaderGlassControl<Content: View>: View {
                 if #available(iOS 26.0, macCatalyst 26.0, *) {
                     RootHeaderGlassCapsuleContainer {
                         content
-                            .frame(width: iconSide, height: iconSide)
+                            .frame(width: max(iconSide, d), height: max(iconSide, d))
                     }
                     .contentShape(Circle())
                 } else {
