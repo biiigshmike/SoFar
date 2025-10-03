@@ -245,6 +245,7 @@ struct IncomeView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: horizontalInset,
+            extraTop: DS.Spacing.s,
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -279,6 +280,7 @@ struct IncomeView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: horizontalInset,
+            extraTop: DS.Spacing.s,
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -305,6 +307,7 @@ struct IncomeView: View {
             .rootTabContentPadding(
                 proxy,
                 horizontal: horizontalInset,
+                extraTop: DS.Spacing.s,
                 includeSafeArea: false,
                 tabBarGutter: gutter
             )
