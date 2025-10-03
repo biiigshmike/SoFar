@@ -13,7 +13,7 @@ struct GlassCapsuleContainer<Content: View>: View {
     private let contentAlignment: Alignment
     private let namespace: Namespace.ID?
     private let glassID: String?
-    private let transition: GlassEffectTransition?
+    private let transitionStorage: Any?
 
     init(
         minimumHeight: CGFloat? = nil,
@@ -22,7 +22,6 @@ struct GlassCapsuleContainer<Content: View>: View {
         alignment: Alignment = .leading,
         namespace: Namespace.ID? = nil,
         glassID: String? = nil,
-        transition: GlassEffectTransition? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
@@ -32,7 +31,28 @@ struct GlassCapsuleContainer<Content: View>: View {
         self.contentAlignment = alignment
         self.namespace = namespace
         self.glassID = glassID
-        self.transition = transition
+        self.transitionStorage = nil
+    }
+
+    @available(iOS 26.0, macCatalyst 26.0, *)
+    init(
+        minimumHeight: CGFloat? = nil,
+        horizontalPadding: CGFloat = DS.Spacing.l,
+        verticalPadding: CGFloat = DS.Spacing.m,
+        alignment: Alignment = .leading,
+        namespace: Namespace.ID? = nil,
+        glassID: String? = nil,
+        transition: GlassEffectTransition,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+        self.minimumHeight = minimumHeight
+        self.horizontalPadding = horizontalPadding
+        self.verticalPadding = verticalPadding
+        self.contentAlignment = alignment
+        self.namespace = namespace
+        self.glassID = glassID
+        self.transitionStorage = transition
     }
 
     var body: some View {
@@ -56,7 +76,7 @@ struct GlassCapsuleContainer<Content: View>: View {
                     glassDecorated = glassDecorated.glassEffectID(glassID, in: namespace)
                 }
 
-                if let transition {
+                if let transition = transitionStorage as? GlassEffectTransition {
                     glassDecorated = glassDecorated.glassEffectTransition(transition)
                 }
 
