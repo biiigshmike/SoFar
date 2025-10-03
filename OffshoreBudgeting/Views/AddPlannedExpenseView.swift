@@ -495,10 +495,32 @@ private struct CategoryChip: View {
     let isSelected: Bool
     let namespace: Namespace.ID?
     @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         let capsule = Capsule(style: .continuous)
+        let tint = themeManager.selectedTheme.resolvedTint
+        let isLightMode = colorScheme == .light
+        let textColor: Color = {
+            if colorScheme == .dark && isSelected {
+                return Color.white
+            }
+            return .primary
+        }()
+        let fallbackFill: Color = {
+            if isLightMode {
+                return DS.Colors.chipFill
+            }
+            return isSelected ? tint.opacity(0.55) : Color.white.opacity(0.08)
+        }()
+        let fallbackStroke: Color = {
+            if isLightMode {
+                return isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill
+            }
+            return isSelected ? tint.opacity(0.85) : Color.white.opacity(0.18)
+        }()
+        let fallbackLineWidth: CGFloat = isSelected ? 1.5 : 1
 
         let content = HStack(spacing: DS.Spacing.s) {
             Circle()
@@ -514,36 +536,48 @@ private struct CategoryChip: View {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
                 if let ns = namespace {
                     if isSelected {
-                        content
-                            .foregroundStyle(Color.white)
-                            .glassEffect(.regular.tint(themeManager.selectedTheme.resolvedTint).interactive(), in: capsule)
-                            .glassEffectID(id, in: ns)
+                        if isLightMode {
+                            content
+                                .foregroundStyle(textColor)
+                                .glassEffect(.regular.interactive(), in: capsule)
+                                .glassEffectID(id, in: ns)
+                        } else {
+                            content
+                                .foregroundStyle(Color.white)
+                                .glassEffect(.regular.tint(tint).interactive(), in: capsule)
+                                .glassEffectID(id, in: ns)
+                        }
                     } else {
                         content
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(textColor)
                             .glassEffect(.regular.interactive(), in: capsule)
                             .glassEffectID(id, in: ns)
                     }
                 } else {
                     if isSelected {
-                        content
-                            .foregroundStyle(Color.white)
-                            .glassEffect(.regular.tint(themeManager.selectedTheme.resolvedTint).interactive(), in: capsule)
+                        if isLightMode {
+                            content
+                                .foregroundStyle(textColor)
+                                .glassEffect(.regular.interactive(), in: capsule)
+                        } else {
+                            content
+                                .foregroundStyle(Color.white)
+                                .glassEffect(.regular.tint(tint).interactive(), in: capsule)
+                        }
                     } else {
                         content
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(textColor)
                             .glassEffect(.regular.interactive(), in: capsule)
                     }
                 }
             } else {
                 content
-                    .background(
-                        capsule.fill(isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill)
-                    )
+                    .foregroundStyle(textColor)
+                    .background(capsule.fill(fallbackFill))
                     .overlay(
                         capsule.stroke(
-                            isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill,
-                            lineWidth: isSelected ? 1.5 : 1
+                            fallbackStroke,
+                            lineWidth: fallbackLineWidth
                         )
                     )
             }
