@@ -68,18 +68,20 @@ struct HomeView: View {
         }
         .navigationTitle("Home")
         .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Order: ellipsis, calendar, plus
-                if let periodSummary = actionableSummaryForSelectedPeriod {
-                    optionsToolbarMenu(summary: periodSummary)
-                } else {
-                    optionsToolbarMenu()
-                }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HomeToolbarGlassWrapper {
+                    // Order: ellipsis, calendar, plus
+                    if let periodSummary = actionableSummaryForSelectedPeriod {
+                        optionsToolbarMenu(summary: periodSummary)
+                    } else {
+                        optionsToolbarMenu()
+                    }
 
-                calendarToolbarMenu()
+                    calendarToolbarMenu()
 
-                if let active = actionableSummaryForSelectedPeriod {
-                    addExpenseToolbarMenu(for: active.id)
+                    if let active = actionableSummaryForSelectedPeriod {
+                        addExpenseToolbarMenu(for: active.id)
+                    }
                 }
             }
         }
@@ -864,9 +866,36 @@ private enum HomeToolbarGlassEffectID {
     static let union = "home.toolbar.cluster"
 }
 
-private struct HeaderMenuGlassLabel: View {
+private enum HomeToolbarGlassMetrics {
+    static let containerSpacing: CGFloat = DS.Spacing.s
+    static let contentSpacing: CGFloat = DS.Spacing.s
+    static let legacySpacing: CGFloat = DS.Spacing.s
+}
+
+private struct HomeToolbarGlassWrapper<Content: View>: View {
     @Environment(\.platformCapabilities) private var capabilities
-    @EnvironmentObject private var themeManager: ThemeManager
+    private let content: () -> Content
+
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+
+    var body: some View {
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            GlassEffectContainer(spacing: HomeToolbarGlassMetrics.containerSpacing) {
+                HStack(spacing: HomeToolbarGlassMetrics.contentSpacing) {
+                    content()
+                }
+            }
+        } else {
+            HStack(spacing: HomeToolbarGlassMetrics.legacySpacing) {
+                content()
+            }
+        }
+    }
+}
+
+private struct HeaderMenuGlassLabel: View {
     var systemImage: String
     var symbolVariants: SymbolVariants? = nil
     var glassNamespace: Namespace.ID? = nil
@@ -885,21 +914,11 @@ private struct HeaderMenuGlassLabel: View {
     }
 
     var body: some View {
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-            RootHeaderGlassControl(
-                sizing: .icon,
-                glassEffectConfiguration: glassConfiguration
-            ) {
-                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
-            }
-            .tint(themeManager.selectedTheme.resolvedTint)
-        } else {
-            RootHeaderGlassControl(
-                sizing: .icon,
-                glassEffectConfiguration: glassConfiguration
-            ) {
-                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
-            }
+        RootHeaderGlassControl(
+            sizing: .icon,
+            glassEffectConfiguration: glassConfiguration
+        ) {
+            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
         }
     }
 }
