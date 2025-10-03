@@ -69,33 +69,21 @@ struct GlassCapsuleContainer<Content: View>: View {
 
         if #available(iOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
-                decoratedGlass(from: decorated, in: capsule)
+                var glassDecorated = decorated
+                    .glassEffect(.regular.interactive(), in: capsule)
+
+                if let namespace, let glassID {
+                    glassDecorated = glassDecorated.glassEffectID(glassID, in: namespace)
+                }
+
+                if let transition = transitionStorage as? GlassEffectTransition {
+                    glassDecorated = glassDecorated.glassEffectTransition(transition)
+                }
+
+                glassDecorated
             }
         } else {
             decorated
-        }
-    }
-}
-
-@available(iOS 26.0, macCatalyst 26.0, *)
-private extension GlassCapsuleContainer {
-    @ViewBuilder
-    func decoratedGlass<Decorated: View>(from decorated: Decorated, in capsule: Capsule) -> some View {
-        let base = decorated
-            .glassEffect(.regular.interactive(), in: capsule)
-
-        if let namespace, let glassID {
-            if let transition = transitionStorage as? GlassEffectTransition {
-                base
-                    .glassEffectID(glassID, in: namespace)
-                    .glassEffectTransition(transition)
-            } else {
-                base.glassEffectID(glassID, in: namespace)
-            }
-        } else if let transition = transitionStorage as? GlassEffectTransition {
-            base.glassEffectTransition(transition)
-        } else {
-            base
         }
     }
 }
