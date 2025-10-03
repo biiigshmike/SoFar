@@ -940,16 +940,16 @@ private struct HeaderMenuGlassLabel: View {
     var glassID: String? = nil
     var transitionStorage: Any? = nil
 
-    var body: some View {
-        @ViewBuilder
-        func iconContent() -> some View {
-            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
-                .frame(
-                    width: RootHeaderActionMetrics.minimumIconDimension,
-                    height: RootHeaderActionMetrics.minimumIconDimension
-                )
-        }
+    @ViewBuilder
+    private func iconContent() -> some View {
+        RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+            .frame(
+                width: RootHeaderActionMetrics.minimumIconDimension,
+                height: RootHeaderActionMetrics.minimumIconDimension
+            )
+    }
 
+    var body: some View {
         if #available(iOS 26.0, macCatalyst 26.0, *),
            let transition = transitionStorage as? GlassEffectTransition {
             RootHeaderGlassControl(
