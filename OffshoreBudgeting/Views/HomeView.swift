@@ -534,6 +534,9 @@ private func triggerAddExpense(_ notificationName: Notification.Name, budgetID: 
 
 // MARK: - Home Header Table Page
 private struct HomeHeaderTablePage<Content: View>: View {
+    @Environment(\.platformCapabilities) private var capabilities
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+
     let summary: BudgetSummary?
     let displayTitle: String
     let displayDetail: String
@@ -552,11 +555,16 @@ private struct HomeHeaderTablePage<Content: View>: View {
     }
 
     private var headerContent: some View {
+        let horizontalPadding = HomeHeaderOverviewMetrics.horizontalPadding(
+            for: capabilities,
+            layoutContext: layoutContext
+        )
+
         VStack(spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
             RootViewTopPlanes(
                 title: "Home",
                 titleDisplayMode: .hidden,
-                horizontalPadding: RootTabHeaderLayout.defaultHorizontalPadding,
+                horizontalPadding: horizontalPadding,
                 topPaddingStyle: topPaddingStyle
             )
 
@@ -571,7 +579,7 @@ private struct HomeHeaderTablePage<Content: View>: View {
                 onAdjustPeriod: onAdjustPeriod,
                 onAddCategory: onAddCategory
             )
-            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            .padding(.horizontal, horizontalPadding)
         }
     }
 }
@@ -856,6 +864,21 @@ private enum HomeHeaderOverviewMetrics {
     static let valueFont: Font = .body.weight(.semibold)
     static let totalValueFont: Font = .title3.weight(.semibold)
     static let fallbackCurrencyCode = "USD"
+
+    static func horizontalPadding(
+        for capabilities: PlatformCapabilities,
+        layoutContext: ResponsiveLayoutContext
+    ) -> CGFloat {
+        if capabilities.supportsOS26Translucency {
+            return RootTabHeaderLayout.defaultHorizontalPadding
+        }
+
+        if layoutContext.containerSize.width >= 600 {
+            return RootTabHeaderLayout.defaultHorizontalPadding
+        }
+
+        return max(layoutContext.safeArea.leading, 0)
+    }
 }
 
 // MARK: - Segmented control sizing helpers
