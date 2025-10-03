@@ -63,7 +63,7 @@ struct RootHeaderControlIcon: View {
 
     var body: some View {
         configuredImage
-            .font(.system(size: 18, weight: .semibold))
+            .font(.system(size: 18, weight: .regular, design: .default))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(iconForegroundStyle)
     }
