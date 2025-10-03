@@ -15,7 +15,6 @@ import SwiftUI
 struct PresetRowView: View {
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Inputs
@@ -45,17 +44,14 @@ struct PresetRowView: View {
                 Button {
                     onAssignTapped(item.template)
                 } label: {
-                    HStack(spacing: 8) {
-                        Text("Assigned Budgets")
-                            .foregroundStyle(.primary)
-                        Text("\(item.assignedCount)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(assignedBudgetsCountColor)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    AssignedBudgetsBadge(
+                        title: "Assigned Budgets",
+                        count: item.assignedCount,
+                        theme: themeManager.selectedTheme,
+                        colorScheme: colorScheme
+                    )
                 }
-                .modifier(GlassOrPlainButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
+                .buttonStyle(.plain)
                 .accessibilityLabel("Assigned Budgets: \(item.assignedCount)")
 
                 VStack(alignment: .trailing, spacing: 4) {
@@ -73,13 +69,6 @@ struct PresetRowView: View {
         .padding(.vertical, 4)
     }
 
-    private var assignedBudgetsCountColor: Color {
-        colorScheme == .dark ? .black : Color.primary
-    }
-
-    private var assignedBudgetsBackground: Color {
-        colorScheme == .dark ? .white : Color.accentColor.opacity(0.15)
-    }
 }
 
 // MARK: - LabeledAmountBlock
@@ -101,21 +90,60 @@ private struct LabeledAmountBlock: View {
     }
 }
 
-// MARK: - Style Adapter
-private struct GlassOrPlainButtonStyleAdapter: ViewModifier {
-    let tint: Color
-    let capabilities: PlatformCapabilities
+// MARK: - AssignedBudgetsBadge
+private struct AssignedBudgetsBadge: View {
+    let title: String
+    let count: Int
+    let theme: AppTheme
+    let colorScheme: ColorScheme
 
-    func body(content: Content) -> some View {
-        Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                content
-                    .buttonStyle(.glass)
-                    .tint(tint)
-            } else {
-                content
-                    .buttonStyle(.plain)
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(titleColor)
+
+            ZStack {
+                Circle()
+                    .fill(circleBackgroundColor)
+
+                Text("\(count)")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(circleForegroundColor)
             }
+            .frame(width: 28, height: 28)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(badgeBackgroundColor)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(badgeStrokeColor, lineWidth: 1)
+        )
+    }
+
+    private var titleColor: Color {
+        colorScheme == .dark ? Color.white : theme.resolvedTint
+    }
+
+    private var circleBackgroundColor: Color {
+        if colorScheme == .dark {
+            return theme.background
+        } else {
+            return .white
+        }
+    }
+
+    private var circleForegroundColor: Color {
+        colorScheme == .dark ? theme.resolvedTint : .black
+    }
+
+    private var badgeBackgroundColor: Color {
+        theme.resolvedTint.opacity(colorScheme == .dark ? 0.2 : 0.08)
+    }
+
+    private var badgeStrokeColor: Color {
+        theme.resolvedTint.opacity(colorScheme == .dark ? 0.4 : 0.2)
     }
 }
