@@ -53,7 +53,7 @@ struct CardPickerRow: View {
                         // MARK: On Tap → Select for Expense
                         selectedCardID = managedCard.objectID
                         },
-                        enableMotionShine: isSelected,
+                        enableMotionShine: true,
                         showsBaseShadow: false
                     )
                     .frame(height: tileHeight)
