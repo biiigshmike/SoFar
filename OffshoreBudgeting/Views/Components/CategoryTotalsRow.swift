@@ -12,7 +12,7 @@ struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
     var isPlaceholder: Bool = false
     var horizontalInset: CGFloat = DS.Spacing.l
-    private let controlHeight: CGFloat = 34
+    private let controlHeight: CGFloat = 44
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
     @Namespace private var glassNamespace
