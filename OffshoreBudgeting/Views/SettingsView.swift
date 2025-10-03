@@ -263,6 +263,7 @@ struct SettingsView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: horizontalInset,
+            extraTop: DS.Spacing.s,
             extraBottom: extraBottomPadding(
                 using: proxy,
                 tabBarGutter: tabBarGutter
