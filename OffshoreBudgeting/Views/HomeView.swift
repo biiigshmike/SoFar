@@ -596,6 +596,8 @@ private struct HomeHeaderOverviewTable: View {
     let onAdjustPeriod: (Int) -> Void
     let onAddCategory: () -> Void
 
+    @Namespace private var glassNamespace
+
     var body: some View {
         LazyVStack(alignment: .leading, spacing: HomeHeaderOverviewMetrics.sectionSpacing) {
             titleRow
@@ -681,7 +683,10 @@ private struct HomeHeaderOverviewTable: View {
                 GlassCapsuleContainer(
                     horizontalPadding: DS.Spacing.l,
                     verticalPadding: DS.Spacing.s,
-                    alignment: .center
+                    alignment: .center,
+                    namespace: glassNamespace,
+                    glassID: "home.addCategory",
+                    transition: .materialize
                 ) {
                     Button(action: onAddCategory) {
                         Label("Add Category", systemImage: "plus")
@@ -738,7 +743,10 @@ private struct HomeHeaderOverviewTable: View {
     private var segmentPicker: some View {
         GlassCapsuleContainer(
             horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding
+            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
+            namespace: glassNamespace,
+            glassID: "home.segmentPicker",
+            transition: .matchedGeometry
         ) {
             Picker("", selection: $selectedSegment) {
                 Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
@@ -754,7 +762,10 @@ private struct HomeHeaderOverviewTable: View {
         GlassCapsuleContainer(
             horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
             verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
-            alignment: .center
+            alignment: .center,
+            namespace: glassNamespace,
+            glassID: "home.sortPicker",
+            transition: .matchedGeometry
         ) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
