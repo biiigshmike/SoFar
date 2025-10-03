@@ -24,6 +24,7 @@ import UIKit
 struct UBEmptyState: View {
 
     @Environment(\.isOnboardingPresentation) private var isOnboardingPresentation
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -141,6 +142,7 @@ struct UBEmptyState: View {
     private func primaryButtonLabel(title: String) -> some View {
         Label(title, systemImage: "plus")
             .labelStyle(.titleAndIcon)
+            .foregroundStyle(primaryButtonForegroundColor())
     }
 
     @ViewBuilder
@@ -168,7 +170,7 @@ struct UBEmptyState: View {
             Label(title, systemImage: "plus")
                 .labelStyle(.titleAndIcon)
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(primaryButtonForegroundColor())
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.vertical, DS.Spacing.m)
         }
@@ -178,6 +180,15 @@ struct UBEmptyState: View {
     }
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    private func primaryButtonForegroundColor(isTintedBackground: Bool = false) -> Color {
+        switch colorScheme {
+        case .light:
+            return .black
+        default:
+            return isTintedBackground ? .white : .primary
+        }
+    }
+
     private var primaryButtonTint: Color {
         themeManager.selectedTheme.resolvedTint
     }
