@@ -7,8 +7,10 @@ import SwiftUI
 struct GlassCTAButton<Label: View>: View {
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
 
     private let maxWidth: CGFloat?
+    private let fillHorizontally: Bool
     private let action: () -> Void
     private let labelBuilder: () -> Label
     private let fallbackAppearance: TranslucentButtonStyle.Appearance
@@ -16,12 +18,14 @@ struct GlassCTAButton<Label: View>: View {
 
     init(
         maxWidth: CGFloat? = nil,
+        fillHorizontally: Bool = false,
         fallbackAppearance: TranslucentButtonStyle.Appearance = .tinted,
         fallbackMetrics: TranslucentButtonStyle.Metrics = .standard,
         action: @escaping () -> Void,
         @ViewBuilder label: @escaping () -> Label
     ) {
         self.maxWidth = maxWidth
+        self.fillHorizontally = fillHorizontally
         self.action = action
         self.labelBuilder = label
         self.fallbackAppearance = fallbackAppearance
@@ -36,7 +40,7 @@ struct GlassCTAButton<Label: View>: View {
                 legacyButton()
             }
         }
-        .frame(maxWidth: maxWidth)
+        .frame(maxWidth: resolvedMaxWidth)
     }
 
     // MARK: - Private Helpers
@@ -48,7 +52,7 @@ struct GlassCTAButton<Label: View>: View {
         .buttonStyle(
             TranslucentButtonStyle(
                 tint: fallbackTint,
-                metrics: fallbackMetrics,
+                metrics: resolvedFallbackMetrics,
                 appearance: fallbackAppearance
             )
         )
@@ -60,9 +64,10 @@ struct GlassCTAButton<Label: View>: View {
         Button(action: action) {
             labelBuilder()
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(glassLabelForeground)
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.vertical, DS.Spacing.m)
+                .frame(maxWidth: fillHorizontally ? .infinity : nil, alignment: .center)
         }
         .buttonStyle(.glass)
         .tint(glassTint)
@@ -74,5 +79,24 @@ struct GlassCTAButton<Label: View>: View {
 
     private var glassTint: Color {
         themeManager.selectedTheme.glassPalette.accent
+    }
+
+    private var glassLabelForeground: Color {
+        colorScheme == .light ? .black : .primary
+    }
+
+    private var resolvedFallbackMetrics: TranslucentButtonStyle.Metrics {
+        guard fillHorizontally else { return fallbackMetrics }
+        var metrics = fallbackMetrics
+        metrics.layout = .expandHorizontally
+        metrics.width = nil
+        return metrics
+    }
+
+    private var resolvedMaxWidth: CGFloat? {
+        if let maxWidth {
+            return maxWidth
+        }
+        return fillHorizontally ? .infinity : nil
     }
 }
