@@ -87,6 +87,17 @@ struct BudgetDetailsView: View {
         return isWideHeaderLayout ? DS.Spacing.xs : DS.Spacing.xs / 2
     }
 
+    private var layoutContextForInsets: ResponsiveLayoutContext? {
+        layoutContext.containerSize.width > 0 ? layoutContext : nil
+    }
+
+    private var headerHorizontalInsets: BudgetListHorizontalPaddingMetrics.Insets {
+        BudgetListHorizontalPaddingMetrics.resolvedInsets(
+            for: capabilities,
+            layoutContext: layoutContextForInsets
+        )
+    }
+
     private var shouldShowPeriodNavigation: Bool {
         guard periodNavigation != nil else { return false }
         guard vm.budget?.startDate != nil, vm.budget?.endDate != nil else { return false }
@@ -464,14 +475,15 @@ private extension BudgetDetailsView {
                         .padding(.top, displaysBudgetTitle ? DS.Spacing.xs : 0)
                     }
                 }
-                .padding(.horizontal, DS.Spacing.l)
+                .padding(.leading, headerHorizontalInsets.leading)
+                .padding(.trailing, headerHorizontalInsets.trailing)
             }
 
             if showsCategoryChips, let summary = vm.summary {
                 let categories = vm.selectedSegment == .planned ? summary.plannedCategoryBreakdown : summary.variableCategoryBreakdown
                 if categories.isEmpty {
                     GlassCapsuleContainer(
-                        horizontalPadding: DS.Spacing.l,
+                        horizontalPadding: headerHorizontalInsets.symmetricInset,
                         verticalPadding: DS.Spacing.s,
                         alignment: .center
                     ) {
@@ -485,7 +497,10 @@ private extension BudgetDetailsView {
                     }
                     .frame(height: 34)
                 } else {
-                    CategoryTotalsRow(categories: categories)
+                    CategoryTotalsRow(
+                        categories: categories,
+                        horizontalInset: headerHorizontalInsets.symmetricInset
+                    )
                 }
             }
         }
@@ -798,6 +813,17 @@ private struct PlannedListFR: View {
     @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
 
+    private var layoutContextForInsets: ResponsiveLayoutContext? {
+        layoutContext.containerSize.width > 0 ? layoutContext : nil
+    }
+
+    private var listHorizontalInsets: BudgetListHorizontalPaddingMetrics.Insets {
+        BudgetListHorizontalPaddingMetrics.resolvedInsets(
+            for: capabilities,
+            layoutContext: layoutContextForInsets
+        )
+    }
+
     init(
         budget: Budget,
         startDate: Date,
@@ -944,7 +970,12 @@ private struct PlannedListFR: View {
                 }
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            .listRowInsets(EdgeInsets(top: idx == 0 ? 4 : 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(
+                listHorizontalInsets.edgeInsets(
+                    top: idx == 0 ? 4 : 12,
+                    bottom: 12
+                )
+            )
             .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
@@ -978,7 +1009,7 @@ private struct PlannedListFR: View {
             .padding(.bottom, applyDefaultInsets ? 0 : BudgetListLayoutMetrics.headerToRowsPadding)
             .listRowInsets(
                 applyDefaultInsets
-                    ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
+                    ? listHorizontalInsets.edgeInsets()
                     : EdgeInsets()
             )
             .listRowSeparator(.hidden)
@@ -1054,6 +1085,8 @@ private struct PlannedListFR: View {
 // MARK: - Shared empty list section helper
 private struct BudgetListRowContainer<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.responsiveLayoutContext) private var layoutContext
+    @Environment(\.platformCapabilities) private var capabilities
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -1061,8 +1094,16 @@ private struct BudgetListRowContainer<Content: View>: View {
     }
 
     var body: some View {
+        let sanitizedLayoutContext: ResponsiveLayoutContext? =
+            layoutContext.containerSize.width > 0 ? layoutContext : nil
+        let horizontalInsets = BudgetListHorizontalPaddingMetrics.resolvedInsets(
+            for: capabilities,
+            layoutContext: sanitizedLayoutContext
+        )
+
         content
-            .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
+            .padding(.leading, horizontalInsets.leading)
+            .padding(.trailing, horizontalInsets.trailing)
             .listRowBackground(Color.clear)
             .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
     }
@@ -1118,6 +1159,17 @@ private struct VariableListFR: View {
     @Environment(\.responsiveLayoutContext) private var layoutContext
     @Environment(\.platformCapabilities) private var capabilities
     @AppStorage(AppSettingsKeys.confirmBeforeDelete.rawValue) private var confirmBeforeDelete: Bool = true
+
+    private var layoutContextForInsets: ResponsiveLayoutContext? {
+        layoutContext.containerSize.width > 0 ? layoutContext : nil
+    }
+
+    private var listHorizontalInsets: BudgetListHorizontalPaddingMetrics.Insets {
+        BudgetListHorizontalPaddingMetrics.resolvedInsets(
+            for: capabilities,
+            layoutContext: layoutContextForInsets
+        )
+    }
 
     init(
         attachedCards: [Card],
@@ -1253,7 +1305,12 @@ private struct VariableListFR: View {
                     }
                 }
                 .padding(.vertical, 6)
-            .listRowInsets(EdgeInsets(top: idx == 0 ? 4 : 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(
+                listHorizontalInsets.edgeInsets(
+                    top: idx == 0 ? 4 : 12,
+                    bottom: 12
+                )
+            )
             .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
@@ -1288,7 +1345,7 @@ private struct VariableListFR: View {
             .padding(.bottom, applyDefaultInsets ? 0 : BudgetListLayoutMetrics.headerToRowsPadding)
             .listRowInsets(
                 applyDefaultInsets
-                    ? EdgeInsets(top: 0, leading: DS.Spacing.l, bottom: 0, trailing: DS.Spacing.l)
+                    ? listHorizontalInsets.edgeInsets()
                     : EdgeInsets()
             )
             .listRowSeparator(.hidden)
@@ -1398,19 +1455,22 @@ private extension View {
     ) -> some View {
         if capabilities.supportsOS26Translucency {
             self
-        } else if let layoutContext {
-            let width = layoutContext.containerSize.width
-            if width >= BudgetListHorizontalPaddingMetrics.wideLayoutMinimumWidth {
-                self.padding(.horizontal, DS.Spacing.l)
-            } else if layoutContext.safeArea.hasNonZeroInsets {
-                self
-                    .padding(.leading, layoutContext.safeArea.leading)
-                    .padding(.trailing, layoutContext.safeArea.trailing)
-            } else {
-                self
-            }
         } else {
-            self.padding(.horizontal, DS.Spacing.l)
+            let sanitizedLayoutContext: ResponsiveLayoutContext?
+            if let layoutContext, layoutContext.containerSize.width > 0 {
+                sanitizedLayoutContext = layoutContext
+            } else {
+                sanitizedLayoutContext = nil
+            }
+
+            let horizontalInsets = BudgetListHorizontalPaddingMetrics.resolvedInsets(
+                for: capabilities,
+                layoutContext: sanitizedLayoutContext
+            )
+
+            self
+                .padding(.leading, horizontalInsets.leading)
+                .padding(.trailing, horizontalInsets.trailing)
         }
     }
 
@@ -1453,6 +1513,52 @@ private enum BudgetListLayoutMetrics {
 
 private enum BudgetListHorizontalPaddingMetrics {
     static let wideLayoutMinimumWidth: CGFloat = 600
+
+    struct Insets {
+        let leading: CGFloat
+        let trailing: CGFloat
+
+        var symmetricInset: CGFloat {
+            max(leading, trailing)
+        }
+
+        func edgeInsets(top: CGFloat = 0, bottom: CGFloat = 0) -> EdgeInsets {
+            EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
+        }
+    }
+
+    static func resolvedInsets(
+        for capabilities: PlatformCapabilities,
+        layoutContext: ResponsiveLayoutContext?
+    ) -> Insets {
+        if capabilities.supportsOS26Translucency {
+            return Insets(
+                leading: RootTabHeaderLayout.defaultHorizontalPadding,
+                trailing: RootTabHeaderLayout.defaultHorizontalPadding
+            )
+        }
+
+        guard let layoutContext, layoutContext.containerSize.width > 0 else {
+            return Insets(
+                leading: RootTabHeaderLayout.defaultHorizontalPadding,
+                trailing: RootTabHeaderLayout.defaultHorizontalPadding
+            )
+        }
+
+        if layoutContext.containerSize.width >= wideLayoutMinimumWidth {
+            return Insets(
+                leading: RootTabHeaderLayout.defaultHorizontalPadding,
+                trailing: RootTabHeaderLayout.defaultHorizontalPadding
+            )
+        }
+
+        let safeArea = layoutContext.safeArea
+        if safeArea.hasNonZeroInsets {
+            return Insets(leading: safeArea.leading, trailing: safeArea.trailing)
+        }
+
+        return Insets(leading: 0, trailing: 0)
+    }
 }
 
 private enum BudgetListBottomInsetMetrics {
