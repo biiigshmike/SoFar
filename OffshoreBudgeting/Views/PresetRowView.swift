@@ -27,24 +27,18 @@ struct PresetRowView: View {
 
     // MARK: Body
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
 
-            // MARK: Left Column (Title + Planned/Actual)
-            VStack(alignment: .leading, spacing: 10) {
+            // MARK: Title + Assigned Budgets Badge
+            HStack(alignment: .center, spacing: 12) {
                 Text(item.name)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .layoutPriority(1)
 
-                HStack(spacing: 32) {
-                    LabeledAmountBlock(title: "PLANNED", value: item.plannedCurrency)
-                    LabeledAmountBlock(title: "ACTUAL", value: item.actualCurrency)
-                }
-            }
+                Spacer(minLength: 12)
 
-            Spacer(minLength: 12)
-
-            // MARK: Right Column (Assigned Budgets + Next Date)
-            VStack(alignment: .trailing, spacing: 10) {
                 Button {
                     onAssignTapped(item.template)
                 } label: {
@@ -56,6 +50,16 @@ struct PresetRowView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Assigned Budgets: \(item.assignedCount)")
+            }
+
+            // MARK: Amounts + Next Date
+            HStack(alignment: .top, spacing: 12) {
+                HStack(spacing: 32) {
+                    LabeledAmountBlock(title: "PLANNED", value: item.plannedCurrency)
+                    LabeledAmountBlock(title: "ACTUAL", value: item.actualCurrency)
+                }
+
+                Spacer(minLength: 12)
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("NEXT DATE")
