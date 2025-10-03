@@ -845,7 +845,7 @@ private struct PlannedListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .applyListHorizontalPadding(capabilities)
+                .applyListHorizontalPadding(capabilities, layoutContext: layoutContext)
                 .budgetListBottomInset(layoutContext: layoutContext)
             } else {
                 // MARK: Real List for native swipe
@@ -857,7 +857,7 @@ private struct PlannedListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .applyListHorizontalPadding(capabilities)
+                .applyListHorizontalPadding(capabilities, layoutContext: layoutContext)
                 .budgetListBottomInset(layoutContext: layoutContext)
             }
         }
@@ -1173,7 +1173,7 @@ private struct VariableListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .applyListHorizontalPadding(capabilities)
+                .applyListHorizontalPadding(capabilities, layoutContext: layoutContext)
                 .budgetListBottomInset(layoutContext: layoutContext)
             } else {
                 // MARK: Real List for native swipe
@@ -1185,7 +1185,7 @@ private struct VariableListFR: View {
                 }
                 .refreshable { onTotalsChanged() }
                 .styledList()
-                .applyListHorizontalPadding(capabilities)
+                .applyListHorizontalPadding(capabilities, layoutContext: layoutContext)
                 .budgetListBottomInset(layoutContext: layoutContext)
             }
         }
@@ -1392,9 +1392,23 @@ private extension View {
     }
 
     @ViewBuilder
-    func applyListHorizontalPadding(_ capabilities: PlatformCapabilities) -> some View {
+    func applyListHorizontalPadding(
+        _ capabilities: PlatformCapabilities,
+        layoutContext: ResponsiveLayoutContext? = nil
+    ) -> some View {
         if capabilities.supportsOS26Translucency {
             self
+        } else if let layoutContext {
+            let width = layoutContext.containerSize.width
+            if width >= BudgetListHorizontalPaddingMetrics.wideLayoutMinimumWidth {
+                self.padding(.horizontal, DS.Spacing.l)
+            } else if layoutContext.safeArea.hasNonZeroInsets {
+                self
+                    .padding(.leading, layoutContext.safeArea.leading)
+                    .padding(.trailing, layoutContext.safeArea.trailing)
+            } else {
+                self
+            }
         } else {
             self.padding(.horizontal, DS.Spacing.l)
         }
@@ -1435,6 +1449,10 @@ private extension View {
 
 private enum BudgetListLayoutMetrics {
     static let headerToRowsPadding: CGFloat = DS.Spacing.s
+}
+
+private enum BudgetListHorizontalPaddingMetrics {
+    static let wideLayoutMinimumWidth: CGFloat = 600
 }
 
 private enum BudgetListBottomInsetMetrics {
