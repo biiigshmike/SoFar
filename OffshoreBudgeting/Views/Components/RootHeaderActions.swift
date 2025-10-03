@@ -14,6 +14,17 @@ enum RootHeaderActionMetrics {
     /// Liquid Glass materials are available.
     private static let glassDimension: CGFloat = DS.Spacing.xxl + DS.Spacing.m
 
+    /// Minimum square dimension applied to icon controls so they always
+    /// meet recommended tap targets.
+    static var minimumIconDimension: CGFloat { minimumTapTarget }
+
+    /// Resolves the preferred icon dimension, clamping to the minimum tap
+    /// target on legacy platforms that do not offer OS 26 glass effects.
+    static func iconDimension(for capabilities: PlatformCapabilities, width: CGFloat?) -> CGFloat {
+        let base = max(width ?? minimumIconDimension, minimumIconDimension)
+        return capabilities.supportsOS26Translucency ? base : minimumIconDimension
+    }
+
     /// Returns the appropriate control dimension for the supplied platform
     /// capabilities, opting into the taller OS 26 appearance when available
     /// while maintaining the legacy sizing for older systems.
@@ -522,11 +533,32 @@ struct RootHeaderGlassControl<Content: View>: View {
         let theme = themeManager.selectedTheme
 
         if sizing == .icon {
-            let iconSide = max(width ?? dimension, dimension)
+            let iconSide = RootHeaderActionMetrics.iconDimension(for: capabilities, width: width)
+            let fallbackSide = RootHeaderActionMetrics.minimumIconDimension
+
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+            if capabilities.supportsOS26Translucency {
+                if #available(iOS 26.0, macCatalyst 26.0, *) {
+                    RootHeaderGlassCapsuleContainer {
+                        content
+                            .frame(width: iconSide, height: iconSide)
+                    }
+                    .contentShape(Circle())
+                } else {
+                    content
+                        .frame(width: fallbackSide, height: fallbackSide)
+                        .contentShape(Circle())
+                }
+            } else {
+                content
+                    .frame(width: fallbackSide, height: fallbackSide)
+                    .contentShape(Circle())
+            }
+#else
             content
-                .frame(width: iconSide, height: iconSide)
+                .frame(width: fallbackSide, height: fallbackSide)
                 .contentShape(Circle())
-                .rootHeaderGlassDecorated(theme: theme, capabilities: capabilities)
+#endif
         } else {
             content
                 .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
@@ -674,11 +706,7 @@ struct RootHeaderIconActionButton: View {
 
     @ViewBuilder
     private var returnLegacy: some View {
-        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
-        RootHeaderGlassControl(
-            width: dimension,
-            sizing: .icon
-        ) {
+        RootHeaderGlassControl(sizing: .icon) {
             Button(action: action) {
                 RootHeaderControlIcon(systemImage: systemImage)
             }
