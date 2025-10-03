@@ -53,30 +53,6 @@ enum RootHeaderControlSizing {
     case icon
 }
 
-enum RootHeaderGlassTransitionStyle {
-    case matchedGeometry
-    case materialize
-}
-
-struct RootHeaderGlassEffectConfiguration {
-    let namespace: Namespace.ID
-    let id: String
-    let unionID: String?
-    let transition: RootHeaderGlassTransitionStyle
-
-    init(
-        namespace: Namespace.ID,
-        id: String,
-        unionID: String? = nil,
-        transition: RootHeaderGlassTransitionStyle = .matchedGeometry
-    ) {
-        self.namespace = namespace
-        self.id = id
-        self.unionID = unionID
-        self.transition = transition
-    }
-}
-
 // MARK: - Icon Content
 struct RootHeaderControlIcon: View {
     @EnvironmentObject private var themeManager: ThemeManager
@@ -533,42 +509,6 @@ struct RootHeaderGlassPill<Leading: View, Trailing: View, Secondary: View>: View
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func applyGlassEffectConfiguration(
-        _ configuration: RootHeaderGlassEffectConfiguration?
-    ) -> some View {
-        if let configuration,
-           #available(iOS 26.0, macCatalyst 26.0, *) {
-            let withID = glassEffectID(configuration.id, in: configuration.namespace)
-
-            if let unionID = configuration.unionID {
-                withID
-                    .glassEffectUnion(id: unionID, namespace: configuration.namespace)
-                    .applyGlassTransition(configuration.transition)
-            } else {
-                withID
-                    .applyGlassTransition(configuration.transition)
-            }
-        } else {
-            self
-        }
-    }
-}
-
-@available(iOS 26.0, macCatalyst 26.0, *)
-private extension View {
-    @ViewBuilder
-    func applyGlassTransition(_ style: RootHeaderGlassTransitionStyle) -> some View {
-        switch style {
-        case .matchedGeometry:
-            glassEffectTransition(.matchedGeometry)
-        case .materialize:
-            glassEffectTransition(.materialize)
-        }
-    }
-}
-
 struct RootHeaderGlassControl<Content: View>: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
@@ -576,18 +516,15 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let content: Content
     private let width: CGFloat?
     private let sizing: RootHeaderControlSizing
-    private let glassEffectConfiguration: RootHeaderGlassEffectConfiguration?
 
     init(
         width: CGFloat? = nil,
         sizing: RootHeaderControlSizing = .automatic,
-        glassEffectConfiguration: RootHeaderGlassEffectConfiguration? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
         self.width = width
         self.sizing = sizing
-        self.glassEffectConfiguration = glassEffectConfiguration
     }
 
     @ViewBuilder
@@ -604,31 +541,26 @@ struct RootHeaderGlassControl<Content: View>: View {
                 if #available(iOS 26.0, macCatalyst 26.0, *) {
                     RootHeaderGlassCapsuleContainer {
                         content
-                            .applyGlassEffectConfiguration(glassEffectConfiguration)
                             .frame(width: iconSide, height: iconSide)
                     }
                     .contentShape(Circle())
                 } else {
                     content
-                        .applyGlassEffectConfiguration(glassEffectConfiguration)
                         .frame(width: fallbackSide, height: fallbackSide)
                         .contentShape(Circle())
                 }
             } else {
                 content
-                    .applyGlassEffectConfiguration(glassEffectConfiguration)
                     .frame(width: fallbackSide, height: fallbackSide)
                     .contentShape(Circle())
             }
 #else
             content
-                .applyGlassEffectConfiguration(glassEffectConfiguration)
                 .frame(width: fallbackSide, height: fallbackSide)
                 .contentShape(Circle())
 #endif
         } else {
             content
-                .applyGlassEffectConfiguration(glassEffectConfiguration)
                 .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
                 .contentShape(Rectangle())
                 .padding(.horizontal, RootHeaderGlassMetrics.horizontalPadding)
