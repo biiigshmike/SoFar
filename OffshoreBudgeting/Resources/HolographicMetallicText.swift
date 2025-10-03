@@ -16,7 +16,7 @@
 import SwiftUI
 
 // MARK: - HolographicMetallicText
-/// Draws a shiny, metallic label. The specular highlight moves with device motion.
+/// Draws a shiny, metallic label. The specular highlight moves with device motion using the smoothed gravity vector.
 /// - Parameters:
 ///   - text: String displayed.
 ///   - titleFont: Text font. Defaults to rounded, bold 28.
@@ -75,18 +75,74 @@ struct HolographicMetallicText: View {
 // MARK: - Motion → Parameters
 private extension HolographicMetallicText {
 
+    struct GravitySample {
+        let x: Double
+        let y: Double
+        let z: Double
+    }
+
+    /// Smoothed, normalized device gravity vector supplied by MotionMonitor.
+    var gravitySample: GravitySample {
+        GravitySample(
+            x: motion.displayGravityX,
+            y: motion.displayGravityY,
+            z: motion.displayGravityZ
+        )
+    }
+
+    var horizontalMagnitude: Double {
+        let g = gravitySample
+        let magnitude = sqrt(g.x * g.x + g.y * g.y)
+        return min(1.0, max(0.0, magnitude))
+    }
+
+    var faceUpAttenuation: Double {
+        let absZ = min(1.0, max(0.0, abs(gravitySample.z)))
+        let faceUpStart: Double = 0.9
+        let faceUpEnd: Double = 0.98
+        if absZ <= faceUpStart { return 1.0 }
+        if absZ >= faceUpEnd { return 0.0 }
+        let progress = (absZ - faceUpStart) / (faceUpEnd - faceUpStart)
+        return max(0.0, min(1.0, 1.0 - progress))
+    }
+
+    var gravityDrivenMagnitude: Double {
+        let base = horizontalMagnitude
+        guard base >= 0.02 else { return 0 }
+        return base * faceUpAttenuation
+    }
+
+    /// Angle (in degrees) of the horizontal gravity projection; rotates with yaw.
+    var horizontalAngleDegrees: Double? {
+        guard gravityDrivenMagnitude > 0 else { return nil }
+        let g = gravitySample
+        return atan2(g.y, g.x) * 180.0 / .pi
+    }
+
+    /// Fraction of tilt that is not face-up/down; keeps highlights lively when upright.
+    var verticalResponse: Double {
+        let absZ = min(1.0, max(0.0, abs(gravitySample.z)))
+        return 1.0 - absZ
+    }
+
     /// Magnitude of motion used to drive opacities/intensity.
+    /// Based on the horizontal gravity component with face-up damping.
     var motionMagnitude: Double {
+        #if os(iOS) || targetEnvironment(macCatalyst)
         guard !reduceMotion else { return 0 }
-        return sqrt(motion.roll * motion.roll + motion.pitch * motion.pitch)
+        return gravityDrivenMagnitude
+        #else
+        return 0
+        #endif
     }
 
     // MARK: Metallic Overlay Opacity
     /// A gentle opacity for the broad metallic sweep; scales with motion.
     var metallicOpacity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
-        guard !reduceMotion else { return 0 }
-        let scaled = min(maxMetallicOpacity, max(0.0, motionMagnitude * shimmerResponsiveness))
+        let magnitude = motionMagnitude
+        guard magnitude > 0 else { return 0 }
+        let scaled = min(maxMetallicOpacity, max(0.0, magnitude * shimmerResponsiveness))
         return scaled
         #else
         return 0
@@ -97,8 +153,9 @@ private extension HolographicMetallicText {
     /// Opacity for the narrower moving shine band; also motion-driven.
     var shineOpacity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
-        guard !reduceMotion else { return 0 }
-        let scaled = min(maxShineOpacity, max(0.0, motionMagnitude * (shimmerResponsiveness + 0.5)))
+        let magnitude = motionMagnitude
+        guard magnitude > 0 else { return 0 }
+        let scaled = min(maxShineOpacity, max(0.0, magnitude * (shimmerResponsiveness + 0.5)))
         return scaled
         #else
         return 0
@@ -110,31 +167,31 @@ private extension HolographicMetallicText {
     var shineIntensity: Double {
         #if os(iOS) || targetEnvironment(macCatalyst)
         guard !reduceMotion else { return 0 }
-        return min(1.0, max(0.0, motionMagnitude * (shimmerResponsiveness + 0.3)))
+        let base = motionMagnitude * (shimmerResponsiveness + 0.3)
+        let boosted = base + verticalResponse * 0.35
+        return min(1.0, max(0.0, boosted))
         #else
         return 0
         #endif
     }
 
     // MARK: Metallic Angle
-    /// Follows device tilt (roll/pitch). +90° so the sweep is perpendicular to tilt.
+    /// Follows the smoothed gravity vector. +90° keeps the sweep perpendicular to the tilt direction.
     var metallicAngle: Angle {
         #if os(iOS) || targetEnvironment(macCatalyst)
-        guard !reduceMotion else { return .degrees(0) }
-        let angleDeg = atan2(motion.pitch, motion.roll) * 180.0 / .pi + 90.0
-        return .degrees(angleDeg)
+        guard let baseAngle = horizontalAngleDegrees, !reduceMotion else { return .degrees(0) }
+        return .degrees(baseAngle + 90.0)
         #else
         return .degrees(0)
         #endif
     }
 
     // MARK: Shine Angle
-    /// Slightly offset from the metallic angle for a richer specular feel.
+    /// Slightly offset from the gravity-driven metallic angle for a richer specular feel.
     var shineAngle: Angle {
         #if os(iOS) || targetEnvironment(macCatalyst)
-        guard !reduceMotion else { return .degrees(0) }
-        let angleDeg = atan2(motion.pitch, motion.roll) * 180.0 / .pi + 60.0
-        return .degrees(angleDeg)
+        guard let baseAngle = horizontalAngleDegrees, !reduceMotion else { return .degrees(0) }
+        return .degrees(baseAngle + 60.0)
         #else
         return .degrees(0)
         #endif

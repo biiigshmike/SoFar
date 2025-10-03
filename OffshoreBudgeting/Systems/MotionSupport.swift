@@ -3,9 +3,10 @@
 //  SoFar
 //
 //  Centralized device-motion publisher with smoothing and amplitude scaling.
-//  - `roll`, `pitch`, `yaw`: raw live values (unscaled).
+//  - `roll`, `pitch`, `yaw`, `gravityX/Y/Z`: raw live values (unscaled).
 //  - `displayRoll`, `displayPitch`: smoothed + scaled values for UI backgrounds.
-//    These use DS.Motion.smoothingAlpha and DS.Motion.cardBackgroundAmplitudeScale.
+//  - `displayGravityX/Y/Z`: smoothed gravity vector for other motion-reactive visuals.
+//    Smoothing uses DS.Motion.smoothingAlpha; roll/pitch scaling uses DS.Motion.cardBackgroundAmplitudeScale.
 //
 //  NOTE: Uses UBMotionsProviding from Compatibility.swift to stay cross-platform.
 //
@@ -27,10 +28,16 @@ final class MotionMonitor: ObservableObject {
     @Published private(set) var roll: Double = 0
     @Published private(set) var pitch: Double = 0
     @Published private(set) var yaw: Double = 0
+    @Published private(set) var gravityX: Double = 0
+    @Published private(set) var gravityY: Double = 0
+    @Published private(set) var gravityZ: Double = 0
 
     // MARK: Smoothed / Scaled for display (use these for backgrounds)
     @Published private(set) var displayRoll: Double = 0
     @Published private(set) var displayPitch: Double = 0
+    @Published private(set) var displayGravityX: Double = 0
+    @Published private(set) var displayGravityY: Double = 0
+    @Published private(set) var displayGravityZ: Double = 0
 
     // MARK: Config
     /// Exponential smoothing factor (0 = frozen, 1 = no smoothing).
@@ -62,22 +69,33 @@ final class MotionMonitor: ObservableObject {
     func start() {
         guard !isRunning else { return }
         isRunning = true
-        provider.start { [weak self] r, p, y in
+        provider.start { [weak self] r, p, y, gx, gy, gz in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.roll = r
                 self.pitch = p
                 self.yaw = y
+                self.gravityX = gx
+                self.gravityY = gy
+                self.gravityZ = gz
 
-                // Scale amplitude down first (gentler background).
-                let targetR = r * self.amplitudeScale
-                let targetP = p * self.amplitudeScale
-
-                // Exponential smoothing: new = old + α * (target - old)
-                self.displayRoll  = self.displayRoll  + self.smoothingAlpha * (targetR - self.displayRoll)
-                self.displayPitch = self.displayPitch + self.smoothingAlpha * (targetP - self.displayPitch)
+                self.smooth(r, into: &self.displayRoll, scale: self.amplitudeScale)
+                self.smooth(p, into: &self.displayPitch, scale: self.amplitudeScale)
+                self.smooth(gx, into: &self.displayGravityX)
+                self.smooth(gy, into: &self.displayGravityY)
+                self.smooth(gz, into: &self.displayGravityZ)
             }
         }
+    }
+
+    /// Low-pass filters a raw motion value into its published display counterpart.
+    /// - Parameters:
+    ///   - raw: Incoming reading from Core Motion.
+    ///   - current: Reference to the published display value.
+    ///   - scale: Optional amplitude scaling before smoothing.
+    private func smooth(_ raw: Double, into current: inout Double, scale: Double = 1.0) {
+        let target = raw * scale
+        current = current + smoothingAlpha * (target - current)
     }
 
     // MARK: stop()
@@ -95,7 +113,7 @@ final class MotionMonitor: ObservableObject {
     /// Adjusts smoothing and amplitude scaling at runtime if desired.
     /// - Parameters:
     ///   - smoothing: 0...1 (default from DS.Motion.smoothingAlpha)
-    ///   - scale: 0...1 (default from DS.Motion.cardBackgroundAmplitudeScale)
+    ///   - scale: 0...1 (default from DS.Motion.cardBackgroundAmplitudeScale). Applied to roll/pitch smoothing only.
     func updateTuning(smoothing: Double? = nil, scale: Double? = nil) {
         if let s = smoothing { smoothingAlpha = max(0, min(1, s)) }
         if let k = scale { amplitudeScale = max(0, min(1, k)) }
