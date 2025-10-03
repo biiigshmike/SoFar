@@ -976,7 +976,7 @@ private struct PlannedListFR: View {
                     bottom: 12
                 )
             )
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.background)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
@@ -1013,7 +1013,7 @@ private struct PlannedListFR: View {
                     : EdgeInsets()
             )
             .listRowSeparator(.hidden)
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.background)
     }
 
     @ViewBuilder
@@ -1105,7 +1105,7 @@ private struct BudgetListRowContainer<Content: View>: View {
             .padding(.leading, horizontalInsets.leading)
             .padding(.trailing, horizontalInsets.trailing)
             .listRowBackground(Color.clear)
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.background)
     }
 }
 
@@ -1311,7 +1311,7 @@ private struct VariableListFR: View {
                     bottom: 12
                 )
             )
-            .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+            .ub_preOS26ListRowBackground(themeManager.selectedTheme.background)
             .contentShape(Rectangle())
             .unifiedSwipeActions(
                 UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
