@@ -185,11 +185,7 @@ struct HomeView: View {
             Button("Add Variable Expense") {
                 triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
             }
-        } label: {
-            RootHeaderGlassControl(sizing: .icon) {
-                RootHeaderControlIcon(systemImage: "plus")
-            }
-        }
+        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -220,11 +216,7 @@ struct HomeView: View {
             } label: {
                 Label("Delete Budget", systemImage: "trash")
             }
-        } label: {
-            RootHeaderGlassControl(sizing: .icon) {
-                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
-            }
-        }
+        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis", symbolVariants: SymbolVariants.none) }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Actions")
     }
@@ -826,22 +818,20 @@ private struct HeaderMenuGlassLabel: View {
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
     var systemImage: String
+    var symbolVariants: SymbolVariants? = nil
 
     var body: some View {
-        Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                baseLabel
-                    .tint(themeManager.selectedTheme.resolvedTint)
-            } else {
-                baseLabel
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+                .frame(
+                    width: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil),
+                    height: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
+                )
+                .tint(themeManager.selectedTheme.resolvedTint)
+        } else {
+            RootHeaderGlassControl(sizing: .icon) {
+                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var baseLabel: some View {
-        RootHeaderGlassControl(sizing: .icon) {
-            RootHeaderControlIcon(systemImage: systemImage)
         }
     }
 }
