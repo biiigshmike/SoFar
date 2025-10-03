@@ -334,7 +334,10 @@ struct HomeView: View {
                             Button(action: addExpenseCTAAction) {
                                 Label(addExpenseCTATitle, systemImage: "plus")
                                     .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                    .frame(maxWidth: .infinity)
+                                    .frame(
+                                maxWidth: .infinity,
+                                minHeight: HomeHeaderOverviewMetrics.categoryControlHeight
+                            )
                                     .frame(minHeight: 44)
                             }
                             .buttonStyle(.glass)
@@ -683,7 +686,10 @@ private struct HomeHeaderOverviewTable: View {
                     Button(action: onAddCategory) {
                         Label("Add Category", systemImage: "plus")
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .frame(maxWidth: .infinity)
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: HomeHeaderOverviewMetrics.categoryControlHeight
+                            )
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("home_add_category_cta")
@@ -850,7 +856,7 @@ private enum HomeHeaderOverviewMetrics {
     static let metricRowSpacing: CGFloat = DS.Spacing.xs
     static let metricGroupSpacing: CGFloat = DS.Spacing.xs
     static let categoryChipTopSpacing: CGFloat = DS.Spacing.s
-    static let categoryControlHeight: CGFloat = 34
+    static let categoryControlHeight: CGFloat = 44
     static let controlHorizontalPadding: CGFloat = DS.Spacing.s
     static let controlVerticalPadding: CGFloat = DS.Spacing.s
     static let titleFont: Font = .largeTitle.bold()
