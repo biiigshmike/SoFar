@@ -53,6 +53,11 @@ enum RootHeaderControlSizing {
     case icon
 }
 
+enum RootHeaderControlBackground {
+    case automatic
+    case clear
+}
+
 // MARK: - Icon Content
 struct RootHeaderControlIcon: View {
     @EnvironmentObject private var themeManager: ThemeManager
@@ -516,15 +521,18 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let content: Content
     private let width: CGFloat?
     private let sizing: RootHeaderControlSizing
+    private let background: RootHeaderControlBackground
 
     init(
         width: CGFloat? = nil,
         sizing: RootHeaderControlSizing = .automatic,
+        background: RootHeaderControlBackground = .automatic,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
         self.width = width
         self.sizing = sizing
+        self.background = background
     }
 
     @ViewBuilder
@@ -537,29 +545,39 @@ struct RootHeaderGlassControl<Content: View>: View {
             let iconSide = RootHeaderActionMetrics.iconDimension(for: capabilities, width: width)
             let fallbackSide = RootHeaderActionMetrics.minimumIconDimension
 
-#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
-            if capabilities.supportsOS26Translucency {
-                if #available(iOS 26.0, macCatalyst 26.0, *) {
-                    RootHeaderGlassCapsuleContainer {
-                        content
-                            .frame(width: max(iconSide, d), height: max(iconSide, d))
-                    }
+            if background == .clear {
+                let side = capabilities.supportsOS26Translucency ? max(iconSide, d) : fallbackSide
+
+                content
+                    .frame(width: side, height: side)
+                    .background(Color.clear)
                     .contentShape(Circle())
+            } else {
+
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+                if capabilities.supportsOS26Translucency {
+                    if #available(iOS 26.0, macCatalyst 26.0, *) {
+                        RootHeaderGlassCapsuleContainer {
+                            content
+                                .frame(width: max(iconSide, d), height: max(iconSide, d))
+                        }
+                        .contentShape(Circle())
+                    } else {
+                        content
+                            .frame(width: fallbackSide, height: fallbackSide)
+                            .contentShape(Circle())
+                    }
                 } else {
                     content
                         .frame(width: fallbackSide, height: fallbackSide)
                         .contentShape(Circle())
                 }
-            } else {
+#else
                 content
                     .frame(width: fallbackSide, height: fallbackSide)
                     .contentShape(Circle())
-            }
-#else
-            content
-                .frame(width: fallbackSide, height: fallbackSide)
-                .contentShape(Circle())
 #endif
+            }
         } else {
             content
                 .modifier(RootHeaderGlassControlFrameModifier(width: width, dimension: dimension))
