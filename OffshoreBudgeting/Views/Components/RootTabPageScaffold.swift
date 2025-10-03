@@ -423,7 +423,7 @@ extension RootTabPageProxy {
         if capabilities.supportsOS26Translucency { return RootTabHeaderLayout.defaultHorizontalPadding }
         if layoutContext.containerSize.width >= 600 { return RootTabHeaderLayout.defaultHorizontalPadding }
 
-        return max(effectiveSafeAreaInsets.leading, 0)
+        return max(effectiveSafeAreaInsets.leading, DS.Spacing.s)
     }
 }
 
