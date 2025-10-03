@@ -11,18 +11,12 @@ struct GlassCapsuleContainer<Content: View>: View {
     private let horizontalPadding: CGFloat
     private let verticalPadding: CGFloat
     private let contentAlignment: Alignment
-    private let namespace: Namespace.ID?
-    private let glassID: String?
-    private let transition: GlassEffectTransition?
 
     init(
         minimumHeight: CGFloat? = nil,
         horizontalPadding: CGFloat = DS.Spacing.l,
         verticalPadding: CGFloat = DS.Spacing.m,
         alignment: Alignment = .leading,
-        namespace: Namespace.ID? = nil,
-        glassID: String? = nil,
-        transition: GlassEffectTransition? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
@@ -30,9 +24,6 @@ struct GlassCapsuleContainer<Content: View>: View {
         self.horizontalPadding = horizontalPadding
         self.verticalPadding = verticalPadding
         self.contentAlignment = alignment
-        self.namespace = namespace
-        self.glassID = glassID
-        self.transition = transition
     }
 
     var body: some View {
@@ -49,18 +40,8 @@ struct GlassCapsuleContainer<Content: View>: View {
 
         if #available(iOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
-                var glassDecorated = decorated
+                decorated
                     .glassEffect(.regular.interactive(), in: capsule)
-
-                if let namespace, let glassID {
-                    glassDecorated = glassDecorated.glassEffectID(glassID, in: namespace)
-                }
-
-                if let transition {
-                    glassDecorated = glassDecorated.glassEffectTransition(transition)
-                }
-
-                glassDecorated
             }
         } else {
             decorated
