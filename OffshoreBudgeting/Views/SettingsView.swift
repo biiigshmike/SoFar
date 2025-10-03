@@ -348,10 +348,10 @@ struct SettingsView: View {
 
         let safeArea = responsiveLayoutContext.safeArea
         if safeArea.hasNonZeroInsets {
-            return max(safeArea.leading, 0)
+            return max(safeArea.leading, DS.Spacing.s)
         }
 
-        return max(horizontalSizeClass == .regular ? RootTabHeaderLayout.defaultHorizontalPadding : 0, 0)
+        return max(horizontalSizeClass == .regular ? RootTabHeaderLayout.defaultHorizontalPadding : 0, DS.Spacing.s)
     }
 
     private var cardStackSpacing: CGFloat {
