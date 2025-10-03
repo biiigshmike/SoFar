@@ -72,6 +72,8 @@ struct AddUnplannedExpenseView: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         GlassCTAButton(
+                            maxWidth: .infinity,
+                            fillHorizontally: true,
                             fallbackAppearance: .neutral,
                             action: { isPresentingAddCard = true }
                         ) {
