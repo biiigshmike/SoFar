@@ -7,17 +7,20 @@ struct GlassCapsuleContainer<Content: View>: View {
     @Environment(\.platformCapabilities) private var capabilities
 
     private let content: Content
+    private let minimumHeight: CGFloat?
     private let horizontalPadding: CGFloat
     private let verticalPadding: CGFloat
     private let contentAlignment: Alignment
 
     init(
+        minimumHeight: CGFloat? = nil,
         horizontalPadding: CGFloat = DS.Spacing.l,
         verticalPadding: CGFloat = DS.Spacing.m,
         alignment: Alignment = .leading,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
+        self.minimumHeight = minimumHeight
         self.horizontalPadding = horizontalPadding
         self.verticalPadding = verticalPadding
         self.contentAlignment = alignment
@@ -32,6 +35,7 @@ struct GlassCapsuleContainer<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: contentAlignment)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
+            .frame(minHeight: minimumHeight)
             .contentShape(capsule)
 
         if #available(iOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
