@@ -827,8 +827,24 @@ private struct HeaderMenuGlassLabel: View {
     var symbolVariants: SymbolVariants? = nil
 
     var body: some View {
-        RootHeaderGlassControl(sizing: .icon) {
-            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            GlassCapsuleContainer(
+                minimumHeight: RootHeaderActionMetrics.minimumIconDimension,
+                horizontalPadding: RootHeaderGlassMetrics.horizontalPadding,
+                verticalPadding: RootHeaderGlassMetrics.verticalPadding,
+                alignment: .trailing
+            ) {
+                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+                    .frame(
+                        width: RootHeaderActionMetrics.minimumIconDimension,
+                        height: RootHeaderActionMetrics.minimumIconDimension
+                    )
+                    .tint(themeManager.selectedTheme.resolvedTint)
+            }
+        } else {
+            RootHeaderGlassControl(sizing: .icon) {
+                RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+            }
         }
     }
 }
