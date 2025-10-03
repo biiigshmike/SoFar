@@ -156,9 +156,9 @@ struct HomeView: View {
     }
 
     // MARK: Toolbar Actions
-    private var toolbarGlassTransition: Any? {
+    private var toolbarGlassTransition: GlassEffectTransition? {
         if #available(iOS 26.0, macCatalyst 26.0, *) {
-            return GlassEffectTransition.matchedGeometry
+            return .matchedGeometry
         } else {
             return nil
         }
@@ -174,7 +174,7 @@ struct HomeView: View {
                 systemImage: "calendar",
                 glassNamespace: toolbarGlassNamespace,
                 glassID: HomeToolbarGlassIdentifiers.calendar,
-                transitionStorage: toolbarGlassTransition
+                transition: toolbarGlassTransition
             )
                 .accessibilityLabel(budgetPeriod.displayName)
         }
@@ -191,7 +191,7 @@ struct HomeView: View {
                 systemImage: "plus",
                 glassNamespace: toolbarGlassNamespace,
                 glassID: HomeToolbarGlassIdentifiers.addExpense,
-                transitionStorage: toolbarGlassTransition
+                transition: toolbarGlassTransition
             )
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -211,7 +211,7 @@ struct HomeView: View {
                 systemImage: "plus",
                 glassNamespace: toolbarGlassNamespace,
                 glassID: HomeToolbarGlassIdentifiers.addExpense,
-                transitionStorage: toolbarGlassTransition
+                transition: toolbarGlassTransition
             )
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -230,7 +230,7 @@ struct HomeView: View {
                 systemImage: "ellipsis",
                 glassNamespace: toolbarGlassNamespace,
                 glassID: HomeToolbarGlassIdentifiers.options,
-                transitionStorage: toolbarGlassTransition
+                transition: toolbarGlassTransition
             )
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -257,7 +257,7 @@ struct HomeView: View {
                 symbolVariants: SymbolVariants.none,
                 glassNamespace: toolbarGlassNamespace,
                 glassID: HomeToolbarGlassIdentifiers.options,
-                transitionStorage: toolbarGlassTransition
+                transition: toolbarGlassTransition
             )
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -723,8 +723,14 @@ private struct HomeHeaderOverviewTable: View {
         Group {
             if categorySpending.isEmpty {
                 // Full-width, pressable capsule to prompt adding a category
-                @ViewBuilder
-                func addCategoryContent() -> some View {
+                GlassCapsuleContainer(
+                    horizontalPadding: DS.Spacing.l,
+                    verticalPadding: DS.Spacing.s,
+                    alignment: .center,
+                    namespace: glassNamespace,
+                    glassID: "home.addCategory",
+                    transition: .materialize
+                ) {
                     Button(action: onAddCategory) {
                         Label("Add Category", systemImage: "plus")
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -735,31 +741,6 @@ private struct HomeHeaderOverviewTable: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("home_add_category_cta")
-                }
-
-                Group {
-                    if #available(iOS 26.0, macCatalyst 26.0, *) {
-                        GlassCapsuleContainer(
-                            horizontalPadding: DS.Spacing.l,
-                            verticalPadding: DS.Spacing.s,
-                            alignment: .center,
-                            namespace: glassNamespace,
-                            glassID: "home.addCategory",
-                            transition: .materialize
-                        ) {
-                            addCategoryContent()
-                        }
-                    } else {
-                        GlassCapsuleContainer(
-                            horizontalPadding: DS.Spacing.l,
-                            verticalPadding: DS.Spacing.s,
-                            alignment: .center,
-                            namespace: glassNamespace,
-                            glassID: "home.addCategory"
-                        ) {
-                            addCategoryContent()
-                        }
-                    }
                 }
                 .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
             } else {
@@ -803,8 +784,13 @@ private struct HomeHeaderOverviewTable: View {
     }
 
     private var segmentPicker: some View {
-        @ViewBuilder
-        func segmentPickerContent() -> some View {
+        GlassCapsuleContainer(
+            horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
+            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
+            namespace: glassNamespace,
+            glassID: "home.segmentPicker",
+            transition: .matchedGeometry
+        ) {
             Picker("", selection: $selectedSegment) {
                 Text("Planned Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.planned)
                 Text("Variable Expenses").segmentedFill().tag(BudgetDetailsViewModel.Segment.variable)
@@ -813,34 +799,17 @@ private struct HomeHeaderOverviewTable: View {
             .equalWidthSegments()
             .frame(maxWidth: .infinity)
         }
-
-        return Group {
-            if #available(iOS 26.0, macCatalyst 26.0, *) {
-                GlassCapsuleContainer(
-                    horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-                    verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
-                    namespace: glassNamespace,
-                    glassID: "home.segmentPicker",
-                    transition: .matchedGeometry
-                ) {
-                    segmentPickerContent()
-                }
-            } else {
-                GlassCapsuleContainer(
-                    horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-                    verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
-                    namespace: glassNamespace,
-                    glassID: "home.segmentPicker"
-                ) {
-                    segmentPickerContent()
-                }
-            }
-        }
     }
 
     private var sortPicker: some View {
-        @ViewBuilder
-        func sortPickerContent() -> some View {
+        GlassCapsuleContainer(
+            horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
+            verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
+            alignment: .center,
+            namespace: glassNamespace,
+            glassID: "home.sortPicker",
+            transition: .matchedGeometry
+        ) {
             Picker("Sort", selection: $sort) {
                 Text("A–Z").segmentedFill().tag(BudgetDetailsViewModel.SortOption.titleAZ)
                 Text("$↓").segmentedFill().tag(BudgetDetailsViewModel.SortOption.amountLowHigh)
@@ -851,31 +820,6 @@ private struct HomeHeaderOverviewTable: View {
             .pickerStyle(.segmented)
             .equalWidthSegments()
             .frame(maxWidth: .infinity)
-        }
-
-        return Group {
-            if #available(iOS 26.0, macCatalyst 26.0, *) {
-                GlassCapsuleContainer(
-                    horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-                    verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
-                    alignment: .center,
-                    namespace: glassNamespace,
-                    glassID: "home.sortPicker",
-                    transition: .matchedGeometry
-                ) {
-                    sortPickerContent()
-                }
-            } else {
-                GlassCapsuleContainer(
-                    horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding,
-                    verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding,
-                    alignment: .center,
-                    namespace: glassNamespace,
-                    glassID: "home.sortPicker"
-                ) {
-                    sortPickerContent()
-                }
-            }
         }
     }
 
@@ -939,38 +883,21 @@ private struct HeaderMenuGlassLabel: View {
     var symbolVariants: SymbolVariants? = nil
     var glassNamespace: Namespace.ID? = nil
     var glassID: String? = nil
-    var transitionStorage: Any? = nil
+    var transition: GlassEffectTransition? = nil
 
     var body: some View {
-        @ViewBuilder
-        func iconContent() -> some View {
+        RootHeaderGlassControl(
+            sizing: .icon,
+            background: .clear,
+            glassNamespace: glassNamespace,
+            glassID: glassID,
+            glassTransition: transition
+        ) {
             RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
                 .frame(
                     width: RootHeaderActionMetrics.minimumIconDimension,
                     height: RootHeaderActionMetrics.minimumIconDimension
                 )
-        }
-
-        if #available(iOS 26.0, macCatalyst 26.0, *),
-           let transition = transitionStorage as? GlassEffectTransition {
-            RootHeaderGlassControl(
-                sizing: .icon,
-                background: .clear,
-                glassNamespace: glassNamespace,
-                glassID: glassID,
-                glassTransition: transition
-            ) {
-                iconContent()
-            }
-        } else {
-            RootHeaderGlassControl(
-                sizing: .icon,
-                background: .clear,
-                glassNamespace: glassNamespace,
-                glassID: glassID
-            ) {
-                iconContent()
-            }
         }
     }
 }
