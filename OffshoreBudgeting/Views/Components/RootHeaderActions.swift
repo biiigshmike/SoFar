@@ -158,18 +158,27 @@ private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
 
     var body: some View {
         GlassEffectContainer {
-            var decorated = content
-                .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+            decoratedContent(
+                content.glassEffect(
+                    .regular.interactive(),
+                    in: Capsule(style: .continuous)
+                )
+            )
+        }
+    }
 
-            if let namespace, let glassID {
-                decorated = decorated.glassEffectID(glassID, in: namespace)
-            }
-
-            if let transition {
-                decorated = decorated.glassEffectTransition(transition)
-            }
-
-            decorated
+    @ViewBuilder
+    private func decoratedContent<V: View>(_ view: V) -> some View {
+        if let namespace, let glassID, let transition {
+            view
+                .glassEffectID(glassID, in: namespace)
+                .glassEffectTransition(transition)
+        } else if let namespace, let glassID {
+            view.glassEffectID(glassID, in: namespace)
+        } else if let transition {
+            view.glassEffectTransition(transition)
+        } else {
+            view
         }
     }
 }
