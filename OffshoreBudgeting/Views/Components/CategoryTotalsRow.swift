@@ -13,28 +13,63 @@ struct CategoryTotalsRow: View {
     var isPlaceholder: Bool = false
     var horizontalInset: CGFloat = DS.Spacing.l
     private let controlHeight: CGFloat = 34
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Namespace private var glassNamespace
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: DS.Spacing.s) {
-                ForEach(categories) { cat in
-                    HStack(spacing: DS.Spacing.s) {
-                        Circle()
-                            .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
-                            .frame(width: chipDotSize, height: chipDotSize)
-                        Text(cat.categoryName)
-                            .font(chipFont)
-                        Text(CurrencyFormatterHelper.string(for: cat.amount))
-                            .font(chipFont)
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                GlassEffectContainer(spacing: DS.Spacing.s) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: DS.Spacing.s) {
+                            ForEach(categories) { cat in
+                                let capsule = Capsule(style: .continuous)
+                                let content = HStack(spacing: DS.Spacing.s) {
+                                    Circle()
+                                        .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
+                                        .frame(width: chipDotSize, height: chipDotSize)
+                                    Text(cat.categoryName)
+                                        .font(chipFont)
+                                    Text(CurrencyFormatterHelper.string(for: cat.amount))
+                                        .font(chipFont)
+                                }
+                                .padding(.horizontal, DS.Spacing.m)
+                                .frame(height: controlHeight)
+
+                                content
+                                    .glassEffect(.regular.interactive(), in: capsule)
+                                    .glassEffectID(String(describing: cat.id), in: glassNamespace)
+                                    .glassEffectTransition(.matchedGeometry)
+                            }
+                        }
+                        .padding(.horizontal, horizontalInset)
                     }
-                    .padding(.horizontal, DS.Spacing.m)
-                    .frame(height: controlHeight)
-                    .background(
-                        Capsule().fill(DS.Colors.chipFill)
-                    )
+                }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: DS.Spacing.s) {
+                        ForEach(categories) { cat in
+                            let content = HStack(spacing: DS.Spacing.s) {
+                                Circle()
+                                    .fill(Color(hex: cat.hexColor ?? "#999999") ?? .secondary)
+                                    .frame(width: chipDotSize, height: chipDotSize)
+                                Text(cat.categoryName)
+                                    .font(chipFont)
+                                Text(CurrencyFormatterHelper.string(for: cat.amount))
+                                    .font(chipFont)
+                            }
+                            .padding(.horizontal, DS.Spacing.m)
+                            .frame(height: controlHeight)
+                            content
+                                .background(
+                                    Capsule().fill(DS.Colors.chipFill)
+                                )
+                        }
+                    }
+                    .padding(.horizontal, horizontalInset)
                 }
             }
-            .padding(.horizontal, horizontalInset)
         }
         .ub_hideScrollIndicators()
         .frame(height: controlHeight)

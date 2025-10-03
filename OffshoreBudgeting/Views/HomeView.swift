@@ -43,6 +43,7 @@ struct HomeView: View {
     @State private var isPresentingManageCategories: Bool = false
 
     // MARK: Body
+    @EnvironmentObject private var themeManager: ThemeManager
     var body: some View {
         // Sticky header is managed by RootTabPageScaffold.
         // - Empty states leverage the scaffold's scroll view for reachability.
@@ -160,7 +161,7 @@ struct HomeView: View {
                 Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
             }
         } label: {
-            RootHeaderControlIcon(systemImage: "calendar")
+            HeaderMenuGlassLabel(systemImage: "calendar")
                 .accessibilityLabel(budgetPeriod.displayName)
         }
         .modifier(HideMenuIndicatorIfPossible())
@@ -171,9 +172,7 @@ struct HomeView: View {
         Menu {
             Button("Add Planned Expense") { isPresentingAddPlannedFromHome = true }
             Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
-        } label: {
-            RootHeaderControlIcon(systemImage: "plus")
-        }
+        } label: { HeaderMenuGlassLabel(systemImage: "plus") }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
     }
@@ -187,7 +186,9 @@ struct HomeView: View {
                 triggerAddExpense(.budgetDetailsRequestAddVariableExpense, budgetID: budgetID)
             }
         } label: {
-            RootHeaderControlIcon(systemImage: "plus")
+            RootHeaderGlassControl(sizing: .icon) {
+                RootHeaderControlIcon(systemImage: "plus")
+            }
         }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Add Expense")
@@ -200,9 +201,7 @@ struct HomeView: View {
             } label: {
                 Label("Create Budget", systemImage: "plus")
             }
-        } label: {
-            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
-        }
+        } label: { HeaderMenuGlassLabel(systemImage: "ellipsis") }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Options")
     }
@@ -222,7 +221,9 @@ struct HomeView: View {
                 Label("Delete Budget", systemImage: "trash")
             }
         } label: {
-            RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
+            RootHeaderGlassControl(sizing: .icon) {
+                RootHeaderControlIcon(systemImage: "ellipsis", symbolVariants: SymbolVariants.none)
+            }
         }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel("Budget Actions")
@@ -328,15 +329,27 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.m) {
                     // Always-offer Add button when no budget exists so users can
                     // quickly create an expense for this period.
-                    GlassCapsuleContainer(horizontalPadding: HomeHeaderOverviewMetrics.controlHorizontalPadding, verticalPadding: HomeHeaderOverviewMetrics.controlVerticalPadding, alignment: .center) {
-                        Button(action: addExpenseCTAAction) {
-                            Label(addExpenseCTATitle, systemImage: "plus")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .frame(maxWidth: .infinity)
+                    Group {
+                        if #available(iOS 26.0, macCatalyst 26.0, *) {
+                            Button(action: addExpenseCTAAction) {
+                                Label(addExpenseCTATitle, systemImage: "plus")
+                                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(minHeight: 44)
+                            }
+                            .buttonStyle(.glass)
+                            .tint(themeManager.selectedTheme.resolvedTint)
+                        } else {
+                            Button(action: addExpenseCTAAction) {
+                                Label(addExpenseCTATitle, systemImage: "plus")
+                                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                     }
+                    .accessibilityIdentifier("emptyPeriodAddExpenseCTA")
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, RootTabHeaderLayout.defaultHorizontalPadding)
 
@@ -798,6 +811,34 @@ private struct HomeHeaderTableTwoColumnRow<Leading: View, Trailing: View>: View 
 
             trailing()
                 .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+}
+
+// MARK: - Header Menu Glass Label (OS26)
+private struct HeaderMenuGlassLabel: View {
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+    var systemImage: String
+
+    var body: some View {
+        let size: CGFloat = 44
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                let circle = Circle()
+                GlassEffectContainer {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: size, height: size)
+                        .contentShape(circle)
+                        .glassEffect(.regular.interactive(), in: circle)
+                }
+                .tint(themeManager.selectedTheme.resolvedTint)
+            } else {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: size, height: size)
+            }
         }
     }
 }

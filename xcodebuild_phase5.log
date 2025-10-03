@@ -45,8 +45,8 @@ ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeD
 
 ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
 
-Build description signature: de622f2cd9e64ac3acc750aefbc0ce9e
-Build description path: /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/XCBuildData/de622f2cd9e64ac3acc750aefbc0ce9e.xcbuilddata
+Build description signature: 2f8cb43b75504c4eb7df6b333027534e
+Build description path: /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/XCBuildData/2f8cb43b75504c4eb7df6b333027534e.xcbuilddata
 ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk /Users/Michael/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
     cd /Users/Michael/Xcode\ iOS/Offshore/Offshore.xcodeproj
     /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -o /Users/Michael/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache

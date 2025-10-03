@@ -8,7 +8,8 @@ enum SystemThemeAdapter {
     enum Flavor { case liquid, classic }
 
     static var currentFlavor: Flavor {
-        if #available(iOS 18.0, macCatalyst 18.0, *) {
+        // Treat OS 26 as the threshold for the native Liquid Glass cycle.
+        if #available(iOS 26.0, macCatalyst 26.0, *) {
             return .liquid
         } else {
             return .classic

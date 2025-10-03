@@ -357,6 +357,9 @@ private struct CategoryChipsRow: View {
 
     @Binding var selectedCategoryID: NSManagedObjectID?
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Namespace private var glassNamespace
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(key: "name", ascending: true,
@@ -370,26 +373,59 @@ private struct CategoryChipsRow: View {
         HStack(spacing: DS.Spacing.m) {
             AddCategoryPill { isPresentingNewCategory = true }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Spacing.s) {
-                    if categories.isEmpty {
-                        Text("No categories yet")
-                            .foregroundStyle(.secondary)
-                            .padding(.vertical, 10)
-                    } else {
-                        ForEach(categories, id: \.objectID) { cat in
-                            CategoryChip(
-                                name: cat.name ?? "Untitled",
-                                colorHex: cat.color ?? "#999999",
-                                isSelected: selectedCategoryID == cat.objectID
-                            )
-                            .onTapGesture { selectedCategoryID = cat.objectID }
+            Group {
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                    GlassEffectContainer(spacing: DS.Spacing.s) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            LazyHStack(spacing: DS.Spacing.s) {
+                                if categories.isEmpty {
+                                    Text("No categories yet")
+                                        .foregroundStyle(.secondary)
+                                        .padding(.vertical, 10)
+                                } else {
+                                    ForEach(categories, id: \.objectID) { cat in
+                                        let isSel = selectedCategoryID == cat.objectID
+                                        CategoryChip(
+                                            id: cat.objectID.uriRepresentation().absoluteString,
+                                            name: cat.name ?? "Untitled",
+                                            colorHex: cat.color ?? "#999999",
+                                            isSelected: isSel,
+                                            namespace: glassNamespace
+                                        )
+                                        .onTapGesture { selectedCategoryID = cat.objectID }
+                                        .glassEffectTransition(.matchedGeometry)
+                                    }
+                                }
+                            }
+                            .padding(.trailing, DS.Spacing.s)
                         }
+                        .ub_hideScrollIndicators()
                     }
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: DS.Spacing.s) {
+                            if categories.isEmpty {
+                                Text("No categories yet")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.vertical, 10)
+                            } else {
+                                ForEach(categories, id: \.objectID) { cat in
+                                    CategoryChip(
+                                        id: cat.objectID.uriRepresentation().absoluteString,
+                                        name: cat.name ?? "Untitled",
+                                        colorHex: cat.color ?? "#999999",
+                                        isSelected: selectedCategoryID == cat.objectID,
+                                        namespace: nil
+                                    )
+                                    .onTapGesture { selectedCategoryID = cat.objectID }
+                                }
+                            }
+                        }
+                        .padding(.trailing, DS.Spacing.s)
+                    }
+                    .ub_hideScrollIndicators()
                 }
-                .padding(.trailing, DS.Spacing.s)
             }
-            .ub_hideScrollIndicators()
         }
         .sheet(isPresented: $isPresentingNewCategory) {
             ExpenseCategoryEditorSheet(
@@ -434,6 +470,8 @@ private struct PresentationDetentsCompat: ViewModifier {
 // MARK: - AddCategoryPill
 private struct AddCategoryPill: View {
     var onTap: () -> Void
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
         Button(action: onTap) {
@@ -441,23 +479,26 @@ private struct AddCategoryPill: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, DS.Spacing.m)
                 .padding(.vertical, 8)
-                .background(
-                    Capsule().fill(DS.Colors.chipFill)
-                )
         }
-        .buttonStyle(.plain)
+        .modifier(CategoryAddButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
         .accessibilityLabel("Add Category")
     }
 }
 
 // MARK: - CategoryChip
 private struct CategoryChip: View {
+    let id: String
     let name: String
     let colorHex: String
     let isSelected: Bool
+    let namespace: Namespace.ID?
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        HStack(spacing: DS.Spacing.s) {
+        let capsule = Capsule(style: .continuous)
+
+        let content = HStack(spacing: DS.Spacing.s) {
             Circle()
                 .fill(Color(hex: colorHex) ?? .secondary)
                 .frame(width: 10, height: 10)
@@ -466,15 +507,66 @@ private struct CategoryChip: View {
         }
         .padding(.horizontal, DS.Spacing.m)
         .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill)
-        )
-        .overlay(
-            Capsule()
-                .stroke(isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill, lineWidth: isSelected ? 1.5 : 1)
-        )
+
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                if let ns = namespace {
+                    if isSelected {
+                        content
+                            .foregroundStyle(Color.white)
+                            .glassEffect(.regular.tint(themeManager.selectedTheme.resolvedTint).interactive(), in: capsule)
+                            .glassEffectID(id, in: ns)
+                    } else {
+                        content
+                            .foregroundStyle(.primary)
+                            .glassEffect(.regular.interactive(), in: capsule)
+                            .glassEffectID(id, in: ns)
+                    }
+                } else {
+                    if isSelected {
+                        content
+                            .foregroundStyle(Color.white)
+                            .glassEffect(.regular.tint(themeManager.selectedTheme.resolvedTint).interactive(), in: capsule)
+                    } else {
+                        content
+                            .foregroundStyle(.primary)
+                            .glassEffect(.regular.interactive(), in: capsule)
+                    }
+                }
+            } else {
+                content
+                    .background(
+                        capsule.fill(isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill)
+                    )
+                    .overlay(
+                        capsule.stroke(
+                            isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill,
+                            lineWidth: isSelected ? 1.5 : 1
+                        )
+                    )
+            }
+        }
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+// MARK: - Style Adapters
+private struct CategoryAddButtonStyleAdapter: ViewModifier {
+    let tint: Color
+    let capabilities: PlatformCapabilities
+
+    func body(content: Content) -> some View {
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                content
+                    .buttonStyle(.glass)
+                    .tint(tint)
+            } else {
+                content
+                    .buttonStyle(.plain)
+                    .background(Capsule().fill(DS.Colors.chipFill))
+            }
+        }
     }
 }

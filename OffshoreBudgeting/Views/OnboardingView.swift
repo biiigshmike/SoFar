@@ -482,13 +482,14 @@ private struct OnboardingPrimaryButton: View {
     let action: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(TranslucentButtonStyle(tint: themeManager.selectedTheme.resolvedTint))
+        .modifier(PrimaryButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
     }
 }
 
@@ -497,15 +498,57 @@ private struct OnboardingSecondaryButton: View {
     let action: () -> Void
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.platformCapabilities) private var capabilities
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(
-            OnboardingSecondaryButtonStyle(tint: themeManager.selectedTheme.resolvedTint)
-        )
+        .modifier(SecondaryButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
+    }
+}
+
+// MARK: - Button Style Adapters (OS26 Glass vs Legacy)
+private struct PrimaryButtonStyleAdapter: ViewModifier {
+    let tint: Color
+    let capabilities: PlatformCapabilities
+
+    func body(content: Content) -> some View {
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                content
+                    .frame(minHeight: 44)
+                    .buttonStyle(.glass)
+                    .tint(tint)
+                    .controlSize(.large)
+            } else {
+                content
+                    .frame(minHeight: 44)
+                    .buttonStyle(TranslucentButtonStyle(tint: tint))
+            }
+        }
+    }
+}
+
+private struct SecondaryButtonStyleAdapter: ViewModifier {
+    let tint: Color
+    let capabilities: PlatformCapabilities
+
+    func body(content: Content) -> some View {
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                content
+                    .frame(minHeight: 44)
+                    .buttonStyle(.glass)
+                    .tint(tint)
+                    .controlSize(.large)
+            } else {
+                content
+                    .frame(minHeight: 44)
+                    .buttonStyle(OnboardingSecondaryButtonStyle(tint: tint))
+            }
+        }
     }
 }
 

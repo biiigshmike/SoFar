@@ -164,22 +164,17 @@ struct UBEmptyState: View {
         glassTint: Color,
         action: @escaping () -> Void
     ) -> some View {
-        let capsule = Capsule(style: .continuous)
-        GlassEffectContainer {
-            Button(action: action) {
-                Label(title, systemImage: "plus")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary) // dark, readable text to match header controls
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.vertical, DS.Spacing.m)
-                    .contentShape(capsule)
-            }
-            .tint(glassTint)
-            .buttonStyle(.plain) // we provide the glass surface below
-            .frame(maxWidth: 320)
-            .glassEffect(in: capsule)
+        Button(action: action) {
+            Label(title, systemImage: "plus")
+                .labelStyle(.titleAndIcon)
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.vertical, DS.Spacing.m)
         }
+        .tint(glassTint)
+        .buttonStyle(.glass)
+        .frame(maxWidth: 320)
     }
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass

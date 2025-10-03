@@ -128,7 +128,7 @@ private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     var body: some View {
         GlassEffectContainer {
             content
-                .glassEffect(in: Capsule(style: .continuous))
+                .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
         }
     }
 }
@@ -635,6 +635,7 @@ struct RootHeaderIconActionButton: View {
     var accessibilityIdentifier: String?
     var action: () -> Void
     @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
 
     init(
         systemImage: String,
@@ -649,25 +650,36 @@ struct RootHeaderIconActionButton: View {
     }
 
     var body: some View {
-        // Always use RootHeaderGlassControl to keep consistent sizing and
-        // alignment with the title row. Decoration is suppressed on
-        // classic OS by RootHeaderGlassControl/rootHeaderGlassDecorated.
         let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
 
-        return RootHeaderGlassControl(
-            width: dimension,
-            sizing: .icon
-        ) {
-            baseButton
-                .buttonStyle(RootHeaderActionButtonStyle())
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            Button(action: action) {
+                RootHeaderControlIcon(systemImage: systemImage)
+                    .frame(width: dimension, height: dimension)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .tint(themeManager.selectedTheme.resolvedTint)
+            .accessibilityLabel(accessibilityLabel)
+            .optionalAccessibilityIdentifier(accessibilityIdentifier)
+        } else {
+            returnLegacy
         }
     }
 
-    private var baseButton: some View {
-        Button(action: action) {
-            RootHeaderControlIcon(systemImage: systemImage)
+    @ViewBuilder
+    private var returnLegacy: some View {
+        let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
+        RootHeaderGlassControl(
+            width: dimension,
+            sizing: .icon
+        ) {
+            Button(action: action) {
+                RootHeaderControlIcon(systemImage: systemImage)
+            }
+            .buttonStyle(RootHeaderActionButtonStyle())
+            .accessibilityLabel(accessibilityLabel)
+            .optionalAccessibilityIdentifier(accessibilityIdentifier)
         }
-        .accessibilityLabel(accessibilityLabel)
-        .optionalAccessibilityIdentifier(accessibilityIdentifier)
     }
 }

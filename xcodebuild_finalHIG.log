@@ -45,8 +45,8 @@ ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeD
 
 ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
 
-Build description signature: de622f2cd9e64ac3acc750aefbc0ce9e
-Build description path: /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/XCBuildData/de622f2cd9e64ac3acc750aefbc0ce9e.xcbuilddata
+Build description signature: cb64a7a3b14f62a39004925178be6fd5
+Build description path: /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/XCBuildData/cb64a7a3b14f62a39004925178be6fd5.xcbuilddata
 ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk /Users/Michael/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
     cd /Users/Michael/Xcode\ iOS/Offshore/Offshore.xcodeproj
     /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -o /Users/Michael/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
@@ -55,10 +55,6 @@ ProcessInfoPlistFile /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore
     cd /Users/Michael/Xcode\ iOS/Offshore
     builtin-infoPlistUtility /Users/Michael/Xcode\ iOS/Offshore/OffshoreBudgeting/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/Offshore.build/Debug-iphonesimulator/OffshoreBudgeting.build/assetcatalog_generated_info.plist -o /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/Info.plist
 removing entry for "NSServices" - only supported on macOS
-
-CopySwiftLibs /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app (in target 'OffshoreBudgeting' from project 'Offshore')
-    cd /Users/Michael/Xcode\ iOS/Offshore
-    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/Offshore.debug.dylib --scan-folder /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/Frameworks --scan-folder /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/PlugIns --scan-folder /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/SystemExtensions --scan-folder /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Products/Debug-iphonesimulator/Offshore.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/Michael/Library/Developer/Xcode/DerivedData/Offshore-dzckiklseaojwietsvvieqpkcqwy/Build/Intermediates.noindex/Offshore.build/Debug-iphonesimulator/OffshoreBudgeting.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
 
 ** BUILD SUCCEEDED **
 

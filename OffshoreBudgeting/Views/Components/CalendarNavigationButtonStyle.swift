@@ -15,7 +15,7 @@ struct CalendarNavigationButtonStyle: ButtonStyle {
     @EnvironmentObject private var themeManager: ThemeManager
 
     func makeBody(configuration: Configuration) -> some View {
-        let height: CGFloat = 34
+        let height: CGFloat = 44
         let radius: CGFloat = height / 2
         let theme = themeManager.selectedTheme
 

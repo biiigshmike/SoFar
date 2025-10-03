@@ -441,12 +441,9 @@ private struct UBSurfaceBackgroundModifier: ViewModifier {
     let ignoresSafeAreaEdges: Edge.Set
 
     func body(content: Content) -> some View {
+        // On OS 26, avoid painting custom backgrounds. Defer to system surfaces.
         if UBGlassBackgroundPolicy.shouldUseGlassSurfaces(theme: theme, capabilities: capabilities) {
-            content.ub_glassBackground(
-                theme.glassBaseColor,
-                configuration: configuration,
-                ignoringSafeArea: ignoresSafeAreaEdges
-            )
+            content
         } else {
             content.background(
                 theme.background.ub_ignoreSafeArea(edges: ignoresSafeAreaEdges)

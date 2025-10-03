@@ -181,6 +181,7 @@ struct FilterBar: View {
                 Text("Planned Expenses").tag(BudgetDetailsViewModel.Segment.planned)
                 Text("Variable Expenses").tag(BudgetDetailsViewModel.Segment.variable)
             }
+            .controlSize(.large)
             .ub_onChange(of: segment) { newValue in
                 onSegmentChanged(newValue)
             }
@@ -192,6 +193,7 @@ struct FilterBar: View {
                 Text("Date ↑").tag(BudgetDetailsViewModel.SortOption.dateOldNew)
                 Text("Date ↓").tag(BudgetDetailsViewModel.SortOption.dateNewOld)
             }
+            .controlSize(.large)
         }
     }
 }

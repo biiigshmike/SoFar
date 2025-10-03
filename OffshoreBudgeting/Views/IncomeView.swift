@@ -381,8 +381,7 @@ struct IncomeView: View {
                     .accessibilityLabel("Next Month")
                     .incomeCalendarGlassButtonStyle(role: .icon)
             }
-            .controlSize(.small)
-            .frame(height: CalendarSectionMetrics.navigationRowHeight)
+            .frame(minHeight: max(CalendarSectionMetrics.navigationRowHeight, 44))
             MCalendarView(
                 selectedDate: $viewModel.selectedDate,
                 selectedRange: .constant(nil)
@@ -780,6 +779,9 @@ private extension View {
 
 // MARK: - Calendar Navigation Styling
 private struct IncomeCalendarGlassButtonModifier: ViewModifier {
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+
     private let cornerRadius: CGFloat = 17
     private let role: CalendarNavigationButtonStyle.Role
 
@@ -788,9 +790,17 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content
-            .buttonStyle(CalendarNavigationButtonStyle(role: role))
-            .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
-            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            content
+                .buttonStyle(.glass)
+                .tint(themeManager.selectedTheme.resolvedTint)
+                .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
+                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            content
+                .buttonStyle(CalendarNavigationButtonStyle(role: role))
+                .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
+                .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        }
     }
 }

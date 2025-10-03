@@ -21,7 +21,9 @@ extension PlatformCapabilities {
     static var current: PlatformCapabilities {
         var supportsModernTranslucency: Bool
         // Liquid Glass is available starting with the OS 26 system releases.
-        if #available(iOS 18.0, macCatalyst 18.0, *) {
+        // Align the feature gate to iOS/macCatalyst 26 so "modern translucency"
+        // only activates when native Liquid Glass APIs are present.
+        if #available(iOS 26.0, macCatalyst 26.0, *) {
             supportsModernTranslucency = true
         } else {
             supportsModernTranslucency = false

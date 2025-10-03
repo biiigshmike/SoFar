@@ -15,6 +15,8 @@ import SwiftUI
 struct PresetRowView: View {
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // MARK: Inputs
     let item: PresetListItem
@@ -49,12 +51,11 @@ struct PresetRowView: View {
                         Text("\(item.assignedCount)")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(assignedBudgetsCountColor)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(assignedBudgetsBackground))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                 }
-                .buttonStyle(.plain)
+                .modifier(GlassOrPlainButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
                 .accessibilityLabel("Assigned Budgets: \(item.assignedCount)")
 
                 VStack(alignment: .trailing, spacing: 4) {
@@ -96,6 +97,25 @@ private struct LabeledAmountBlock: View {
             Text(value)
                 .font(.body)
                 .foregroundStyle(.primary)
+        }
+    }
+}
+
+// MARK: - Style Adapter
+private struct GlassOrPlainButtonStyleAdapter: ViewModifier {
+    let tint: Color
+    let capabilities: PlatformCapabilities
+
+    func body(content: Content) -> some View {
+        Group {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                content
+                    .buttonStyle(.glass)
+                    .tint(tint)
+            } else {
+                content
+                    .buttonStyle(.plain)
+            }
         }
     }
 }
