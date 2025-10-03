@@ -1284,12 +1284,18 @@ Use the following // MARK anchors to understand intent and safe insertion points
 - // MARK: saveIfNeeded()
 - // MARK: performBackgroundTask(_:)
 
+## Coding
+- Coding should be reusable, scalable, and OOP-oriented. 
+- The codebase should also try to be simple and easy-to-read. 
+- Try to avoid introducing new helper methods; instead, check first if one may exist. If one does not exist, and the method will be used for a singular instance, consider implementing the single instance in the single file versus creating new files or new methods that will not be called elsewhere.
+
 ## UI guidelines
 
 - Align header pills, grids, and info panels using shared layout environment values when present.
 - Keep text sizing, spacing, and padding consistent with existing design tokens.
 - Avoid hard-coded device checks when layout modifiers can adapt.
 - Ensure that iOS 26/iPadOS26/macOS 26 Liquid Glass is prioritized and provide legacy fallback for older OSes. The app supports as low as iOS/iPadOS 15.4 and macOS 15.4; due to this, Liquid Glass should only be for OS 26 and then older, legacy OS versions have their UI elements that are consistent with their current OS.
+- Always reference the Apple Documentation folder, especially when making adjustments to Liquid Glass elements throughout the app. It's very important you do this each time you are coding that you constantly refresh yourself on Apple's official documentation on Liquid Glass.
 
 ## Core Data and model notes
 
