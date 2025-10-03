@@ -165,6 +165,7 @@ struct HomeView: View {
                 .accessibilityLabel(budgetPeriod.displayName)
         }
         .modifier(HideMenuIndicatorIfPossible())
+        .headerToolbarMenuStyle()
         .accessibilityLabel(budgetPeriod.displayName)
     }
 
@@ -174,6 +175,7 @@ struct HomeView: View {
             Button("Add Variable Expense") { isPresentingAddVariableFromHome = true }
         } label: { HeaderMenuGlassLabel(systemImage: "plus") }
         .modifier(HideMenuIndicatorIfPossible())
+        .headerToolbarMenuStyle()
         .accessibilityLabel("Add Expense")
     }
 
@@ -187,6 +189,7 @@ struct HomeView: View {
             }
         } label: { HeaderMenuGlassLabel(systemImage: "plus") }
         .modifier(HideMenuIndicatorIfPossible())
+        .headerToolbarMenuStyle()
         .accessibilityLabel("Add Expense")
     }
 
@@ -199,6 +202,7 @@ struct HomeView: View {
             }
         } label: { HeaderMenuGlassLabel(systemImage: "ellipsis") }
         .modifier(HideMenuIndicatorIfPossible())
+        .headerToolbarMenuStyle()
         .accessibilityLabel("Budget Options")
     }
 
@@ -218,6 +222,7 @@ struct HomeView: View {
             }
         } label: { HeaderMenuGlassLabel(systemImage: "ellipsis", symbolVariants: SymbolVariants.none) }
         .modifier(HideMenuIndicatorIfPossible())
+        .headerToolbarMenuStyle()
         .accessibilityLabel("Budget Actions")
     }
 
@@ -848,6 +853,12 @@ private struct HeaderMenuGlassLabel: View {
                 RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
             }
         }
+    }
+}
+
+private extension Menu {
+    func headerToolbarMenuStyle() -> some View {
+        menuStyle(.borderlessButton)
     }
 }
 
