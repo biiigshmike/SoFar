@@ -59,7 +59,10 @@ struct PresetsView: View {
 
     @ViewBuilder
     private func content(using proxy: RootTabPageProxy) -> some View {
-        let horizontalInset = proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities)
+        let contentInset = max(
+            proxy.resolvedSymmetricHorizontalInset(capabilities: capabilities),
+            DS.Spacing.s
+        )
 
         Group {
             // MARK: Empty State — standardized with UBEmptyState (same as Home/Cards)
@@ -71,7 +74,7 @@ struct PresetsView: View {
                     primaryButtonTitle: "Add Preset",
                     onPrimaryTap: { isPresentingAddSheet = true }
                 )
-                .padding(.horizontal, horizontalInset)
+                .padding(.horizontal, contentInset)
                 .frame(maxWidth: .infinity)
                 .frame(
                     minHeight: max(proxy.availableHeightBelowHeader, proxy.availableHeight),
@@ -88,9 +91,9 @@ struct PresetsView: View {
                             }
                         )
                         .listRowInsets(
-                            EdgeInsets(top: 12, leading: horizontalInset, bottom: 12, trailing: horizontalInset)
+                            EdgeInsets(top: 12, leading: contentInset, bottom: 12, trailing: contentInset)
                         )
-                        .ub_preOS26ListRowBackground(themeManager.selectedTheme.secondaryBackground)
+                        .ub_preOS26ListRowBackground(themeManager.selectedTheme.background)
                         .unifiedSwipeActions(
                             UnifiedSwipeConfig(allowsFullSwipeToDelete: false),
                             onEdit: { editingTemplate = item.template },
@@ -119,6 +122,7 @@ struct PresetsView: View {
         .rootTabContentPadding(
             proxy,
             horizontal: 0,
+            extraTop: DS.Spacing.s,
             includeSafeArea: false,
             tabBarGutter: proxy.compactAwareTabBarGutter
         )
