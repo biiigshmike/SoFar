@@ -267,9 +267,8 @@ private struct CategoryChipsRow: View {
                                     }
                                 }
                             }
-                            .padding(.trailing, DS.Spacing.s)
+                            .padding(.horizontal, DS.Spacing.s)
                         }
-                        .padding(.leading, DS.Spacing.s)
                     }
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -291,9 +290,8 @@ private struct CategoryChipsRow: View {
                                 }
                             }
                         }
-                        .padding(.trailing, DS.Spacing.s)
+                        .padding(.horizontal, DS.Spacing.s)
                     }
-                    .padding(.leading, DS.Spacing.s)
                 }
             }
             // Hide scroll indicators consistently across platforms
