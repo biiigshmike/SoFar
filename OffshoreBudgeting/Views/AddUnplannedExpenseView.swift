@@ -361,31 +361,18 @@ private struct CategoryChip: View {
     let isSelected: Bool
     let namespace: Namespace.ID?
     @Environment(\.platformCapabilities) private var capabilities
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
+
+    private enum Metrics {
+        static let chipHeight: CGFloat = 44
+    }
 
     var body: some View {
         let capsule = Capsule(style: .continuous)
         let tint = themeManager.selectedTheme.resolvedTint
-        let isLightMode = colorScheme == .light
-        let textColor: Color = {
-            if colorScheme == .dark && isSelected {
-                return Color.white
-            }
-            return .primary
-        }()
-        let fallbackFill: Color = {
-            if isLightMode {
-                return DS.Colors.chipFill
-            }
-            return isSelected ? tint.opacity(0.55) : Color.white.opacity(0.08)
-        }()
-        let fallbackStroke: Color = {
-            if isLightMode {
-                return isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill
-            }
-            return isSelected ? tint.opacity(0.85) : Color.white.opacity(0.18)
-        }()
+        let textColor: Color = isSelected ? .white : .primary
+        let fallbackFill: Color = isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill
+        let fallbackStroke: Color = isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill
         let fallbackLineWidth: CGFloat = isSelected ? 1.5 : 1
 
         let content = HStack(spacing: DS.Spacing.s) {
@@ -397,44 +384,22 @@ private struct CategoryChip: View {
         }
         .padding(.horizontal, DS.Spacing.m)
         .padding(.vertical, 8)
+        .frame(height: Metrics.chipHeight)
 
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                let glassContent = content
+                    .foregroundStyle(textColor)
+                    .glassEffect(
+                        isSelected ? .regular.tint(tint).interactive() : .regular.interactive(),
+                        in: capsule
+                    )
+
                 if let ns = namespace {
-                    if isSelected {
-                        if isLightMode {
-                            content
-                                .foregroundStyle(textColor)
-                                .glassEffect(.regular.interactive(), in: capsule)
-                                .glassEffectID(id, in: ns)
-                        } else {
-                            content
-                                .foregroundStyle(Color.white)
-                                .glassEffect(.regular.tint(tint).interactive(), in: capsule)
-                                .glassEffectID(id, in: ns)
-                        }
-                    } else {
-                        content
-                            .foregroundStyle(textColor)
-                            .glassEffect(.regular.interactive(), in: capsule)
-                            .glassEffectID(id, in: ns)
-                    }
+                    glassContent
+                        .glassEffectID(id, in: ns)
                 } else {
-                    if isSelected {
-                        if isLightMode {
-                            content
-                                .foregroundStyle(textColor)
-                                .glassEffect(.regular.interactive(), in: capsule)
-                        } else {
-                            content
-                                .foregroundStyle(Color.white)
-                                .glassEffect(.regular.tint(tint).interactive(), in: capsule)
-                        }
-                    } else {
-                        content
-                            .foregroundStyle(textColor)
-                            .glassEffect(.regular.interactive(), in: capsule)
-                    }
+                    glassContent
                 }
             } else {
                 content
