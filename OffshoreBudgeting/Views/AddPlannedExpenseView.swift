@@ -377,7 +377,7 @@ private struct CategoryChipsRow: View {
             AddCategoryPill { isPresentingNewCategory = true }
 
             Group {
-                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                     GlassEffectContainer(spacing: DS.Spacing.s) {
                         ScrollView(.horizontal, showsIndicators: false) {
                             LazyHStack(spacing: DS.Spacing.s) {
@@ -525,7 +525,6 @@ private struct CategoryChip: View {
                     .font(.subheadline.weight(.semibold))
             }
         }
-
         let resolvedChip = Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
                 if let ns = namespace {

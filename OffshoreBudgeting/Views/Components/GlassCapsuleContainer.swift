@@ -38,7 +38,7 @@ struct GlassCapsuleContainer<Content: View>: View {
             .frame(minHeight: minimumHeight)
             .contentShape(capsule)
 
-        if #available(iOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
+        if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *), capabilities.supportsOS26Translucency {
             GlassEffectContainer {
                 decorated
                     .glassEffect(.regular.interactive(), in: capsule)

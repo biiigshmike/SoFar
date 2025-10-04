@@ -34,7 +34,7 @@ struct GlassCTAButton<Label: View>: View {
 
     var body: some View {
         Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 glassButton()
             } else {
                 legacyButton()
@@ -58,7 +58,7 @@ struct GlassCTAButton<Label: View>: View {
         )
     }
 
-    @available(iOS 26.0, macCatalyst 26.0, *)
+    @available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *)
     @ViewBuilder
     private func glassButton() -> some View {
         Button(action: action) {

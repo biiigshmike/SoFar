@@ -72,7 +72,7 @@ struct HomeView: View {
         .navigationTitle("Home")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                     GlassEffectContainer(spacing: DS.Spacing.s) {
                         // Order: ellipsis, calendar, plus
                         if let periodSummary = actionableSummaryForSelectedPeriod {
@@ -190,7 +190,7 @@ struct HomeView: View {
             return nil
         }
 
-        if #available(iOS 26.0, macCatalyst 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
             let t: GlassEffectTransition = reduceMotion ? .identity : .matchedGeometry
             return t
         } else {
@@ -223,7 +223,7 @@ struct HomeView: View {
                 }
             }
         } label: {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 RootHeaderMenuButtonLabel(
                     systemImage: "calendar",
                     glassNamespace: toolbarGlassNamespace,
@@ -245,7 +245,7 @@ struct HomeView: View {
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel(budgetPeriod.displayName)
 
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
             menu
                 .menuStyle(.button)
                 .buttonBorderShape(.circle)
@@ -438,7 +438,7 @@ struct HomeView: View {
                     // Always-offer Add button when no budget exists so users can
                     // quickly create an expense for this period.
                     Group {
-                        if #available(iOS 26.0, macCatalyst 26.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                             Button(action: addExpenseCTAAction) {
                                 Label(addExpenseCTATitle, systemImage: "plus")
                                     .font(.system(size: 17, weight: .semibold, design: .rounded))

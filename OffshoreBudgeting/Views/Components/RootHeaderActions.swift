@@ -137,7 +137,7 @@ extension View {
 #if os(iOS)
 
 #if os(iOS) || targetEnvironment(macCatalyst)
-@available(iOS 26, macCatalyst 26.0, *)
+@available(iOS 26, macOS 26.0, macCatalyst 26.0, *)
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     private let namespace: Namespace.ID?
     private let glassID: String?
@@ -206,7 +206,7 @@ private extension View {
     ) -> some View {
 #if os(iOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
-            if #available(iOS 26.0, macCatalyst 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 RootHeaderGlassCapsuleContainer(
                     namespace: namespace,
                     glassID: glassID,
@@ -617,7 +617,7 @@ struct RootHeaderGlassControl<Content: View>: View {
 
 #if os(iOS) || targetEnvironment(macCatalyst)
                 if capabilities.supportsOS26Translucency {
-                    if #available(iOS 26.0, macCatalyst 26.0, *) {
+                    if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                         RootHeaderGlassCapsuleContainer(
                             namespace: glassNamespace,
                             glassID: glassID,
@@ -792,7 +792,7 @@ struct RootHeaderIconActionButton: View {
     var body: some View {
         let dimension = RootHeaderActionMetrics.dimension(for: capabilities)
 
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
             Button(action: action) {
                 RootHeaderControlIcon(systemImage: systemImage)
                     .frame(width: dimension, height: dimension)
