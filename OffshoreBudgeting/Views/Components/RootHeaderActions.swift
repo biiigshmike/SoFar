@@ -819,3 +819,29 @@ struct RootHeaderIconActionButton: View {
         }
     }
 }
+
+struct RootHeaderMenuButtonLabel: View {
+    @Environment(\.platformCapabilities) private var capabilities
+    var systemImage: String
+    var symbolVariants: SymbolVariants? = nil
+    var glassNamespace: Namespace.ID? = nil
+    var glassID: String? = nil
+    var glassUnionID: String? = nil
+    var glassTransition: Any? = nil
+
+    var body: some View {
+        RootHeaderGlassControl(
+            sizing: .icon,
+            glassNamespace: glassNamespace,
+            glassID: glassID,
+            glassUnionID: glassUnionID,
+            glassTransition: glassTransition
+        ) {
+            RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
+                .frame(
+                    width: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil),
+                    height: RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
+                )
+        }
+    }
+}

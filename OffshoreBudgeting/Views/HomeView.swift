@@ -202,8 +202,9 @@ struct HomeView: View {
         .spring(response: 0.34, dampingFraction: 0.78, blendDuration: 0.1)
     }
 
+    @ViewBuilder
     private func calendarToolbarMenu() -> some View {
-        Menu {
+        let menu = Menu {
             ForEach(BudgetPeriod.selectableCases) { period in
                 Button {
                     budgetPeriodRawValue = period.rawValue
@@ -211,22 +212,46 @@ struct HomeView: View {
                     Label {
                         Text(period.displayName)
                     } icon: {
-                        Image(systemName: "checkmark")
-                            .opacity(budgetPeriod == period ? 1 : 0)
+                        if budgetPeriod == period {
+                            Image(systemName: "checkmark")
+                        } else {
+                            Image(systemName: "checkmark")
+                                .hidden()
+                                .accessibilityHidden(true)
+                        }
                     }
                 }
             }
         } label: {
-            HeaderMenuGlassLabel(
-                systemImage: "calendar",
-                glassNamespace: toolbarGlassNamespace,
-                glassID: HomeToolbarGlassIdentifiers.calendar,
-                transition: toolbarGlassTransition
-            )
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                RootHeaderMenuButtonLabel(
+                    systemImage: "calendar",
+                    glassNamespace: toolbarGlassNamespace,
+                    glassID: HomeToolbarGlassIdentifiers.calendar,
+                    glassTransition: toolbarGlassTransition
+                )
                 .accessibilityLabel(budgetPeriod.displayName)
+            } else {
+                HeaderMenuGlassLabel(
+                    systemImage: "calendar",
+                    glassNamespace: toolbarGlassNamespace,
+                    glassID: HomeToolbarGlassIdentifiers.calendar,
+                    transition: toolbarGlassTransition
+                )
+                .accessibilityLabel(budgetPeriod.displayName)
+            }
         }
         .modifier(HideMenuIndicatorIfPossible())
         .accessibilityLabel(budgetPeriod.displayName)
+
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            menu
+                .menuStyle(.button)
+                .buttonBorderShape(.circle)
+                .tint(themeManager.selectedTheme.resolvedTint)
+        } else {
+            menu
+        }
     }
 
     private func addExpenseToolbarMenu() -> some View {
