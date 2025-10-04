@@ -341,11 +341,15 @@ private struct UBRootNavigationChromeModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if UBGlassBackgroundPolicy.shouldUseSystemChrome(capabilities: capabilities) {
-            if #available(iOS 16.0, macCatalyst 16.0, *) {
+            #if targetEnvironment(macCatalyst)
+            content
+            #else
+            if #available(iOS 16.0, *) {
                 content.toolbarBackground(.hidden, for: .navigationBar)
             } else {
                 content
             }
+            #endif
         } else {
             content
         }
