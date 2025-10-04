@@ -25,15 +25,15 @@ struct CategoryChipStyle {
             let strokeColor = categoryColor
 
             return CategoryChipStyle(
-                scale: 1.04,
+                scale: 1.0,
                 fallbackTextColor: .primary,
                 fallbackFill: .clear,
                 fallbackStroke: Stroke(color: strokeColor, lineWidth: 2),
                 glassTextColor: .primary,
                 glassStroke: Stroke(color: strokeColor, lineWidth: 2),
-                shadowColor: categoryColor.opacity(colorScheme == .dark ? 0.55 : 0.35),
-                shadowRadius: 6,
-                shadowY: 3
+                shadowColor: .clear,
+                shadowRadius: 0,
+                shadowY: 0
             )
         } else {
             return CategoryChipStyle(
