@@ -153,6 +153,10 @@ struct IncomeView: View {
         )
     }
 
+    private func contentBottomInset(using proxy: RootTabPageProxy) -> CGFloat {
+        proxy.safeAreaBottomInset + DS.Spacing.s
+    }
+
     private let landscapeLayoutMinimumWidth: CGFloat = 780
     private let landscapeSummarySpansFullWidth: Bool = true
 
@@ -317,6 +321,7 @@ struct IncomeView: View {
             proxy,
             horizontal: horizontalInset,
             extraTop: DS.Spacing.s,
+            extraBottom: contentBottomInset(using: proxy),
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -352,6 +357,7 @@ struct IncomeView: View {
             proxy,
             horizontal: horizontalInset,
             extraTop: DS.Spacing.s,
+            extraBottom: contentBottomInset(using: proxy),
             includeSafeArea: false,
             tabBarGutter: gutter
         )
@@ -379,12 +385,12 @@ struct IncomeView: View {
                 proxy,
                 horizontal: horizontalInset,
                 extraTop: DS.Spacing.s,
+                extraBottom: contentBottomInset(using: proxy),
                 includeSafeArea: false,
                 tabBarGutter: gutter
             )
         }
-        // Removed extra bottom inset; RootTabPageScaffold + rootTabContentPadding
-        // control any desired gutter above the tab bar.
+        // RootTabPageScaffold + rootTabContentPadding control the gutter above the tab bar.
     }
 
     private func adaptiveCardHeights(
