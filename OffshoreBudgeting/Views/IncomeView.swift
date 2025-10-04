@@ -69,8 +69,24 @@ struct IncomeView: View {
         return false
     }
 
+    private func usesCompactCalendarRows(using proxy: RootTabPageProxy?) -> Bool {
+#if os(iOS)
+        if horizontalSizeClass == .regular && verticalSizeClass != .compact {
+            return false
+        }
+#endif
+        if let proxy, proxy.layoutContext.idiom == .mac {
+            return false
+        }
+        return isCompactHeightScenario(using: proxy)
+    }
+
+    private func calendarGridHeight(using proxy: RootTabPageProxy?) -> CGFloat {
+        CalendarSectionMetrics.calendarGrid.height(isCompact: usesCompactCalendarRows(using: proxy))
+    }
+
     private func calendarCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat {
-        isCompactHeightScenario(using: proxy) ? 260 : 300
+        calendarGridHeight(using: proxy)
     }
 
     private func selectedDayCardMinimumHeight(using proxy: RootTabPageProxy?) -> CGFloat {
@@ -82,22 +98,38 @@ struct IncomeView: View {
     }
 
     private func calendarContentHeight(using proxy: RootTabPageProxy?) -> CGFloat {
-#if os(iOS)
-        if horizontalSizeClass == .regular { return 440 }
-        if verticalSizeClass == .compact { return 300 }
-#endif
-        if proxy?.layoutContext.isLandscape == true { return 280 }
-        return 320
+        calendarGridHeight(using: proxy)
     }
 
 
 
     private enum CalendarSectionMetrics {
+        struct CalendarGridMetrics {
+            let headerHeight: CGFloat
+            let compactRowHeight: CGFloat
+            let regularRowHeight: CGFloat
+            let rowCount: CGFloat
+
+            func rowHeight(isCompact: Bool) -> CGFloat {
+                isCompact ? compactRowHeight : regularRowHeight
+            }
+
+            func height(isCompact: Bool) -> CGFloat {
+                headerHeight + (rowHeight(isCompact: isCompact) * rowCount)
+            }
+        }
+
         static let navigationRowHeight: CGFloat = max(
             TranslucentButtonStyle.Metrics.calendarNavigationIcon.height ?? 0,
             TranslucentButtonStyle.Metrics.calendarNavigationLabel.height ?? 0
         )
-        static let headerSpacing: CGFloat = 8
+        static let headerSpacing: CGFloat = DS.Spacing.s
+        static let calendarGrid = CalendarGridMetrics(
+            headerHeight: DS.Spacing.xl + DS.Spacing.s + DS.Spacing.l,
+            compactRowHeight: DS.Spacing.xl + DS.Spacing.m,
+            regularRowHeight: DS.Spacing.xl + DS.Spacing.l,
+            rowCount: 6
+        )
     }
 
     private let calendarSectionContentPadding: CGFloat = 10
@@ -357,10 +389,9 @@ struct IncomeView: View {
     /// In light mode the background is white; in dark mode it is black; selection styling handled by the calendar views.
     @ViewBuilder
     private func calendarSection(using proxy: RootTabPageProxy, cardHeight: CGFloat? = nil) -> some View {
-        let resolvedHeight = max(
-            cardHeight ?? calendarContentHeight(using: proxy),
-            calendarCardMinimumHeight(using: proxy)
-        )
+        let minimumGridHeight = calendarGridHeight(using: proxy)
+        let desiredHeight = cardHeight ?? calendarContentHeight(using: proxy)
+        let resolvedHeight = max(desiredHeight, minimumGridHeight)
         let today = Date()
         let cal = sundayFirstCalendar
         let start = cal.date(byAdding: .year, value: -5, to: today)!
