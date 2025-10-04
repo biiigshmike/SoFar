@@ -504,17 +504,16 @@ private struct CategoryChip: View {
 
     var body: some View {
         let capsule = Capsule(style: .continuous)
-        let tint = themeManager.selectedTheme.resolvedTint
+        let categoryColor = Color(hex: colorHex) ?? .secondary
         let style = CategoryChipStyle.make(
             isSelected: isSelected,
-            tint: tint,
-            colorScheme: colorScheme,
-            readability: { readableForegroundColor(for: $0) }
+            categoryColor: categoryColor,
+            colorScheme: colorScheme
         )
 
         let content = HStack(spacing: DS.Spacing.s) {
             Circle()
-                .fill(Color(hex: colorHex) ?? .secondary)
+                .fill(categoryColor)
                 .frame(width: 10, height: 10)
             Text(name)
                 .font(.subheadline.weight(.semibold))
@@ -528,7 +527,7 @@ private struct CategoryChip: View {
                 let glassContent = content
                     .foregroundStyle(style.glassTextColor)
                     .glassEffect(
-                        isSelected ? .regular.tint(tint).interactive() : .regular.interactive(),
+                        .regular.interactive(),
                         in: capsule
                     )
                     .overlay {
@@ -548,12 +547,7 @@ private struct CategoryChip: View {
                     .foregroundStyle(style.fallbackTextColor)
                     .background {
                         capsule
-                            .fill(DS.Colors.chipFill)
-                            .overlay {
-                                if let overlay = style.fallbackOverlay {
-                                    capsule.fill(overlay)
-                                }
-                            }
+                            .fill(style.fallbackFill)
                     }
                     .overlay(
                         capsule.stroke(
@@ -569,39 +563,6 @@ private struct CategoryChip: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func readableForegroundColor(for background: Color) -> Color {
-        guard let resolvedColor = resolveUIColor(for: background) else {
-            return .white
-        }
-
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-
-        if resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
-            let brightness = 0.299 * red + 0.587 * green + 0.114 * blue
-            return brightness < 0.55 ? .white : .black
-        }
-
-        var white: CGFloat = 0
-        if resolvedColor.getWhite(&white, alpha: &alpha) {
-            return white < 0.55 ? .white : .black
-        }
-
-        return .white
-    }
-
-    private func resolveUIColor(for color: Color) -> UIColor? {
-#if canImport(UIKit)
-        let uiColor = UIColor(color)
-        let userInterfaceStyle: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
-        let traitCollection = UITraitCollection(userInterfaceStyle: userInterfaceStyle)
-        return uiColor.resolvedColor(with: traitCollection)
-#else
-        return nil
-#endif
-    }
 }
 
 // MARK: - Style Adapters
