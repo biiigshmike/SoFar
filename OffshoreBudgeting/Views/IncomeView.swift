@@ -896,7 +896,7 @@ private struct IncomeCalendarGlassButtonModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
             content
                 .buttonStyle(.glass)
                 .tint(themeManager.selectedTheme.resolvedTint)
