@@ -170,29 +170,11 @@ struct PresetsView: View {
         .navigationTitle("Presets")
     }
 
-    @ViewBuilder
     private var addPresetToolbarButton: some View {
-        let iconDimension = RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
-
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
-            Button(action: { isPresentingAddSheet = true }) {
-                RootHeaderGlassControl(sizing: .icon) {
-                    RootHeaderControlIcon(systemImage: "plus")
-                        .frame(width: iconDimension, height: iconDimension)
-                }
-            }
-            .buttonStyle(.glass)
-            .accessibilityLabel("Add Preset Planned Expense")
-        } else {
-            Button(action: { isPresentingAddSheet = true }) {
-                RootHeaderGlassControl(sizing: .icon) {
-                    RootHeaderControlIcon(systemImage: "plus")
-                        .frame(width: iconDimension, height: iconDimension)
-                }
-            }
-            .buttonStyle(RootHeaderActionButtonStyle())
-            .accessibilityLabel("Add Preset Planned Expense")
+        Button(action: { isPresentingAddSheet = true }) {
+            Image(systemName: "plus")
         }
+        .accessibilityLabel("Add Preset Planned Expense")
     }
 
     // MARK: - Actions

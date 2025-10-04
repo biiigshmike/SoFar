@@ -116,41 +116,18 @@ struct CardsView: View {
         .tint(themeManager.selectedTheme.resolvedTint)
     }
 
-    @ViewBuilder
     private var addActionToolbarButton: some View {
-        let iconDimension = RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
-
-        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
-            Button {
-                if selectedCardStableID == nil {
-                    isPresentingAddCard = true
-                } else {
-                    isPresentingAddExpense = true
-                }
-            } label: {
-                RootHeaderGlassControl(sizing: .icon) {
-                    RootHeaderControlIcon(systemImage: "plus")
-                        .frame(width: iconDimension, height: iconDimension)
-                }
+        Button {
+            if selectedCardStableID == nil {
+                isPresentingAddCard = true
+            } else {
+                isPresentingAddExpense = true
             }
-            .buttonStyle(.glass)
-            .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
-        } else {
-            Button {
-                if selectedCardStableID == nil {
-                    isPresentingAddCard = true
-                } else {
-                    isPresentingAddExpense = true
-                }
-            } label: {
-                RootHeaderGlassControl(sizing: .icon) {
-                    RootHeaderControlIcon(systemImage: "plus")
-                        .frame(width: iconDimension, height: iconDimension)
-                }
-            }
-            .buttonStyle(RootHeaderActionButtonStyle())
-            .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
+        } label: {
+            Image(systemName: "plus")
+                //.imageScale(.medium)
         }
+        .accessibilityLabel(selectedCardStableID == nil ? "Add Card" : "Add Expense")
     }
 
     // MARK: - Content View (Type-Safe)
