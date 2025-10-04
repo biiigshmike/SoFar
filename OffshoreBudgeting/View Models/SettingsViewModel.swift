@@ -125,30 +125,39 @@ struct SettingsCard<Content: View>: View {
     @ViewBuilder var content: Content
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.platformCapabilities) private var capabilities
 
     var body: some View {
-        VStack(alignment: .leading, spacing: headerSpacing) {
-            HStack(alignment: .center, spacing: 12) {
-                SettingsIcon(systemName: iconSystemName)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.title3).fontWeight(.semibold)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
+        if capabilities.supportsOS26Translucency,
+           #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
+            modernCard()
+        } else {
+            legacyCard()
+        }
+    }
 
-            VStack(spacing: 0) {
-                content
-            }
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(themeManager.selectedTheme.secondaryBackground)
-            )
+    private var isCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    private var innerCornerRadius: CGFloat { 14 }
+    private var cardPadding: CGFloat { isCompact ? 10 : 16 }
+    private var headerSpacing: CGFloat { isCompact ? 6 : 12 }
+    private var outerCornerRadius: CGFloat { isCompact ? 14 : 20 }
+
+    @ViewBuilder
+    private func legacyCard() -> some View {
+        VStack(alignment: .leading, spacing: headerSpacing) {
+            cardHeader
+            rowsContainer
+                .background(
+                    RoundedRectangle(cornerRadius: innerCornerRadius, style: .continuous)
+                        .fill(themeManager.selectedTheme.secondaryBackground)
+                )
         }
         .padding(cardPadding)
         .background(
@@ -161,17 +170,46 @@ struct SettingsCard<Content: View>: View {
         )
     }
 
-    private var isCompact: Bool {
-        #if os(iOS)
-        horizontalSizeClass == .compact
-        #else
-        false
-        #endif
+    @available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *)
+    @ViewBuilder
+    private func modernCard() -> some View {
+        let outerShape = RoundedRectangle(cornerRadius: outerCornerRadius, style: .continuous)
+        let innerShape = RoundedRectangle(cornerRadius: innerCornerRadius, style: .continuous)
+
+        GlassEffectContainer {
+            VStack(alignment: .leading, spacing: headerSpacing) {
+                cardHeader
+                rowsContainer
+                    .glassEffect(.regular, in: innerShape)
+            }
+            .padding(cardPadding)
+            .glassEffect(.regular, in: outerShape)
+        }
     }
 
-    private var cardPadding: CGFloat { isCompact ? 10 : 16 }
-    private var headerSpacing: CGFloat { isCompact ? 6 : 12 }
-    private var outerCornerRadius: CGFloat { isCompact ? 14 : 20 }
+    @ViewBuilder
+    private var cardHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            SettingsIcon(systemName: iconSystemName)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.title3).fontWeight(.semibold)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private var rowsContainer: some View {
+        VStack(spacing: 0) {
+            content
+        }
+        .frame(maxWidth: .infinity)
+    }
 }
 
 // MARK: - SettingsRow

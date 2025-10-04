@@ -239,7 +239,7 @@ private struct CategoryChipsRow: View {
 
             // MARK: Scrolling Chips (wrapped in a single GlassEffectContainer on OS26)
             Group {
-                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                     GlassEffectContainer(spacing: DS.Spacing.s) {
                         ScrollView(.horizontal, showsIndicators: false) {
                             LazyHStack(spacing: DS.Spacing.s) {
