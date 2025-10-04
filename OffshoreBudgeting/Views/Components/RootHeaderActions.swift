@@ -828,10 +828,12 @@ struct RootHeaderMenuButtonLabel: View {
     var glassID: String? = nil
     var glassUnionID: String? = nil
     var glassTransition: Any? = nil
+    var background: RootHeaderControlBackground = .automatic
 
     var body: some View {
         RootHeaderGlassControl(
             sizing: .icon,
+            background: background,
             glassNamespace: glassNamespace,
             glassID: glassID,
             glassUnionID: glassUnionID,

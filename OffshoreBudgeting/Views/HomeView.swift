@@ -228,7 +228,8 @@ struct HomeView: View {
                     systemImage: "calendar",
                     glassNamespace: toolbarGlassNamespace,
                     glassID: HomeToolbarGlassIdentifiers.calendar,
-                    glassTransition: toolbarGlassTransition
+                    glassTransition: toolbarGlassTransition,
+                    background: .clear
                 )
                 .accessibilityLabel(budgetPeriod.displayName)
             } else {
