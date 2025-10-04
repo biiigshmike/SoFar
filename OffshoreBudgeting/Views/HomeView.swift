@@ -42,6 +42,7 @@ struct HomeView: View {
     @State private var isPresentingManagePresets: Bool = false
     @State private var isPresentingManageCategories: Bool = false
     @Namespace private var toolbarGlassNamespace
+    @State private var hasActiveBudget: Bool = false
 
     // MARK: Body
     @EnvironmentObject private var themeManager: ThemeManager
@@ -72,23 +73,49 @@ struct HomeView: View {
         .navigationTitle("Home")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Order: ellipsis, calendar, plus
-                if let periodSummary = actionableSummaryForSelectedPeriod {
-                    optionsToolbarMenu(summary: periodSummary)
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                    GlassEffectContainer(spacing: DS.Spacing.s) {
+                        // Order: ellipsis, calendar, plus
+                        if let periodSummary = actionableSummaryForSelectedPeriod {
+                            optionsToolbarMenu(summary: periodSummary)
+                        } else {
+                            optionsToolbarMenu()
+                        }
+
+                        calendarToolbarMenu()
+
+                        if hasActiveBudget, let active = actionableSummaryForSelectedPeriod {
+                            addExpenseToolbarMenu(for: active.id)
+                        }
+                    }
                 } else {
-                    optionsToolbarMenu()
-                }
+                    // Legacy / older OS
+                    if let periodSummary = actionableSummaryForSelectedPeriod {
+                        optionsToolbarMenu(summary: periodSummary)
+                    } else {
+                        optionsToolbarMenu()
+                    }
 
-                calendarToolbarMenu()
+                    calendarToolbarMenu()
 
-                if let active = actionableSummaryForSelectedPeriod {
-                    addExpenseToolbarMenu(for: active.id)
+                    if let active = actionableSummaryForSelectedPeriod {
+                        addExpenseToolbarMenu(for: active.id)
+                    }
                 }
             }
         }
         .task {
             CoreDataService.shared.ensureLoaded()
             vm.startIfNeeded()
+        }
+        .onAppear { hasActiveBudget = actionableSummaryForSelectedPeriod != nil }
+        .ub_onChange(of: actionableSummaryForSelectedPeriod?.id) { _ in
+            let newValue = actionableSummaryForSelectedPeriod != nil
+            if capabilities.supportsOS26Translucency && !reduceMotion {
+                withAnimation(periodAdjustmentAnimation) { hasActiveBudget = newValue }
+            } else {
+                hasActiveBudget = newValue
+            }
         }
         // Temporarily disable automatic refresh on every Core Data save to
         // prevent re-entrant view reconstruction and load() loops. Explicit
@@ -159,13 +186,14 @@ struct HomeView: View {
     }
 
     // MARK: Toolbar Actions
-    private var toolbarGlassTransition: GlassEffectTransition? {
+    private var toolbarGlassTransition: Any? {
         guard capabilities.supportsOS26Translucency else {
             return nil
         }
 
         if #available(iOS 26.0, macCatalyst 26.0, *) {
-            return reduceMotion ? .identity : .materialize
+            let t: GlassEffectTransition = reduceMotion ? .identity : .matchedGeometry
+            return t
         } else {
             return nil
         }
@@ -638,6 +666,7 @@ private struct HomeHeaderTablePage<Content: View>: View {
                 displayTitle: displayTitle,
                 displayDetail: displayDetail,
                 categorySpending: categorySpending,
+                globalCategorySpending: globalCategorySpending,
                 selectedSegment: $selectedSegment,
                 sort: $sort,
                 periodNavigationTitle: periodNavigationTitle,
@@ -645,6 +674,20 @@ private struct HomeHeaderTablePage<Content: View>: View {
                 onAddCategory: onAddCategory
             )
             .padding(.horizontal, horizontalPadding)
+        }
+    }
+
+    // Build zero-amount placeholders for all categories in the system so
+    // inactive/empty periods still show chips rather than the Add Category CTA.
+    private var globalCategorySpending: [BudgetSummary.CategorySpending] {
+        let ctx = CoreDataService.shared.viewContext
+        let req = NSFetchRequest<ExpenseCategory>(entityName: "ExpenseCategory")
+        req.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true, selector: #selector(NSString.localizedCaseInsensitiveCompare(_:)))]
+        let all: [ExpenseCategory] = (try? ctx.fetch(req)) ?? []
+        return all.compactMap { cat in
+            let name = (cat.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return nil }
+            return BudgetSummary.CategorySpending(categoryName: name, hexColor: cat.color, amount: 0)
         }
     }
 }
@@ -655,6 +698,7 @@ private struct HomeHeaderOverviewTable: View {
     let displayTitle: String
     let displayDetail: String
     let categorySpending: [BudgetSummary.CategorySpending]
+    let globalCategorySpending: [BudgetSummary.CategorySpending]
     @Binding var selectedSegment: BudgetDetailsViewModel.Segment
     @Binding var sort: BudgetDetailsViewModel.SortOption
     let periodNavigationTitle: String
@@ -741,8 +785,23 @@ private struct HomeHeaderOverviewTable: View {
 
     private var categoryRow: some View {
         Group {
-            if categorySpending.isEmpty {
-                // Full-width, pressable capsule to prompt adding a category
+            if !categorySpending.isEmpty {
+                CategoryTotalsRow(
+                    categories: categorySpending,
+                    isPlaceholder: false,
+                    horizontalInset: 0
+                )
+                .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
+            } else if !globalCategorySpending.isEmpty {
+                // Show zero-amount chips for all categories when no spending yet
+                CategoryTotalsRow(
+                    categories: globalCategorySpending,
+                    isPlaceholder: false,
+                    horizontalInset: 0
+                )
+                .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
+            } else {
+                // Only when there are no categories in the system, show Add Category CTA
                 GlassCapsuleContainer(
                     horizontalPadding: DS.Spacing.l,
                     verticalPadding: DS.Spacing.s,
@@ -759,13 +818,6 @@ private struct HomeHeaderOverviewTable: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("home_add_category_cta")
                 }
-                .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
-            } else {
-                CategoryTotalsRow(
-                    categories: categorySpending,
-                    isPlaceholder: false,
-                    horizontalInset: 0
-                )
                 .frame(height: HomeHeaderOverviewMetrics.categoryControlHeight)
             }
         }
@@ -894,7 +946,8 @@ private struct HeaderMenuGlassLabel: View {
     var symbolVariants: SymbolVariants? = nil
     var glassNamespace: Namespace.ID? = nil
     var glassID: String? = nil
-    var transition: GlassEffectTransition? = nil
+    var glassUnionID: String? = nil
+    var transition: Any? = nil
 
     var body: some View {
         RootHeaderGlassControl(
@@ -902,6 +955,7 @@ private struct HeaderMenuGlassLabel: View {
             background: .clear,
             glassNamespace: glassNamespace,
             glassID: glassID,
+            glassUnionID: glassUnionID,
             glassTransition: transition
         ) {
             RootHeaderControlIcon(systemImage: systemImage, symbolVariants: symbolVariants)
@@ -917,6 +971,7 @@ private enum HomeToolbarGlassIdentifiers {
     static let options = "home-toolbar.options"
     static let calendar = "home-toolbar.calendar"
     static let addExpense = "home-toolbar.add-expense"
+    static let union = "home-toolbar.union"
 }
 
 private enum HomeHeaderOverviewMetrics {

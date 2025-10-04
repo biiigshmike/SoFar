@@ -141,36 +141,55 @@ extension View {
 private struct RootHeaderGlassCapsuleContainer<Content: View>: View {
     private let namespace: Namespace.ID?
     private let glassID: String?
+    private let unionID: String?
     private let transition: GlassEffectTransition?
     private let content: Content
 
     init(
         namespace: Namespace.ID? = nil,
         glassID: String? = nil,
+        glassUnionID: String? = nil,
         transition: GlassEffectTransition? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.namespace = namespace
         self.glassID = glassID
+        self.unionID = glassUnionID
         self.transition = transition
         self.content = content()
     }
 
     var body: some View {
-        GlassEffectContainer {
-            var decorated = content
+        let base = AnyView(
+            content
                 .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+        )
 
+        let withID: AnyView = {
             if let namespace, let glassID {
-                decorated = decorated.glassEffectID(glassID, in: namespace)
+                return AnyView(base.glassEffectID(glassID, in: namespace))
+            } else {
+                return base
             }
+        }()
 
+        let withUnion: AnyView = {
+            if let namespace, let unionID {
+                return AnyView(withID.glassEffectUnion(id: unionID, namespace: namespace))
+            } else {
+                return withID
+            }
+        }()
+
+        let withTransition: AnyView = {
             if let transition {
-                decorated = decorated.glassEffectTransition(transition)
+                return AnyView(withUnion.glassEffectTransition(transition))
+            } else {
+                return withUnion
             }
+        }()
 
-            decorated
-        }
+        withTransition
     }
 }
 #endif
@@ -182,7 +201,8 @@ private extension View {
         capabilities: PlatformCapabilities,
         namespace: Namespace.ID? = nil,
         glassID: String? = nil,
-        transition: GlassEffectTransition? = nil
+        glassUnionID: String? = nil,
+        transition: Any? = nil
     ) -> some View {
 #if os(iOS) || targetEnvironment(macCatalyst)
         if capabilities.supportsOS26Translucency {
@@ -190,7 +210,8 @@ private extension View {
                 RootHeaderGlassCapsuleContainer(
                     namespace: namespace,
                     glassID: glassID,
-                    transition: transition
+                    glassUnionID: glassUnionID,
+                    transition: transition as? GlassEffectTransition
                 ) { self }
             } else {
                 rootHeaderLegacyGlassDecorated(theme: theme, capabilities: capabilities)
@@ -552,7 +573,8 @@ struct RootHeaderGlassControl<Content: View>: View {
     private let background: RootHeaderControlBackground
     private let glassNamespace: Namespace.ID?
     private let glassID: String?
-    private let glassTransition: GlassEffectTransition?
+    private let glassUnionID: String?
+    private let glassTransition: Any?
 
     init(
         width: CGFloat? = nil,
@@ -560,7 +582,8 @@ struct RootHeaderGlassControl<Content: View>: View {
         background: RootHeaderControlBackground = .automatic,
         glassNamespace: Namespace.ID? = nil,
         glassID: String? = nil,
-        glassTransition: GlassEffectTransition? = nil,
+        glassUnionID: String? = nil,
+        glassTransition: Any? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
@@ -569,6 +592,7 @@ struct RootHeaderGlassControl<Content: View>: View {
         self.background = background
         self.glassNamespace = glassNamespace
         self.glassID = glassID
+        self.glassUnionID = glassUnionID
         self.glassTransition = glassTransition
     }
 
@@ -597,7 +621,8 @@ struct RootHeaderGlassControl<Content: View>: View {
                         RootHeaderGlassCapsuleContainer(
                             namespace: glassNamespace,
                             glassID: glassID,
-                            transition: glassTransition
+                            glassUnionID: glassUnionID,
+                            transition: glassTransition as? GlassEffectTransition
                         ) {
                             content
                                 .frame(width: max(iconSide, d), height: max(iconSide, d))
@@ -631,6 +656,7 @@ struct RootHeaderGlassControl<Content: View>: View {
                     capabilities: capabilities,
                     namespace: glassNamespace,
                     glassID: glassID,
+                    glassUnionID: glassUnionID,
                     transition: glassTransition
                 )
         }

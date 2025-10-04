@@ -11,6 +11,9 @@
 import Foundation
 import SwiftUI
 import CoreData
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - BudgetLoadState
 /// Represents the loading state for budgets to prevent UI flickering
