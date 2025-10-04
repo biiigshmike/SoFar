@@ -6,6 +6,7 @@ struct CategoryChipStyle {
         let lineWidth: CGFloat
     }
 
+    let scale: CGFloat
     let fallbackTextColor: Color
     let fallbackFill: Color
     let fallbackStroke: Stroke
@@ -24,6 +25,7 @@ struct CategoryChipStyle {
             let strokeColor = categoryColor
 
             return CategoryChipStyle(
+                scale: 1.04,
                 fallbackTextColor: .primary,
                 fallbackFill: .clear,
                 fallbackStroke: Stroke(color: strokeColor, lineWidth: 2),
@@ -35,6 +37,7 @@ struct CategoryChipStyle {
             )
         } else {
             return CategoryChipStyle(
+                scale: 1.0,
                 fallbackTextColor: .primary,
                 fallbackFill: DS.Colors.chipFill,
                 fallbackStroke: Stroke(color: DS.Colors.chipFill, lineWidth: 1),
