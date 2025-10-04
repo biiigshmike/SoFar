@@ -357,6 +357,16 @@ struct AddPlannedExpenseView: View {
 /// Shared layout metrics for the category pill controls.
 private enum CategoryPillMetrics {
     static let controlHeight: CGFloat = 44
+
+    static var shape: Capsule { Capsule(style: .continuous) }
+
+    static func layout<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, DS.Spacing.m)
+            .padding(.vertical, 8)
+            .frame(height: controlHeight, alignment: .center)
+            .contentShape(shape)
+    }
 }
 
 /// Reusable horizontally scrolling row of category chips with an Add button.
@@ -484,12 +494,14 @@ private struct AddCategoryPill: View {
         Button(action: onTap) {
             Label("Add", systemImage: "plus")
                 .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, DS.Spacing.m)
-                .padding(.vertical, 8)
-                .frame(height: CategoryPillMetrics.controlHeight, alignment: .center)
-                .contentShape(Capsule())
         }
-        .modifier(CategoryAddButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
+        .buttonStyle(
+            AddCategoryPillStyle(
+                capabilities: capabilities,
+                tint: themeManager.selectedTheme.resolvedTint
+            )
+        )
+        .controlSize(.regular)
         .accessibilityLabel("Add Category")
     }
 }
@@ -506,7 +518,7 @@ private struct CategoryChip: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let capsule = Capsule(style: .continuous)
+        let capsule = CategoryPillMetrics.shape
         let categoryColor = Color(hex: colorHex) ?? .secondary
         let style = CategoryChipStyle.make(
             isSelected: isSelected,
@@ -514,16 +526,15 @@ private struct CategoryChip: View {
             colorScheme: colorScheme
         )
 
-        let content = HStack(spacing: DS.Spacing.s) {
-            Circle()
-                .fill(categoryColor)
-                .frame(width: 10, height: 10)
-            Text(name)
-                .font(.subheadline.weight(.semibold))
+        let content = CategoryPillMetrics.layout {
+            HStack(spacing: DS.Spacing.s) {
+                Circle()
+                    .fill(categoryColor)
+                    .frame(width: 10, height: 10)
+                Text(name)
+                    .font(.subheadline.weight(.semibold))
+            }
         }
-        .padding(.horizontal, DS.Spacing.m)
-        .padding(.vertical, 8)
-        .frame(height: CategoryPillMetrics.controlHeight)
 
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
@@ -568,22 +579,47 @@ private struct CategoryChip: View {
 
 }
 
-// MARK: - Style Adapters
-private struct CategoryAddButtonStyleAdapter: ViewModifier {
-    let tint: Color
+// MARK: - Styles
+private struct AddCategoryPillStyle: ButtonStyle {
     let capabilities: PlatformCapabilities
+    let tint: Color
 
-    func body(content: Content) -> some View {
-        Group {
+    func makeBody(configuration: Configuration) -> some View {
+        let capsule = CategoryPillMetrics.shape
+        let isActive = configuration.isPressed
+
+        let label = CategoryPillMetrics.layout {
+            configuration.label
+        }
+
+        return Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                content
-                    .buttonStyle(.glass)
-                    .tint(tint)
+                label
+                    .foregroundStyle(.primary)
+                    .glassEffect(.regular.interactive(), in: capsule)
+                    .background {
+                        if isActive {
+                            capsule.fill(tint.opacity(0.25))
+                        }
+                    }
+                    .overlay {
+                        if isActive {
+                            capsule.stroke(tint, lineWidth: 2)
+                        }
+                    }
             } else {
-                content
-                    .buttonStyle(.plain)
-                    .background(Capsule().fill(DS.Colors.chipFill))
+                label
+                    .foregroundStyle(.primary)
+                    .background {
+                        capsule.fill(isActive ? tint.opacity(0.18) : DS.Colors.chipFill)
+                    }
+                    .overlay {
+                        if isActive {
+                            capsule.stroke(tint, lineWidth: 2)
+                        }
+                    }
             }
         }
+        .animation(.easeOut(duration: 0.15), value: isActive)
     }
 }
