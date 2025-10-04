@@ -546,7 +546,7 @@ private struct CategoryChip: View {
                     )
                     .overlay {
                         if let stroke = style.glassStroke {
-                            capsule.strokeBorder(stroke.color, lineWidth: stroke.lineWidth)
+                            capsule.stroke(stroke.color, lineWidth: stroke.lineWidth)
                         }
                     }
 
@@ -563,12 +563,12 @@ private struct CategoryChip: View {
                         capsule
                             .fill(style.fallbackFill)
                     }
-                    .overlay {
-                        capsule.strokeBorder(
+                    .overlay(
+                        capsule.stroke(
                             style.fallbackStroke.color,
                             lineWidth: style.fallbackStroke.lineWidth
                         )
-                    }
+                    )
             }
         }
         .scaleEffect(style.scale)
