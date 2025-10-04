@@ -375,6 +375,7 @@ private struct CategoryChipsRow: View {
     @Binding var selectedCategoryID: NSManagedObjectID?
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
     @Namespace private var glassNamespace
 
     @FetchRequest(
@@ -513,13 +514,16 @@ private struct CategoryChip: View {
     let isSelected: Bool
     let namespace: Namespace.ID?
     @Environment(\.platformCapabilities) private var capabilities
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let capsule = CategoryPillMetrics.shape
         let categoryColor = Color(hex: colorHex) ?? .secondary
         let style = CategoryChipStyle.make(
             isSelected: isSelected,
-            categoryColor: categoryColor
+            categoryColor: categoryColor,
+            colorScheme: colorScheme
         )
 
         let content = CategoryPillMetrics.layout {
@@ -568,6 +572,7 @@ private struct CategoryChip: View {
             }
         }
         .scaleEffect(style.scale)
+        .shadow(color: style.shadowColor, radius: style.shadowRadius, x: 0, y: style.shadowY)
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
