@@ -55,8 +55,7 @@ enum DesignSystem {
         /// background on all platforms.  Increase or decrease the opacity to tune
         /// the visual weight of chips globally.
         static var chipFill: Color {
-            // Match the card fill opacity for consistency; adjust as desired
-            return Color.primary.opacity(0.06)
+            return dynamicChipNeutral(opacity: 0.06)
         }
 
         /// Fill color for selected category chips and pills.  This uses a slightly
@@ -65,7 +64,7 @@ enum DesignSystem {
         /// contrast across themes, update this constant instead of hardcoding
         /// values in your views.
         static var chipSelectedFill: Color {
-            return Color.primary.opacity(0.12)
+            return dynamicChipNeutral(opacity: 0.12)
         }
 
         /// Stroke color for the selection outline around a chip or pill.  Using
@@ -73,7 +72,30 @@ enum DesignSystem {
         /// independent of the fill opacity.  When unselected, you may choose to
         /// return `.clear` or a low‑opacity stroke for subtle definition.
         static var chipSelectedStroke: Color {
-            return Color.primary.opacity(0.35)
+            return dynamicChipNeutral(opacity: 0.35)
+        }
+
+        /// Generates a dynamic neutral color that keeps light mode behavior intact
+        /// while resolving to a richer, darker fill in dark mode. The `opacity`
+        /// value mirrors the historical hierarchy so existing design intent is
+        /// preserved.
+        private static func dynamicChipNeutral(opacity: CGFloat) -> Color {
+            if #available(iOS 13.0, macCatalyst 13.0, *) {
+                let dynamicColor = UIColor { traitCollection in
+                    let resolvedLabel = UIColor.label.resolvedColor(with: traitCollection)
+                    guard traitCollection.userInterfaceStyle == .dark else {
+                        return resolvedLabel.withAlphaComponent(opacity)
+                    }
+
+                    let resolvedBackground = UIColor.systemBackground.resolvedColor(with: traitCollection)
+                    return resolvedBackground
+                        .blended(withFraction: opacity, of: resolvedLabel)
+                        ?? resolvedLabel.withAlphaComponent(opacity)
+                }
+                return Color(dynamicColor)
+            } else {
+                return Color.black.opacity(Double(opacity))
+            }
         }
     }
 }
