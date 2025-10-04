@@ -88,9 +88,11 @@ enum DesignSystem {
                     }
 
                     let resolvedBackground = UIColor.systemBackground.resolvedColor(with: traitCollection)
-                    return resolvedBackground
-                        .blended(withFraction: opacity, of: resolvedLabel)
-                        ?? resolvedLabel.withAlphaComponent(opacity)
+                    if let blended = UIColor.ds_blend(resolvedBackground, with: resolvedLabel, fraction: opacity) {
+                        return blended
+                    } else {
+                        return resolvedLabel.withAlphaComponent(opacity)
+                    }
                 }
                 return Color(dynamicColor)
             } else {
@@ -102,3 +104,31 @@ enum DesignSystem {
 
 // Maintain compatibility with existing views using `DS`
 typealias DS = DesignSystem
+
+// MARK: - Private Helpers
+
+fileprivate extension UIColor {
+    /// Linearly interpolates between two UIColors in sRGB space.
+    /// - Parameters:
+    ///   - base: Starting color (fraction = 0).
+    ///   - with: Target color (fraction = 1).
+    ///   - fraction: Mix amount in 0...1.
+    /// - Returns: A blended color or `nil` if components couldn’t be extracted.
+    static func ds_blend(_ base: UIColor, with other: UIColor, fraction: CGFloat) -> UIColor? {
+        let t = max(0, min(1, fraction))
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        var or: CGFloat = 0, og: CGFloat = 0, ob: CGFloat = 0, oa: CGFloat = 0
+
+        guard base.getRed(&br, green: &bg, blue: &bb, alpha: &ba),
+              other.getRed(&or, green: &og, blue: &ob, alpha: &oa) else {
+            return nil
+        }
+
+        let r = br + (or - br) * t
+        let g = bg + (og - bg) * t
+        let b = bb + (ob - bb) * t
+        let a = ba + (oa - ba) * t
+
+        return UIColor(red: r, green: g, blue: b, alpha: a)
+    }
+}
