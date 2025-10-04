@@ -354,21 +354,6 @@ struct AddPlannedExpenseView: View {
 }
 
 // MARK: - CategoryChipsRow
-/// Shared layout metrics for the category pill controls.
-private enum CategoryPillMetrics {
-    static let controlHeight: CGFloat = 44
-
-    static var shape: Capsule { Capsule(style: .continuous) }
-
-    static func layout<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(.horizontal, DS.Spacing.m)
-            .padding(.vertical, 8)
-            .frame(height: controlHeight, alignment: .center)
-            .contentShape(shape)
-    }
-}
-
 /// Reusable horizontally scrolling row of category chips with an Add button.
 private struct CategoryChipsRow: View {
 
@@ -497,7 +482,6 @@ private struct AddCategoryPill: View {
         }
         .buttonStyle(
             AddCategoryPillStyle(
-                capabilities: capabilities,
                 tint: themeManager.selectedTheme.resolvedTint
             )
         )
@@ -514,11 +498,9 @@ private struct CategoryChip: View {
     let isSelected: Bool
     let namespace: Namespace.ID?
     @Environment(\.platformCapabilities) private var capabilities
-    @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let capsule = CategoryPillMetrics.shape
         let categoryColor = Color(hex: colorHex) ?? .secondary
         let style = CategoryChipStyle.make(
             isSelected: isSelected,
@@ -526,7 +508,23 @@ private struct CategoryChip: View {
             colorScheme: colorScheme
         )
 
-        let content = CategoryPillMetrics.layout {
+        let shouldApplyShadow = style.shadowRadius > 0 || style.shadowY != 0
+
+        func convertStroke(_ stroke: CategoryChipStyle.Stroke?) -> CategoryChipPill<EmptyView>.Stroke? {
+            guard let stroke, stroke.lineWidth > 0 else { return nil }
+            return .init(color: stroke.color, lineWidth: stroke.lineWidth)
+        }
+
+        let glassStroke = convertStroke(style.glassStroke)
+        let fallbackStroke = convertStroke(style.fallbackStroke)
+
+        var chip = CategoryChipPill(
+            isSelected: isSelected,
+            selectionColor: categoryColor,
+            glassStroke: glassStroke,
+            fallbackFill: style.fallbackFill,
+            fallbackStroke: fallbackStroke
+        ) {
             HStack(spacing: DS.Spacing.s) {
                 Circle()
                     .fill(categoryColor)
@@ -536,45 +534,19 @@ private struct CategoryChip: View {
             }
         }
 
-        let shouldApplyShadow = style.shadowRadius > 0 || style.shadowY != 0
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            chip = chip
+                .foregroundStyle(style.glassTextColor)
+                .glassEffectTransition(.matchedGeometry)
 
-        let chipContent = Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                let glassContent = content
-                    .foregroundStyle(style.glassTextColor)
-                    .glassEffect(
-                        .regular.interactive(),
-                        in: capsule
-                    )
-                    .overlay {
-                        if let stroke = style.glassStroke {
-                            capsule.stroke(stroke.color, lineWidth: stroke.lineWidth)
-                        }
-                    }
-
-                if let ns = namespace {
-                    glassContent
-                        .glassEffectID(id, in: ns)
-                } else {
-                    glassContent
-                }
-            } else {
-                content
-                    .foregroundStyle(style.fallbackTextColor)
-                    .background {
-                        capsule
-                            .fill(style.fallbackFill)
-                    }
-                    .overlay(
-                        capsule.stroke(
-                            style.fallbackStroke.color,
-                            lineWidth: style.fallbackStroke.lineWidth
-                        )
-                    )
+            if let ns = namespace {
+                chip = chip.glassEffectID(id, in: ns)
             }
+        } else {
+            chip = chip.foregroundStyle(style.fallbackTextColor)
         }
 
-        let base = chipContent
+        let base = chip
             .scaleEffect(style.scale)
             .animation(.easeOut(duration: 0.15), value: isSelected)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -596,45 +568,25 @@ private struct CategoryChip: View {
 
 // MARK: - Styles
 private struct AddCategoryPillStyle: ButtonStyle {
-    let capabilities: PlatformCapabilities
     let tint: Color
 
     func makeBody(configuration: Configuration) -> some View {
-        let capsule = CategoryPillMetrics.shape
         let isActive = configuration.isPressed
-
-        let label = CategoryPillMetrics.layout {
+        let pill = CategoryChipPill(
+            isSelected: false,
+            selectionColor: nil
+        ) {
             configuration.label
         }
 
-        return Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                label
-                    .foregroundStyle(.primary)
-                    .glassEffect(.regular.interactive(), in: capsule)
-                    .background {
-                        if isActive {
-                            capsule.fill(tint.opacity(0.25))
-                        }
-                    }
-                    .overlay {
-                        if isActive {
-                            capsule.stroke(tint, lineWidth: 2)
-                        }
-                    }
-            } else {
-                label
-                    .foregroundStyle(.primary)
-                    .background {
-                        capsule.fill(isActive ? tint.opacity(0.18) : DS.Colors.chipFill)
-                    }
-                    .overlay {
-                        if isActive {
-                            capsule.stroke(tint, lineWidth: 2)
-                        }
-                    }
+        return pill
+            .foregroundStyle(.primary)
+            .overlay {
+                if isActive {
+                    Capsule(style: .continuous)
+                        .strokeBorder(tint.opacity(0.35), lineWidth: 1.5)
+                }
             }
-        }
-        .animation(.easeOut(duration: 0.15), value: isActive)
+            .animation(.easeOut(duration: 0.15), value: isActive)
     }
 }
