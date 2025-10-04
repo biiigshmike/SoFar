@@ -171,12 +171,31 @@ struct IncomeView: View {
         addIncomeInitialDate = AddIncomeSheetDate(value: baseDate)
     }
 
+    @ViewBuilder
     private var addIncomeButton: some View {
-        Button(action: { beginAddingIncome() }) {
-            Image(systemName: "plus")
+        let iconDimension = RootHeaderActionMetrics.iconDimension(for: capabilities, width: nil)
+
+        if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
+            Button(action: { beginAddingIncome() }) {
+                RootHeaderGlassControl(sizing: .icon) {
+                    RootHeaderControlIcon(systemImage: "plus")
+                        .frame(width: iconDimension, height: iconDimension)
+                }
+            }
+            .buttonStyle(.glass)
+            .accessibilityLabel("Add Income")
+            .accessibilityIdentifier("add_income_button")
+        } else {
+            Button(action: { beginAddingIncome() }) {
+                RootHeaderGlassControl(sizing: .icon) {
+                    RootHeaderControlIcon(systemImage: "plus")
+                        .frame(width: iconDimension, height: iconDimension)
+                }
+            }
+            .buttonStyle(RootHeaderActionButtonStyle())
+            .accessibilityLabel("Add Income")
+            .accessibilityIdentifier("add_income_button")
         }
-        .accessibilityLabel("Add Income")
-        .accessibilityIdentifier("add_income_button")
     }
 
     // MARK: Calendar
