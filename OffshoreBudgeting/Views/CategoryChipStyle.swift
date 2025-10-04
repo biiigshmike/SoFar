@@ -29,9 +29,9 @@ struct CategoryChipStyle {
                 fallbackStroke: Stroke(color: strokeColor, lineWidth: 2),
                 glassTextColor: .primary,
                 glassStroke: Stroke(color: strokeColor, lineWidth: 2),
-                shadowColor: .clear,
-                shadowRadius: 0,
-                shadowY: 0
+                shadowColor: categoryColor.opacity(colorScheme == .dark ? 0.55 : 0.35),
+                shadowRadius: 6,
+                shadowY: 3
             )
         } else {
             return CategoryChipStyle(
