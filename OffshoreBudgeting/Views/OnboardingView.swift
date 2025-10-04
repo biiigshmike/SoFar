@@ -516,7 +516,7 @@ private struct PrimaryButtonStyleAdapter: ViewModifier {
 
     func body(content: Content) -> some View {
         Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 content
                     .frame(minHeight: 44)
                     .buttonStyle(.glass)
@@ -537,7 +537,7 @@ private struct SecondaryButtonStyleAdapter: ViewModifier {
 
     func body(content: Content) -> some View {
         Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 content
                     .frame(minHeight: 44)
                     .buttonStyle(.glass)

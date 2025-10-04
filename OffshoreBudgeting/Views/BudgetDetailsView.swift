@@ -933,7 +933,7 @@ private struct PlannedListFR: View {
     @ViewBuilder
     private func addActionButton(title: String, action: @escaping () -> Void) -> some View {
         Group {
-            if #available(iOS 26.0, macCatalyst 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 Button(action: action) {
                     budgetDetailsCTAButtonLabel(title)
                         .foregroundStyle(.primary)

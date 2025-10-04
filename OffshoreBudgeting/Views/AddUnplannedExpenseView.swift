@@ -254,7 +254,7 @@ private struct CategoryChipsRow: View {
 
             // MARK: Scrolling Chips (wrapped in a single GlassEffectContainer on OS26)
             Group {
-                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                     GlassEffectContainer(spacing: DS.Spacing.s) {
                         ScrollView(.horizontal, showsIndicators: false) {
                             LazyHStack(spacing: DS.Spacing.s) {
@@ -405,7 +405,7 @@ private struct CategoryChip: View {
         let shouldApplyShadow = style.shadowRadius > 0 || style.shadowY != 0
 
         let chipContent = Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 let glassContent = content
                     .foregroundStyle(style.glassTextColor)
                     .glassEffect(
@@ -474,7 +474,7 @@ private struct AddCategoryPillStyle: ButtonStyle {
         }
 
         return Group {
-            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+            if capabilities.supportsOS26Translucency, #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
                 label
                     .foregroundStyle(.primary)
                     .glassEffect(.regular.interactive(), in: capsule)
