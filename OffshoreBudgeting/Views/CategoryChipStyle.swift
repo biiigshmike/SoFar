@@ -39,8 +39,8 @@ struct CategoryChipStyle {
             return CategoryChipStyle(
                 scale: 1.0,
                 fallbackTextColor: .primary,
-                fallbackFill: DS.Colors.chipFill,
-                fallbackStroke: Stroke(color: DS.Colors.chipFill, lineWidth: 1),
+                fallbackFill: .clear,
+                fallbackStroke: Stroke(color: .clear, lineWidth: 0),
                 glassTextColor: .primary,
                 glassStroke: nil,
                 shadowColor: .clear,
