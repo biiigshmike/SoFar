@@ -402,7 +402,9 @@ private struct CategoryChip: View {
             }
         }
 
-        Group {
+        let shouldApplyShadow = style.shadowRadius > 0 || style.shadowY != 0
+
+        let chipContent = Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
                 let glassContent = content
                     .foregroundStyle(style.glassTextColor)
@@ -437,10 +439,23 @@ private struct CategoryChip: View {
                     )
             }
         }
-        .scaleEffect(style.scale)
-        .shadow(color: style.shadowColor, radius: style.shadowRadius, x: 0, y: style.shadowY)
-        .animation(.easeOut(duration: 0.15), value: isSelected)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+
+        let base = chipContent
+            .scaleEffect(style.scale)
+            .animation(.easeOut(duration: 0.15), value: isSelected)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+
+        if shouldApplyShadow {
+            base
+                .shadow(
+                    color: style.shadowColor,
+                    radius: style.shadowRadius,
+                    x: 0,
+                    y: style.shadowY
+                )
+        } else {
+            base
+        }
     }
 
 }
