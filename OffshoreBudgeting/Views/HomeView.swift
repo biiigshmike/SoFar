@@ -160,12 +160,8 @@ struct HomeView: View {
 
     // MARK: Toolbar Actions
     private var toolbarGlassTransition: GlassEffectTransition? {
-        guard capabilities.supportsOS26Translucency else {
-            return nil
-        }
-
         if #available(iOS 26.0, macCatalyst 26.0, *) {
-            return reduceMotion ? .identity : .materialize
+            return .matchedGeometry
         } else {
             return nil
         }
