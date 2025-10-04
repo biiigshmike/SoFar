@@ -571,6 +571,7 @@ private struct CategoryChip: View {
                     )
             }
         }
+        .scaleEffect(style.scale)
         .shadow(color: style.shadowColor, radius: style.shadowRadius, x: 0, y: style.shadowY)
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
