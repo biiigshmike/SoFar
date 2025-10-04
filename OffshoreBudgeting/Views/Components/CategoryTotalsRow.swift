@@ -39,7 +39,7 @@ struct CategoryTotalsRow: View {
                                 .frame(height: controlHeight)
 
                                 content
-                                    .glassEffect(.regular.interactive(), in: capsule)
+                                    .glassEffect(.regular, in: capsule)
                                     .glassEffectID(String(describing: cat.id), in: glassNamespace)
                                     .glassEffectTransition(.matchedGeometry)
                             }
@@ -71,7 +71,7 @@ struct CategoryTotalsRow: View {
                     }
                     .padding(.horizontal, horizontalInset)
                 }
-                .allowsHitTesting(isInteractive)
+//                .allowsHitTesting(isInteractive)
             }
         }
         .ub_hideScrollIndicators()
