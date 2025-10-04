@@ -362,6 +362,7 @@ private struct CategoryChip: View {
     let namespace: Namespace.ID?
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
 
     private enum Metrics {
         static let chipHeight: CGFloat = 44
@@ -370,7 +371,6 @@ private struct CategoryChip: View {
     var body: some View {
         let capsule = Capsule(style: .continuous)
         let tint = themeManager.selectedTheme.resolvedTint
-        let textColor: Color = isSelected ? .white : .primary
         let fallbackFill: Color = isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill
         let fallbackStroke: Color = isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill
         let fallbackLineWidth: CGFloat = isSelected ? 1.5 : 1
@@ -388,8 +388,9 @@ private struct CategoryChip: View {
 
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
+                let glassTextColor: Color = isSelected ? readableForegroundColor(for: tint) : .primary
                 let glassContent = content
-                    .foregroundStyle(textColor)
+                    .foregroundStyle(glassTextColor)
                     .glassEffect(
                         isSelected ? .regular.tint(tint).interactive() : .regular.interactive(),
                         in: capsule
@@ -402,8 +403,9 @@ private struct CategoryChip: View {
                     glassContent
                 }
             } else {
+                let legacyTextColor: Color = isSelected ? readableForegroundColor(for: fallbackFill) : .primary
                 content
-                    .foregroundStyle(textColor)
+                    .foregroundStyle(legacyTextColor)
                     .background(capsule.fill(fallbackFill))
                     .overlay(
                         capsule.stroke(
@@ -415,6 +417,40 @@ private struct CategoryChip: View {
         }
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func readableForegroundColor(for background: Color) -> Color {
+        guard let resolvedColor = resolveUIColor(for: background) else {
+            return .white
+        }
+
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        if resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            let brightness = 0.299 * red + 0.587 * green + 0.114 * blue
+            return brightness < 0.55 ? .white : .black
+        }
+
+        var white: CGFloat = 0
+        if resolvedColor.getWhite(&white, alpha: &alpha) {
+            return white < 0.55 ? .white : .black
+        }
+
+        return .white
+    }
+
+    private func resolveUIColor(for color: Color) -> UIColor? {
+#if canImport(UIKit)
+        let uiColor = UIColor(color)
+        let userInterfaceStyle: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
+        let traitCollection = UITraitCollection(userInterfaceStyle: userInterfaceStyle)
+        return uiColor.resolvedColor(with: traitCollection)
+#else
+        return nil
+#endif
     }
 }
 
