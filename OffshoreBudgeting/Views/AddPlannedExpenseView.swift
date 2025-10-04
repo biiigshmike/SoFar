@@ -131,7 +131,9 @@ struct AddPlannedExpenseView: View {
             // MARK: Category Selection
             UBFormSection("Category", isUppercased: true) {
                 CategoryChipsRow(selectedCategoryID: $vm.selectedCategoryID)
+                    .padding(.vertical, DS.Spacing.xs)
             }
+            .ub_formSectionClearBackground()
             .accessibilityElement(children: .contain)
 
             // MARK: Individual Fields
