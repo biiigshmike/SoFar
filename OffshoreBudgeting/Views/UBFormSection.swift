@@ -66,3 +66,26 @@ struct UBFormSection<Content: View>: View {
         }
     }
 }
+
+// MARK: - Convenience Modifiers
+extension View {
+    /// Removes the default grouped form background from a section row and normalises padding.
+    /// - Parameters:
+    ///   - horizontalInset: Leading/trailing padding applied to the row. Defaults to the standard form inset.
+    ///   - verticalInset: Top/bottom padding applied to the row. Defaults to a small system-friendly value.
+    /// - Returns: A view with a clear row background and consistent insets, ideal for chip rows or custom containers.
+    func ub_formSectionClearBackground(
+        horizontalInset: CGFloat = DS.Spacing.l,
+        verticalInset: CGFloat = DS.Spacing.s
+    ) -> some View {
+        listRowBackground(Color.clear)
+            .listRowInsets(
+                EdgeInsets(
+                    top: verticalInset,
+                    leading: horizontalInset,
+                    bottom: verticalInset,
+                    trailing: horizontalInset
+                )
+            )
+    }
+}

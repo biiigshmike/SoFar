@@ -97,8 +97,10 @@ struct AddUnplannedExpenseView: View {
                 CategoryChipsRow(
                     selectedCategoryID: $vm.selectedCategoryID
                 )
+                .padding(.vertical, DS.Spacing.xs)
                 .accessibilityElement(children: .contain)
             }
+            .ub_formSectionClearBackground()
 
 
             // MARK: Individual Fields
