@@ -207,6 +207,11 @@ struct AddUnplannedExpenseView: View {
 }
 
 // MARK: - CategoryChipsRow
+/// Shared layout metrics for the category pill controls.
+private enum CategoryPillMetrics {
+    static let controlHeight: CGFloat = 44
+}
+
 /// Shows a static “Add” pill followed by a horizontally-scrolling list of
 /// category chips (live via @FetchRequest). Selecting a chip updates the binding.
 private struct CategoryChipsRow: View {
@@ -348,6 +353,8 @@ private struct AddCategoryPill: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, DS.Spacing.m)
                 .padding(.vertical, 8)
+                .frame(height: CategoryPillMetrics.controlHeight, alignment: .center)
+                .contentShape(Capsule())
         }
         .modifier(CategoryAddButtonStyleAdapter(tint: themeManager.selectedTheme.resolvedTint, capabilities: capabilities))
         .accessibilityLabel("Add Category")
@@ -365,10 +372,6 @@ private struct CategoryChip: View {
     @Environment(\.platformCapabilities) private var capabilities
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.colorScheme) private var colorScheme
-
-    private enum Metrics {
-        static let chipHeight: CGFloat = 44
-    }
 
     var body: some View {
         let capsule = Capsule(style: .continuous)
@@ -388,7 +391,7 @@ private struct CategoryChip: View {
         }
         .padding(.horizontal, DS.Spacing.m)
         .padding(.vertical, 8)
-        .frame(height: Metrics.chipHeight)
+        .frame(height: CategoryPillMetrics.controlHeight)
 
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
