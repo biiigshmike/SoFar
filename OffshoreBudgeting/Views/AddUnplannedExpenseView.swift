@@ -371,9 +371,12 @@ private struct CategoryChip: View {
     var body: some View {
         let capsule = Capsule(style: .continuous)
         let tint = themeManager.selectedTheme.resolvedTint
-        let fallbackFill: Color = isSelected ? DS.Colors.chipSelectedFill : DS.Colors.chipFill
-        let fallbackStroke: Color = isSelected ? DS.Colors.chipSelectedStroke : DS.Colors.chipFill
-        let fallbackLineWidth: CGFloat = isSelected ? 1.5 : 1
+        let style = CategoryChipStyle.make(
+            isSelected: isSelected,
+            tint: tint,
+            colorScheme: colorScheme,
+            readability: { readableForegroundColor(for: $0) }
+        )
 
         let content = HStack(spacing: DS.Spacing.s) {
             Circle()
@@ -388,13 +391,17 @@ private struct CategoryChip: View {
 
         Group {
             if capabilities.supportsOS26Translucency, #available(iOS 26.0, macCatalyst 26.0, *) {
-                let glassTextColor: Color = isSelected ? readableForegroundColor(for: tint) : .primary
                 let glassContent = content
-                    .foregroundStyle(glassTextColor)
+                    .foregroundStyle(style.glassTextColor)
                     .glassEffect(
                         isSelected ? .regular.tint(tint).interactive() : .regular.interactive(),
                         in: capsule
                     )
+                    .overlay {
+                        if let stroke = style.glassStroke {
+                            capsule.stroke(stroke.color, lineWidth: stroke.lineWidth)
+                        }
+                    }
 
                 if let ns = namespace {
                     glassContent
@@ -403,18 +410,27 @@ private struct CategoryChip: View {
                     glassContent
                 }
             } else {
-                let legacyTextColor: Color = isSelected ? readableForegroundColor(for: fallbackFill) : .primary
                 content
-                    .foregroundStyle(legacyTextColor)
-                    .background(capsule.fill(fallbackFill))
+                    .foregroundStyle(style.fallbackTextColor)
+                    .background {
+                        capsule
+                            .fill(DS.Colors.chipFill)
+                            .overlay {
+                                if let overlay = style.fallbackOverlay {
+                                    capsule.fill(overlay)
+                                }
+                            }
+                    }
                     .overlay(
                         capsule.stroke(
-                            fallbackStroke,
-                            lineWidth: fallbackLineWidth
+                            style.fallbackStroke.color,
+                            lineWidth: style.fallbackStroke.lineWidth
                         )
                     )
             }
         }
+        .scaleEffect(style.scale)
+        .shadow(color: style.shadowColor, radius: style.shadowRadius, x: 0, y: style.shadowY)
         .animation(.easeOut(duration: 0.15), value: isSelected)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
