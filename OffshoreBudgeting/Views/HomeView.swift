@@ -205,7 +205,16 @@ struct HomeView: View {
     private func calendarToolbarMenu() -> some View {
         Menu {
             ForEach(BudgetPeriod.selectableCases) { period in
-                Button(period.displayName) { budgetPeriodRawValue = period.rawValue }
+                Button {
+                    budgetPeriodRawValue = period.rawValue
+                } label: {
+                    Label {
+                        Text(period.displayName)
+                    } icon: {
+                        Image(systemName: "checkmark")
+                            .opacity(budgetPeriod == period ? 1 : 0)
+                    }
+                }
             }
         } label: {
             HeaderMenuGlassLabel(
