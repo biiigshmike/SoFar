@@ -48,7 +48,6 @@ struct HomeView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.platformCapabilities) private var capabilities
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         // Sticky header is managed by RootTabPageScaffold.
         // - Empty states leverage the scaffold's scroll view for reachability.
@@ -178,7 +177,7 @@ struct HomeView: View {
             selectedSegment: $selectedSegment,
             sort: $homeSort,
             periodNavigationTitle: title(for: vm.selectedDate),
-            onAdjustPeriod: { delta in performPeriodAdjustment(by: delta) },
+            onAdjustPeriod: { delta in vm.adjustSelectedPeriod(by: delta) },
             onAddCategory: { isPresentingManageCategories = true },
             topPaddingStyle: topPaddingStyle,
             content: content
@@ -197,6 +196,10 @@ struct HomeView: View {
         } else {
             return nil
         }
+    }
+
+    private var periodAdjustmentAnimation: Animation {
+        .spring(response: 0.34, dampingFraction: 0.78, blendDuration: 0.1)
     }
 
     private func calendarToolbarMenu() -> some View {
@@ -471,21 +474,6 @@ struct HomeView: View {
     // MARK: Helpers
     private func title(for date: Date) -> String {
         budgetPeriod.title(for: date)
-    }
-
-    private var periodAdjustmentAnimation: Animation {
-        .spring(response: 0.32, dampingFraction: 0.72, blendDuration: 0.15)
-    }
-
-    private func performPeriodAdjustment(by delta: Int) {
-        guard capabilities.supportsOS26Translucency, !reduceMotion else {
-            vm.adjustSelectedPeriod(by: delta)
-            return
-        }
-
-        withAnimation(periodAdjustmentAnimation) {
-            vm.adjustSelectedPeriod(by: delta)
-        }
     }
 
     // Period-driven header title, e.g. "September 2025 Budget" or
