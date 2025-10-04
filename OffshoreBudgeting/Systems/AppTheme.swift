@@ -473,7 +473,11 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var usesGlassMaterials: Bool {
         switch self {
         case .system:
-            return false
+            if #available(iOS 26.0, macOS 26.0, macCatalyst 26.0, *) {
+                return true
+            } else {
+                return false
+            }
         default:
             return true
         }
