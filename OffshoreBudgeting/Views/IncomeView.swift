@@ -154,6 +154,7 @@ struct IncomeView: View {
     }
 
     private let landscapeLayoutMinimumWidth: CGFloat = 780
+    private let landscapeSummarySpansFullWidth: Bool = true
 
     private struct IncomeCardHeights {
         let calendar: CGFloat
@@ -273,20 +274,43 @@ struct IncomeView: View {
         let calendarFraction: CGFloat = 0.58
         let calendarWidth = max(availableWidth * calendarFraction, 0)
 
-        return HStack(alignment: .top, spacing: columnSpacing) {
-            calendarSection(using: proxy, cardHeight: calendarCardHeight)
-                .frame(width: calendarWidth, alignment: .top)
+        let summaryTargetHeight = max(heights.summary, minimums.summary, sharedTargetHeight)
 
-            VStack(spacing: DS.Spacing.m) {
-                selectedDaySection(minHeight: minimums.selected)
-                    .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: sharedTargetHeight, alignment: .top)
+        return Group {
+            if landscapeSummarySpansFullWidth {
+                VStack(alignment: .leading, spacing: DS.Spacing.m) {
+                    HStack(alignment: .top, spacing: columnSpacing) {
+                        calendarSection(using: proxy, cardHeight: calendarCardHeight)
+                            .frame(width: calendarWidth, alignment: .top)
 
-                weeklySummaryBar(minHeight: minimums.summary)
+                        selectedDaySection(minHeight: minimums.selected)
+                            .frame(maxWidth: .infinity, alignment: .top)
+                            .frame(height: sharedTargetHeight, alignment: .top)
+                    }
+
+                    weeklySummaryBar(minHeight: minimums.summary)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                        .frame(height: summaryTargetHeight, alignment: .top)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(alignment: .top, spacing: columnSpacing) {
+                    calendarSection(using: proxy, cardHeight: calendarCardHeight)
+                        .frame(width: calendarWidth, alignment: .top)
+
+                    VStack(spacing: DS.Spacing.m) {
+                        selectedDaySection(minHeight: minimums.selected)
+                            .frame(maxWidth: .infinity, alignment: .top)
+                            .frame(height: sharedTargetHeight, alignment: .top)
+
+                        weeklySummaryBar(minHeight: minimums.summary)
+                            .frame(maxWidth: .infinity, alignment: .top)
+                            .frame(height: sharedTargetHeight, alignment: .top)
+                    }
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: sharedTargetHeight, alignment: .top)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .rootTabContentPadding(
