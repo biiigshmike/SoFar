@@ -401,6 +401,7 @@ private struct CategoryChipsRow: View {
                             }
                             .padding(.trailing, DS.Spacing.s)
                         }
+                        .padding(.leading, DS.Spacing.s)
                         .ub_hideScrollIndicators()
                     }
                 } else {
@@ -425,6 +426,7 @@ private struct CategoryChipsRow: View {
                         }
                         .padding(.trailing, DS.Spacing.s)
                     }
+                    .padding(.leading, DS.Spacing.s)
                     .ub_hideScrollIndicators()
                 }
             }
