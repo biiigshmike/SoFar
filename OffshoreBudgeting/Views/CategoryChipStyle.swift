@@ -12,9 +12,14 @@ struct CategoryChipStyle {
     let fallbackStroke: Stroke
     let glassTextColor: Color
     let glassStroke: Stroke?
+    let shadowColor: Color
+    let shadowRadius: CGFloat
+    let shadowY: CGFloat
+
     static func make(
         isSelected: Bool,
-        categoryColor: Color
+        categoryColor: Color,
+        colorScheme: ColorScheme
     ) -> CategoryChipStyle {
         if isSelected {
             let strokeColor = categoryColor
@@ -25,7 +30,10 @@ struct CategoryChipStyle {
                 fallbackFill: .clear,
                 fallbackStroke: Stroke(color: strokeColor, lineWidth: 2),
                 glassTextColor: .primary,
-                glassStroke: Stroke(color: strokeColor, lineWidth: 2)
+                glassStroke: Stroke(color: strokeColor, lineWidth: 2),
+                shadowColor: categoryColor.opacity(colorScheme == .dark ? 0.55 : 0.35),
+                shadowRadius: 6,
+                shadowY: 3
             )
         } else {
             return CategoryChipStyle(
@@ -34,7 +42,10 @@ struct CategoryChipStyle {
                 fallbackFill: DS.Colors.chipFill,
                 fallbackStroke: Stroke(color: DS.Colors.chipFill, lineWidth: 1),
                 glassTextColor: .primary,
-                glassStroke: nil
+                glassStroke: nil,
+                shadowColor: .clear,
+                shadowRadius: 0,
+                shadowY: 0
             )
         }
     }
