@@ -30,6 +30,9 @@ struct IncomeView: View {
     /// Controls which date the calendar should scroll to when navigation buttons are used.
     /// A `nil` value means no programmatic scroll is requested.
     @State private var calendarScrollDate: Date? = nil
+    /// Tracks the measured height of the navigation controls above the calendar so the
+    /// landscape layout can align the calendar card with the adjacent column.
+    @State private var navigationButtonRowHeight: CGFloat = CalendarSectionMetrics.navigationRowHeight
 
     // MARK: Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -130,6 +133,14 @@ struct IncomeView: View {
             regularRowHeight: DS.Spacing.xl + DS.Spacing.l,
             rowCount: 6
         )
+    }
+
+    private struct NavigationRowHeightPreferenceKey: PreferenceKey {
+        static var defaultValue: CGFloat = CalendarSectionMetrics.navigationRowHeight
+
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = max(value, nextValue())
+        }
     }
 
     private let calendarSectionContentPadding: CGFloat = 10
@@ -242,16 +253,20 @@ struct IncomeView: View {
             using: proxy,
             availableHeight: availableHeight,
             tabBarGutter: gutter,
-            minimums: minimums
+            minimums: minimums,
+            splitExtraEvenly: true
         )
-        let selectedHeight = max(heights.selected, minimums.selected)
-        let summaryHeight = max(heights.summary, minimums.summary)
-        let rightColumnHeight = selectedHeight + DS.Spacing.m + summaryHeight
-        let navigationHeaderHeight = CalendarSectionMetrics.navigationRowHeight + CalendarSectionMetrics.headerSpacing
-        let calendarCardHeight = max(
-            rightColumnHeight - (calendarSectionContentPadding * 2) - navigationHeaderHeight,
-            minimums.calendar
+        let calendarChromeHeight = navigationButtonRowHeight + CalendarSectionMetrics.headerSpacing + (calendarSectionContentPadding * 2)
+        let minimumCalendarCardHeight = minimums.calendar + calendarChromeHeight
+        let sharedTargetHeight = max(
+            heights.summary,
+            heights.selected,
+            minimums.selected,
+            minimums.summary,
+            minimumCalendarCardHeight,
+            heights.calendar + calendarChromeHeight
         )
+        let calendarCardHeight = max(sharedTargetHeight - calendarChromeHeight, minimums.calendar)
         let horizontalPadding = horizontalInset * 2
         let columnSpacing = DS.Spacing.l
         let availableWidth = max(proxy.layoutContext.containerSize.width - horizontalPadding - columnSpacing, 0)
@@ -265,11 +280,11 @@ struct IncomeView: View {
             VStack(spacing: DS.Spacing.m) {
                 selectedDaySection(minHeight: minimums.selected)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: selectedHeight, alignment: .top)
+                    .frame(height: sharedTargetHeight, alignment: .top)
 
                 weeklySummaryBar(minHeight: minimums.summary)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: summaryHeight, alignment: .top)
+                    .frame(height: sharedTargetHeight, alignment: .top)
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
@@ -352,14 +367,26 @@ struct IncomeView: View {
         using proxy: RootTabPageProxy,
         availableHeight: CGFloat,
         tabBarGutter: RootTabPageProxy.TabBarGutter,
-        minimums providedMinimums: IncomeCardHeights? = nil
+        minimums providedMinimums: IncomeCardHeights? = nil,
+        splitExtraEvenly: Bool = false
     ) -> IncomeCardHeights {
         let cardSpacing = DS.Spacing.m * 2
         let minimums = providedMinimums ?? minimumCardHeights(using: proxy)
-        let baseTotal = minimums.calendar + minimums.selected + minimums.summary
         let bottomPadding = proxy.tabBarGutterSpacing(tabBarGutter)
-        let adjustedHeight = max(availableHeight - bottomPadding, baseTotal + cardSpacing)
-        let extra = max(adjustedHeight - baseTotal - cardSpacing, 0)
+        let availableContentHeight = max(availableHeight - bottomPadding, 0)
+        let minimumLayoutHeight = minimums.calendar + minimums.selected + minimums.summary + cardSpacing
+        let adjustedHeight = max(availableContentHeight, minimumLayoutHeight)
+        let extra = max(adjustedHeight - minimumLayoutHeight, 0)
+
+        if splitExtraEvenly {
+            let extraPerCard = extra / 3
+
+            return IncomeCardHeights(
+                calendar: max(minimums.calendar + extraPerCard, minimums.calendar),
+                selected: max(minimums.selected + extraPerCard, minimums.selected),
+                summary: max(minimums.summary + extraPerCard, minimums.summary)
+            )
+        }
 
         let calendar = minimums.calendar + (extra * 0.22)
         let summary = minimums.summary + (extra * 0.08)
@@ -419,6 +446,15 @@ struct IncomeView: View {
                     .incomeCalendarGlassButtonStyle(role: .icon)
             }
             .frame(minHeight: max(CalendarSectionMetrics.navigationRowHeight, 44))
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(
+                            key: NavigationRowHeightPreferenceKey.self,
+                            value: proxy.size.height
+                        )
+                }
+            )
             MCalendarView(
                 selectedDate: $viewModel.selectedDate,
                 selectedRange: .constant(nil)
@@ -453,6 +489,9 @@ struct IncomeView: View {
         .layoutPriority(1)
         .padding(calendarSectionContentPadding)
         .incomeSectionContainerStyle(theme: themeManager.selectedTheme, capabilities: capabilities)
+        .onPreferenceChange(NavigationRowHeightPreferenceKey.self) { value in
+            navigationButtonRowHeight = max(value, CalendarSectionMetrics.navigationRowHeight)
+        }
     }
 
     // MARK: - Weekly Summary Bar
