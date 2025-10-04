@@ -11,6 +11,7 @@ import SwiftUI
 struct CategoryTotalsRow: View {
     let categories: [BudgetSummary.CategorySpending]
     var isPlaceholder: Bool = false
+    var isInteractive: Bool = true
     var horizontalInset: CGFloat = DS.Spacing.l
     private let controlHeight: CGFloat = 44
     @Environment(\.platformCapabilities) private var capabilities
@@ -45,6 +46,7 @@ struct CategoryTotalsRow: View {
                         }
                         .padding(.horizontal, horizontalInset)
                     }
+                    .allowsHitTesting(isInteractive)
                 }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -69,6 +71,7 @@ struct CategoryTotalsRow: View {
                     }
                     .padding(.horizontal, horizontalInset)
                 }
+                .allowsHitTesting(isInteractive)
             }
         }
         .ub_hideScrollIndicators()
